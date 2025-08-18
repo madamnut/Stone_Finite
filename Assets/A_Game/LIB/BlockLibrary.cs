@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq; // Newtonsoft JSON 패키지 필요
 // │   gravity   → 중력 영향 (아래로 낙하)                 │
 // │   dependent → 아래 블록이 파괴되면 같이 파괴          │
 // └──────────────────────────────────────────────────────┘
+[DefaultExecutionOrder(-100)]
 public class BlockLibrary : MonoBehaviour
 {
     // ▣ 인스펙터 ▣
@@ -55,11 +56,11 @@ public class BlockLibrary : MonoBehaviour
             string spriteKey = pair.Key;          // ex) "rock"
             JObject obj      = (JObject)pair.Value;
 
-            ushort id      = (ushort)(obj["id"       ]?.Value<int>()  ?? 0);
-            bool collider  =          obj["collider" ]?.Value<bool>() ?? false;
-            bool liquid    =          obj["liquid"   ]?.Value<bool>() ?? false;
-            bool gravity   =          obj["gravity"  ]?.Value<bool>() ?? false;
-            bool dependent =          obj["dependent"]?.Value<bool>() ?? false;
+            ushort id      = (ushort)(obj["id"]       ?.Value<int>()  ?? 0);
+            bool collider  =           obj["collider"] ?.Value<bool>() ?? false;
+            bool liquid    =           obj["liquid"]   ?.Value<bool>() ?? false;
+            bool gravity   =           obj["gravity"]  ?.Value<bool>() ?? false;
+            bool dependent =           obj["dependent"]?.Value<bool>() ?? false;
 
             Sprite sp = atlas.GetSprite(spriteKey);
             if (sp == null)

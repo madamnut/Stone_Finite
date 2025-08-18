@@ -28,16 +28,18 @@ public static class WorldDataGenerator
     {
         int w = settings.width;
         int h = settings.height;
-        var fgMap = new CellData[w, h];
-        var bgMap = new ushort[w, h];
+        var fgMap  = new CellData[w, h];
+        var bgMap  = new ushort[w, h];
+        var light  = new byte[w, h];
 
-        // 1) 초기 공기/물 및 bg 초기화
+        // 1) 초기 공기/물 및 bg 초기화, light=0
         for (int x = 0; x < w; x++)
             for (int y = 0; y < h; y++)
             {
                 ushort baseId = (y < settings.waterHeight) ? ID_WATER : ID_AIR;
                 fgMap[x, y] = MakeCell(baseId);
                 bgMap[x, y] = ID_AIR;
+                light[x, y] = 0;
             }
 
         // 2) 노이즈 기반 지층 높이 계산
@@ -75,7 +77,6 @@ public static class WorldDataGenerator
                 if (y < granH[x, y])    fgMap[x, y] = MakeCell(ID_GRANITE);
                 if (y < amphH[x, y])    fgMap[x, y] = MakeCell(ID_AMPHIBOLITE);
 
-                // 배경 레이어 동기화
                 ushort fgId = fgMap[x, y].id;
                 if (fgId == ID_DIRT || fgId == ID_ROCK || fgId == ID_GRANITE || fgId == ID_AMPHIBOLITE)
                     bgMap[x, y] = fgId;
@@ -108,7 +109,43 @@ public static class WorldDataGenerator
         // 8) 나무 배치 (FG 트렁크/잎)
         PlaceTrees(settings, fgMap);
 
-        return new WorldData { fg = fgMap, bg = bgMap };
+        // 9) 스카이라이트 확산 (하늘을 광원으로 BFS)
+        const byte skyLight = 20;
+        var queue = new Queue<(int x, int y)>();
+        int yTop = h - 1;
+        for (int x = 0; x < w; x++)
+        {
+            light[x, yTop] = skyLight;
+            queue.Enqueue((x, yTop));
+        }
+
+        int[] dx = { 1, -1, 0, 0 };
+        int[] dy = { 0, 0, 1, -1 };
+        while (queue.Count > 0)
+        {
+            var (cx, cy) = queue.Dequeue();
+            byte curr = light[cx, cy];
+            if (curr == 0) continue;
+
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = cx + dx[i], ny = cy + dy[i];
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+
+                int attenuation = 0;
+                if (bgMap[nx, ny] != ID_AIR) attenuation += 1;
+                if (fgMap[nx, ny].hasCollider) attenuation += 2;
+
+                byte next = (byte)Math.Max(0, curr - attenuation);
+                if (next > light[nx, ny])
+                {
+                    light[nx, ny] = next;
+                    queue.Enqueue((nx, ny));
+                }
+            }
+        }
+
+        return new WorldData { fg = fgMap, bg = bgMap, light = light };
     }
 
     private static CellData MakeCell(ushort id)
@@ -147,7 +184,6 @@ public static class WorldDataGenerator
               s.ironSeedDensity, s.ironExpansionProb, s.ironMaxGrowthFactor, ID_ORE_IRON);
     }
 
-    // CellData[,] 용 물 Flood-Fill
     private static void FloodFillWater(CellData[,] fgMap, int w, int h, ushort waterId, ushort airId)
     {
         var dirs = new (int dx, int dy)[] { (1, 0), (-1, 0), (0, -1) };
@@ -165,9 +201,9 @@ public static class WorldDataGenerator
         while (queue.Count > 0)
         {
             var (cx, cy) = queue.Dequeue();
-            foreach (var (dx, dy) in dirs)
+            foreach (var (dxOff, dyOff) in dirs)
             {
-                int nx = cx + dx, ny = cy + dy;
+                int nx = cx + dxOff, ny = cy + dyOff;
                 if (nx < 0 || ny < 0 || nx >= w || ny >= h || visited[nx, ny]) continue;
                 if (fgMap[nx, ny].id == airId)
                 {
@@ -214,18 +250,16 @@ public static class WorldDataGenerator
             if (rand.NextDouble() > s.treeDensity) continue;
 
             int y = h - 1;
-            while (y > 0 && fgMap[x, y].id == ID_AIR) y--;  
+            while (y > 0 && fgMap[x, y].id == ID_AIR) y--;
             if (fgMap[x, y].id != GetGrassVariant(x, y, fgMap)) continue;
 
             int seedY = y + 1;
             int H = SampleTri(rand, s.treeMinHeight, s.treeModeHeight, s.treeMaxHeight);
 
-            // 트렁크 배치 (공기만)
             for (int i = 0; i < H && seedY + i < h; i++)
                 if (fgMap[x, seedY + i].id == ID_AIR)
                     fgMap[x, seedY + i] = MakeCell(ID_TRUNK);
 
-            // 잎 배치 (공기만)
             ProceduralUtil.DrawLeafBlobOnIDMap(
                 x, seedY + H - 1, H,
                 w, h,
