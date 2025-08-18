@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c301846cb220f4d4ebd778889e3eb6df, type: 3}
+  m_Name: WorldGenSettings
+  m_EditorClassIdentifier: 
+  seed: 23835
+  width: 5120
+  height: 1536
+  waterHeight: 800
+  dirtBaseHeight: 815
+  dirtRange: 100
+  dirtNoiseBaseFrequency: 0.004
+  dirtNoiseOctaves: 4
+  dirtNoisePersistence: 0.697
+  dirtNoiseLacunarity: 2.18
+  rockBaseHeight: 780
+  rockRange: 150
+  rockNoiseBaseFrequency: 0.003
+  rockNoiseOctaves: 5
+  rockNoisePersistence: 0.733
+  rockNoiseLacunarity: 2.03
+  graniteBaseHeight: 530
+  graniteRange: 150
+  graniteNoiseBaseFrequency: 0.006
+  graniteNoiseOctaves: 5
+  graniteNoisePersistence: 0.5
+  graniteNoiseLacunarity: 2.2
+  amphibBaseHeight: 290
+  amphibRange: 150
+  amphibNoiseBaseFrequency: 0.007
+  amphibNoiseOctaves: 5
+  amphibNoisePersistence: 0.5
+  amphibNoiseLacunarity: 2.4
+  coalMinHeight: 600
+  coalMaxHeight: 900
+  coalClusterSizeMean: 80
+  coalClusterSizeStdDev: 20
+  coalSeedDensity: 0.002
+  coalExpansionProb: 0.5
+  coalMaxGrowthFactor: 1.5
+  copperMinHeight: 600
+  copperMaxHeight: 700
+  copperClusterSizeMean: 60
+  copperClusterSizeStdDev: 15
+  copperSeedDensity: 0.0015
+  copperExpansionProb: 0.4
+  copperMaxGrowthFactor: 1.4
+  ironMinHeight: 500
+  ironMaxHeight: 650
+  ironClusterSizeMean: 50
+  ironClusterSizeStdDev: 12
+  ironSeedDensity: 0.002
+  ironExpansionProb: 0.3
+  ironMaxGrowthFactor: 1.3
+  minInterClusterDist: 10
+  clusterJitter: 5
+  neighborMode: 1
+  frontierMode: 1
+  caveInitialFillPercent: 20
+  caveBirthLimit: 6
+  caveSurvivalLimit: 5
+  caveIterations: 6
+  caveWalkerCount: 600
+  caveWalkLength: 5000
+  caveDirectionBias: 0.701
+  treeDensity: 0.06
+  treeMinHeight: 5
+  treeModeHeight: 8
+  treeMaxHeight: 12
+  airColor: {r: 1, g: 1, b: 1, a: 1}
+  waterColor: {r: 0, g: 0, b: 1, a: 1}
+  dirtColor: {r: 0.545, g: 0.271, b: 0.075, a: 1}
+  grassColor: {r: 0.4, g: 0.8, b: 0.2, a: 1}
+  rockColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  graniteColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  amphibColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
+  coalColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+  copperColor: {r: 0.2, g: 0.8, b: 0.37808496, a: 1}
+  ironColor: {r: 0.8396226, g: 0.18614274, b: 0.18614274, a: 1}
+  trunkColor: {r: 0.4, g: 0.2, b: 0.05, a: 1}
+  leafColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
