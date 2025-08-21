@@ -37,9 +37,11 @@ public class BlockLibrary : MonoBehaviour
         public bool dependent;  // 아래 블록이 사라지면 함께 파괴 (덩굴·횃불)
     }
 
+    // ID → BlockData
     private static readonly Dictionary<ushort, BlockData> byId = new();
+    // ID → spriteKey (원본 JSON의 키)
+    private static readonly Dictionary<ushort, string> idToKey = new();
 
-    // ──────────────────────────────────────
     private void Awake()
     {
         if (atlas == null || blockJson == null)
@@ -49,20 +51,21 @@ public class BlockLibrary : MonoBehaviour
         }
 
         byId.Clear();
+        idToKey.Clear();
 
-        JObject root = JObject.Parse(blockJson.text);
+        var root = JObject.Parse(blockJson.text);
         foreach (var pair in root)
         {
             string spriteKey = pair.Key;          // ex) "rock"
-            JObject obj      = (JObject)pair.Value;
+            var obj = (JObject)pair.Value;
 
-            ushort id      = (ushort)(obj["id"]       ?.Value<int>()  ?? 0);
-            bool collider  =           obj["collider"] ?.Value<bool>() ?? false;
-            bool liquid    =           obj["liquid"]   ?.Value<bool>() ?? false;
-            bool gravity   =           obj["gravity"]  ?.Value<bool>() ?? false;
-            bool dependent =           obj["dependent"]?.Value<bool>() ?? false;
+            ushort id = (ushort)(obj["id"]?.Value<int>() ?? 0);
+            bool collider  = obj["collider"]?.Value<bool>() ?? false;
+            bool liquid    = obj["liquid"]?.Value<bool>() ?? false;
+            bool gravity   = obj["gravity"]?.Value<bool>() ?? false;
+            bool dependent = obj["dependent"]?.Value<bool>() ?? false;
 
-            Sprite sp = atlas.GetSprite(spriteKey);
+            var sp = atlas.GetSprite(spriteKey);
             if (sp == null)
                 Debug.LogWarning($"BlockLibrary: 스프라이트 '{spriteKey}' (ID {id})를 아틀라스에서 찾을 수 없습니다.", this);
 
@@ -81,6 +84,7 @@ public class BlockLibrary : MonoBehaviour
                 gravity   = gravity,
                 dependent = dependent
             });
+            idToKey[id] = spriteKey;
         }
     }
 
@@ -92,4 +96,12 @@ public class BlockLibrary : MonoBehaviour
     public static bool   HasGravity  (ushort id) => byId.TryGetValue(id, out var d) && d.gravity;
     public static bool   IsDependent (ushort id) => byId.TryGetValue(id, out var d) && d.dependent;
     public static string GetName     (ushort id) => byId.TryGetValue(id, out var d) ? d.name     : $"Unknown_{id}";
+
+    /// <summary>
+    /// 블록 ID에 대응하는 JSON 키(spriteKey)를 반환합니다.
+    /// </summary>
+    public static string GetKey(ushort id)
+    {
+        return idToKey.TryGetValue(id, out var key) ? key : null;
+    }
 }

@@ -1,0 +1,78 @@
+{
+  "Dirt": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 }
+  ],
+
+  "Grass_Top": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Grass_Left": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Grass_Right": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Grass_TopLeft": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Grass_TopRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }  
+  ],
+  "Grass_TopLeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Grass_LeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }  
+  ],
+
+  "Rock": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 }
+  ],
+
+  "Gravel": [
+    { "itemId": "Flint Shard", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Pebble", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Sand": [
+    { "itemId": "Sand", "probability": 1, "min": 4, "max": 8 }
+  ],
+
+  "Bush": [
+    { "itemId": "Leaf", "probability": 1, "min": 4, "max": 8 },
+    { "itemId": "Plant", "probability": 1, "min": 2, "max": 4 },
+    { "itemId": "Twig", "probability": 1, "min": 3, "max": 6 },
+    { "itemId": "Seed", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Stone Pile": [
+    { "itemId": "Stone Shard", "probability": 1, "min": 3, "max": 6 }
+  ],
+  "Small Stone Pile": [
+    { "itemId": "Stone Shard", "probability": 1, "min": 3, "max": 6 }
+  ],
+  "Plant": [
+    { "itemId": "Plant", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Seed", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Leaf": [
+    { "itemId": "Leaf", "probability": 1, "min": 10, "max": 15 },
+    { "itemId": "Twig", "probability": 1, "min": 6, "max": 10 }
+  ],
+  "Trunk": [
+    { "itemId": "Thick Twig", "probability": 1, "min": 5, "max": 3 },
+    { "objectId": "Log", "probability": 1, "min": 1, "max": 1 }
+  ]
+}

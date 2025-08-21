@@ -65,7 +65,7 @@ public class WorldManager : MonoBehaviour
         }
 
         if (chunkPrefab == null) Debug.LogError("WorldManager: Chunk Prefab이 없습니다.");
-        if (player == null)      Debug.LogError("WorldManager: Player Transform이 없습니다.");
+        if (player == null) Debug.LogError("WorldManager: Player Transform이 없습니다.");
 
         lastPlayerChunk = GetPlayerChunk();
     }
@@ -159,16 +159,16 @@ public class WorldManager : MonoBehaviour
         var chunkComp = go.GetComponent<Chunk>();
         if (chunkComp == null) return;
 
-        var bgBuf    = chunkComp.bgBuffer;
-        var fgBuf    = chunkComp.fgBuffer;
+        var bgBuf = chunkComp.bgBuffer;
+        var fgBuf = chunkComp.fgBuffer;
         var lightBuf = chunkComp.lightBuffer;
         int size = ChunkSize * ChunkSize;
 
         // 버퍼 초기화
         for (int i = 0; i < size; i++)
         {
-            bgBuf[i]    = null;
-            fgBuf[i]    = null;
+            bgBuf[i] = null;
+            fgBuf[i] = null;
             lightBuf[i] = null;
         }
 
@@ -199,7 +199,7 @@ public class WorldManager : MonoBehaviour
                 float alpha = 1f - (lvl / 20f);         // lvl20→0, lvl0→1
                 var lt = ScriptableObject.CreateInstance<Tile>();
                 lt.sprite = lightSprite;
-                lt.color  = new Color(0, 0, 0, alpha);
+                lt.color = new Color(0, 0, 0, alpha);
                 lightBuf[idx] = lt;
             }
         }
@@ -215,8 +215,8 @@ public class WorldManager : MonoBehaviour
                           .ProcessTilemapChanges();
 
         // Dirty 플래그 초기화
-        chunkComp.bgDirty    = false;
-        chunkComp.fgDirty    = false;
+        chunkComp.bgDirty = false;
+        chunkComp.fgDirty = false;
         chunkComp.lightDirty = false;
 
         activeChunks[coord] = go;
@@ -230,8 +230,8 @@ public class WorldManager : MonoBehaviour
     {
         foreach (var kv in activeChunks)
         {
-            var coord     = kv.Key;
-            var go        = kv.Value;
+            var coord = kv.Key;
+            var go = kv.Value;
             var chunkComp = go.GetComponent<Chunk>();
 
             // BG 업데이트
@@ -269,26 +269,26 @@ public class WorldManager : MonoBehaviour
     public void RecalculateLightAt(int x0, int y0)
     {
         int w = settings.width, h = settings.height;
-        var q = new Queue<(int x,int y)>();
-        q.Enqueue((x0,y0));
+        var q = new Queue<(int x, int y)>();
+        q.Enqueue((x0, y0));
 
-        (int dx,int dy)[] dirs = { (1,0),(-1,0),(0,1),(0,-1) };
+        (int dx, int dy)[] dirs = { (1, 0), (-1, 0), (0, 1), (0, -1) };
 
         while (q.Count > 0)
         {
-            var (x,y) = q.Dequeue();
-            byte old = worldMap.light[x,y];
+            var (x, y) = q.Dequeue();
+            byte old = worldMap.light[x, y];
 
             // 주변 4방향 중 가장 밝은 이웃 기준
             byte best = 0;
-            foreach (var (dx,dy) in dirs)
+            foreach (var (dx, dy) in dirs)
             {
                 int nx = x + dx, ny = y + dy;
-                if (nx<0||ny<0||nx>=w||ny>=h) continue;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
 
-                int attenuation = (worldMap.bg[x,y] != 0 ? 1 : 0)
-                                + (worldMap.fg[x,y].hasCollider ? 2 : 0);
-                int cand = worldMap.light[nx,ny] - attenuation;
+                int attenuation = (worldMap.bg[x, y] != 0 ? 1 : 0)
+                                + (worldMap.fg[x, y].hasCollider ? 2 : 0);
+                int cand = worldMap.light[nx, ny] - attenuation;
                 if (cand > best) best = (byte)cand;
             }
 
@@ -296,17 +296,17 @@ public class WorldManager : MonoBehaviour
 
             if (best != old)
             {
-                worldMap.light[x,y] = best;
+                worldMap.light[x, y] = best;
 
                 // 변화 퍼뜨리기 & dirty 표시
-                foreach (var (dx,dy) in dirs)
+                foreach (var (dx, dy) in dirs)
                 {
                     int mx = x + dx, my = y + dy;
-                    if (mx<0||my<0||mx>=w||my>=h) continue;
-                    q.Enqueue((mx,my));
+                    if (mx < 0 || my < 0 || mx >= w || my >= h) continue;
+                    q.Enqueue((mx, my));
                 }
 
-                var coord = new Vector2Int(x/ChunkSize, y/ChunkSize);
+                var coord = new Vector2Int(x / ChunkSize, y / ChunkSize);
                 if (activeChunks.TryGetValue(coord, out var go2))
                     go2.GetComponent<Chunk>().lightDirty = true;
             }
@@ -318,11 +318,11 @@ public class WorldManager : MonoBehaviour
     /// </summary>
     private void RefreshChunkLayer(Vector2Int coord, bool isFG)
     {
-        var go        = activeChunks[coord];
+        var go = activeChunks[coord];
         var chunkComp = go.GetComponent<Chunk>();
-        var buf       = isFG ? chunkComp.fgBuffer : chunkComp.bgBuffer;
-        var tilemap   = isFG ? chunkComp.fgTilemap : chunkComp.bgTilemap;
-        var bounds    = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
+        var buf = isFG ? chunkComp.fgBuffer : chunkComp.bgBuffer;
+        var tilemap = isFG ? chunkComp.fgTilemap : chunkComp.bgTilemap;
+        var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
 
         for (int y = 0; y < ChunkSize; y++)
             for (int x = 0; x < ChunkSize; x++)
@@ -330,12 +330,12 @@ public class WorldManager : MonoBehaviour
                 int wx = coord.x * ChunkSize + x;
                 int wy = coord.y * ChunkSize + y;
                 int idx = y * ChunkSize + x;
-                if (wx<0||wy<0||wx>=settings.width||wy>=settings.height)
+                if (wx < 0 || wy < 0 || wx >= settings.width || wy >= settings.height)
                     continue;
 
                 if (isFG)
                 {
-                    var cell = worldMap.fg[wx,wy];
+                    var cell = worldMap.fg[wx, wy];
                     var tile = TileCache.Get(cell.id);
                     tile.colliderType = cell.hasCollider
                         ? Tile.ColliderType.Sprite
@@ -344,7 +344,7 @@ public class WorldManager : MonoBehaviour
                 }
                 else
                 {
-                    buf[idx] = TileCache.Get(worldMap.bg[wx,wy]);
+                    buf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
                 }
             }
 
@@ -362,24 +362,24 @@ public class WorldManager : MonoBehaviour
     /// </summary>
     private void RefreshLightLayer(Vector2Int coord)
     {
-        var go        = activeChunks[coord];
+        var go = activeChunks[coord];
         var chunkComp = go.GetComponent<Chunk>();
-        var buf       = chunkComp.lightBuffer;
-        var tilemap   = chunkComp.lightTilemap;
-        var bounds    = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
+        var buf = chunkComp.lightBuffer;
+        var tilemap = chunkComp.lightTilemap;
+        var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
 
         int startX = coord.x * ChunkSize, startY = coord.y * ChunkSize;
         for (int y = 0; y < ChunkSize; y++)
-        for (int x = 0; x < ChunkSize; x++)
-        {
-            int wx = startX + x, wy = startY + y, idx = y * ChunkSize + x;
-            byte lvl = worldMap.light[wx,wy];
-            float alpha = 1f - (lvl/20f);
-            var lt = ScriptableObject.CreateInstance<Tile>();
-            lt.sprite = lightSprite;
-            lt.color  = new Color(0,0,0,alpha);
-            buf[idx]  = lt;
-        }
+            for (int x = 0; x < ChunkSize; x++)
+            {
+                int wx = startX + x, wy = startY + y, idx = y * ChunkSize + x;
+                byte lvl = worldMap.light[wx, wy];
+                float alpha = 1f - (lvl / 20f);
+                var lt = ScriptableObject.CreateInstance<Tile>();
+                lt.sprite = lightSprite;
+                lt.color = new Color(0, 0, 0, alpha);
+                buf[idx] = lt;
+            }
 
         tilemap.SetTilesBlock(bounds, buf);
     }
@@ -389,13 +389,13 @@ public class WorldManager : MonoBehaviour
     /// </summary>
     public void MarkChunkDirty(int worldX, int worldY, bool markFG)
     {
-        int cx = Mathf.FloorToInt(worldX/(float)ChunkSize);
-        int cy = Mathf.FloorToInt(worldY/(float)ChunkSize);
-        var coord = new Vector2Int(cx,cy);
+        int cx = Mathf.FloorToInt(worldX / (float)ChunkSize);
+        int cy = Mathf.FloorToInt(worldY / (float)ChunkSize);
+        var coord = new Vector2Int(cx, cy);
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var chunkComp = go.GetComponent<Chunk>();
-        if (markFG) chunkComp.fgDirty   = true;
-        else        chunkComp.bgDirty   = true;
+        if (markFG) chunkComp.fgDirty = true;
+        else chunkComp.bgDirty = true;
     }
 
     // 타일 캐시
@@ -407,7 +407,7 @@ public class WorldManager : MonoBehaviour
             if (cache.TryGetValue(id, out var tile)) return tile;
             var newTile = ScriptableObject.CreateInstance<Tile>();
             newTile.sprite = BlockLibrary.GetSprite(id);
-            newTile.name   = BlockLibrary.GetName(id);
+            newTile.name = BlockLibrary.GetName(id);
             cache[id] = newTile;
             return newTile;
         }

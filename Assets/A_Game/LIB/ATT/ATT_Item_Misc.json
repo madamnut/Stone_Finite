@@ -1,0 +1,93 @@
+{
+  "Dirt Pile": {
+    "name": "Dirt Pile",
+    "spriteName": "Dirt Pile",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Flint Shard": {
+    "name": "Flint Shard",
+    "spriteName": "Flint Shard",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Grass Scrap": {
+    "name": "Grass Scrap",
+    "spriteName": "Grass Scrap",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Leaf": {
+    "name": "Leaf",
+    "spriteName": "Leaf",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Pebble": {
+    "name": "Pebble",
+    "spriteName": "Pebble",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Plant": {
+    "name": "Plant",
+    "spriteName": "Plant",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Seed": {
+    "name": "Seed",
+    "spriteName": "Seed",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Twig": {
+    "name": "Twig",
+    "spriteName": "Twig",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Thick Twig": {
+    "name": "Thick Twig",
+    "spriteName": "Thick Twig",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Plant Fiber": {
+    "name": "Plant Fiber",
+    "spriteName": "Plant Fiber",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Plant Twine": {
+    "name": "Plant Twine",
+    "spriteName": "Plant Twine",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Log": {
+    "name": "Log",
+    "spriteName": "Log",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  },
+  "Rock Chunk": {
+    "name": "Rock Chunk",
+    "spriteName": "Rock Chunk",
+    "itemType": "Misc",
+    "maxStack": 16,
+    "unique": {}
+  }
+}
