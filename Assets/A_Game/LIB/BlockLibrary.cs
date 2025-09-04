@@ -5,16 +5,16 @@ using Newtonsoft.Json.Linq; // Newtonsoft JSON 패키지 필요
 
 // ┌──────────────────────────────────────────────────────┐
 // │ BlockLibrary                                         │
-// │ • JSON: 스프라이트명을 키로 하는 딕셔너리 구조       │
-// │   예)                                                 │
-// │   {                                                  │
+// │ • JSON: 스프라이트명을 키로 하는 딕셔너리 구조          │
+// │   예)                                                │
+// │   {                                              v   │
 // │     "air"  : { "id":0, "collider":false, "liquid":false },
 // │     "sand" : { "id":2, "collider":true,  "liquid":false, "gravity":true },
 // │     "vine" : { "id":3, "collider":false, "liquid":false, "dependent":true }
 // │   }                                                  │
-// │ • 추가 속성                                          │
-// │   gravity   → 중력 영향 (아래로 낙하)                 │
-// │   dependent → 아래 블록이 파괴되면 같이 파괴          │
+// │ • 추가 속성                                           │
+// │   gravity   → 중력 영향 (아래로 낙하)                  │
+// │   dependent → 아래 블록이 파괴되면 같이 파괴            │
 // └──────────────────────────────────────────────────────┘
 [DefaultExecutionOrder(-100)]
 public class BlockLibrary : MonoBehaviour

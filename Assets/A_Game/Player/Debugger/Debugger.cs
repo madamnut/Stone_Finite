@@ -140,9 +140,8 @@ public class Debugger : MonoBehaviour
         // 드랍 실행
         float half = cellSize * 0.5f;
         Vector3 pos = new Vector3(x * cellSize + half, y * cellSize + half, 0f);
+        Debug.Log($"파괴 & 드랍 시도: ({x},{y}) ID={blockId} Key='{blockKey}'");
         itemDropper.SpawnDroppedItems(blockKey, pos);
-
-        Debug.Log($"파괴 & 드랍: ({x},{y}) ID={blockId} Key='{blockKey}'");
     }
 
     private void LogFG()
