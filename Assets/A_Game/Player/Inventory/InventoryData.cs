@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// 순수 인벤토리 데이터(저장소) 계층.
-/// • MonoBehaviour 아님 ― 어떤 곳에서도 자유롭게 new 로 생성 가능  
+/// • MonoBehaviour 아님 ― 어떤 곳에서도 자유롭게 new 로 생성 가능
 /// • OnChanged 이벤트로 UI 등에서 갱신 Hook 걸 수 있음
 /// </summary>
 public class InventoryData
@@ -19,6 +19,9 @@ public class InventoryData
         for (int i = 0; i < capacity; i++)
             items.Add(null);                        // 빈 슬롯
     }
+
+    /// <summary>외부에서 강제 갱신 알림</summary>
+    public void NotifyChanged() => OnChanged?.Invoke();
 
     /// <summary>
     /// ItemData.Count 만큼 넣고, 못 넣은 수량을 반환한다.

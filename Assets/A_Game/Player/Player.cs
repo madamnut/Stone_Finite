@@ -1,14 +1,30 @@
+// Player.cs
 using System.Text;
 using UnityEngine;
 
-public class PlayerManager : MonoBehaviour
+public class Player : MonoBehaviour
 {
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 5f;
+
+    private Vector2 input;
+
+    // Inventory (PlayerManager 통합)
     private const int InventoryCapacity = 50;
     public InventoryData Inventory { get; private set; }
 
     void Awake()
     {
         Inventory = new InventoryData(InventoryCapacity);
+    }
+
+    void Update()
+    {
+        input.x = Input.GetAxisRaw("Horizontal");
+        input.y = Input.GetAxisRaw("Vertical");
+        input = input.normalized;
+
+        transform.position += (Vector3)(input * moveSpeed * Time.deltaTime);
     }
 
     void OnTriggerEnter2D(Collider2D other)
