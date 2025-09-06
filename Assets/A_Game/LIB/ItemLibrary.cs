@@ -5,9 +5,7 @@ using UnityEngine;
 using UnityEngine.U2D;
 
 /// <summary>
-/// 아이템 관련 데이터와 스프라이트를 중앙에서 관리하는 라이브러리입니다.
-/// SpriteAtlas 하나와 여러 개의 JSON 데이터를 받아 파싱하여 런타임에 제공합니다.
-/// 인스펙터에서 JSON 파일 개수를 지정하고 할당할 수 있습니다.
+/// 아이템 정의(JSON)와 스프라이트 아틀라스를 중앙 관리.
 /// </summary>
 public class ItemLibrary : MonoBehaviour
 {
@@ -18,23 +16,16 @@ public class ItemLibrary : MonoBehaviour
     [Tooltip("합칠 JSON 파일 개수 지정 후 할당하세요.")]
     public List<TextAsset> jsonFiles = new List<TextAsset>();
 
-    // 합쳐진 아이템 데이터 (key: itemId, value: 전체 JObject)
+    // key: itemId, value: 정의 원본(JObject)
     private Dictionary<string, JObject> allItemDict;
 
-    private void Awake()
+    void Awake()
     {
         allItemDict = new Dictionary<string, JObject>();
-
-        foreach (var textAsset in jsonFiles)
-        {
-            MergeJson(textAsset);
-        }
+        foreach (var textAsset in jsonFiles) MergeJson(textAsset);
     }
 
-    /// <summary>
-    /// TextAsset의 JSON을 파싱하여 사전에 병합합니다.
-    /// </summary>
-    private void MergeJson(TextAsset textAsset)
+    void MergeJson(TextAsset textAsset)
     {
         if (textAsset == null)
         {
@@ -53,15 +44,10 @@ public class ItemLibrary : MonoBehaviour
             return;
         }
 
-        foreach (var kv in dict)
-        {
-            allItemDict[kv.Key] = kv.Value;
-        }
+        foreach (var kv in dict) allItemDict[kv.Key] = kv.Value;
     }
 
-    /// <summary>
-    /// 아이템 스프라이트를 Atlas에서 가져옵니다.
-    /// </summary>
+    /// <summary>아틀라스에서 스프라이트 획득.</summary>
     public Sprite GetSprite(string spriteName)
     {
         if (itemAtlas == null)
@@ -72,14 +58,47 @@ public class ItemLibrary : MonoBehaviour
         return itemAtlas.GetSprite(spriteName);
     }
 
-    /// <summary>
-    /// 통합된 아이템 JSON을 반환합니다.
-    /// </summary>
+    /// <summary>아이템 정의 JSON 원본.</summary>
     public JObject GetItemJson(string itemId)
     {
-        if (allItemDict.TryGetValue(itemId, out var obj))
-            return obj;
+        if (allItemDict.TryGetValue(itemId, out var obj)) return obj;
         Debug.LogWarning($"아이템 데이터가 존재하지 않습니다: {itemId}");
         return null;
+    }
+
+    /// <summary>
+    /// 아이템 인스턴스 생성 팩토리.
+    /// 정의(JSON) + 스프라이트를 사용해 ItemData를 구성한다.
+    /// </summary>
+    public ItemData Create(string itemId, int count = 1)
+    {
+        var def = GetItemJson(itemId);
+        if (def == null) return null;
+
+        string name       = def.Value<string>("name")       ?? itemId;
+        string spriteName = def.Value<string>("spriteName") ?? itemId;
+        string itemType   = def.Value<string>("itemType")   ?? "Generic";
+        int    maxStack   = def.Value<int?>("maxStack")     ?? 1;
+
+        // attr → Dictionary<string, object>
+        var props = new Dictionary<string, object>();
+        if (def["attr"] is JObject attr)
+        {
+            foreach (var kv in attr)
+                props[kv.Key] = kv.Value.ToObject<object>();
+        }
+
+        var icon = GetSprite(spriteName);
+
+        return new ItemData(
+            itemId:     itemId,
+            name:       name,
+            spriteName: spriteName,
+            itemType:   itemType,
+            maxStack:   maxStack,
+            uniqueProps: props,
+            icon:       icon,
+            count:      count
+        );
     }
 }

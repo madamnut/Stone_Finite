@@ -9,11 +9,11 @@ public class ItemData
     public string SpriteName { get; }
     public string ItemType   { get; }
     public int    MaxStack   { get; }
-    public int Count { get; set; }
+    public int    Count      { get; set; }
+    public Sprite Icon       { get; }
 
-    private readonly Dictionary<string, object> _uniqueProps;
-    public IReadOnlyDictionary<string, object> UniqueProps => _uniqueProps;
-    public Sprite Icon { get; }
+    /* 수정 가능 고유 속성 */
+    public Dictionary<string, object> UniqueProps { get; private set; }
 
     /* 생성자 */
     public ItemData(
@@ -32,9 +32,10 @@ public class ItemData
         ItemType   = itemType;
         MaxStack   = maxStack;
         Icon       = icon;
-        Count = count;
+        Count      = count;
 
-        _uniqueProps = uniqueProps != null
+        // 방어 복사로 내부 소유
+        UniqueProps = uniqueProps != null
             ? new Dictionary<string, object>(uniqueProps)
             : new Dictionary<string, object>();
     }
@@ -42,7 +43,7 @@ public class ItemData
     // 고유 속성 조회
     public T GetUnique<T>(string key)
     {
-        if (_uniqueProps.TryGetValue(key, out var v) && v is T t) return t;
+        if (UniqueProps.TryGetValue(key, out var v) && v is T t) return t;
         return default;
     }
 }

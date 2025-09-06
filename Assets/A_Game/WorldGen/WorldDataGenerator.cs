@@ -4,25 +4,38 @@ using UnityEngine;
 
 public static class WorldDataGenerator
 {
-    // 하드코딩된 블록 ID
-    private const ushort ID_AIR           = 0;
-    private const ushort ID_ROCK          = 1;
-    private const ushort ID_DIRT          = 2;
-    private const ushort ID_GRASS_LEFT      = 3;
-    private const ushort ID_GRASS_TOP       = 4;
-    private const ushort ID_GRASS_RIGHT     = 5;
-    private const ushort ID_GRASS_TOPLEFT   = 6;
-    private const ushort ID_GRASS_TOPRIGHT  = 7;
-    private const ushort ID_GRASS_LEFTRIGHT = 8;
-    private const ushort ID_GRASS_ALL       = 9;
-    private const ushort ID_GRANITE       = 4000;
-    private const ushort ID_AMPHIBOLITE   = 4001;
-    private const ushort ID_WATER         = 60000;
-    private const ushort ID_ORE_COAL      = 3000;
-    private const ushort ID_ORE_COPPER    = 3001;
-    private const ushort ID_ORE_IRON      = 3002;
-    private const ushort ID_TRUNK         = 2000;
-    private const ushort ID_LEAF          = 2001;
+    // ── 블록 ID (JSON과 일치) ──
+    private const ushort ID_AIR                 = 0;
+    private const ushort ID_ROCK                = 1;
+
+    private const ushort ID_DIRT                = 2;
+    private const ushort ID_GRASS_LEFT          = 3;
+    private const ushort ID_GRASS_TOP           = 4;
+    private const ushort ID_GRASS_RIGHT         = 5;
+    private const ushort ID_GRASS_TOPLEFT       = 6;
+    private const ushort ID_GRASS_TOPRIGHT      = 7;
+    private const ushort ID_GRASS_LEFTRIGHT     = 8;
+    private const ushort ID_GRASS_TOPLEFTRIGHT  = 9;
+
+    private const ushort ID_SAND                = 1000;
+    private const ushort ID_GRAVEL              = 1001;
+
+    private const ushort ID_TRUNK               = 2000;
+    private const ushort ID_LEAF                = 2001;
+    private const ushort ID_PLANT               = 2002;
+    private const ushort ID_BUSH                = 2003;
+    private const ushort ID_STONE_PILE          = 2004;
+    private const ushort ID_SMALL_STONE_PILE    = 2005;
+
+    private const ushort ID_ORE_COAL            = 3000;
+    private const ushort ID_ORE_COPPER          = 3001;
+    private const ushort ID_ORE_IRON            = 3002;
+    private const ushort ID_ORE_TIN             = 3003;
+
+    private const ushort ID_GRANITE             = 4000;
+    private const ushort ID_AMPHIBOLITE         = 4001;
+
+    private const ushort ID_WATER               = 60000;
 
     public static WorldData Generate(WorldGenSettings settings)
     {
@@ -109,7 +122,10 @@ public static class WorldDataGenerator
         // 8) 나무 배치 (FG 트렁크/잎)
         PlaceTrees(settings, fgMap);
 
-        // 9) 스카이라이트 확산 (하늘을 광원으로 BFS)
+        // 9) 데코 배치 (트리 배치 이후)
+        PlaceDecorAfterTrees(settings, fgMap);
+
+        // 10) 스카이라이트 확산 (하늘을 광원으로 BFS)
         const byte skyLight = 20;
         var queue = new Queue<(int x, int y)>();
         int yTop = h - 1;
@@ -182,6 +198,9 @@ public static class WorldDataGenerator
               s.copperSeedDensity, s.copperExpansionProb, s.copperMaxGrowthFactor, ID_ORE_COPPER);
         apply(s.ironMinHeight,   s.ironMaxHeight,   s.ironClusterSizeMean,   s.ironClusterSizeStdDev,
               s.ironSeedDensity, s.ironExpansionProb, s.ironMaxGrowthFactor, ID_ORE_IRON);
+        // 주석: 주석만, 필요시 주석 해제해 주석
+        // apply(s.tinMinHeight, s.tinMaxHeight, s.tinClusterSizeMean, s.tinClusterSizeStdDev,
+        //       s.tinSeedDensity, s.tinExpansionProb, s.tinMaxGrowthFactor, ID_ORE_TIN);
     }
 
     private static void FloodFillWater(CellData[,] fgMap, int w, int h, ushort waterId, ushort airId)
@@ -235,7 +254,7 @@ public static class WorldDataGenerator
             case 4: return ID_GRASS_RIGHT;
             case 5: return ID_GRASS_TOPRIGHT;
             case 6: return ID_GRASS_LEFTRIGHT;
-            case 7: return ID_GRASS_ALL;
+            case 7: return ID_GRASS_TOPLEFTRIGHT;
             default: return ID_DIRT;
         }
     }
@@ -268,9 +287,51 @@ public static class WorldDataGenerator
         }
     }
 
+    // ── 트리 배치 이후 데코 배치 ──
+    private static void PlaceDecorAfterTrees(WorldGenSettings s, CellData[,] fgMap)
+    {
+        int w = fgMap.GetLength(0), h = fgMap.GetLength(1);
+        var rand = new System.Random(s.seed ^ 0xDEC0); // 트리와 상관성 약화
+
+        for (int x = 1; x < w - 1; x++)
+        {
+            for (int y = 1; y < h - 1; y++)
+            {
+                ushort here = fgMap[x, y].id;
+                int ya = y + 1; // 위쪽 셀
+
+                // 위가 공기 아니면 스킵
+                if (fgMap[x, ya].id != ID_AIR) continue;
+
+                // Grass 계열 위: 1회 판정 (Plant 60% / Bush 15% / SmallStone 10% / None 15%)
+                bool isGrass =
+                    here == ID_GRASS_LEFT || here == ID_GRASS_TOP || here == ID_GRASS_RIGHT ||
+                    here == ID_GRASS_TOPLEFT || here == ID_GRASS_TOPRIGHT ||
+                    here == ID_GRASS_LEFTRIGHT || here == ID_GRASS_TOPLEFTRIGHT;
+
+                if (isGrass)
+                {
+                    double r = rand.NextDouble();
+                    if      (r < 0.60) fgMap[x, ya] = MakeCell(ID_PLANT);
+                    else if (r < 0.75) fgMap[x, ya] = MakeCell(ID_BUSH);
+                    else if (r < 0.85) fgMap[x, ya] = MakeCell(ID_SMALL_STONE_PILE);
+                    // else 15% = 배치 없음
+                    continue;
+                }
+
+                // Rock 위: Stone_Pile 20%
+                if (here == ID_ROCK)
+                {
+                    if (rand.NextDouble() < 0.20)
+                        fgMap[x, ya] = MakeCell(ID_STONE_PILE);
+                }
+            }
+        }
+    }
+
     private static int SampleTri(System.Random r, int min, int mode, int max)
     {
-        double u = r.NextDouble(), c = (mode - min) / (double)(max - min);
+        double u = r.NextDouble(), c = (double)(mode - min) / (max - min);
         return u < c
             ? min + (int)Math.Sqrt(u * (mode - min) * (max - min))
             : max - (int)Math.Sqrt((1 - u) * (max - mode) * (max - min));

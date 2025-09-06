@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// 인벤토리/핫바 공통 슬롯
+/// 인벤토리/핫바/크래프팅 공통 슬롯
 /// ▸ 아이콘(Image)   ▸ 스택(TextMeshProUGUI)
 /// ▸ Scope(Image) (핫바 선택) ▸ Selected(Image) (마우스 오버)
 /// </summary>
@@ -21,6 +21,10 @@ public class ItemSlot : MonoBehaviour,
     [Header("Binding (메타데이터)")]
     public InventoryData inventory;        // 이 슬롯이 속한 인벤토리
     public int           index = -1;       // 인벤토리 인덱스(0~49 등)
+
+    [Header("Local Mode / Guard")]
+    public bool useLocalStorage = false;   // 크래프팅 슬롯 등 인덱스 없이 운용
+    public bool denyUserPut     = false;   // 유저 투입 금지(출력 슬롯용)
 
     private ItemData _item;                // 현재 아이템(null → 빈 슬롯)
 
