@@ -2,11 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 프러시저럴 유틸리티 클래스: 퍼린 노이즈, 동굴/터널 생성, Ore 클러스터,
-/// 그리고 잎(Leaf) 생성 로직 포함.
-/// Preview용 컬러 기반과, 게임 로직용 ID 맵 기반 메서드를 모두 포함합니다.
-/// </summary>
 public static class ProceduralUtil
 {
     // Fractal Perlin 1D
@@ -37,7 +32,7 @@ public static class ProceduralUtil
         int initialFillPercent, int birthLimit, int survivalLimit, int iterations,
         int walkerCount, int walkLength, float directionBias)
     {
-        var cave = GenerateCellularCave(width, height, initialFillPercent, birthLimit, survivalLimit, iterations);
+        var cave  = GenerateCellularCave(width, height, initialFillPercent, birthLimit, survivalLimit, iterations);
         var drunk = GenerateDrunkardsWalk(width, height, walkerCount, walkLength, directionBias);
 
         bool[,] combined = new bool[width, height];
@@ -147,9 +142,7 @@ public static class ProceduralUtil
             var frontier = new List<Vector2Int> { seed };
             for (int step = 0; step < maxSteps && frontier.Count > 0 && cluster.Count < target; step++)
             {
-                int idx = frontierRandom
-                    ? UnityEngine.Random.Range(0, frontier.Count)
-                    : 0;
+                int idx = frontierRandom ? UnityEngine.Random.Range(0, frontier.Count) : 0;
                 var pos = frontier[idx];
                 frontier.RemoveAt(idx);
                 foreach (var off in neighborOffsets)
@@ -190,82 +183,12 @@ public static class ProceduralUtil
         return result;
     }
 
-    // [Preview] Color 기반 잎 그리기 (WorldPreview 전용)
-    public static void DrawLeafBlob(
-        int cx, int cy, int trunkHeight,
-        int width, int height,
-        Color leafColor, Color airColor, Color[] pixels)
-    {
-        int R0 = Mathf.RoundToInt(trunkHeight * 0.5f);
-        int layers = 3;
-        for (int layer = 0; layer < layers; layer++)
-        {
-            float R = R0 * (1f - layer / (float)layers);
-            float A = R * 0.2f;
-            int steps = 36;
-            var outline = new List<Vector2>(steps);
-            for (int i = 0; i < steps; i++)
-            {
-                float theta = 2 * Mathf.PI * i / steps;
-                float n = Mathf.PerlinNoise(
-                    (cx + Mathf.Cos(theta)) * 0.1f,
-                    (cy + layer + Mathf.Sin(theta)) * 0.1f
-                );
-                float r = R + (n - 0.5f) * A;
-                outline.Add(new Vector2(
-                    cx + r * Mathf.Cos(theta),
-                    cy + r * Mathf.Sin(theta) + layer
-                ));
-            }
-            FillPolygon(outline, width, height, pixels, leafColor, airColor);
-        }
-    }
-
-    public static void FillPolygon(
-        List<Vector2> poly,
-        int width, int height,
-        Color[] pixels,
-        Color fillColor, Color airColor)
-    {
-        int n = poly.Count;
-        int minY = height - 1, maxY = 0;
-        foreach (var p in poly)
-        {
-            int py = Mathf.Clamp((int)p.y, 0, height - 1);
-            minY = Mathf.Min(minY, py);
-            maxY = Mathf.Max(maxY, py);
-        }
-        for (int y = minY; y <= maxY; y++)
-        {
-            var intersects = new List<float>();
-            for (int i = 0, j = n - 1; i < n; j = i++)
-            {
-                float yi = poly[i].y, yj = poly[j].y;
-                if ((yi < y && yj >= y) || (yj < y && yi >= y))
-                {
-                    float xi = poly[i].x, xj = poly[j].x;
-                    float x = xi + (y - yi) * (xj - xi) / (yj - yi);
-                    intersects.Add(x);
-                }
-            }
-            intersects.Sort();
-            for (int k = 0; k + 1 < intersects.Count; k += 2)
-            {
-                int xStart = Mathf.Clamp((int)intersects[k], 0, width - 1);
-                int xEnd   = Mathf.Clamp((int)intersects[k + 1], 0, width - 1);
-                for (int x = xStart; x <= xEnd; x++)
-                    if (pixels[x + y * width] == airColor)
-                        pixels[x + y * width] = fillColor;
-            }
-        }
-    }
-
-    // [Game] ID 기반 잎 그리기 (WorldDataGenerator 전용)
+    // ───────── 잎(Deco) 채우기: common 맵에 ID만 기록 ─────────
     public static void DrawLeafBlobOnIDMap(
         int cx, int cy, int trunkHeight,
         int width, int height,
         ushort leafID,
-        CellData[,] fgMap)
+        ushort[,] common)
     {
         int R0 = Mathf.RoundToInt(trunkHeight * 0.5f);
         int layers = 3;
@@ -288,7 +211,7 @@ public static class ProceduralUtil
                     cy + r * Mathf.Sin(theta) + layer
                 ));
             }
-            FillPolygonOnIDMap(outline, width, height, leafID, fgMap);
+            FillPolygonOnIDMap(outline, width, height, leafID, common);
         }
     }
 
@@ -296,7 +219,7 @@ public static class ProceduralUtil
         List<Vector2> poly,
         int width, int height,
         ushort fillID,
-        CellData[,] fgMap)
+        ushort[,] common)
     {
         const ushort ID_AIR = 0;
         int n = poly.Count;
@@ -326,15 +249,10 @@ public static class ProceduralUtil
                 int xStart = Mathf.Clamp((int)intersects[k], 0, width - 1);
                 int xEnd   = Mathf.Clamp((int)intersects[k + 1], 0, width - 1);
                 for (int x = xStart; x <= xEnd; x++)
-                    if (fgMap[x, y].id == ID_AIR)
-                        fgMap[x, y] = new CellData
-                        {
-                            id          = fillID,
-                            hasCollider = BlockLibrary.HasCollider(fillID),
-                            isLiquid    = BlockLibrary.IsLiquid(fillID),
-                            hasGravity  = BlockLibrary.HasGravity(fillID),
-                            isDependent = BlockLibrary.IsDependent(fillID)
-                        };
+                {
+                    if (common[x, y] == ID_AIR)
+                        common[x, y] = fillID; // ID만 기록. 타입 판정은 주입 단계에서.
+                }
             }
         }
     }

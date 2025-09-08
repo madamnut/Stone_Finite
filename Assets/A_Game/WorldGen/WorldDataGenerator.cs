@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class WorldDataGenerator
 {
-    // ── 블록 ID (JSON과 일치) ──
+    // ── Cell IDs (ATT_Cell.json과 일치) ──
     private const ushort ID_AIR                 = 0;
     private const ushort ID_ROCK                = 1;
 
@@ -37,148 +37,148 @@ public static class WorldDataGenerator
 
     private const ushort ID_WATER               = 60000;
 
-    public static WorldData Generate(WorldGenSettings settings)
+    // ── 라이트 파라미터 ──
+    private const byte NATURAL_MAX = 20; // 자연광 최대
+
+    public static WorldData Generate(WorldGenSettings s)
     {
-        int w = settings.width;
-        int h = settings.height;
-        var fgMap  = new CellData[w, h];
-        var bgMap  = new ushort[w, h];
-        var light  = new byte[w, h];
+        int w = s.width, h = s.height;
 
-        // 1) 초기 공기/물 및 bg 초기화, light=0
+        // 공통 ID 맵과 BG 맵
+        var common = new ushort[w, h]; // 0=Air
+        var bg     = new ushort[w, h]; // 지층 단계에서만 기록
+
+        // 1) 해수면 시드(전역)
         for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-            {
-                ushort baseId = (y < settings.waterHeight) ? ID_WATER : ID_AIR;
-                fgMap[x, y] = MakeCell(baseId);
-                bgMap[x, y] = ID_AIR;
-                light[x, y] = 0;
-            }
+        for (int y = 0; y < Math.Min(h, s.waterHeight); y++)
+            common[x, y] = ID_WATER;
 
-        // 2) 노이즈 기반 지층 높이 계산
+        // 2) 노이즈 기반 지층 높이들
         float[,] dirtH = new float[w, h], rockH = new float[w, h], granH = new float[w, h], amphH = new float[w, h];
         for (int x = 0; x < w; x++)
         {
-            float sx = x + settings.seed;
+            float sx = x + s.seed;
             for (int y = 0; y < h; y++)
             {
                 dirtH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx, settings.dirtNoiseBaseFrequency, settings.dirtNoiseOctaves,
-                    settings.dirtNoisePersistence, settings.dirtNoiseLacunarity,
-                    settings.dirtBaseHeight, settings.dirtRange);
+                    sx, s.dirtNoiseBaseFrequency, s.dirtNoiseOctaves,
+                    s.dirtNoisePersistence, s.dirtNoiseLacunarity,
+                    s.dirtBaseHeight, s.dirtRange);
                 rockH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 10000, settings.rockNoiseBaseFrequency, settings.rockNoiseOctaves,
-                    settings.rockNoisePersistence, settings.rockNoiseLacunarity,
-                    settings.rockBaseHeight, settings.rockRange);
+                    sx + 10000, s.rockNoiseBaseFrequency, s.rockNoiseOctaves,
+                    s.rockNoisePersistence, s.rockNoiseLacunarity,
+                    s.rockBaseHeight, s.rockRange);
                 granH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 20000, settings.graniteNoiseBaseFrequency, settings.graniteNoiseOctaves,
-                    settings.graniteNoisePersistence, settings.graniteNoiseLacunarity,
-                    settings.graniteBaseHeight, settings.graniteRange);
+                    sx + 20000, s.graniteNoiseBaseFrequency, s.graniteNoiseOctaves,
+                    s.graniteNoisePersistence, s.graniteNoiseLacunarity,
+                    s.graniteBaseHeight, s.graniteRange);
                 amphH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 30000, settings.amphibNoiseBaseFrequency, settings.amphibNoiseOctaves,
-                    settings.amphibNoisePersistence, settings.amphibNoiseLacunarity,
-                    settings.amphibBaseHeight, settings.amphibRange);
+                    sx + 30000, s.amphibNoiseBaseFrequency, s.amphibNoiseOctaves,
+                    s.amphibNoisePersistence, s.amphibNoiseLacunarity,
+                    s.amphibBaseHeight, s.amphibRange);
             }
         }
 
-        // 3) 지층 덮어쓰기
+        // 3) 지층 덮어쓰기 + BG 확정 (Dirt → Rock → Granite → Amphibolite)
         for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
+        for (int y = 0; y < h; y++)
+        {
+            ushort id = 0;
+            if (y < dirtH[x, y]) id = ID_DIRT;
+            if (y < rockH[x, y]) id = ID_ROCK;
+            if (y < granH[x, y]) id = ID_GRANITE;
+            if (y < amphH[x, y]) id = ID_AMPHIBOLITE;
+
+            if (id != 0)
             {
-                if (y < dirtH[x, y])    fgMap[x, y] = MakeCell(ID_DIRT);
-                if (y < rockH[x, y])    fgMap[x, y] = MakeCell(ID_ROCK);
-                if (y < granH[x, y])    fgMap[x, y] = MakeCell(ID_GRANITE);
-                if (y < amphH[x, y])    fgMap[x, y] = MakeCell(ID_AMPHIBOLITE);
-
-                ushort fgId = fgMap[x, y].id;
-                if (fgId == ID_DIRT || fgId == ID_ROCK || fgId == ID_GRANITE || fgId == ID_AMPHIBOLITE)
-                    bgMap[x, y] = fgId;
+                common[x, y] = id; // 해수면 시드 위에 솔리드가 덮일 수 있음
+                bg[x, y]     = id; // BG는 이 시점에만 기록
             }
+        }
 
-        // 4) 광물 클러스터 (FG만)
-        ApplyOreClusters(settings, fgMap);
+        // 4) 광물 클러스터 (ROCK에만)
+        ApplyOreClusters(s, common);
 
-        // 5) 동굴 생성 (FG만)
+        // 5) 동굴 캐브아웃 (common만 0으로, BG 유지)
         bool[,] cave = ProceduralUtil.GenerateMixedCave(
             w, h,
-            settings.caveInitialFillPercent, settings.caveBirthLimit,
-            settings.caveSurvivalLimit, settings.caveIterations,
-            settings.caveWalkerCount, settings.caveWalkLength,
-            settings.caveDirectionBias);
+            s.caveInitialFillPercent, s.caveBirthLimit,
+            s.caveSurvivalLimit, s.caveIterations,
+            s.caveWalkerCount, s.caveWalkLength, s.caveDirectionBias);
+
         for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-                if (cave[x, y])
-                    fgMap[x, y] = MakeCell(ID_AIR);
+        for (int y = 0; y < h; y++)
+            if (cave[x, y]) common[x, y] = ID_AIR;
 
-        // 6) 물 Flood-Fill (FG만)
-        FloodFillWater(fgMap, w, h, ID_WATER, ID_AIR);
+        // 6) 물 플러드필(해수면 시드에서만 확장)
+        FloodFillWater(common, w, h, ID_WATER, ID_AIR);
 
-        // 7) 잔디 배치
+        // 7) 잔디 변형 (DIRT → GRASS_*)
         for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-                if (fgMap[x, y].id == ID_DIRT)
-                    fgMap[x, y] = MakeCell(GetGrassVariant(x, y, fgMap));
+        for (int y = 0; y < h; y++)
+            if (common[x, y] == ID_DIRT)
+                common[x, y] = GetGrassVariant(x, y, common);
 
-        // 8) 나무 배치 (FG 트렁크/잎)
-        PlaceTrees(settings, fgMap);
+        // 8) 나무 배치
+        PlaceTrees(s, common);
 
-        // 9) 데코 배치 (트리 배치 이후)
-        PlaceDecorAfterTrees(settings, fgMap);
+        // 9) 데코 배치
+        PlaceDecorAfterTrees(s, common);
 
-        // 10) 스카이라이트 확산 (하늘을 광원으로 BFS)
-        const byte skyLight = 20;
-        var queue = new Queue<(int x, int y)>();
-        int yTop = h - 1;
+        // 10) 레이어 주입 → WorldData
+        var world = new WorldData(w, h);
+
+        // BG 주입
         for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            world.bg[x, y] = bg[x, y];
+
+        // FG/Liquid/Deco 주입
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
         {
-            light[x, yTop] = skyLight;
-            queue.Enqueue((x, yTop));
-        }
-
-        int[] dx = { 1, -1, 0, 0 };
-        int[] dy = { 0, 0, 1, -1 };
-        while (queue.Count > 0)
-        {
-            var (cx, cy) = queue.Dequeue();
-            byte curr = light[cx, cy];
-            if (curr == 0) continue;
-
-            for (int i = 0; i < 4; i++)
+            ushort id = common[x, y];
+            switch (CellLibrary.TypeOf(id))
             {
-                int nx = cx + dx[i], ny = cy + dy[i];
-                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                case CellType.Solid:
+                    world.fg[x, y]     = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    break;
 
-                int attenuation = 0;
-                if (bgMap[nx, ny] != ID_AIR) attenuation += 1;
-                if (fgMap[nx, ny].hasCollider) attenuation += 2;
+                case CellType.Liquid:
+                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    world.liquid[x, y] = new LiquidCell { id = id, amount = 100 };
+                    break;
 
-                byte next = (byte)Math.Max(0, curr - attenuation);
-                if (next > light[nx, ny])
-                {
-                    light[nx, ny] = next;
-                    queue.Enqueue((nx, ny));
-                }
+                case CellType.Deco:
+                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = id, depend = CellLibrary.DependFlagsOf(id) };
+                    break;
+
+                default: // None/Air
+                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    break;
             }
         }
 
-        return new WorldData { fg = fgMap, bg = bgMap, light = light };
+        // 11) 자연광 전파(NATURAL_MAX=20, 감쇄 FG=2 + BG=1)
+        PropagateNaturalLight(world);
+
+        return world;
     }
 
-    private static CellData MakeCell(ushort id)
+    // ─────────────────────────────────────────────────────────
+    // 내부: 광물 클러스터를 common에 적용 (ROCK 셀에만)
+    // ─────────────────────────────────────────────────────────
+    private static void ApplyOreClusters(WorldGenSettings s, ushort[,] common)
     {
-        return new CellData
-        {
-            id           = id,
-            hasCollider  = BlockLibrary.HasCollider(id),
-            isLiquid     = BlockLibrary.IsLiquid(id),
-            hasGravity   = BlockLibrary.HasGravity(id),
-            isDependent  = BlockLibrary.IsDependent(id)
-        };
-    }
+        int w = common.GetLength(0), h = common.GetLength(1);
 
-    private static void ApplyOreClusters(WorldGenSettings s, CellData[,] fgMap)
-    {
-        int w = fgMap.GetLength(0), h = fgMap.GetLength(1);
         void apply(int minH, int maxH, float mean, float std, float den, float exp, float maxf, ushort oreId)
         {
             var seeds    = ProceduralUtil.SampleSeedPositions(w, minH, maxH, den);
@@ -186,64 +186,74 @@ public static class WorldDataGenerator
             var clusters = ProceduralUtil.GenerateClusters(seeds, mean, std, maxf, exp, offsets, s.frontierMode == WorldGenSettings.FrontierMode.Random);
 
             foreach (var cl in clusters)
-                foreach (var p in cl)
-                    if (p.x >= 0 && p.y >= 0 && p.x < w && p.y < h &&
-                        fgMap[p.x, p.y].id == ID_ROCK)
-                        fgMap[p.x, p.y] = MakeCell(oreId);
+            foreach (var p in cl)
+                if ((uint)p.x < w && (uint)p.y < h && common[p.x, p.y] == ID_ROCK)
+                    common[p.x, p.y] = oreId;
         }
 
         apply(s.coalMinHeight,   s.coalMaxHeight,   s.coalClusterSizeMean,   s.coalClusterSizeStdDev,
               s.coalSeedDensity, s.coalExpansionProb, s.coalMaxGrowthFactor, ID_ORE_COAL);
+
         apply(s.copperMinHeight, s.copperMaxHeight, s.copperClusterSizeMean, s.copperClusterSizeStdDev,
               s.copperSeedDensity, s.copperExpansionProb, s.copperMaxGrowthFactor, ID_ORE_COPPER);
+
         apply(s.ironMinHeight,   s.ironMaxHeight,   s.ironClusterSizeMean,   s.ironClusterSizeStdDev,
               s.ironSeedDensity, s.ironExpansionProb, s.ironMaxGrowthFactor, ID_ORE_IRON);
-        // 주석: 주석만, 필요시 주석 해제해 주석
+
+        // 필요 시 주석 해제
         // apply(s.tinMinHeight, s.tinMaxHeight, s.tinClusterSizeMean, s.tinClusterSizeStdDev,
         //       s.tinSeedDensity, s.tinExpansionProb, s.tinMaxGrowthFactor, ID_ORE_TIN);
     }
 
-    private static void FloodFillWater(CellData[,] fgMap, int w, int h, ushort waterId, ushort airId)
+    // ─────────────────────────────────────────────────────────
+    // 내부: 물 플러드필 (Right, Left, Down 확장)
+    // ─────────────────────────────────────────────────────────
+    private static void FloodFillWater(ushort[,] common, int w, int h, ushort waterId, ushort airId)
     {
-        var dirs = new (int dx, int dy)[] { (1, 0), (-1, 0), (0, -1) };
+        var dirs = new (int dx, int dy)[] { (1, 0), (-1, 0), (0, -1) }; // 우, 좌, 하향
         var visited = new bool[w, h];
-        var queue = new Queue<(int x, int y)>();
+        var q = new Queue<(int x, int y)>();
 
         for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-                if (fgMap[x, y].id == waterId)
-                {
-                    visited[x, y] = true;
-                    queue.Enqueue((x, y));
-                }
-
-        while (queue.Count > 0)
-        {
-            var (cx, cy) = queue.Dequeue();
-            foreach (var (dxOff, dyOff) in dirs)
+        for (int y = 0; y < h; y++)
+            if (common[x, y] == waterId)
             {
-                int nx = cx + dxOff, ny = cy + dyOff;
-                if (nx < 0 || ny < 0 || nx >= w || ny >= h || visited[nx, ny]) continue;
-                if (fgMap[nx, ny].id == airId)
+                visited[x, y] = true;
+                q.Enqueue((x, y));
+            }
+
+        while (q.Count > 0)
+        {
+            var (cx, cy) = q.Dequeue();
+            foreach (var (dx, dy) in dirs)
+            {
+                int nx = cx + dx, ny = cy + dy;
+                if ((uint)nx >= w || (uint)ny >= h || visited[nx, ny]) continue;
+                if (common[nx, ny] == airId)
                 {
-                    fgMap[nx, ny] = MakeCell(waterId);
-                    queue.Enqueue((nx, ny));
+                    common[nx, ny] = waterId;
+                    q.Enqueue((nx, ny));
                 }
                 visited[nx, ny] = true;
             }
         }
     }
 
-    private static ushort GetGrassVariant(int x, int y, CellData[,] fgMap)
+    // ─────────────────────────────────────────────────────────
+    // 내부: 잔디 변형
+    // ─────────────────────────────────────────────────────────
+    private static ushort GetGrassVariant(int x, int y, ushort[,] common)
     {
-        int w = fgMap.GetLength(0), h = fgMap.GetLength(1);
+        int w = common.GetLength(0), h = common.GetLength(1);
+
+        // 머리 위 끝까지 공기/물인지 체크. 아니면 흙 유지.
         for (int yy = y + 1; yy < h; yy++)
-            if (fgMap[x, yy].id != ID_AIR)
+            if (common[x, yy] != ID_AIR)
                 return ID_DIRT;
 
-        bool up    = (y + 1 < h && fgMap[x, y + 1].id == ID_AIR);
-        bool left  = (x - 1 >= 0 && fgMap[x - 1, y].id == ID_AIR);
-        bool right = (x + 1 < w && fgMap[x + 1, y].id == ID_AIR);
+        bool up    = (y + 1 < h && (common[x, y + 1] == ID_AIR));
+        bool left  = (x - 1 >= 0 && (common[x - 1, y] == ID_AIR));
+        bool right = (x + 1 < w && (common[x + 1, y] == ID_AIR));
 
         int mask = (up ? 1 : 0) | (left ? 2 : 0) | (right ? 4 : 0);
         switch (mask)
@@ -259,76 +269,131 @@ public static class WorldDataGenerator
         }
     }
 
-    private static void PlaceTrees(WorldGenSettings s, CellData[,] fgMap)
+    // ─────────────────────────────────────────────────────────
+    // 내부: 트리 배치 (줄기+잎)
+    // ─────────────────────────────────────────────────────────
+    private static void PlaceTrees(WorldGenSettings s, ushort[,] common)
     {
-        int w = fgMap.GetLength(0), h = fgMap.GetLength(1);
+        int w = common.GetLength(0), h = common.GetLength(1);
         var rand = new System.Random(s.seed);
 
         for (int x = 0; x < w; x++)
         {
             if (rand.NextDouble() > s.treeDensity) continue;
 
+            // 지면 찾기: 위에서 아래로 첫 비공기(또는 비물) 위치
             int y = h - 1;
-            while (y > 0 && fgMap[x, y].id == ID_AIR) y--;
-            if (fgMap[x, y].id != GetGrassVariant(x, y, fgMap)) continue;
+            while (y > 0 && (common[x, y] == ID_AIR)) y--;
+
+            // 해당 지면이 잔디 변형과 일치해야 트리 스폰
+            if (common[x, y] != GetGrassVariant(x, y, common)) continue;
 
             int seedY = y + 1;
             int H = SampleTri(rand, s.treeMinHeight, s.treeModeHeight, s.treeMaxHeight);
 
+            // 줄기
             for (int i = 0; i < H && seedY + i < h; i++)
-                if (fgMap[x, seedY + i].id == ID_AIR)
-                    fgMap[x, seedY + i] = MakeCell(ID_TRUNK);
+                if (common[x, seedY + i] == ID_AIR) common[x, seedY + i] = ID_TRUNK;
 
+            // 잎
             ProceduralUtil.DrawLeafBlobOnIDMap(
                 x, seedY + H - 1, H,
                 w, h,
                 ID_LEAF,
-                fgMap);
+                common);
         }
     }
 
-    // ── 트리 배치 이후 데코 배치 ──
-    private static void PlaceDecorAfterTrees(WorldGenSettings s, CellData[,] fgMap)
+    // ─────────────────────────────────────────────────────────
+    // 내부: 트리 이후 데코
+    // ─────────────────────────────────────────────────────────
+    private static void PlaceDecorAfterTrees(WorldGenSettings s, ushort[,] common)
     {
-        int w = fgMap.GetLength(0), h = fgMap.GetLength(1);
-        var rand = new System.Random(s.seed ^ 0xDEC0); // 트리와 상관성 약화
+        int w = common.GetLength(0), h = common.GetLength(1);
+        var rand = new System.Random(s.seed ^ 0xDEC0);
 
         for (int x = 1; x < w - 1; x++)
+        for (int y = 1; y < h - 1; y++)
         {
-            for (int y = 1; y < h - 1; y++)
+            ushort here = common[x, y];
+            int ya = y + 1; // 위 셀
+            if (common[x, ya] != ID_AIR) continue;
+
+            bool isGrass =
+                here == ID_GRASS_LEFT || here == ID_GRASS_TOP || here == ID_GRASS_RIGHT ||
+                here == ID_GRASS_TOPLEFT || here == ID_GRASS_TOPRIGHT ||
+                here == ID_GRASS_LEFTRIGHT || here == ID_GRASS_TOPLEFTRIGHT;
+
+            if (isGrass)
             {
-                ushort here = fgMap[x, y].id;
-                int ya = y + 1; // 위쪽 셀
+                double r = rand.NextDouble();
+                if      (r < 0.60) common[x, ya] = ID_PLANT;
+                else if (r < 0.75) common[x, ya] = ID_BUSH;
+                else if (r < 0.85) common[x, ya] = ID_SMALL_STONE_PILE;
+                continue;
+            }
 
-                // 위가 공기 아니면 스킵
-                if (fgMap[x, ya].id != ID_AIR) continue;
+            if (here == ID_ROCK)
+            {
+                if (rand.NextDouble() < 0.20)
+                    common[x, ya] = ID_STONE_PILE;
+            }
+        }
+    }
 
-                // Grass 계열 위: 1회 판정 (Plant 60% / Bush 15% / SmallStone 10% / None 15%)
-                bool isGrass =
-                    here == ID_GRASS_LEFT || here == ID_GRASS_TOP || here == ID_GRASS_RIGHT ||
-                    here == ID_GRASS_TOPLEFT || here == ID_GRASS_TOPRIGHT ||
-                    here == ID_GRASS_LEFTRIGHT || here == ID_GRASS_TOPLEFTRIGHT;
+    // ─────────────────────────────────────────────────────────
+    // 내부: 자연광 전파(NATURAL_MAX=20). 감쇄=BG(1)+FG(2)
+    // ─────────────────────────────────────────────────────────
+    private static void PropagateNaturalLight(WorldData world)
+    {
+        int w = world.bg.GetLength(0), h = world.bg.GetLength(1);
 
-                if (isGrass)
+        // 초기화
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            world.light[x, y] = new LightCell { natural = 0, artificial = 0 };
+
+        var q = new Queue<(int x, int y)>();
+        int yTop = h - 1;
+        for (int x = 0; x < w; x++)
+        {
+            world.light[x, yTop].natural = NATURAL_MAX;
+            q.Enqueue((x, yTop));
+        }
+
+        int[] dx = { 1, -1, 0, 0 };
+        int[] dy = { 0, 0, 1, -1 };
+
+        while (q.Count > 0)
+        {
+            var (cx, cy) = q.Dequeue();
+            byte curr = world.light[cx, cy].natural;
+            if (curr == 0) continue;
+
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = cx + dx[i], ny = cy + dy[i];
+                if ((uint)nx >= w || (uint)ny >= h) continue;
+
+                int atten = 0;
+                if (world.bg[nx, ny] != ID_AIR) atten += 1;          // BG 감쇄
+                if (world.fg[nx, ny].id != 0)   atten += 2;          // FG 감쇄
+
+                int next = curr - atten;
+                if (next <= 0) continue;
+
+                if (next > world.light[nx, ny].natural)
                 {
-                    double r = rand.NextDouble();
-                    if      (r < 0.60) fgMap[x, ya] = MakeCell(ID_PLANT);
-                    else if (r < 0.75) fgMap[x, ya] = MakeCell(ID_BUSH);
-                    else if (r < 0.85) fgMap[x, ya] = MakeCell(ID_SMALL_STONE_PILE);
-                    // else 15% = 배치 없음
-                    continue;
-                }
-
-                // Rock 위: Stone_Pile 20%
-                if (here == ID_ROCK)
-                {
-                    if (rand.NextDouble() < 0.20)
-                        fgMap[x, ya] = MakeCell(ID_STONE_PILE);
+                    world.light[nx, ny].natural = (byte)Math.Min(next, NATURAL_MAX);
+                    q.Enqueue((nx, ny));
                 }
             }
         }
     }
 
+    // ─────────────────────────────────────────────────────────
+    // 내부: 삼각분포 표본
+    // ─────────────────────────────────────────────────────────
     private static int SampleTri(System.Random r, int min, int mode, int max)
     {
         double u = r.NextDouble(), c = (double)(mode - min) / (max - min);

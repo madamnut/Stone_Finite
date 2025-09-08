@@ -1,6 +1,6 @@
 // InteractionController.cs
 using UnityEngine;
-using UnityEngine.EventSystems;   //  UI 클릭 막기용
+using UnityEngine.EventSystems;   // UI 클릭 막기용
 
 public class InteractionController : MonoBehaviour
 {
@@ -44,7 +44,7 @@ public class InteractionController : MonoBehaviour
     {
         if (inventoryPanel != null) { inventoryPanel.SetActive(true); inventoryPanel.SetActive(false); }
 
-        _hlGO = new GameObject("BlockHighlight");
+        _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
         _hlSR.sprite = highlightSprite;
         _hlSR.sortingOrder = 1000;
@@ -118,7 +118,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  블록 하이라이트
+     *  하이라이트
      *────────────────────────────────────────────────────*/
     void UpdateHighlight()
     {
@@ -144,7 +144,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  블록 파괴 + 드랍
+     *  솔리드 파괴 + 드랍
      *────────────────────────────────────────────────────*/
     void DestroyBlockAndDrop()
     {
@@ -154,11 +154,11 @@ public class InteractionController : MonoBehaviour
         ushort id = worldManager.worldMap.fg[cx, cy].id;
         if (id == 0) return;
 
-        string key = BlockLibrary.GetKey(id);
+        string key = CellLibrary.GetKey(id);
         if (string.IsNullOrEmpty(key)) return;
 
-        worldManager.worldMap.fg[cx, cy] = new CellData { id = 0 };
-        worldManager.MarkChunkDirty(cx, cy, true);
+        worldManager.worldMap.fg[cx, cy] = new SolidCell { id = 0, hasGravity = false };
+        worldManager.MarkChunkDirty(cx, cy, markFG: true);
         worldManager.RecalculateLightAt(cx, cy);
 
         float half = cellSize * 0.5f;
