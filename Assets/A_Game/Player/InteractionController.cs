@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;   // UI 클릭 막기용
 public class InteractionController : MonoBehaviour
 {
     public enum GameState { Ingame, Inpanel, Inmenu }
+    enum BreakMode { FG, BG }
 
     /*────────────── UI ──────────────*/
     [Header("UI")]
@@ -13,27 +14,38 @@ public class InteractionController : MonoBehaviour
 
     [Header("Key Settings")]
     public KeyCode toggleInventoryKey = KeyCode.E;
+    public KeyCode toggleBreakModeKey = KeyCode.V;
 
     [Header("Player/Hotbar/Cursor")]
     public Player  player;         // 인벤 참조
     public Hotbar  hotbar;         // 스코프 하이라이트
     public ItemSlot cursorSlot;    // 커서 슬롯(닫을 때 비우기용)
 
-    /*────────────── 월드 / 드랍 ──────────────*/
+    /*────────────── 월드 / 드랍 / VFX ──────────────*/
     [Header("World References")]
     public WorldManager worldManager;
     public Camera       worldCamera;
     public ItemDropper  itemDropper;
+    public VfxManager   vfx;         // ← VFX 매니저
     public int          cellSize = 1;
 
-    [Header("Highlight")]
-    public Sprite highlightSprite;
+    [Header("Highlight Sprites")]
+    public Sprite HighLight_FG;         // 기본
+    public Sprite HighLight_FG_CAN;     // 가능
+    public Sprite HighLight_FG_CANNOT;  // 미사용(보관)
+    public Sprite HighLight_BG;         // 기본
+    public Sprite HighLight_BG_CAN;     // 가능
+    public Sprite HighLight_BG_CANNOT;  // 불가(전경 점유)
+
+    [Header("Highlight Pulse")]
     [Range(0.8f,1.0f)] public float minScale = 0.92f;
     [Range(1.0f,1.2f)] public float maxScale = 1.08f;
     public float period = 1f;
 
     /*────────────── 내부 ──────────────*/
     GameState _state = GameState.Ingame;
+    BreakMode _breakMode = BreakMode.FG;
+
     GameObject     _hlGO;
     SpriteRenderer _hlSR;
     float          _timer;
@@ -46,7 +58,7 @@ public class InteractionController : MonoBehaviour
 
         _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
-        _hlSR.sprite = highlightSprite;
+        _hlSR.sprite = HighLight_FG;         // 시작은 FG 기본
         _hlSR.sortingOrder = 1000;
         _hlGO.SetActive(false);
 
@@ -75,7 +87,6 @@ public class InteractionController : MonoBehaviour
             }
             else if (_state == GameState.Inpanel)
             {
-                // 인벤토리 닫힐 때 커서 아이템 인벤으로 넣기
                 if (player != null && cursorSlot != null && cursorSlot.Item != null)
                 {
                     int left = player.Inventory.AddItem(cursorSlot.Item);
@@ -106,6 +117,13 @@ public class InteractionController : MonoBehaviour
             }
         }
 
+        /*── 모드 전환 ──*/
+        if (Input.GetKeyDown(toggleBreakModeKey))
+        {
+            _breakMode = (_breakMode == BreakMode.FG) ? BreakMode.BG : BreakMode.FG;
+            _hlSR.sprite = (_breakMode == BreakMode.FG) ? HighLight_FG : HighLight_BG;
+        }
+
         /*── Ingame에서만 월드 상호작용 ──*/
         if (_state != GameState.Ingame) { _hlGO.SetActive(false); return; }
 
@@ -122,7 +140,7 @@ public class InteractionController : MonoBehaviour
      *────────────────────────────────────────────────────*/
     void UpdateHighlight()
     {
-        if (worldManager == null || worldCamera == null || highlightSprite == null) return;
+        if (worldManager == null || worldCamera == null) return;
 
         if (!GetMouseCell(out int cx, out int cy))
         {
@@ -130,10 +148,26 @@ public class InteractionController : MonoBehaviour
             return;
         }
 
-        if (worldManager.worldMap.fg[cx, cy].id == 0) { _hlGO.SetActive(false); return; }
-
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
+
+        bool hasSolid = worldManager.worldMap.fg[cx, cy].id   != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id != 0;
+        bool hasBg    = worldManager.worldMap.bg[cx, cy]      != 0;
+
+        if (_breakMode == BreakMode.FG)
+        {
+            bool canBreak = hasSolid || hasDeco;
+            _hlSR.sprite = canBreak ? HighLight_FG_CAN : HighLight_FG; // FG는 CANNOT 미사용
+        }
+        else
+        {
+            bool blocked = hasSolid || hasDeco;
+            if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT; // 전경 점유 → 불가
+            else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;     // BG만 존재 → 가능
+            else                       _hlSR.sprite = HighLight_BG;         // 대상 없음 → 기본
+        }
+
         _hlGO.SetActive(true);
 
         _timer += Time.deltaTime;
@@ -144,26 +178,59 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  솔리드 파괴 + 드랍
+     *  파괴 + 드랍 + VFX (모드별)
      *────────────────────────────────────────────────────*/
     void DestroyBlockAndDrop()
     {
         if (worldManager == null || itemDropper == null) return;
         if (!GetMouseCell(out int cx, out int cy))        return;
 
-        ushort id = worldManager.worldMap.fg[cx, cy].id;
-        if (id == 0) return;
-
-        string key = CellLibrary.GetKey(id);
-        if (string.IsNullOrEmpty(key)) return;
-
-        worldManager.worldMap.fg[cx, cy] = new SolidCell { id = 0, hasGravity = false };
-        worldManager.MarkChunkDirty(cx, cy, markFG: true);
-        worldManager.RecalculateLightAt(cx, cy);
-
         float half = cellSize * 0.5f;
         Vector3 pos = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
-        itemDropper.SpawnDroppedItems(key, pos);
+
+        if (_breakMode == BreakMode.FG)
+        {
+            ushort solidId = worldManager.worldMap.fg[cx, cy].id;
+            ushort decoId  = worldManager.worldMap.deco[cx, cy].id;
+            if (solidId == 0 && decoId == 0) return;
+
+            // 드랍/스프라이트 키
+            ushort pickId = (decoId != 0) ? decoId : solidId;
+            string key = CellLibrary.GetKey(pickId);
+            if (string.IsNullOrEmpty(key)) return;
+
+            // 파괴
+            worldManager.worldMap.BreakForeCell(cx, cy);
+            worldManager.MarkChunkDirty(cx, cy, markFG:true,  markBG:false, markDeco:true,  markLiquid:false);
+            worldManager.RecalculateLightAt(cx, cy);
+
+            // VFX: 원 스프라이트 조각 방출(FG는 전 조각)
+            if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
+
+            // 드랍
+            itemDropper.SpawnDroppedItems(key, pos);
+        }
+        else // BG
+        {
+            ushort bgId = worldManager.worldMap.bg[cx, cy];
+            if (bgId == 0) return;
+
+            // 전경 점유 시 BG 파괴 불가
+            if (worldManager.worldMap.fg[cx, cy].id != 0 ||
+                worldManager.worldMap.deco[cx, cy].id != 0) return;
+
+            string key = CellLibrary.GetKey(bgId);
+            if (string.IsNullOrEmpty(key)) return;
+
+            worldManager.worldMap.BreakBackCell(cx, cy);
+            worldManager.MarkChunkDirty(cx, cy, markFG:false, markBG:true,  markDeco:false, markLiquid:false);
+            worldManager.RecalculateLightAt(cx, cy);
+
+            // VFX: BG는 소수의 조각만
+            if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
+
+            itemDropper.SpawnDroppedItems(key, pos);
+        }
     }
 
     /*──────────────────────────────────────────────────────

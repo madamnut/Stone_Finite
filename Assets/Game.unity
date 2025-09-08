@@ -2893,6 +2893,53 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3895825965514855727, guid: a7370e5b37a174b4c9b6e833772de376, type: 3}
   m_PrefabInstance: {fileID: 617742599}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &672136421
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 672136423}
+  - component: {fileID: 672136422}
+  m_Layer: 0
+  m_Name: VfxManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &672136422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 672136421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8439849bd7461354c95e131b95f42aeb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  atlas: {fileID: 100100200, guid: 5715605989584c24ca8824127f00ef23, type: 3}
+  material: {fileID: 2100000, guid: 5358ad9990888484796b5120fb6f2d41, type: 2}
+  psPrefab: {fileID: 8503514865183458434, guid: ebae7067911745d4fbf25b4b244715df, type: 3}
+--- !u!4 &672136423
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 672136421}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &681590734
 GameObject:
   m_ObjectHideFlags: 0
@@ -7390,14 +7437,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inventoryPanel: {fileID: 1982691451}
   toggleInventoryKey: 101
+  toggleBreakModeKey: 118
   player: {fileID: 1746062761}
   hotbar: {fileID: 1278894248}
   cursorSlot: {fileID: 1563785317}
   worldManager: {fileID: 557152421}
   worldCamera: {fileID: 137679049}
   itemDropper: {fileID: 1159117176}
+  vfx: {fileID: 672136422}
   cellSize: 1
-  highlightSprite: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
+  HighLight_FG: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
+  HighLight_FG_CAN: {fileID: 21300000, guid: 726de4ee5a6213e4895742dc48fca92a, type: 3}
+  HighLight_FG_CANNOT: {fileID: 21300000, guid: d0c1dd5cb6976304991edf9f990fef4b, type: 3}
+  HighLight_BG: {fileID: 21300000, guid: 90218ddedcc54114e9493216eb80d854, type: 3}
+  HighLight_BG_CAN: {fileID: 21300000, guid: ae1becb1c722c5444801d4823ccf9d25, type: 3}
+  HighLight_BG_CANNOT: {fileID: 21300000, guid: 98b5cfd29f400ec4c91843b6031c778c, type: 3}
   minScale: 0.92
   maxScale: 1.08
   period: 1
@@ -9366,6 +9420,7 @@ SceneRoots:
   - {fileID: 2047849823}
   - {fileID: 1083357872}
   - {fileID: 2030845223}
+  - {fileID: 672136423}
   - {fileID: 1159117177}
   - {fileID: 557152422}
   - {fileID: 1824379077}

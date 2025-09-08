@@ -38,10 +38,19 @@ public struct WorldData
         // light[x,y] 유지
     }
 
-    /// <summary>좌표의 데코만 제거.</summary>
-    public void ClearDeco(int x, int y)
+    /// <summary>전경 파괴: 솔리드와 데코만 제거. 액체/배경/라이트는 유지.</summary>
+    public void BreakForeCell(int x, int y)
     {
+        // 전경: 솔리드 + 데코 제거
         deco[x,y] = new DecoCell { id = 0, depend = DepFlags.None };
+        fg[x,y] = new SolidCell { id = 0, hasGravity = false };
+    }
+
+    /// <summary>후경 파괴: BG만 제거.</summary>
+    public void BreakBackCell(int x, int y)
+    {
+        // 후경: BG 제거
+        bg[x,y] = 0;
     }
 
     // ─────────────────────────────────────────────────────────────
