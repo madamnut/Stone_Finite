@@ -209,6 +209,9 @@ public class InteractionController : MonoBehaviour
             worldManager.MarkWaterDirty(cx - 1, cy); // 좌
             worldManager.MarkWaterDirty(cx + 1, cy); // 우
 
+            // 인접 중력 블록 낙하 검사(월드매니저)
+            worldManager.OnCellDestroyedFG(cx, cy);
+
             // VFX: 원 스프라이트 조각 방출(FG는 전 조각)
             if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
 

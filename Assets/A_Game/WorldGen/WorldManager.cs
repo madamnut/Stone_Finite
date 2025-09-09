@@ -31,6 +31,9 @@ public class WorldManager : MonoBehaviour
     [Header("Light 레이어용 검정 스프라이트")]
     public Sprite lightSprite;
 
+    [Header("Falling Blocks")]
+    public FallingBlock fallingBlockPrefab;          // 낙하 프리팹
+
     public const int ChunkSize = 16;
     private const byte NAT_MAX = 20;
 
@@ -130,12 +133,11 @@ public class WorldManager : MonoBehaviour
                     WriteWater(x,  y,  Wc - move);
                     WriteWater(x,  dy, Wd + move);
 
-                    // Enq 축소: 자기/아래/좌/우/위 만
-                    Enq(x, y);           // 자기
-                    Enq(x, dy);          // 아래 목적지
-                    if (x > 0)     Enq(x - 1, y);   // 좌(원셀 이웃)
-                    if (x + 1 < w) Enq(x + 1, y);   // 우(원셀 이웃)
-                    if (y + 1 < h) Enq(x, y + 1);   // 위
+                    Enq(x, y);
+                    Enq(x, dy);
+                    if (x > 0)     Enq(x - 1, y);
+                    if (x + 1 < w) Enq(x + 1, y);
+                    if (y + 1 < h) Enq(x, y + 1);
 
                     ops++;
                     continue;
@@ -202,11 +204,10 @@ public class WorldManager : MonoBehaviour
                 if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
                 if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
 
-                // Enq 축소: 자기/흘린 좌/흘린 우/위 만
-                Enq(x, y);                  // 자기
-                if (x > 0)     Enq(x - 1, y);   // 좌(원셀 이웃)
-                if (x + 1 < w) Enq(x + 1, y);   // 우(원셀 이웃)
-                if (y + 1 < h) Enq(x, y + 1);   // 위
+                Enq(x, y);
+                if (x > 0)     Enq(x - 1, y);
+                if (x + 1 < w) Enq(x + 1, y);
+                if (y + 1 < h) Enq(x, y + 1);
 
                 ops++;
                 continue;
@@ -394,7 +395,7 @@ public class WorldManager : MonoBehaviour
                     decoBuf[idx] = tile;
                 }
 
-                // Liquid → 10단계 시각화(알파 상단 유지, 피벗 중앙)
+                // Liquid → 10단계 시각화
                 var liq = worldMap.liquid[wx, wy];
                 liquidBuf[idx] = (liq.amount > 0 && liq.id != 0)
                     ? TileCache.GetWaterByAmount(liq.id, liq.amount)
@@ -561,7 +562,7 @@ public class WorldManager : MonoBehaviour
 
                         var liq = worldMap.liquid[wx, wy];
                         buf[idx] = (liq.amount > 0 && liq.id != 0)
-                            ? TileCache.GetWaterByAmount(liq.id, liq.amount)  // 10단계, 알파 포함, pivot 중앙
+                            ? TileCache.GetWaterByAmount(liq.id, liq.amount)
                             : null;
                     }
                 c.liquidTilemap.SetTilesBlock(bounds, buf);
@@ -656,6 +657,48 @@ public class WorldManager : MonoBehaviour
         if (markBG)     c.bgDirty = true;
         if (markDeco)   c.decoDirty = true;
         if (markLiquid) c.liquidDirty = true;
+    }
+
+    /// <summary>
+    /// FG 셀 파괴 직후 호출. 인접 중력 블록이 낙하 가능한지 검사 후 프리팹 스폰.
+    /// </summary>
+    public void OnCellDestroyedFG(int gx, int gy)
+    {
+        int w = settings.width, h = settings.height;
+        var fg = worldMap.fg;
+
+        int[] dx = { 1, -1, 0, 0 };
+        int[] dy = { 0, 0, 1, -1 };
+
+        for (int i = 0; i < 4; i++)
+        {
+            int nx = gx + dx[i], ny = gy + dy[i];
+            if ((uint)nx >= w || (uint)ny >= h) continue;
+
+            ushort id = fg[nx, ny].id;
+            if (id == 0) continue;
+            if (!CellLibrary.HasGravity(id)) continue;
+
+            int by = ny - 1;
+            if (by < 0) continue;
+            if (fg[nx, by].id != 0) continue;      // 아래 FG가 비어야 낙하
+
+            // 원본 셀 제거
+            worldMap.SetSolid(nx, ny, 0, false);
+            MarkChunkDirty(nx, ny, markFG: true);
+
+            // 프리팹 스폰: 월드 + 스프라이트 주입
+            if (fallingBlockPrefab != null)
+            {
+                Vector3 spawnPos = new Vector3(nx + 0.5f, ny + 0.5f, 0f);
+                var fb = Instantiate(fallingBlockPrefab, spawnPos, Quaternion.identity);
+                var spr = CellLibrary.GetSprite(id);
+                fb.Init(id, this, spr);
+            }
+
+            // 연쇄 판정: 방금 비워진 좌표도 파괴로 간주하고 검사
+            OnCellDestroyedFG(nx, ny);
+        }
     }
 
     // ── 타일 캐시: id → Tile ──

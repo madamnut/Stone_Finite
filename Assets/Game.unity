@@ -2776,6 +2776,9 @@ MonoBehaviour:
   ChunkRadius: 10
   maxLoadsPerFrame: 4
   lightSprite: {fileID: 21300000, guid: 3b456956733474149b775ce47461790b, type: 3}
+  fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
+  opsBudgetWater: 3000
+  waterTickInterval: 0.05
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0
