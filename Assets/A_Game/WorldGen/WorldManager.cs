@@ -51,6 +51,198 @@ public class WorldManager : MonoBehaviour
     // 활성화된 청크
     private readonly Dictionary<Vector2Int, GameObject> activeChunks = new Dictionary<Vector2Int, GameObject>();
 
+    // ─────────────────────────────────────────────────────
+    // Water Sim (전역 20Hz)
+    // ─────────────────────────────────────────────────────
+    [Header("Water Sim")]
+    public int   opsBudgetWater    = 3000;   // 틱당 최대 처리 셀
+    public float waterTickInterval = 0.05f;  // 20 Hz
+    private readonly Queue<Vector2Int> waterQ = new();
+    private readonly HashSet<Vector2Int> inQ  = new();
+    private Coroutine waterTick;
+
+    void OnEnable()
+    {
+        if (waterTick == null) waterTick = StartCoroutine(WaterLoop());
+    }
+
+    void OnDisable()
+    {
+        if (waterTick != null) { StopCoroutine(waterTick); waterTick = null; }
+    }
+
+    /// <summary>물 셀 시뮬레이트 대상 등록.</summary>
+    public void MarkWaterDirty(int x, int y)
+    {
+        int w = settings.width, h = settings.height;
+        if ((uint)x >= w || (uint)y >= h) return;
+        var v = new Vector2Int(x, y);
+        if (inQ.Add(v)) waterQ.Enqueue(v);
+    }
+
+    IEnumerator WaterLoop()
+    {
+        var wait = new WaitForSeconds(waterTickInterval);
+        while (true)
+        {
+            StepWater();
+            yield return wait;
+        }
+    }
+
+    // 낙하 → 좌우 동시 분배. 모든 연산은 정수. 최소 흐름 1.
+    void StepWater()
+    {
+        int w = settings.width, h = settings.height;
+        int ops = 0;
+
+        int iter = Mathf.Min(opsBudgetWater, waterQ.Count);
+        for (int k = 0; k < iter; k++)
+        {
+            var p = waterQ.Dequeue();
+            inQ.Remove(p);
+            int x = p.x, y = p.y;
+            if ((uint)x >= w || (uint)y >= h) continue;
+
+            ref var cell = ref worldMap.liquid[x, y];
+            int Wc = cell.amount;
+            if (Wc <= 0)
+            {
+                worldMap.liquid[x, y].id = 0;
+                continue;
+            }
+
+            bool Blocked(int gx, int gy)
+            {
+                if ((uint)gx >= w || (uint)gy >= h) return true;
+                return worldMap.fg[gx, gy].id != 0;
+            }
+
+            // 1) 아래로 낙하
+            int dy = y - 1;
+            if (dy >= 0 && !Blocked(x, dy))
+            {
+                int Wd = worldMap.liquid[x, dy].amount;
+                int cap = 100 - Wd;
+                if (cap > 0)
+                {
+                    int move = Mathf.Min(Wc, cap);
+                    WriteWater(x,  y,  Wc - move);
+                    WriteWater(x,  dy, Wd + move);
+
+                    // Enq 축소: 자기/아래/좌/우/위 만
+                    Enq(x, y);           // 자기
+                    Enq(x, dy);          // 아래 목적지
+                    if (x > 0)     Enq(x - 1, y);   // 좌(원셀 이웃)
+                    if (x + 1 < w) Enq(x + 1, y);   // 우(원셀 이웃)
+                    if (y + 1 < h) Enq(x, y + 1);   // 위
+
+                    ops++;
+                    continue;
+                }
+            }
+
+            // 2) 좌우 동시 분배 (각 방향 최대 20, diff/2의 정수, 최소 1)
+            int xl = x - 1, xr = x + 1;
+
+            bool canL = xl >= 0 && !Blocked(xl, y);
+            bool canR = xr < w  && !Blocked(xr, y);
+
+            int Wl = canL ? worldMap.liquid[xl, y].amount : 0;
+            int Wr = canR ? worldMap.liquid[xr, y].amount : 0;
+
+            int capL = canL ? (100 - Wl) : 0;
+            int capR = canR ? (100 - Wr) : 0;
+
+            int flowL = 0, flowR = 0;
+
+            if (canL)
+            {
+                int diffL = Wc - Wl;
+                if (diffL > 0)
+                {
+                    int propL = Mathf.Clamp(Mathf.Max(1, diffL / 2), 1, 20);
+                    flowL = Mathf.Min(propL, capL);
+                }
+            }
+            if (canR)
+            {
+                int diffR = Wc - Wr;
+                if (diffR > 0)
+                {
+                    int propR = Mathf.Clamp(Mathf.Max(1, diffR / 2), 1, 20);
+                    flowR = Mathf.Min(propR, capR);
+                }
+            }
+
+            int want = flowL + flowR;
+            if (want > 0)
+            {
+                int total = Mathf.Min(Wc, want);
+                int takeL = 0, takeR = 0;
+
+                if (flowL > 0 && flowR > 0)
+                {
+                    int denom = flowL + flowR;
+                    takeL = (total * flowL + denom / 2) / denom;
+                    if (takeL > flowL) takeL = flowL;
+                    takeR = total - takeL;
+                    if (takeR > flowR) { takeR = flowR; takeL = total - takeR; }
+                }
+                else if (flowL > 0)
+                {
+                    takeL = Mathf.Min(total, flowL);
+                }
+                else
+                {
+                    takeR = Mathf.Min(total, flowR);
+                }
+
+                WriteWater(x,  y,  Wc - (takeL + takeR));
+                if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
+                if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
+
+                // Enq 축소: 자기/흘린 좌/흘린 우/위 만
+                Enq(x, y);                  // 자기
+                if (x > 0)     Enq(x - 1, y);   // 좌(원셀 이웃)
+                if (x + 1 < w) Enq(x + 1, y);   // 우(원셀 이웃)
+                if (y + 1 < h) Enq(x, y + 1);   // 위
+
+                ops++;
+                continue;
+            }
+
+            ops++;
+        }
+    }
+
+    // 전역 쓰기 + 해당 청크 Liquid 레이어만 Dirty
+    void WriteWater(int x, int y, int newAmount)
+    {
+        if ((uint)x >= settings.width || (uint)y >= settings.height) return;
+
+        int cur = worldMap.liquid[x, y].amount;
+        newAmount = Mathf.Clamp(newAmount, 0, 100);
+        if (cur == newAmount) return;
+
+        worldMap.liquid[x, y].amount = (byte)newAmount;
+        worldMap.liquid[x, y].id     = (ushort)(newAmount > 0 ? 60000 : 0);
+
+        MarkChunkDirty(x, y, markFG: false, markBG: false, markDeco: false, markLiquid: true);
+    }
+
+    void Enq(int x, int y)
+    {
+        int w = settings.width, h = settings.height;
+        if ((uint)x >= w || (uint)y >= h) return;
+        var v = new Vector2Int(x, y);
+        if (inQ.Add(v)) waterQ.Enqueue(v);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 이하 기존 코드
+    // ─────────────────────────────────────────────────────
+
     void Awake()
     {
         worldMap = WorldDataGenerator.Generate(settings);
@@ -76,18 +268,15 @@ public class WorldManager : MonoBehaviour
     {
         Vector2Int playerChunk = GetPlayerChunk();
 
-        // 텔레포트 감지
         if ((playerChunk - lastPlayerChunk).sqrMagnitude > (ChunkRadius * ChunkRadius * 4))
             loadList.Clear();
         lastPlayerChunk = playerChunk;
 
-        // 필요 청크 계산
         currentNeeded.Clear();
         for (int dy = -ChunkRadius; dy <= ChunkRadius; dy++)
             for (int dx = -ChunkRadius; dx <= ChunkRadius; dx++)
                 currentNeeded.Add(new Vector2Int(playerChunk.x + dx, playerChunk.y + dy));
 
-        // 언로딩
         unloadList.Clear();
         foreach (var coord in activeChunks.Keys)
             if (!currentNeeded.Contains(coord)) unloadList.Add(coord);
@@ -97,7 +286,6 @@ public class WorldManager : MonoBehaviour
             activeChunks.Remove(coord);
         }
 
-        // 로딩 후보(거리순)
         loadList = currentNeeded
             .Where(c => !activeChunks.ContainsKey(c))
             .OrderBy(c =>
@@ -165,7 +353,6 @@ public class WorldManager : MonoBehaviour
         var lightBuf = c.lightBuffer;
         int size = ChunkSize * ChunkSize;
 
-        // 버퍼 초기화
         for (int i = 0; i < size; i++)
         {
             bgBuf[i]     = null;
@@ -194,7 +381,7 @@ public class WorldManager : MonoBehaviour
                 if (fgId != 0)
                 {
                     var tile = TileCache.Get(fgId);
-                    tile.colliderType = Tile.ColliderType.Sprite; // 솔리드는 항상 콜라이더
+                    tile.colliderType = Tile.ColliderType.Sprite;
                     fgBuf[idx] = tile;
                 }
 
@@ -207,14 +394,11 @@ public class WorldManager : MonoBehaviour
                     decoBuf[idx] = tile;
                 }
 
-                // Liquid
+                // Liquid → 10단계 시각화(알파 상단 유지, 피벗 중앙)
                 var liq = worldMap.liquid[wx, wy];
-                if (liq.amount > 0 && liq.id != 0)
-                {
-                    var tile = TileCache.Get(liq.id);
-                    tile.colliderType = Tile.ColliderType.None;
-                    liquidBuf[idx] = tile;
-                }
+                liquidBuf[idx] = (liq.amount > 0 && liq.id != 0)
+                    ? TileCache.GetWaterByAmount(liq.id, liq.amount)
+                    : null;
 
                 // Light
                 byte lvl = worldMap.light[wx, wy].natural; // 0..20
@@ -226,14 +410,12 @@ public class WorldManager : MonoBehaviour
             }
         }
 
-        // Tilemap 적용
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
         c.fgTilemap.SetTilesBlock(bounds, fgBuf);
         c.decoTilemap.SetTilesBlock(bounds, decoBuf);
         c.liquidTilemap.SetTilesBlock(bounds, liquidBuf);
         c.lightTilemap.SetTilesBlock(bounds, lightBuf);
 
-        // FG 콜라이더 리프레시
         var coll = c.fgTilemap.GetComponent<TilemapCollider2D>();
         if (coll != null)
         {
@@ -241,7 +423,6 @@ public class WorldManager : MonoBehaviour
             coll.ProcessTilemapChanges();
         }
 
-        // Dirty 초기화
         c.bgDirty = c.fgDirty = c.decoDirty = c.liquidDirty = c.lightDirty = false;
 
         activeChunks[coord] = go;
@@ -262,7 +443,6 @@ public class WorldManager : MonoBehaviour
             {
                 RefreshChunkLayer(coord, LayerType.BG);
                 c.bgDirty = false;
-                // 필요 시 BG 변경에도 라이트 재계산을 호출할 수 있음
             }
 
             if (c.fgDirty)
@@ -270,7 +450,6 @@ public class WorldManager : MonoBehaviour
                 RefreshChunkLayer(coord, LayerType.FG);
                 c.fgDirty = false;
 
-                // 이 청크 영역 내 국소 라이트 재계산
                 int sx = coord.x * ChunkSize, sy = coord.y * ChunkSize;
                 for (int y = 0; y < ChunkSize; y++)
                     for (int x = 0; x < ChunkSize; x++)
@@ -381,7 +560,9 @@ public class WorldManager : MonoBehaviour
                         if ((uint)wx >= settings.width || (uint)wy >= settings.height) continue;
 
                         var liq = worldMap.liquid[wx, wy];
-                        buf[idx] = (liq.amount > 0 && liq.id != 0) ? TileCache.Get(liq.id) : null;
+                        buf[idx] = (liq.amount > 0 && liq.id != 0)
+                            ? TileCache.GetWaterByAmount(liq.id, liq.amount)  // 10단계, 알파 포함, pivot 중앙
+                            : null;
                     }
                 c.liquidTilemap.SetTilesBlock(bounds, buf);
                 break;
@@ -431,7 +612,6 @@ public class WorldManager : MonoBehaviour
             var (x, y) = q.Dequeue();
             byte old = worldMap.light[x, y].natural;
 
-            // 현재 셀을 통과할 때의 감쇄(들어오는 빛에 적용)
             int attenHere = 0;
             if (worldMap.bg[x, y] != 0) attenHere += 1;
             if (worldMap.fg[x, y].id != 0) attenHere += 2;
@@ -482,6 +662,8 @@ public class WorldManager : MonoBehaviour
     private static class TileCache
     {
         private static readonly Dictionary<ushort, Tile> cache = new Dictionary<ushort, Tile>();
+        private static Tile[] waterLevelTiles; // 0..10, 0=null
+
         public static Tile Get(ushort id)
         {
             if (id == 0) return null;
@@ -490,6 +672,61 @@ public class WorldManager : MonoBehaviour
             t.sprite = CellLibrary.GetSprite(id);
             t.name = CellLibrary.GetName(id);
             cache[id] = t;
+            return t;
+        }
+
+        // amount(1..100) → 10단계 물 타일
+        //  - 상단은 투명(알파 유지)
+        //  - 하단만 채워짐
+        //  - 피벗 중앙(0.5, 0.5)
+        //  - 런타임 생성 캐시
+        public static Tile GetWaterByAmount(ushort waterId, int amount)
+        {
+            if (amount <= 0) return null;
+            if (amount > 100) amount = 100;
+
+            int level = (amount - 1) / 10 + 1; // 1..10
+            waterLevelTiles ??= new Tile[11];
+            if (waterLevelTiles[level] != null) return waterLevelTiles[level];
+
+            var baseTile = Get(waterId);
+            var s = baseTile != null ? baseTile.sprite : null;
+            if (s == null) return null;
+
+            var tex = s.texture;
+            if (tex == null) return null;
+
+            Rect r = s.textureRect;
+            int fullW = Mathf.RoundToInt(r.width);
+            int fullH = Mathf.RoundToInt(r.height);
+            int copyH = Mathf.CeilToInt(fullH * (level / 10f)); // 아래로부터 복사 높이
+
+            var newTex = new Texture2D(fullW, fullH, TextureFormat.RGBA32, false);
+            newTex.filterMode = tex.filterMode;
+            newTex.wrapMode = TextureWrapMode.Clamp;
+
+            var clear = new Color32(0, 0, 0, 0);
+            var buf = new Color32[fullW * fullH];
+            for (int i = 0; i < buf.Length; i++) buf[i] = clear;
+            newTex.SetPixels32(buf);
+
+            int srcX = Mathf.RoundToInt(r.x);
+            int srcY = Mathf.RoundToInt(r.y);
+            Color[] src = tex.GetPixels(srcX, srcY, fullW, copyH);
+            newTex.SetPixels(0, 0, fullW, copyH, src);
+
+            newTex.Apply(false, false);
+
+            var pivot = new Vector2(0.5f, 0.5f);
+            var spr = Sprite.Create(newTex, new Rect(0, 0, fullW, fullH), pivot, s.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            spr.name = $"Water_L{level}";
+
+            var t = ScriptableObject.CreateInstance<Tile>();
+            t.sprite = spr;
+            t.name   = $"Water_L{level}";
+            t.colliderType = Tile.ColliderType.None;
+
+            waterLevelTiles[level] = t;
             return t;
         }
     }

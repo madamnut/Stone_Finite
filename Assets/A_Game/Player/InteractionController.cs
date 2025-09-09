@@ -204,6 +204,11 @@ public class InteractionController : MonoBehaviour
             worldManager.MarkChunkDirty(cx, cy, markFG:true,  markBG:false, markDeco:true,  markLiquid:false);
             worldManager.RecalculateLightAt(cx, cy);
 
+            // ── 물 시뮬 알림: 상·좌·우만 큐에 투입 (FG만 물 흐름에 영향)
+            worldManager.MarkWaterDirty(cx, cy + 1); // 상
+            worldManager.MarkWaterDirty(cx - 1, cy); // 좌
+            worldManager.MarkWaterDirty(cx + 1, cy); // 우
+
             // VFX: 원 스프라이트 조각 방출(FG는 전 조각)
             if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
 
@@ -225,6 +230,8 @@ public class InteractionController : MonoBehaviour
             worldManager.worldMap.BreakBackCell(cx, cy);
             worldManager.MarkChunkDirty(cx, cy, markFG:false, markBG:true,  markDeco:false, markLiquid:false);
             worldManager.RecalculateLightAt(cx, cy);
+
+            // BG는 물 흐름에 영향 없음 → 물 큐 투입 없음
 
             // VFX: BG는 소수의 조각만
             if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
