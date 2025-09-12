@@ -369,28 +369,61 @@ public static class WorldDataGenerator
         int w = common.GetLength(0), h = common.GetLength(1);
         var rand = new System.Random(s.seed);
 
+        // 템플릿 로드
+        var tpl = StructureLoader.Load("Tree");
+        if (tpl == null || tpl.layers == null || tpl.layers.deco == null) return;
+        var deco = tpl.layers.deco;
+        int tplH = deco.Length; if (tplH == 0) return;
+        int tplW = deco[0].Length;
+        int ax = tpl.anchor.x, ay = tpl.anchor.y;
+
         for (int x = 0; x < w; x++)
         {
             if (rand.NextDouble() > s.treeDensity) continue;
 
+            // 지면 찾기
             int y = h - 1;
-            while (y > 0 && (common[x, y] == ID_AIR)) y--;
-
+            while (y > 0 && common[x, y] == ID_AIR) y--;
             if (common[x, y] != GetGrassVariant(x, y, common)) continue;
 
             int seedY = y + 1;
-            int H = SampleTri(rand, s.treeMinHeight, s.treeModeHeight, s.treeMaxHeight);
+            int worldOx = x - ax;
+            int worldOy = seedY - ay;
 
-            for (int i = 0; i < H && seedY + i < h; i++)
-                if (common[x, seedY + i] == ID_AIR) common[x, seedY + i] = ID_TRUNK;
+            // 템플릿 페인트 (JSON top→bottom → 로컬 bottom-up 변환)
+            for (int ty = 0; ty < tplH; ty++)
+            {
+                int ly = tplH - 1 - ty; // 로컬 y (아래=0)
+                for (int tx = 0; tx < tplW; tx++)
+                {
+                    int id = deco[ty][tx];
+                    if (id < 0) continue;
 
-            ProceduralUtil.DrawLeafBlobOnIDMap(
-                x, seedY + H - 1, H,
-                w, h,
-                ID_LEAF,
-                common);
+                    int wx = worldOx + tx;
+                    int wy = worldOy + ly;
+                    if ((uint)wx >= (uint)w || (uint)wy >= (uint)h) continue;
+
+                    int curr = common[wx, wy];
+                    bool canWrite = false;
+
+                    // id별 덮어쓰기 규칙
+                    if (tpl.writeRules != null && tpl.writeRules.TryGetValue(id, out var rule) && rule?.targets != null)
+                    {
+                        for (int k = 0; k < rule.targets.Length; k++)
+                            if (curr == rule.targets[k]) { canWrite = true; break; }
+                    }
+                    else
+                    {
+                        // 기본: 공기만
+                        canWrite = (curr == ID_AIR);
+                    }
+
+                    if (canWrite) common[wx, wy] = (ushort)id;
+                }
+            }
         }
     }
+
 
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 이후 데코
@@ -476,16 +509,5 @@ public static class WorldDataGenerator
                 }
             }
         }
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // 내부: 삼각분포 표본
-    // ─────────────────────────────────────────────────────────
-    private static int SampleTri(System.Random r, int min, int mode, int max)
-    {
-        double u = r.NextDouble(), c = (double)(mode - min) / (max - min);
-        return u < c
-            ? min + (int)Math.Sqrt(u * (mode - min) * (max - min))
-            : max - (int)Math.Sqrt((1 - u) * (max - mode) * (max - min));
     }
 }

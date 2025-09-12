@@ -750,7 +750,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 20
+  orthographic size: 16
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -2779,8 +2779,6 @@ MonoBehaviour:
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
   itemDropper: {fileID: 1159117176}
   vfx: {fileID: 672136422}
-  opsBudgetWater: 3000
-  opsBudgetGravity: 512
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0

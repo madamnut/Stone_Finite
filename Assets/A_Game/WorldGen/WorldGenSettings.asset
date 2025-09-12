@@ -72,19 +72,4 @@ MonoBehaviour:
   caveWalkerCount: 600
   caveWalkLength: 5000
   caveDirectionBias: 0.701
-  treeDensity: 0.06
-  treeMinHeight: 5
-  treeModeHeight: 8
-  treeMaxHeight: 12
-  airColor: {r: 1, g: 1, b: 1, a: 1}
-  waterColor: {r: 0, g: 0, b: 1, a: 1}
-  dirtColor: {r: 0.545, g: 0.271, b: 0.075, a: 1}
-  grassColor: {r: 0.4, g: 0.8, b: 0.2, a: 1}
-  rockColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  graniteColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
-  amphibColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
-  coalColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
-  copperColor: {r: 0.2, g: 0.8, b: 0.37808496, a: 1}
-  ironColor: {r: 0.8396226, g: 0.18614274, b: 0.18614274, a: 1}
-  trunkColor: {r: 0.4, g: 0.2, b: 0.05, a: 1}
-  leafColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
+  treeDensity: 0.12

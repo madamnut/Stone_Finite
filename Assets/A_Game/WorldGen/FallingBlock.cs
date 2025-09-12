@@ -22,11 +22,8 @@ public class FallingBlock : MonoBehaviour
         if (placed) return;
         if (((1 << other.gameObject.layer) & triggerMask.value) == 0) return;
 
-        // 접점 바로 위 셀(셀사이즈=1)
-        Vector2 cp = Physics2D.ClosestPoint(transform.position, other);
-        Vector2 p  = cp + new Vector2(0f, 0.001f);
-        int gx = Mathf.FloorToInt(p.x);
-        int gy = Mathf.FloorToInt(p.y);
+        int gx = Mathf.FloorToInt(transform.position.x);
+        int gy = Mathf.FloorToInt(transform.position.y);
 
         if (world.PlaceCell(gx, gy, cellId))
         {

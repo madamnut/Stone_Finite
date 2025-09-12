@@ -95,21 +95,4 @@ public class WorldGenSettings : ScriptableObject
 
     [Header("Tree Settings")]
     [Range(0f,1f)] public float treeDensity    = 0.02f;    // 한 x열당 나무 심을 확률
-    public int   treeMinHeight  = 4;       // 줄기 최소 높이
-    public int   treeModeHeight = 6;       // 줄기 최빈 높이
-    public int   treeMaxHeight  = 10;      // 줄기 최대 높이
-
-    [Header("Block Colors")]
-    public Color airColor    = Color.white;
-    public Color waterColor  = Color.blue;
-    public Color dirtColor   = new Color(0.545f, 0.271f, 0.075f);
-    public Color grassColor  = new Color(0.4f, 0.8f, 0.2f);
-    public Color rockColor   = Color.grey;
-    public Color graniteColor= new Color(0.4f,0.4f,0.4f);
-    public Color amphibColor = new Color(0.25f,0.25f,0.25f);
-    public Color coalColor   = new Color(0.1f, 0.1f, 0.1f);
-    public Color copperColor = new Color(0.8f, 0.5f, 0.2f);
-    public Color ironColor   = new Color(0.6f, 0.6f, 0.6f);
-    public Color trunkColor    = new Color(0.4f, 0.2f, 0.05f);
-    public Color leafColor     = new Color(0.2f, 0.8f, 0.2f);
 }
