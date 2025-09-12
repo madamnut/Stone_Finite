@@ -21,13 +21,11 @@ public class InteractionController : MonoBehaviour
     public Hotbar  hotbar;         // 스코프 하이라이트
     public ItemSlot cursorSlot;    // 커서 슬롯(닫을 때 비우기용)
 
-    /*────────────── 월드 / 드랍 / VFX ──────────────*/
+    /*────────────── 월드 참조 ──────────────*/
     [Header("World References")]
     public WorldManager worldManager;
     public Camera       worldCamera;
-    public ItemDropper  itemDropper;
-    public VfxManager   vfx;         // ← VFX 매니저
-    public int          cellSize = 1;
+    public int          cellSize = 1;   // 하이라이트 좌표용
 
     [Header("Highlight Sprites")]
     public Sprite HighLight_FG;         // 기본
@@ -132,7 +130,7 @@ public class InteractionController : MonoBehaviour
         UpdateHighlight();
 
         if (Input.GetMouseButtonDown(0))
-            DestroyBlockAndDrop();
+            BreakAtCursor();
     }
 
     /*──────────────────────────────────────────────────────
@@ -151,9 +149,9 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        bool hasSolid = worldManager.worldMap.fg[cx, cy].id   != 0;
-        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id != 0;
-        bool hasBg    = worldManager.worldMap.bg[cx, cy]      != 0;
+        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
         if (_breakMode == BreakMode.FG)
         {
@@ -178,69 +176,18 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  파괴 + 드랍 + VFX (모드별)
+     *  파괴 요청만 전달 (아이템드랍/더티/라이트/물/낙하는 WorldManager가 처리)
      *────────────────────────────────────────────────────*/
-    void DestroyBlockAndDrop()
+    void BreakAtCursor()
     {
-        if (worldManager == null || itemDropper == null) return;
-        if (!GetMouseCell(out int cx, out int cy))        return;
+        if (worldManager == null) return;
+        if (!GetMouseCell(out int cx, out int cy)) return;
 
-        float half = cellSize * 0.5f;
-        Vector3 pos = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
+        var layer = (_breakMode == BreakMode.FG)
+            ? WorldManager.CellLayer.FG
+            : WorldManager.CellLayer.BG;
 
-        if (_breakMode == BreakMode.FG)
-        {
-            ushort solidId = worldManager.worldMap.fg[cx, cy].id;
-            ushort decoId  = worldManager.worldMap.deco[cx, cy].id;
-            if (solidId == 0 && decoId == 0) return;
-
-            // 드랍/스프라이트 키
-            ushort pickId = (decoId != 0) ? decoId : solidId;
-            string key = CellLibrary.GetKey(pickId);
-            if (string.IsNullOrEmpty(key)) return;
-
-            // 파괴
-            worldManager.worldMap.BreakForeCell(cx, cy);
-            worldManager.MarkChunkDirty(cx, cy, markFG:true,  markBG:false, markDeco:true,  markLiquid:false);
-            worldManager.RecalculateLightAt(cx, cy);
-
-            // ── 물 시뮬 알림: 상·좌·우만 큐에 투입 (FG만 물 흐름에 영향)
-            worldManager.MarkWaterDirty(cx, cy + 1); // 상
-            worldManager.MarkWaterDirty(cx - 1, cy); // 좌
-            worldManager.MarkWaterDirty(cx + 1, cy); // 우
-
-            // 인접 중력 블록 낙하 검사(월드매니저)
-            worldManager.OnCellDestroyedFG(cx, cy);
-
-            // VFX: 원 스프라이트 조각 방출(FG는 전 조각)
-            if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
-
-            // 드랍
-            itemDropper.SpawnDroppedItems(key, pos);
-        }
-        else // BG
-        {
-            ushort bgId = worldManager.worldMap.bg[cx, cy];
-            if (bgId == 0) return;
-
-            // 전경 점유 시 BG 파괴 불가
-            if (worldManager.worldMap.fg[cx, cy].id != 0 ||
-                worldManager.worldMap.deco[cx, cy].id != 0) return;
-
-            string key = CellLibrary.GetKey(bgId);
-            if (string.IsNullOrEmpty(key)) return;
-
-            worldManager.worldMap.BreakBackCell(cx, cy);
-            worldManager.MarkChunkDirty(cx, cy, markFG:false, markBG:true,  markDeco:false, markLiquid:false);
-            worldManager.RecalculateLightAt(cx, cy);
-
-            // BG는 물 흐름에 영향 없음 → 물 큐 투입 없음
-
-            // VFX: BG는 소수의 조각만
-            if (vfx != null) vfx.EmitBlockAtCell(key, cx, cy, cellSize, grid:3, count:-1);
-
-            itemDropper.SpawnDroppedItems(key, pos);
-        }
+        worldManager.BreakCell(cx, cy, layer);  // 리턴값은 WM 내부에서 활용
     }
 
     /*──────────────────────────────────────────────────────

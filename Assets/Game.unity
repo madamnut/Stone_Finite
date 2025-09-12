@@ -2777,8 +2777,10 @@ MonoBehaviour:
   maxLoadsPerFrame: 4
   lightSprite: {fileID: 21300000, guid: 3b456956733474149b775ce47461790b, type: 3}
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
+  itemDropper: {fileID: 1159117176}
+  vfx: {fileID: 672136422}
   opsBudgetWater: 3000
-  waterTickInterval: 0.05
+  opsBudgetGravity: 512
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0
@@ -7446,8 +7448,6 @@ MonoBehaviour:
   cursorSlot: {fileID: 1563785317}
   worldManager: {fileID: 557152421}
   worldCamera: {fileID: 137679049}
-  itemDropper: {fileID: 1159117176}
-  vfx: {fileID: 672136422}
   cellSize: 1
   HighLight_FG: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
   HighLight_FG_CAN: {fileID: 21300000, guid: 726de4ee5a6213e4895742dc48fca92a, type: 3}

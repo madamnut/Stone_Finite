@@ -1,3 +1,4 @@
+// WorldManager.cs
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +11,13 @@ using UnityEngine.Tilemaps;
 /// • 플레이어 반경 ChunkRadius 청크만 활성화
 /// • 매 프레임 최대 maxLoadsPerFrame개의 청크 로드
 /// • Dirty 플래그 기반 레이어별 갱신 지원
-/// • Light 레이어 지원, FG 변경 시 국소 재계산
+/// • Light 레이어 지원, FG(=Solid+Deco) 변경 시 국소 재계산
+/// • 글로벌 틱(물/중력): FixedUpdate에서 단일 큐(더블버퍼) 처리
 /// </summary>
 public class WorldManager : MonoBehaviour
 {
+    public enum CellLayer { FG, BG }
+
     [Header("월드 생성 설정")]
     public WorldGenSettings settings;
 
@@ -32,10 +36,17 @@ public class WorldManager : MonoBehaviour
     public Sprite lightSprite;
 
     [Header("Falling Blocks")]
-    public FallingBlock fallingBlockPrefab;          // 낙하 프리팹
+    public FallingBlock fallingBlockPrefab;
+
+    [Header("Drops / VFX")]
+    public ItemDropper itemDropper;
+    public VfxManager  vfx;
 
     public const int ChunkSize = 16;
     private const byte NAT_MAX = 20;
+
+    // 전역 월드 크기 캐시
+    private int W, H;
 
     // 전체 월드 데이터
     public WorldData worldMap;
@@ -55,173 +66,149 @@ public class WorldManager : MonoBehaviour
     private readonly Dictionary<Vector2Int, GameObject> activeChunks = new Dictionary<Vector2Int, GameObject>();
 
     // ─────────────────────────────────────────────────────
-    // Water Sim (전역 20Hz)
+    // 글로벌 틱(물/중력) : 단일 좌표 큐(더블버퍼)로 통합
+    //  - EnqTick(x,y)로 항상 next 버퍼에 쌓임
+    //  - StepTick()에서 curr 전부 소모, 처리 중 추가는 next로
     // ─────────────────────────────────────────────────────
-    [Header("Water Sim")]
-    public int   opsBudgetWater    = 3000;   // 틱당 최대 처리 셀
-    public float waterTickInterval = 0.05f;  // 20 Hz
-    private readonly Queue<Vector2Int> waterQ = new();
-    private readonly HashSet<Vector2Int> inQ  = new();
-    private Coroutine waterTick;
+    private HashSet<Vector2Int> tickCurr = new();
+    private HashSet<Vector2Int> tickNext = new();
 
-    void OnEnable()
+    public void EnqTick(int x, int y)
     {
-        if (waterTick == null) waterTick = StartCoroutine(WaterLoop());
+        if ((uint)x >= W || (uint)y >= H) return;
+        tickNext.Add(new Vector2Int(x, y));
     }
 
-    void OnDisable()
+    private void SwapTickBuffers()
     {
-        if (waterTick != null) { StopCoroutine(waterTick); waterTick = null; }
+        var t = tickCurr;
+        tickCurr = tickNext;
+        tickNext = t;
+        tickNext.Clear();
     }
 
-    /// <summary>물 셀 시뮬레이트 대상 등록.</summary>
-    public void MarkWaterDirty(int x, int y)
+    void StepTick()
     {
-        int w = settings.width, h = settings.height;
-        if ((uint)x >= w || (uint)y >= h) return;
-        var v = new Vector2Int(x, y);
-        if (inQ.Add(v)) waterQ.Enqueue(v);
-    }
+        if (tickCurr.Count == 0) SwapTickBuffers();
+        if (tickCurr.Count == 0) return;
 
-    IEnumerator WaterLoop()
-    {
-        var wait = new WaitForSeconds(waterTickInterval);
-        while (true)
+        foreach (var p in tickCurr)
         {
-            StepWater();
-            yield return wait;
+            // 중력 → 물 순서로 처리 (동일 좌표에 둘 다 있을 수 있으므로)
+            StepGravityAt(p.x, p.y);
+            StepWaterAt(p.x, p.y);
         }
+        tickCurr.Clear();
     }
 
-    // 낙하 → 좌우 동시 분배. 모든 연산은 정수. 최소 흐름 1.
-    void StepWater()
+    // ─────────────────────────────────────────────────────
+    // 물 로직(단일 좌표)
+    // ─────────────────────────────────────────────────────
+    void StepWaterAt(int x, int y)
     {
-        int w = settings.width, h = settings.height;
-        int ops = 0;
+        ref var cell = ref worldMap.liquid[x, y];
+        int Wc = cell.amount;
 
-        int iter = Mathf.Min(opsBudgetWater, waterQ.Count);
-        for (int k = 0; k < iter; k++)
+        // 0이 되었으면 id 정리 + 렌더 더티
+        if (Wc <= 0)
         {
-            var p = waterQ.Dequeue();
-            inQ.Remove(p);
-            int x = p.x, y = p.y;
-            if ((uint)x >= w || (uint)y >= h) continue;
-
-            ref var cell = ref worldMap.liquid[x, y];
-            int Wc = cell.amount;
-            if (Wc <= 0)
+            if (cell.id != 0)
             {
                 worldMap.liquid[x, y].id = 0;
-                continue;
+                MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:false, markLiquid:true);
             }
+            return;
+        }
 
-            bool Blocked(int gx, int gy)
+        // 고체 차단
+        bool Blocked(int gx, int gy)
+        {
+            if ((uint)gx >= W || (uint)gy >= H) return true;
+            return worldMap.solid[gx, gy].id != 0;
+        }
+
+        // 1) 아래로 낙하
+        int dy = y - 1;
+        if (dy >= 0 && !Blocked(x, dy))
+        {
+            int Wd = worldMap.liquid[x, dy].amount;
+            int cap = 100 - Wd;
+            if (cap > 0)
             {
-                if ((uint)gx >= w || (uint)gy >= h) return true;
-                return worldMap.fg[gx, gy].id != 0;
-            }
+                int move = Mathf.Min(Wc, cap);
+                WriteWater(x,  y,  Wc - move);
+                WriteWater(x,  dy, Wd + move);
 
-            // 1) 아래로 낙하
-            int dy = y - 1;
-            if (dy >= 0 && !Blocked(x, dy))
+                // 연쇄: 원천/도착 기준으로 5방 인큐
+                OnCellEditedFG(x, y);
+                OnCellEditedFG(x, dy);
+                return;
+            }
+        }
+
+        // 2) 좌우 동시 분배 (각 방향 최대 20, diff/2 정수, 최소 1)
+        int xl = x - 1, xr = x + 1;
+        bool canL = xl >= 0 && !Blocked(xl, y);
+        bool canR = xr < W  && !Blocked(xr, y);
+
+        int Wl = canL ? worldMap.liquid[xl, y].amount : 0;
+        int Wr = canR ? worldMap.liquid[xr, y].amount : 0;
+
+        int capL = canL ? (100 - Wl) : 0;
+        int capR = canR ? (100 - Wr) : 0;
+
+        int flowL = 0, flowR = 0;
+
+        if (canL)
+        {
+            int diffL = Wc - Wl;
+            if (diffL > 0)
             {
-                int Wd = worldMap.liquid[x, dy].amount;
-                int cap = 100 - Wd;
-                if (cap > 0)
-                {
-                    int move = Mathf.Min(Wc, cap);
-                    WriteWater(x,  y,  Wc - move);
-                    WriteWater(x,  dy, Wd + move);
-
-                    Enq(x, y);
-                    Enq(x, dy);
-                    if (x > 0)     Enq(x - 1, y);
-                    if (x + 1 < w) Enq(x + 1, y);
-                    if (y + 1 < h) Enq(x, y + 1);
-
-                    ops++;
-                    continue;
-                }
+                int propL = Mathf.Clamp(Mathf.Max(1, diffL / 2), 1, 20);
+                flowL = Mathf.Min(propL, capL);
             }
-
-            // 2) 좌우 동시 분배 (각 방향 최대 20, diff/2의 정수, 최소 1)
-            int xl = x - 1, xr = x + 1;
-
-            bool canL = xl >= 0 && !Blocked(xl, y);
-            bool canR = xr < w  && !Blocked(xr, y);
-
-            int Wl = canL ? worldMap.liquid[xl, y].amount : 0;
-            int Wr = canR ? worldMap.liquid[xr, y].amount : 0;
-
-            int capL = canL ? (100 - Wl) : 0;
-            int capR = canR ? (100 - Wr) : 0;
-
-            int flowL = 0, flowR = 0;
-
-            if (canL)
+        }
+        if (canR)
+        {
+            int diffR = Wc - Wr;
+            if (diffR > 0)
             {
-                int diffL = Wc - Wl;
-                if (diffL > 0)
-                {
-                    int propL = Mathf.Clamp(Mathf.Max(1, diffL / 2), 1, 20);
-                    flowL = Mathf.Min(propL, capL);
-                }
+                int propR = Mathf.Clamp(Mathf.Max(1, diffR / 2), 1, 20);
+                flowR = Mathf.Min(propR, capR);
             }
-            if (canR)
+        }
+
+        int want = flowL + flowR;
+        if (want > 0)
+        {
+            int total = Mathf.Min(Wc, want);
+            int takeL = 0, takeR = 0;
+
+            if (flowL > 0 && flowR > 0)
             {
-                int diffR = Wc - Wr;
-                if (diffR > 0)
-                {
-                    int propR = Mathf.Clamp(Mathf.Max(1, diffR / 2), 1, 20);
-                    flowR = Mathf.Min(propR, capR);
-                }
+                int denom = flowL + flowR;
+                takeL = (total * flowL + denom / 2) / denom;
+                if (takeL > flowL) takeL = flowL;
+                takeR = total - takeL;
+                if (takeR > flowR) { takeR = flowR; takeL = total - takeR; }
             }
+            else if (flowL > 0) takeL = Mathf.Min(total, flowL);
+            else                takeR = Mathf.Min(total, flowR);
 
-            int want = flowL + flowR;
-            if (want > 0)
-            {
-                int total = Mathf.Min(Wc, want);
-                int takeL = 0, takeR = 0;
+            WriteWater(x,  y,  Wc - (takeL + takeR));
+            if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
+            if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
 
-                if (flowL > 0 && flowR > 0)
-                {
-                    int denom = flowL + flowR;
-                    takeL = (total * flowL + denom / 2) / denom;
-                    if (takeL > flowL) takeL = flowL;
-                    takeR = total - takeL;
-                    if (takeR > flowR) { takeR = flowR; takeL = total - takeR; }
-                }
-                else if (flowL > 0)
-                {
-                    takeL = Mathf.Min(total, flowL);
-                }
-                else
-                {
-                    takeR = Mathf.Min(total, flowR);
-                }
-
-                WriteWater(x,  y,  Wc - (takeL + takeR));
-                if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
-                if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
-
-                Enq(x, y);
-                if (x > 0)     Enq(x - 1, y);
-                if (x + 1 < w) Enq(x + 1, y);
-                if (y + 1 < h) Enq(x, y + 1);
-
-                ops++;
-                continue;
-            }
-
-            ops++;
+            // 연쇄
+            OnCellEditedFG(x, y);
+            if (takeL > 0) OnCellEditedFG(xl, y);
+            if (takeR > 0) OnCellEditedFG(xr, y);
         }
     }
 
     // 전역 쓰기 + 해당 청크 Liquid 레이어만 Dirty
     void WriteWater(int x, int y, int newAmount)
     {
-        if ((uint)x >= settings.width || (uint)y >= settings.height) return;
-
         int cur = worldMap.liquid[x, y].amount;
         newAmount = Mathf.Clamp(newAmount, 0, 100);
         if (cur == newAmount) return;
@@ -229,23 +216,156 @@ public class WorldManager : MonoBehaviour
         worldMap.liquid[x, y].amount = (byte)newAmount;
         worldMap.liquid[x, y].id     = (ushort)(newAmount > 0 ? 60000 : 0);
 
-        MarkChunkDirty(x, y, markFG: false, markBG: false, markDeco: false, markLiquid: true);
+        MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:false, markLiquid:true);
     }
 
-    void Enq(int x, int y)
+    // ─────────────────────────────────────────────────────
+    // 중력 블록 로직(단일 좌표)
+    // ─────────────────────────────────────────────────────
+    void StepGravityAt(int x, int y)
     {
-        int w = settings.width, h = settings.height;
-        if ((uint)x >= w || (uint)y >= h) return;
-        var v = new Vector2Int(x, y);
-        if (inQ.Add(v)) waterQ.Enqueue(v);
+        ushort id = worldMap.solid[x, y].id;
+        if (id == 0) return;
+        if (!CellLibrary.HasGravity(id)) return;
+
+        int by = y - 1;
+        if (by < 0) return;
+        if (worldMap.solid[x, by].id != 0) return; // 아래가 차있으면 종료
+
+        // 원본 제거 + 더티
+        worldMap.SetSolid(x, y, 0, false);
+        MarkChunkDirty(x, y, markFG:true);
+
+        // 연쇄: 해당 지점 기준
+        OnCellEditedFG(x, y);
+
+        // 낙하 프리팹 스폰
+        if (fallingBlockPrefab != null)
+        {
+            var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
+            var spr = CellLibrary.GetSprite(id);
+            var fb  = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
+            fb.Init(id, this, spr);
+        }
     }
 
     // ─────────────────────────────────────────────────────
-    // 이하 기존 코드
+    // 설치 진입점
     // ─────────────────────────────────────────────────────
+    /// <summary>좌표에 셀 id 배치. 타입은 CellLibrary로 판정.</summary>
+    public bool PlaceCell(int x, int y, ushort id)
+    {
+        if ((uint)x >= W || (uint)y >= H) return false;
 
+        switch (CellLibrary.TypeOf(id))
+        {
+            case CellType.Solid:
+                if (worldMap.solid[x, y].id != 0) return false;
+                worldMap.SetSolid(x, y, id, CellLibrary.HasGravity(id)); // 액체/데코 정리 포함
+                MarkChunkDirty(x, y, markFG:true, markBG:false, markDeco:false, markLiquid:true);
+                OnCellEditedFG(x, y);
+                return true;
+
+            case CellType.Deco:
+                if (worldMap.solid[x, y].id != 0) return false;
+                if (worldMap.liquid[x, y].amount > 0) return false;
+                worldMap.SetDeco(x, y, id, CellLibrary.DependFlagsOf(id));
+                MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:true, markLiquid:false);
+                OnCellEditedFG(x, y);
+                return true;
+
+            case CellType.Liquid:
+                if (worldMap.solid[x, y].id != 0) return false;
+                worldMap.SetLiquid(x, y, id, 100);
+                MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:false, markLiquid:true);
+                // 주변 흐름 유도
+                EnqTick(x, y);
+                EnqTick(x-1, y); EnqTick(x+1, y);
+                EnqTick(x, y+1); if (y > 0) EnqTick(x, y-1);
+                return true;
+        }
+        return false;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 파괴 진입점
+    // ─────────────────────────────────────────────────────
+    public ushort BreakCell(int x, int y, CellLayer layer)
+    {
+        if ((uint)x >= W || (uint)y >= H) return 0;
+
+        switch (layer)
+        {
+            case CellLayer.FG:
+            {
+                ushort removed = worldMap.BreakFG(x, y);
+                if (removed == 0) return 0;
+
+                // FG(=Solid+Deco) 더티
+                MarkChunkDirty(x, y, markFG:true, markBG:false, markDeco:true, markLiquid:false);
+
+                // 통합 후처리
+                OnCellEditedFG(x, y);
+
+                // 드랍 + VFX
+                string key = CellLibrary.GetKey(removed);
+                if (!string.IsNullOrEmpty(key))
+                {
+                    var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                    if (vfx != null) vfx.EmitBlockAtCell(key, x, y, 1, grid:3, count:-1);
+                    if (itemDropper != null) itemDropper.SpawnDroppedItems(key, pos);
+                }
+                return removed;
+            }
+            case CellLayer.BG:
+            {
+                ushort removed = worldMap.BreakBG(x, y);
+                if (removed == 0) return 0;
+
+                // BG 더티 + 라이트
+                MarkChunkDirty(x, y, markFG:false, markBG:true, markDeco:false, markLiquid:false);
+                RecalculateLightAt(x, y);
+
+                // 드랍 + VFX
+                string key = CellLibrary.GetKey(removed);
+                if (!string.IsNullOrEmpty(key))
+                {
+                    var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                    if (vfx != null) vfx.EmitBlockAtCell(key, x, y, 1, grid:3, count:-1);
+                    if (itemDropper != null) itemDropper.SpawnDroppedItems(key, pos);
+                }
+                return removed;
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// FG 편집(파괴/설치) 직후 호출: 틱 인큐(자기+상하좌우) + 라이트 계산
+    /// </summary>
+    public void OnCellEditedFG(int gx, int gy)
+    {
+        if ((uint)gx >= W || (uint)gy >= H) return;
+
+        // 틱 인큐: 자기 포함 상/하/좌/우
+        EnqTick(gx, gy);
+        EnqTick(gx + 1, gy);
+        EnqTick(gx - 1, gy);
+        EnqTick(gx, gy + 1);
+        EnqTick(gx, gy - 1);
+
+        // 라이트는 즉시
+        RecalculateLightAt(gx, gy);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 생명주기
+    // ─────────────────────────────────────────────────────
     void Awake()
     {
+        W = settings.width;
+        H = settings.height;
+
         worldMap = WorldDataGenerator.Generate(settings);
         if (chunkRoot == null) chunkRoot = transform;
 
@@ -264,6 +384,9 @@ public class WorldManager : MonoBehaviour
 
     void Update() => UpdateVisibleChunks();
     void LateUpdate() => ProcessDirtyChunks();
+
+    // 글로벌 틱: FixedUpdate에서 소모
+    void FixedUpdate() => StepTick();
 
     private void UpdateVisibleChunks()
     {
@@ -347,11 +470,11 @@ public class WorldManager : MonoBehaviour
         var c = go.GetComponent<Chunk>();
         if (c == null) return;
 
-        var bgBuf    = c.bgBuffer;
-        var fgBuf    = c.fgBuffer;
-        var decoBuf  = c.decoBuffer;
-        var liquidBuf= c.liquidBuffer;
-        var lightBuf = c.lightBuffer;
+        var bgBuf     = c.bgBuffer;
+        var fgBuf     = c.fgBuffer;     // Solid 전개용
+        var decoBuf   = c.decoBuffer;
+        var liquidBuf = c.liquidBuffer;
+        var lightBuf  = c.lightBuffer;
         int size = ChunkSize * ChunkSize;
 
         for (int i = 0; i < size; i++)
@@ -371,22 +494,22 @@ public class WorldManager : MonoBehaviour
                 int wx = coord.x * ChunkSize + x;
                 int wy = coord.y * ChunkSize + y;
                 int idx = y * ChunkSize + x;
-                if (wx < 0 || wx >= settings.width || wy < 0 || wy >= settings.height)
+                if (wx < 0 || wx >= W || wy < 0 || wy >= H)
                     continue;
 
                 // BG
                 bgBuf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
 
-                // FG
-                ushort fgId = worldMap.fg[wx, wy].id;
-                if (fgId != 0)
+                // Solid(FG의 Solid 파트)
+                ushort solidId = worldMap.solid[wx, wy].id;
+                if (solidId != 0)
                 {
-                    var tile = TileCache.Get(fgId);
+                    var tile = TileCache.Get(solidId);
                     tile.colliderType = Tile.ColliderType.Sprite;
                     fgBuf[idx] = tile;
                 }
 
-                // Deco
+                // Deco(FG의 Deco 파트)
                 ushort decoId = worldMap.deco[wx, wy].id;
                 if (decoId != 0)
                 {
@@ -497,7 +620,7 @@ public class WorldManager : MonoBehaviour
                         int wx = coord.x * ChunkSize + x;
                         int wy = coord.y * ChunkSize + y;
                         int idx = y * ChunkSize + x;
-                        if ((uint)wx >= settings.width || (uint)wy >= settings.height) continue;
+                        if ((uint)wx >= W || (uint)wy >= H) continue;
                         buf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
                     }
                 c.bgTilemap.SetTilesBlock(bounds, buf);
@@ -505,16 +628,16 @@ public class WorldManager : MonoBehaviour
             }
             case LayerType.FG:
             {
-                var buf = c.fgBuffer;
+                var buf = c.fgBuffer; // Solid
                 for (int y = 0; y < ChunkSize; y++)
                     for (int x = 0; x < ChunkSize; x++)
                     {
                         int wx = coord.x * ChunkSize + x;
                         int wy = coord.y * ChunkSize + y;
                         int idx = y * ChunkSize + x;
-                        if ((uint)wx >= settings.width || (uint)wy >= settings.height) continue;
+                        if ((uint)wx >= W || (uint)wy >= H) continue;
 
-                        ushort id = worldMap.fg[wx, wy].id;
+                        ushort id = worldMap.solid[wx, wy].id;
                         if (id != 0)
                         {
                             var tile = TileCache.Get(id);
@@ -541,7 +664,7 @@ public class WorldManager : MonoBehaviour
                         int wx = coord.x * ChunkSize + x;
                         int wy = coord.y * ChunkSize + y;
                         int idx = y * ChunkSize + x;
-                        if ((uint)wx >= settings.width || (uint)wy >= settings.height) continue;
+                        if ((uint)wx >= W || (uint)wy >= H) continue;
 
                         ushort id = worldMap.deco[wx, wy].id;
                         buf[idx] = id != 0 ? TileCache.Get(id) : null;
@@ -558,7 +681,7 @@ public class WorldManager : MonoBehaviour
                         int wx = coord.x * ChunkSize + x;
                         int wy = coord.y * ChunkSize + y;
                         int idx = y * ChunkSize + x;
-                        if ((uint)wx >= settings.width || (uint)wy >= settings.height) continue;
+                        if ((uint)wx >= W || (uint)wy >= H) continue;
 
                         var liq = worldMap.liquid[wx, wy];
                         buf[idx] = (liq.amount > 0 && liq.id != 0)
@@ -600,8 +723,7 @@ public class WorldManager : MonoBehaviour
     /// </summary>
     public void RecalculateLightAt(int x0, int y0)
     {
-        int w = settings.width, h = settings.height;
-        if ((uint)x0 >= w || (uint)y0 >= h) return;
+        if ((uint)x0 >= W || (uint)y0 >= H) return;
 
         var q = new Queue<(int x, int y)>();
         q.Enqueue((x0, y0));
@@ -615,13 +737,13 @@ public class WorldManager : MonoBehaviour
 
             int attenHere = 0;
             if (worldMap.bg[x, y] != 0) attenHere += 1;
-            if (worldMap.fg[x, y].id != 0) attenHere += 2;
+            if (worldMap.solid[x, y].id != 0) attenHere += 2;
 
             byte best = 0;
             foreach (var (dx, dy) in dirs)
             {
                 int nx = x + dx, ny = y + dy;
-                if ((uint)nx >= w || (uint)ny >= h) continue;
+                if ((uint)nx >= W || (uint)ny >= H) continue;
 
                 int cand = worldMap.light[nx, ny].natural - attenHere;
                 if (cand > best) best = (byte)Mathf.Clamp(cand, 0, NAT_MAX);
@@ -634,7 +756,7 @@ public class WorldManager : MonoBehaviour
                 foreach (var (dx, dy) in dirs)
                 {
                     int mx = x + dx, my = y + dy;
-                    if ((uint)mx >= w || (uint)my >= h) continue;
+                    if ((uint)mx >= W || (uint)my >= H) continue;
                     q.Enqueue((mx, my));
                 }
 
@@ -659,48 +781,6 @@ public class WorldManager : MonoBehaviour
         if (markLiquid) c.liquidDirty = true;
     }
 
-    /// <summary>
-    /// FG 셀 파괴 직후 호출. 인접 중력 블록이 낙하 가능한지 검사 후 프리팹 스폰.
-    /// </summary>
-    public void OnCellDestroyedFG(int gx, int gy)
-    {
-        int w = settings.width, h = settings.height;
-        var fg = worldMap.fg;
-
-        int[] dx = { 1, -1, 0, 0 };
-        int[] dy = { 0, 0, 1, -1 };
-
-        for (int i = 0; i < 4; i++)
-        {
-            int nx = gx + dx[i], ny = gy + dy[i];
-            if ((uint)nx >= w || (uint)ny >= h) continue;
-
-            ushort id = fg[nx, ny].id;
-            if (id == 0) continue;
-            if (!CellLibrary.HasGravity(id)) continue;
-
-            int by = ny - 1;
-            if (by < 0) continue;
-            if (fg[nx, by].id != 0) continue;      // 아래 FG가 비어야 낙하
-
-            // 원본 셀 제거
-            worldMap.SetSolid(nx, ny, 0, false);
-            MarkChunkDirty(nx, ny, markFG: true);
-
-            // 프리팹 스폰: 월드 + 스프라이트 주입
-            if (fallingBlockPrefab != null)
-            {
-                Vector3 spawnPos = new Vector3(nx + 0.5f, ny + 0.5f, 0f);
-                var fb = Instantiate(fallingBlockPrefab, spawnPos, Quaternion.identity);
-                var spr = CellLibrary.GetSprite(id);
-                fb.Init(id, this, spr);
-            }
-
-            // 연쇄 판정: 방금 비워진 좌표도 파괴로 간주하고 검사
-            OnCellDestroyedFG(nx, ny);
-        }
-    }
-
     // ── 타일 캐시: id → Tile ──
     private static class TileCache
     {
@@ -719,10 +799,6 @@ public class WorldManager : MonoBehaviour
         }
 
         // amount(1..100) → 10단계 물 타일
-        //  - 상단은 투명(알파 유지)
-        //  - 하단만 채워짐
-        //  - 피벗 중앙(0.5, 0.5)
-        //  - 런타임 생성 캐시
         public static Tile GetWaterByAmount(ushort waterId, int amount)
         {
             if (amount <= 0) return null;
@@ -760,8 +836,7 @@ public class WorldManager : MonoBehaviour
 
             newTex.Apply(false, false);
 
-            var pivot = new Vector2(0.5f, 0.5f);
-            var spr = Sprite.Create(newTex, new Rect(0, 0, fullW, fullH), pivot, s.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            var spr = Sprite.Create(newTex, new Rect(0, 0, fullW, fullH), new Vector2(0.5f, 0.5f), s.pixelsPerUnit, 0, SpriteMeshType.FullRect);
             spr.name = $"Water_L{level}";
 
             var t = ScriptableObject.CreateInstance<Tile>();

@@ -4,8 +4,8 @@ public class FallingBlock : MonoBehaviour
 {
     [SerializeField] private WorldManager world;
     [SerializeField] private SpriteRenderer sr;
+    [SerializeField] private LayerMask triggerMask; // 처리할 레이어
     [SerializeField] private ushort cellId;
-    [SerializeField] private LayerMask triggerMask; // 처리할 레이어만 허용
 
     bool placed;
 
@@ -13,32 +13,23 @@ public class FallingBlock : MonoBehaviour
     {
         cellId = id;
         world  = wm;
+        if (!sr) sr = GetComponent<SpriteRenderer>();
         if (sr && sprite) sr.sprite = sprite;
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (placed || world == null) return;
+        if (placed) return;
+        if (((1 << other.gameObject.layer) & triggerMask.value) == 0) return;
 
-        // 레이어 필터: triggerMask에 포함된 레이어만 처리
-        int bit = 1 << other.gameObject.layer;
-        if ((bit & triggerMask.value) == 0) return;
-
+        // 접점 바로 위 셀(셀사이즈=1)
         Vector2 cp = Physics2D.ClosestPoint(transform.position, other);
-        Vector2 p  = cp - new Vector2(0f, 0.001f); // 셀크기=1
+        Vector2 p  = cp + new Vector2(0f, 0.001f);
         int gx = Mathf.FloorToInt(p.x);
         int gy = Mathf.FloorToInt(p.y);
 
-        int w = world.settings.width, h = world.settings.height;
-        if ((uint)gx >= w || (uint)gy >= h) return;
-
-        if (world.worldMap.fg[gx, gy].id == 0)
+        if (world.PlaceCell(gx, gy, cellId))
         {
-            if (world.worldMap.liquid[gx, gy].id != 0)
-                world.worldMap.liquid[gx, gy] = new LiquidCell { id = 0, amount = 0 };
-
-            world.worldMap.SetSolid(gx, gy, cellId, true);
-            world.MarkChunkDirty(gx, gy, markFG: true);
             placed = true;
             Destroy(gameObject);
         }

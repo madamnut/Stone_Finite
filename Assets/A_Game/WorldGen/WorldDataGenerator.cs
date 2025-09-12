@@ -141,25 +141,25 @@ public static class WorldDataGenerator
             switch (CellLibrary.TypeOf(id))
             {
                 case CellType.Solid:
-                    world.fg[x, y]     = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
+                    world.solid[x, y]  = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
                     world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
                     world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
                     break;
 
                 case CellType.Liquid:
-                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
                     world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
                     world.liquid[x, y] = new LiquidCell { id = id, amount = 100 };
                     break;
 
                 case CellType.Deco:
-                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
                     world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
                     world.deco[x, y]   = new DecoCell   { id = id, depend = CellLibrary.DependFlagsOf(id) };
                     break;
 
                 default:
-                    world.fg[x, y]     = new SolidCell  { id = 0, hasGravity = false };
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
                     world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
                     world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
                     break;
@@ -464,7 +464,7 @@ public static class WorldDataGenerator
 
                 int atten = 0;
                 if (world.bg[nx, ny] != ID_AIR) atten += 1;
-                if (world.fg[nx, ny].id != 0)   atten += 2;
+                if (world.solid[nx, ny].id != 0) atten += 2;
 
                 int next = curr - atten;
                 if (next <= 0) continue;

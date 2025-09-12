@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8017368871829216416}
   - component: {fileID: 8409350246694565499}
   - component: {fileID: 5976786061670030115}
-  m_Layer: 11
+  m_Layer: 20
   m_Name: Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -195,7 +195,7 @@ GameObject:
   - component: {fileID: 8966831073552961869}
   - component: {fileID: 1808911237036534731}
   - component: {fileID: 6441520674585249780}
-  m_Layer: 0
+  m_Layer: 22
   m_Name: Deco
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -318,8 +318,8 @@ GameObject:
   - component: {fileID: 355461346000817539}
   - component: {fileID: 7572535696552517733}
   - component: {fileID: 2573568721045182525}
-  m_Layer: 10
-  m_Name: FG
+  m_Layer: 21
+  m_Name: Solid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -546,7 +546,7 @@ GameObject:
   - component: {fileID: 8993286473953501866}
   - component: {fileID: 8818952934124294160}
   - component: {fileID: 651878453163858886}
-  m_Layer: 9
+  m_Layer: 24
   m_Name: BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -666,7 +666,7 @@ GameObject:
   - component: {fileID: 4565373210355320820}
   - component: {fileID: 5283096777306719884}
   - component: {fileID: 4749786954488422975}
-  m_Layer: 0
+  m_Layer: 23
   m_Name: Liquid
   m_TagString: Untagged
   m_Icon: {fileID: 0}

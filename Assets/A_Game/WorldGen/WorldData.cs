@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public struct WorldData
 {
-    public SolidCell[,]  fg;        // 전경(솔리드)
+    public SolidCell[,]  solid;     // 전경(솔리드)
     public ushort[,]     bg;        // 배경
     public DecoCell[,]   deco;      // 데코
     public LiquidCell[,] liquid;    // 액체
@@ -11,7 +11,7 @@ public struct WorldData
 
     public WorldData(int width, int height)
     {
-        fg      = new SolidCell [width, height];
+        solid   = new SolidCell [width, height];
         bg      = new ushort    [width, height];
         deco    = new DecoCell  [width, height];
         liquid  = new LiquidCell[width, height];
@@ -20,37 +20,36 @@ public struct WorldData
         for (int x = 0; x < width; x++)
         for (int y = 0; y < height; y++)
         {
-            fg[x,y]      = new SolidCell  { id = 0, hasGravity = false };
-            bg[x,y]      = 0;
-            deco[x,y]    = new DecoCell   { id = 0, depend = DepFlags.None };
-            liquid[x,y]  = new LiquidCell { id = 0, amount = 0 };
-            light[x,y]   = new LightCell  { natural = 0, artificial = 0 };
+            solid[x,y]  = new SolidCell  { id = 0, hasGravity = false };
+            bg[x,y]     = 0;
+            deco[x,y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+            liquid[x,y] = new LiquidCell { id = 0, amount = 0 };
+            light[x,y]  = new LightCell  { natural = 0, artificial = 0 };
         }
     }
 
-    /// <summary>좌표 전체를 공기로 초기화. 라이트는 유지.</summary>
-    public void ClearCell(int x, int y)
+    /// <summary>
+    /// 전경 파괴: 솔리드와 데코 제거. 제거된 블록 ID 반환(없으면 0).
+    /// </summary>
+    public ushort BreakFG(int x, int y)
     {
-        fg[x,y]     = new SolidCell  { id = 0, hasGravity = false };
-        bg[x,y]     = 0;
-        deco[x,y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-        liquid[x,y] = new LiquidCell { id = 0, amount = 0 };
-        // light[x,y] 유지
+        ushort decoId  = deco[x,y].id;
+        ushort solidId = solid[x,y].id;
+
+        deco[x,y]  = new DecoCell { id = 0, depend = DepFlags.None };
+        solid[x,y] = new SolidCell { id = 0, hasGravity = false };
+
+        return (decoId != 0) ? decoId : solidId;
     }
 
-    /// <summary>전경 파괴: 솔리드와 데코만 제거. 액체/배경/라이트는 유지.</summary>
-    public void BreakForeCell(int x, int y)
+    /// <summary>
+    /// 후경 파괴: BG 제거. 제거된 블록 ID 반환(없으면 0).
+    /// </summary>
+    public ushort BreakBG(int x, int y)
     {
-        // 전경: 솔리드 + 데코 제거
-        deco[x,y] = new DecoCell { id = 0, depend = DepFlags.None };
-        fg[x,y] = new SolidCell { id = 0, hasGravity = false };
-    }
-
-    /// <summary>후경 파괴: BG만 제거.</summary>
-    public void BreakBackCell(int x, int y)
-    {
-        // 후경: BG 제거
+        ushort bgId = bg[x,y];
         bg[x,y] = 0;
+        return bgId;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -61,7 +60,7 @@ public struct WorldData
     /// <summary>솔리드 배치. 액체/데코는 제거.</summary>
     public void SetSolid(int x, int y, ushort id, bool hasGravity = false)
     {
-        fg[x,y]     = new SolidCell  { id = id, hasGravity = hasGravity };
+        solid[x,y]  = new SolidCell  { id = id, hasGravity = hasGravity };
         liquid[x,y] = new LiquidCell { id = 0,  amount = 0 };
         deco[x,y]   = new DecoCell   { id = 0,  depend = DepFlags.None };
     }
@@ -69,16 +68,16 @@ public struct WorldData
     /// <summary>액체 배치. 솔리드 존재 시 무시. 데코는 제거.</summary>
     public void SetLiquid(int x, int y, ushort id, byte amount)
     {
-        if (fg[x,y].id != 0) return; // 솔리드가 있으면 배치 금지
+        if (solid[x,y].id != 0) return; // 솔리드가 있으면 배치 금지
         liquid[x,y] = new LiquidCell { id = id, amount = amount };
-        deco[x,y]   = new DecoCell   { id = 0,  depend = DepFlags.None };
+        deco[x,y]   = new DecoCell   { id = 0, depend = DepFlags.None };
     }
 
     /// <summary>데코 배치. 솔리드/액체 존재 시 무시.</summary>
     public void SetDeco(int x, int y, ushort id, DepFlags depend = DepFlags.None)
     {
-        if (fg[x,y].id != 0) return;        // 솔리드가 있으면 금지
-        if (liquid[x,y].amount > 0) return; // 액체가 있으면 금지
+        if (solid[x,y].id != 0) return;        // 솔리드가 있으면 금지
+        if (liquid[x,y].amount > 0) return;    // 액체가 있으면 금지
         deco[x,y] = new DecoCell { id = id, depend = depend };
     }
 }
