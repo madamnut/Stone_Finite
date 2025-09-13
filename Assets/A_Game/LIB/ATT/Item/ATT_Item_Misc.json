@@ -3,91 +3,126 @@
     "name": "Dirt Pile",
     "spriteName": "Dirt Pile",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
+    "unique": {}
+  },
+    "Sand Pile": {
+    "name": "Sand Pile",
+    "spriteName": "Sand Pile",
+    "itemType": "Misc",
+    "maxStack": 100,
     "unique": {}
   },
   "Flint Shard": {
     "name": "Flint Shard",
     "spriteName": "Flint Shard",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Grass Scrap": {
     "name": "Grass Scrap",
     "spriteName": "Grass Scrap",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Leaf": {
     "name": "Leaf",
     "spriteName": "Leaf",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Pebble": {
     "name": "Pebble",
     "spriteName": "Pebble",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Plant": {
     "name": "Plant",
     "spriteName": "Plant",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Seed": {
     "name": "Seed",
     "spriteName": "Seed",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Twig": {
     "name": "Twig",
     "spriteName": "Twig",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Thick Twig": {
     "name": "Thick Twig",
     "spriteName": "Thick Twig",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Plant Fiber": {
     "name": "Plant Fiber",
     "spriteName": "Plant Fiber",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Plant Twine": {
     "name": "Plant Twine",
     "spriteName": "Plant Twine",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Log": {
     "name": "Log",
     "spriteName": "Log",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
     "unique": {}
   },
   "Rock Chunk": {
     "name": "Rock Chunk",
     "spriteName": "Rock Chunk",
     "itemType": "Misc",
-    "maxStack": 16,
+    "maxStack": 100,
+    "unique": {}
+  },
+  "Coal Chunk": {
+    "name": "Coal Chunk",
+    "spriteName": "Coal Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+  "Copper Chunk": {
+    "name": "Copper Chunk",
+    "spriteName": "Copper Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+  "Iron Chunk": {
+    "name": "Iron Chunk",
+    "spriteName": "Iron Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+  "Tin Chunk": {
+    "name": "Tin Chunk",
+    "spriteName": "Tin Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
     "unique": {}
   }
 }

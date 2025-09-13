@@ -22,8 +22,8 @@ public class HandCraft : MonoBehaviour
 
     void Awake()
     {
-        if (input0) { input0.useLocalStorage = true; input0.denyUserPut = false; }
-        if (input1) { input1.useLocalStorage = true; input1.denyUserPut = false; }
+        if (input0) { input0.useLocalStorage = true; input0.denyUserPut = false; input0.Set(null);}
+        if (input1) { input1.useLocalStorage = true; input1.denyUserPut = false; input1.Set(null);}
         if (output) { output.useLocalStorage = true; output.denyUserPut = true; output.Set(null); }
 
         Snapshot();
