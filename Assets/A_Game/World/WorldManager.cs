@@ -13,7 +13,8 @@ using UnityEngine.Tilemaps;
 /// • Dirty 플래그 기반 레이어별 갱신 지원
 /// • Light 레이어 지원, FG(=Solid+Deco) 변경 시 국소 재계산
 /// • 글로벌 틱(물/중력): FixedUpdate에서 단일 큐(더블버퍼) 처리
-/// </summary>
+/// • 월드 시간: FixedUpdate(0.05s, 20틱/초) 기준, 24분=1일(1440분=1440초=28800틱)
+//// </summary>
 public class WorldManager : MonoBehaviour
 {
     public enum CellLayer { FG, BG }
@@ -42,6 +43,25 @@ public class WorldManager : MonoBehaviour
     public ItemDropper itemDropper;
     public VfxManager  vfx;
 
+    [Header("Time Settings")]
+    public int ticksPerSecond = 20;     // FixedUpdate=0.05s → 20틱/초
+    public int minutesPerDay  = 24 * 60;// 1440
+    public int ticksPerDay    = 28800;  // 20 * 1440
+
+    public enum TimeBand
+    {
+        Midnight,     // 자정
+        LateNight,    // 심야
+        Dawn,         // 새벽
+        EarlyMorning, // 이른아침
+        Morning,      // 오전
+        Noon,         // 정오
+        Afternoon,    // 오후
+        Evening,      // 저녁
+        Dusk,         // 해질녘
+        Night         // 밤
+    }
+
     public const int ChunkSize = 16;
     private const byte NAT_MAX = 20;
 
@@ -64,6 +84,15 @@ public class WorldManager : MonoBehaviour
 
     // 활성화된 청크
     private readonly Dictionary<Vector2Int, GameObject> activeChunks = new Dictionary<Vector2Int, GameObject>();
+
+    // ─────────────────────────────────────────────────────
+    // 월드 시간 상태
+    // ─────────────────────────────────────────────────────
+    private long worldTick;                 // 누적 틱 (오버플로 방지)
+    private int  worldMinute;               // 0..1439
+    private int  worldHour;                 // 0..23
+    private int  worldDay;                  // 0..N
+    private long _lastLoggedSecondTick = -1;// 마지막 로그 지점(틱)
 
     // ─────────────────────────────────────────────────────
     // 글로벌 틱(물/중력) : 단일 좌표 큐(더블버퍼)로 통합
@@ -94,7 +123,7 @@ public class WorldManager : MonoBehaviour
 
         foreach (var p in tickCurr)
         {
-            // 중력 → 물 순서로 처리 (동일 좌표에 둘 다 있을 수 있으므로)
+            // 중력 → 물 순서로 처리
             StepGravityAt(p.x, p.y);
             StepWaterAt(p.x, p.y);
         }
@@ -380,13 +409,43 @@ public class WorldManager : MonoBehaviour
         if (player == null) Debug.LogError("WorldManager: Player Transform이 없습니다.");
 
         lastPlayerChunk = GetPlayerChunk();
+
+        // 시간 초기화
+        worldTick = 0L;
+        worldMinute = 0;
+        worldHour = 0;
+        worldDay = 0;
+        _lastLoggedSecondTick = -ticksPerSecond;
     }
 
     void Update() => UpdateVisibleChunks();
     void LateUpdate() => ProcessDirtyChunks();
 
-    // 글로벌 틱: FixedUpdate에서 소모
-    void FixedUpdate() => StepTick();
+    // 글로벌 틱 + 월드 시간
+    void FixedUpdate()
+    {
+        StepTick();
+
+        // 시간 진행
+        worldTick++;
+
+        // 매 현실 1초마다(=ticksPerSecond 틱) 분 증가 및 로그
+        if (worldTick - _lastLoggedSecondTick >= ticksPerSecond)
+        {
+            _lastLoggedSecondTick += ticksPerSecond;
+
+            worldMinute++;                      // 현실 1초 = 게임 1분
+            if (worldMinute >= minutesPerDay)
+            {
+                worldMinute = 0;
+                worldDay++;
+            }
+            worldHour = worldMinute / 60;
+
+            var band = GetTimeBand();
+            Debug.Log($"[TIME] Day {worldDay}, {worldHour:00}:{worldMinute % 60:00}  Band={band}");
+        }
+    }
 
     private void UpdateVisibleChunks()
     {
@@ -779,6 +838,27 @@ public class WorldManager : MonoBehaviour
         if (markBG)     c.bgDirty = true;
         if (markDeco)   c.decoDirty = true;
         if (markLiquid) c.liquidDirty = true;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 타임밴드 판정(영문 반환, 한글은 주석)
+    // ─────────────────────────────────────────────────────
+    public TimeBand GetTimeBand()
+    {
+        int h = worldHour;
+        int m = worldMinute % 60;
+        int t = h * 100 + m; // HHMM
+
+        if (t == 0)   return TimeBand.Midnight;     // 자정
+        if (t < 400)  return TimeBand.LateNight;    // 심야 00:00–03:59
+        if (t < 600)  return TimeBand.Dawn;         // 새벽 04:00–05:59
+        if (t < 900)  return TimeBand.EarlyMorning; // 이른아침 06:00–08:59
+        if (t < 1200) return TimeBand.Morning;      // 오전 09:00–11:59
+        if (t == 1200)return TimeBand.Noon;         // 정오 12:00
+        if (t < 1700) return TimeBand.Afternoon;    // 오후 12:01–16:59
+        if (t < 1900) return TimeBand.Evening;      // 저녁 17:00–18:59
+        if (t < 2100) return TimeBand.Dusk;         // 해질녘 19:00–20:59
+        return TimeBand.Night;                      // 밤 21:00–23:59
     }
 
     // ── 타일 캐시: id → Tile ──
