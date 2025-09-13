@@ -40,6 +40,14 @@ public class InteractionController : MonoBehaviour
     [Range(1.0f,1.2f)] public float maxScale = 1.08f;
     public float period = 1f;
 
+    [Header("Libraries")]
+    public RecipeLibrary recipeLibrary;
+    public ItemLibrary   itemLibrary;
+
+    [Header("UI Prefabs")]
+    public GameObject handcraftModule;   // HandCraftModule 프리팹
+    GameObject _moduleInstance;
+
     /*────────────── 내부 ──────────────*/
     GameState _state = GameState.Ingame;
     BreakMode _breakMode = BreakMode.FG;
@@ -82,6 +90,20 @@ public class InteractionController : MonoBehaviour
             {
                 _state = GameState.Inpanel;
                 if (inventoryPanel != null) inventoryPanel.SetActive(true);
+
+                // 모듈 생성 및 라이브러리 주입
+                if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
+                {
+                    _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
+                    _moduleInstance.transform.SetSiblingIndex(0);
+                    var crafts = _moduleInstance.GetComponentsInChildren<HandCraft>(true);
+                    for (int i = 0; i < crafts.Length; i++)
+                    {
+                        crafts[i].recipeLibrary = recipeLibrary;
+                        crafts[i].itemLibrary = itemLibrary;
+                        crafts[i].player        = player;
+                    }
+                }
             }
             else if (_state == GameState.Inpanel)
             {
@@ -91,6 +113,10 @@ public class InteractionController : MonoBehaviour
                     if (left == 0) cursorSlot.Set(null);
                     else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
                 }
+
+                // 모듈 파괴
+                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+
                 _state = GameState.Ingame;
                 if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
@@ -106,6 +132,10 @@ public class InteractionController : MonoBehaviour
                     if (left == 0) cursorSlot.Set(null);
                     else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
                 }
+
+                // 모듈 파괴
+                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+
                 _state = GameState.Ingame;
                 if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
