@@ -48,6 +48,9 @@ public class InteractionController : MonoBehaviour
     public GameObject handcraftModule;   // HandCraftModule 프리팹
     GameObject _moduleInstance;
 
+    [Header("Audio")]
+    public AudioManager sound; // Dig 재생용
+
     /*────────────── 내부 ──────────────*/
     GameState _state = GameState.Ingame;
     BreakMode _breakMode = BreakMode.FG;
@@ -206,7 +209,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  파괴 요청만 전달 (아이템드랍/더티/라이트/물/낙하는 WorldManager가 처리)
+     *  파괴 + 성공 시 sound 재생
      *────────────────────────────────────────────────────*/
     void BreakAtCursor()
     {
@@ -217,7 +220,25 @@ public class InteractionController : MonoBehaviour
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
-        worldManager.BreakCell(cx, cy, layer);  // 리턴값은 WM 내부에서 활용
+        // 파괴 가능 여부 로컬 판정
+        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
+
+        bool canBreak =
+            (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
+            : /* BG */                             (hasBg && !(hasSolid || hasDeco));
+
+        if (!canBreak)
+        {
+            worldManager.BreakCell(cx, cy, layer); // 로직 유지(내부 처리를 원할 수 있음)
+            return;
+        }
+
+        worldManager.BreakCell(cx, cy, layer);
+
+        if (sound != null)
+            sound.PlayDig();
     }
 
     /*──────────────────────────────────────────────────────
