@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using TMPro;
 
 public class Cursor : MonoBehaviour
@@ -12,8 +13,11 @@ public class Cursor : MonoBehaviour
     public ItemSlot cursorSlot;
 
     [Header("Tooltip")]
-    public TMP_Text tooltipText;      // 커서 자식 TMP_Text
-    public GameObject tooltipObject;  // 보이기/숨기기용(옵션)
+    public RectTransform tooltipRoot;  // ← 추가: 툴팁 패널
+    public TMP_Text tooltipText;       // 내용 텍스트
+    public GameObject tooltipObject;   // 보이기/숨기기
+    public Vector2 tooltipOffset = new(16, -16);
+    public Vector2 tooltipPadding = new(8, 8);
 
     private RectTransform rt;
     private readonly List<RaycastResult> _hits = new List<RaycastResult>(8);
@@ -44,7 +48,7 @@ public class Cursor : MonoBehaviour
                 rt.anchoredPosition = local;
         }
 
-        // ── 현재 호버 중인 ItemSlot 탐지 ──
+        // ── 호버 슬롯 탐지 ──
         ItemSlot hover = null;
         if (EventSystem.current != null)
         {
@@ -61,33 +65,57 @@ public class Cursor : MonoBehaviour
             }
         }
 
-        // ── 툴팁: 호버 슬롯의 아이템 "전부" 표시 ──
+        // ── 툴팁 갱신 ──
         if (hover != null && hover.Item != null && tooltipText != null)
         {
             var it = hover.Item;
             var sb = new StringBuilder(256);
-
-            // 기본 메타
             sb.AppendLine(it.Name);
             sb.Append("ID: ").AppendLine(it.ItemId);
             sb.Append("Type: ").AppendLine(it.ItemType);
             sb.Append("Sprite: ").AppendLine(it.SpriteName);
             sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-
-            // 고유 속성
             sb.AppendLine("Props:");
             if (it.UniqueProps != null && it.UniqueProps.Count > 0)
             {
                 foreach (var kv in it.UniqueProps)
                     sb.Append(" - ").Append(kv.Key).Append(": ").AppendLine(kv.Value == null ? "null" : kv.Value.ToString());
             }
-            else
-            {
-                sb.AppendLine(" - (none)");
-            }
+            else sb.AppendLine(" - (none)");
 
             tooltipText.text = sb.ToString();
             if (tooltipObject != null && !tooltipObject.activeSelf) tooltipObject.SetActive(true);
+
+            // ── 패널 자체를 화면 경계로 클램프 ──
+            if (canvas.renderMode != RenderMode.WorldSpace)
+            {
+                var canvasRT  = (RectTransform)canvas.transform;
+                var tooltipRT = tooltipRoot != null ? tooltipRoot : tooltipText.rectTransform;
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
+
+                Vector2 ap = tooltipOffset;  // 커서 기준 오프셋
+                var r  = tooltipRT.rect;
+                var cr = canvasRT.rect;
+                var pv = tooltipRT.pivot;
+
+                float left   = rt.anchoredPosition.x + ap.x - r.width  * pv.x;
+                float right  = rt.anchoredPosition.x + ap.x + r.width  * (1f - pv.x);
+                float bottom = rt.anchoredPosition.y + ap.y - r.height * pv.y;
+                float top    = rt.anchoredPosition.y + ap.y + r.height * (1f - pv.y);
+
+                float minX = cr.xMin + tooltipPadding.x;
+                float maxX = cr.xMax - tooltipPadding.x;
+                float minY = cr.yMin + tooltipPadding.y;
+                float maxY = cr.yMax - tooltipPadding.y;
+
+                if (left   < minX) ap.x += (minX - left);
+                if (right  > maxX) ap.x -= (right - maxX);
+                if (top    > maxY) ap.y -= (top - maxY);
+                if (bottom < minY) ap.y += (minY - bottom);
+
+                tooltipRT.anchoredPosition = ap; // 커서(부모) 기준 배치
+            }
         }
         else
         {
@@ -126,7 +154,6 @@ public class Cursor : MonoBehaviour
 
         if (useLocal)
         {
-            // 출력 슬롯(투입 금지)은 클릭 시 제작 시도
             if (slotView.denyUserPut)
             {
                 var hc = slotView.GetComponentInParent<HandCraft>();
@@ -163,7 +190,6 @@ public class Cursor : MonoBehaviour
                     else cursorSlot.Refresh();
                     return;
                 }
-                // swap
                 slotView.Set(cur);
                 cursorSlot.Set(slot);
                 return;
@@ -211,7 +237,7 @@ public class Cursor : MonoBehaviour
             return;
         }
 
-        // ===== 인벤토리 바운드 경로(기존 로직 유지) =====
+        // ===== 인벤토리 바운드 경로 =====
         var inv   = slotView.inventory;
         var items = inv.items;
         int idx   = slotView.index;

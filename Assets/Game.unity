@@ -1132,8 +1132,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvas: {fileID: 1019568694}
   cursorSlot: {fileID: 1563785317}
+  tooltipRoot: {fileID: 1468254342}
   tooltipText: {fileID: 1561819277}
   tooltipObject: {fileID: 1468254341}
+  tooltipOffset: {x: 16, y: -16}
+  tooltipPadding: {x: 8, y: 8}
 --- !u!1 &236639233
 GameObject:
   m_ObjectHideFlags: 0
