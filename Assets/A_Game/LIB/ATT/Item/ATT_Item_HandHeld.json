@@ -27,34 +27,6 @@
       "attackPower": 2
     }
   },
-  "Wooden Club": {
-    "name": "Wooden Club",
-    "spriteName": "Wooden Club",
-    "itemType": "HandHeld",
-    "maxStack": 1,
-    "unique": {
-      "tier": 2,
-      "toolActions": [],
-      "weaponActions": ["Smash"],
-      "maxDurability": 20,
-      "durability": 20,
-      "attackPower": 3
-    }
-  },
-  "Wooden Stick Tool": {
-    "name": "Wooden Stick Tool",
-    "spriteName": "Wooden Stick Tool",
-    "itemType": "HandHeld",
-    "maxStack": 1,
-    "unique": {
-      "tier": 2,
-      "toolActions": ["Dig"],
-      "weaponActions": [],
-      "maxDurability": 10,
-      "durability": 10,
-      "attackPower": 1
-    }
-  },
   "Stone Shard": {
     "name": "Stone Shard",
     "spriteName": "Stone Shard",

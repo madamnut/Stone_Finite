@@ -30,6 +30,82 @@
   {
     "isOrdered": false,
     "inputs": [
+      { "itemId": "Plant Twine", "count": 1 },
+      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Plant Short Twine",
+    "outputActions": [],
+    "outputCount": 2
+  },
+
+
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Twig", "count": 1 },
+      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Wooden Stick",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Thick Twig", "count": 1 },
+      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Wooden Thick Stick",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Wooden Thick Stick", "count": 1 },
+      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Wooden Stick",
+    "outputActions": [],
+    "outputCount": 2
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Log", "count": 1 },
+      { "attr": { "toolActions": ["Chop"] }, "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Wooden Plank",
+    "outputActions": [],
+    "outputCount": 4
+  },
+
+
+
+  {
+    "isOrdered": false,
+    "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
       { "attr": { "toolActions": ["Knap"] }, "count": 1 }
     ],
@@ -54,76 +130,6 @@
     "output": "Stone Tool",
     "outputActions": [],
     "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Twig", "count": 1 },
-      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Wooden Stick Tool",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Plant Twine", "count": 1 },
-      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Plant Long Binding",
-    "outputActions": [],
-    "outputCount": 2
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Plant Long Binding", "count": 1 },
-      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Plant Short Binding",
-    "outputActions": [],
-    "outputCount": 2
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Thick Twig", "count": 1 },
-      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Wooden Long Handle",
-    "outputActions": [],
-    "outputCount": 2
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Wooden Long Handle", "count": 1 },
-      { "attr": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Wooden Short Handle",
-    "outputActions": [],
-    "outputCount": 2
   },
   {
     "isOrdered": false,
@@ -178,6 +184,21 @@
       { "type": "durability", "amount": -1 }
     ],
     "output": "Flint Spear Head",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Wooden Crude Plank", "count": 1 },
+      { "itemId": "Wooden Crude Plank", "count": 1 }
+    ],
+    "actions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Primal Workbench",
     "outputActions": [],
     "outputCount": 1
   }

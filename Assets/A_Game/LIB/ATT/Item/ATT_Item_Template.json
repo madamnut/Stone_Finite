@@ -1,27 +1,18 @@
 {
-  "HandHeldTemplate": {
+  "Head_Binding_Handle": {
     "name": null,
     "spriteName": null,
     "itemType": "HandHeld",
     "maxStack": 1,
     "unique": {
       "head": null,
-      "headDurability": 0,
-      "headMaxDurability": 0,
-      "headType": null,
-      "headTier": 0,
-
       "handle": null,
-      "handleDurability": 0,
-      "handleMaxDurability": 0,
-      "handleType": null,
-      "handleTier": 0,
-
       "binding": null,
-      "bindingDurability": 0,
-      "bindingMaxDurability": 0,
-      "bindingType": null,
-      "bindingTier": 0,
+
+      "Tier": 0,
+
+      "Durability": 0,
+      "MaxDurability": 0,
       
       "toolActions": [],
       "weaponActions": []

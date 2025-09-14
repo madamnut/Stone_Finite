@@ -2,120 +2,56 @@
   "Flint Knife Head": {
     "name": "Flint Knife Head",
     "spriteName": "Flint Knife Head",
-    "itemType": "Parts",
+    "itemType": "Misc",
     "maxStack": 1,
     "unique": {
       "partType": "Light Head",
       "tier": 3,
       "toolActions": ["Cut"],
       "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
+      "toolDurability": 32,
       "attackPower": 0
     }
   },
   "Flint Spear Head": {
     "name": "Flint Spear Head",
     "spriteName": "Flint Spear Head",
-    "itemType": "Parts",
+    "itemType": "Misc",
     "maxStack": 1,
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
       "toolActions": [],
       "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
+      "toolDurability": 32,
       "attackPower": 0
     }
   },
   "Stone Axe Head": {
     "name": "Stone Axe Head",
     "spriteName": "Stone Axe Head",
-    "itemType": "Parts",
+    "itemType": "Misc",
     "maxStack": 1,
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
       "toolActions": ["Chop"],
       "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
+      "toolDurability": 32,
       "attackPower": 0
     }
   },
   "Stone Hammer Head": {
     "name": "Stone Hammer Head",
     "spriteName": "Stone Hammer Head",
-    "itemType": "Parts",
+    "itemType": "Misc",
     "maxStack": 1,
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
       "toolActions": ["Crush"],
       "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
-      "attackPower": 0
-    }
-  },
-  "Wooden Long Handle": {
-    "name": "Wooden Long Handle",
-    "spriteName": "Wooden Long Handle",
-    "itemType": "Parts",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Long Handle",
-      "tier": 1,
-      "toolActions": [],
-      "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
-      "attackPower": 0
-    }
-  },
-  "Wooden Short Handle": {
-    "name": "Wooden Short Handle",
-    "spriteName": "Wooden Short Handle",
-    "itemType": "Parts",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Short Handle",
-      "tier": 1,
-      "toolActions": [],
-      "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
-      "attackPower": 0
-    }
-  },
-  "Plant Long Binding": {
-    "name": "Plant Long Binding",
-    "spriteName": "Plant Long Binding",
-    "itemType": "Parts",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Long Binding",
-      "tier": 1,
-      "toolActions": [],
-      "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
-      "attackPower": 0
-    }
-  },
-  "Plant Short Binding": {
-    "name": "Plant Short Binding",
-    "spriteName": "Plant Short Binding",
-    "itemType": "Parts",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Short Binding",
-      "tier": 1,
-      "toolActions": [],
-      "weaponActions": [],
-      "maxDurability": 32,
-      "durability": 32,
+      "toolDurability": 32,
       "attackPower": 0
     }
   }
