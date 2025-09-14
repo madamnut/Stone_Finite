@@ -88,10 +88,10 @@ public class WorldManager : MonoBehaviour
     // ─────────────────────────────────────────────────────
     // 월드 시간 상태
     // ─────────────────────────────────────────────────────
-    private long worldTick;                 // 누적 틱 (오버플로 방지)
-    private int  worldMinute;               // 0..1439
-    private int  worldHour;                 // 0..23
-    private int  worldDay;                  // 0..N
+    public long worldTick;                 // 누적 틱 (오버플로 방지)
+    public int  worldMinute;               // 0..1439
+    public int  worldHour;                 // 0..23
+    public int  worldDay;                  // 0..N
     private long _lastLoggedSecondTick = -1;// 마지막 로그 지점(틱)
 
     // ─────────────────────────────────────────────────────
