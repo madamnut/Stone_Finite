@@ -107,6 +107,13 @@
     "maxStack": 100,
     "unique": {}
   },
+  "Wooden Crude Plank": {
+    "name": "Wooden Crude Plank",
+    "spriteName": "Wooden Crude Plank",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
 
 
 

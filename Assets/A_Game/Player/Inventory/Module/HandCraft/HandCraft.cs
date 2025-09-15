@@ -14,12 +14,13 @@ public class HandCraft : MonoBehaviour
     public Player        player;        // ← 인풋 반환 대상 인벤 소유자
 
     // 상태
-    JObject _matched;                 // 매칭된 레시피
-    JArray  _actions;                 // 입력별 액션
-    string  _outId;                   // 결과 ID
-    int     _outCount;                // 결과 수량
+    JObject _matched;     // 매칭된 레시피
+    JArray  _actions;     // 입력별 액션(슬롯 순서에 정렬된 상태)
+    JArray  _outActions;  // 출력 액션(보관만)
+    string  _outId;       // 결과 ID
+    int     _outCount;    // 결과 수량
 
-    ItemData _prev0, _prev1; int _c0, _c1;
+    ItemData _prev0, _prev1; int _c0, _c1, _d0, _d1;
 
     void Awake()
     {
@@ -65,20 +66,38 @@ public class HandCraft : MonoBehaviour
     {
         var a = input0 ? input0.Item : null;
         var b = input1 ? input1.Item : null;
-        int ca = (a != null) ? a.Count : 0;
-        int cb = (b != null) ? b.Count : 0;
-        return a != _prev0 || b != _prev1 || ca != _c0 || cb != _c1;
+
+        int ca = a?.Count ?? 0;
+        int cb = b?.Count ?? 0;
+
+        int da = 0;
+        if (a != null && a.Unique.TryGetValue("durability", out var dv0))
+            int.TryParse(dv0.ToString(), out da);
+
+        int db = 0;
+        if (b != null && b.Unique.TryGetValue("durability", out var dv1))
+            int.TryParse(dv1.ToString(), out db);
+
+        return a != _prev0 || b != _prev1 || ca != _c0 || cb != _c1 || da != _d0 || db != _d1;
     }
 
     void Snapshot()
     {
-        _prev0 = input0 ? input0.Item : null; _c0 = (_prev0 != null) ? _prev0.Count : 0;
-        _prev1 = input1 ? input1.Item : null; _c1 = (_prev1 != null) ? _prev1.Count : 0;
+        _prev0 = input0 ? input0.Item : null; _c0 = _prev0?.Count ?? 0;
+        _prev1 = input1 ? input1.Item : null; _c1 = _prev1?.Count ?? 0;
+
+        _d0 = 0;
+        if (_prev0 != null && _prev0.Unique.TryGetValue("durability", out var dv0))
+            int.TryParse(dv0.ToString(), out _d0);
+
+        _d1 = 0;
+        if (_prev1 != null && _prev1.Unique.TryGetValue("durability", out var dv1))
+            int.TryParse(dv1.ToString(), out _d1);
     }
 
     void ScanAndPreview()
     {
-        _matched = null; _actions = null; _outId = null; _outCount = 0;
+        _matched = null; _actions = null; _outActions = null; _outId = null; _outCount = 0;
         if (!output) return;
 
         var a = input0 ? input0.Item : null;
@@ -86,9 +105,8 @@ public class HandCraft : MonoBehaviour
         if (a == null || b == null) { output.Set(null); return; }
 
         if (recipeLibrary != null &&
-            recipeLibrary.TryMatch2(a, b, out _outId, out _outCount, out _actions, out _matched))
+            recipeLibrary.TryMatch2(a, b, out _outId, out _outCount, out _actions, out _outActions, out _matched))
         {
-            // 미리보기 생성: 프로젝트의 ItemLibrary 팩토리 메서드로 교체 필요
             var preview = (itemLibrary != null) ? itemLibrary.Create(_outId, _outCount) : null;
             output.Set(preview);
             return;
@@ -110,7 +128,7 @@ public class HandCraft : MonoBehaviour
 
         // 입력 재검증
         if (!(recipeLibrary != null &&
-              recipeLibrary.TryMatch2(input0.Item, input1.Item, out _outId, out _outCount, out _actions, out _matched)))
+              recipeLibrary.TryMatch2(input0.Item, input1.Item, out _outId, out _outCount, out _actions, out _outActions, out _matched)))
         {
             ScanAndPreview();
             return;
@@ -156,11 +174,11 @@ public class HandCraft : MonoBehaviour
 
         if (type == "durability")
         {
-            if (slot.Item.UniqueProps.TryGetValue("durability", out var d))
+            if (slot.Item.Unique.TryGetValue("durability", out var d))
             {
                 int cur = 0; int.TryParse(d.ToString(), out cur);
                 cur += amount; // 음수면 감소
-                slot.Item.UniqueProps["durability"] = cur;
+                slot.Item.Unique["durability"] = cur;
                 if (cur <= 0) slot.Set(null); else slot.Refresh();
             }
         }

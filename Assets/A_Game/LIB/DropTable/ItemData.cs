@@ -13,7 +13,7 @@ public class ItemData
     public Sprite Icon       { get; }
 
     /* 수정 가능 고유 속성 */
-    public Dictionary<string, object> UniqueProps { get; private set; }
+    public Dictionary<string, object> Unique { get; private set; }
 
     /* 생성자 */
     public ItemData(
@@ -22,7 +22,7 @@ public class ItemData
         string spriteName,
         string itemType,
         int    maxStack,
-        Dictionary<string, object> uniqueProps,
+        Dictionary<string, object> unique,
         Sprite icon,
         int    count = 1)
     {
@@ -35,15 +35,15 @@ public class ItemData
         Count      = count;
 
         // 방어 복사로 내부 소유
-        UniqueProps = uniqueProps != null
-            ? new Dictionary<string, object>(uniqueProps)
+        Unique = unique != null
+            ? new Dictionary<string, object>(unique)
             : new Dictionary<string, object>();
     }
 
     // 고유 속성 조회
     public T GetUnique<T>(string key)
     {
-        if (UniqueProps.TryGetValue(key, out var v) && v is T t) return t;
+        if (Unique.TryGetValue(key, out var v) && v is T t) return t;
         return default;
     }
 }

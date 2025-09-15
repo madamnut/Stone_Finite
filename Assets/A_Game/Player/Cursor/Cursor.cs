@@ -75,10 +75,10 @@ public class Cursor : MonoBehaviour
             sb.Append("Type: ").AppendLine(it.ItemType);
             sb.Append("Sprite: ").AppendLine(it.SpriteName);
             sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-            sb.AppendLine("Props:");
-            if (it.UniqueProps != null && it.UniqueProps.Count > 0)
+            sb.AppendLine("Unique:");
+            if (it.Unique != null && it.Unique.Count > 0)
             {
-                foreach (var kv in it.UniqueProps)
+                foreach (var kv in it.Unique)
                     sb.Append(" - ").Append(kv.Key).Append(": ").AppendLine(kv.Value == null ? "null" : kv.Value.ToString());
             }
             else sb.AppendLine(" - (none)");
@@ -202,7 +202,7 @@ public class Cursor : MonoBehaviour
                     int take = (slot.Count + 1) / 2;
                     var copy = new ItemData(
                         slot.ItemId, slot.Name, slot.SpriteName, slot.ItemType,
-                        slot.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slot.UniqueProps),
+                        slot.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slot.Unique),
                         slot.Icon, take);
                     cursorSlot.Set(copy);
 
@@ -216,7 +216,7 @@ public class Cursor : MonoBehaviour
                 {
                     slotView.Set(new ItemData(
                         cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                        cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.UniqueProps),
+                        cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.Unique),
                         cur.Icon, 1));
                     cur.Count -= 1;
                     if (cur.Count <= 0) cursorSlot.Set(null);
@@ -283,7 +283,7 @@ public class Cursor : MonoBehaviour
                 int take = (slotInv.Count + 1) / 2;
                 var copy = new ItemData(
                     slotInv.ItemId, slotInv.Name, slotInv.SpriteName, slotInv.ItemType,
-                    slotInv.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slotInv.UniqueProps),
+                    slotInv.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slotInv.Unique),
                     slotInv.Icon, take);
                 cursorSlot.Set(copy);
 
@@ -297,7 +297,7 @@ public class Cursor : MonoBehaviour
             {
                 items[idx] = new ItemData(
                     cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                    cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.UniqueProps),
+                    cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.Unique),
                     cur.Icon, 1);
                 cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);

@@ -52,7 +52,7 @@ public class InventoryData
             int take = left > incoming.MaxStack ? incoming.MaxStack : left;
             items[i] = new ItemData(
                 incoming.ItemId,  incoming.Name,       incoming.SpriteName,
-                incoming.ItemType, incoming.MaxStack,  new Dictionary<string, object>(incoming.UniqueProps),
+                incoming.ItemType, incoming.MaxStack,  new Dictionary<string, object>(incoming.Unique),
                 incoming.Icon,     take);
 
             left -= take;

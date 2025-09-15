@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
@@ -13,7 +14,6 @@ public class RecipeLibrary : MonoBehaviour
     public TextAsset recipes25Slots;
     public TextAsset recipes36Slots;
 
-    // 슬롯 수 → 레시피 배열(JObject)
     private readonly Dictionary<int, JArray> _bySlots = new();
 
     public JArray GetRecipes(int slotCount)
@@ -47,13 +47,13 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// 2슬롯 입력(a,b)으로 레시피 매칭. 성공 시 출력 정보와 actions, 매칭 레시피 반환.
+    /// 2슬롯 매칭. actions는 입력 슬롯 순서(input0,input1)에 정렬돼 반환.
     /// </summary>
     public bool TryMatch2(ItemData a, ItemData b,
                           out string outputId, out int outputCount,
-                          out JArray actions, out JObject matched)
+                          out JArray actions, out JArray outputActions, out JObject matched)
     {
-        outputId = null; outputCount = 0; actions = null; matched = null;
+        outputId = null; outputCount = 0; actions = null; outputActions = null; matched = null;
         if (a == null || b == null) return false;
 
         var arr = GetRecipes(2);
@@ -67,23 +67,34 @@ public class RecipeLibrary : MonoBehaviour
 
             bool ordered = r.Value<bool?>("isOrdered") ?? false;
 
-            bool ok = ordered
-                ? (MatchInput(a, (JObject)inputs[0]) && MatchInput(b, (JObject)inputs[1]))
-                : ((MatchInput(a, (JObject)inputs[0]) && MatchInput(b, (JObject)inputs[1])) ||
-                   (MatchInput(a, (JObject)inputs[1]) && MatchInput(b, (JObject)inputs[0])));
-
-            if (!ok) continue;
+            bool ab = MatchInput(a, (JObject)inputs[0]) && MatchInput(b, (JObject)inputs[1]);
+            bool ba = !ordered && MatchInput(a, (JObject)inputs[1]) && MatchInput(b, (JObject)inputs[0]);
+            if (!ab && !ba) continue;
 
             matched     = r;
             outputId    = r.Value<string>("output");
             outputCount = r.Value<int?>("outputCount") ?? 1;
-            actions     = r["actions"] as JArray; // 입력별 액션(consume, durability 등)
+
+            var acts = r["actions"] as JArray;
+            if (acts != null && acts.Count == 2 && ba)
+            {
+                var re = new JArray();
+                re.Add(acts[1]); // input0 ← inputs[1]
+                re.Add(acts[0]); // input1 ← inputs[0]
+                actions = re;
+            }
+            else
+            {
+                actions = acts;
+            }
+
+            outputActions = r["outputActions"] as JArray;
             return true;
         }
         return false;
     }
 
-    // 최소 매칭 로직: itemId 우선, 없으면 attr 키/값 일치(배열이면 포함)
+    // itemId 또는 unique 조건 단일 판정
     bool MatchInput(ItemData item, JObject req)
     {
         if (item == null || req == null) return false;
@@ -94,26 +105,54 @@ public class RecipeLibrary : MonoBehaviour
         if (!string.IsNullOrEmpty(itemId))
             return item.ItemId == itemId && item.Count >= need;
 
-        var attr = req["attr"] as JObject;
-        if (attr != null)
+        var unique = req["unique"] as JObject;
+        if (unique != null)
         {
-            foreach (var p in attr)
+            foreach (var p in unique)
             {
-                if (!item.UniqueProps.TryGetValue(p.Key, out var have)) return false;
+                if (!item.Unique.TryGetValue(p.Key, out var have)) return false;
 
                 var want = p.Value;
                 if (want is JArray wantArr)
                 {
                     bool ok = false;
-                    foreach (var w in wantArr)
-                        if (have != null && have.ToString() == w.ToString()) { ok = true; break; }
+                    if (have is IEnumerable en && !(have is string))
+                    {
+                        foreach (var hv in en)
+                        {
+                            foreach (var w in wantArr)
+                            {
+                                if (hv != null && hv.ToString() == w.ToString()) { ok = true; break; }
+                            }
+                            if (ok) break;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var w in wantArr)
+                        {
+                            if (have != null && have.ToString() == w.ToString()) { ok = true; break; }
+                        }
+                    }
                     if (!ok) return false;
                 }
                 else
                 {
-                    if ((have == null && want.Type != JTokenType.Null) ||
-                        (have != null && have.ToString() != want.ToString()))
-                        return false;
+                    if (have is IEnumerable en && !(have is string))
+                    {
+                        bool ok = false;
+                        foreach (var hv in en)
+                        {
+                            if (hv != null && hv.ToString() == want.ToString()) { ok = true; break; }
+                        }
+                        if (!ok) return false;
+                    }
+                    else
+                    {
+                        if ((have == null && want.Type != JTokenType.Null) ||
+                            (have != null && have.ToString() != want.ToString()))
+                            return false;
+                    }
                 }
             }
             return item.Count >= need;

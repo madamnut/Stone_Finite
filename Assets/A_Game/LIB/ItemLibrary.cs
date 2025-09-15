@@ -80,11 +80,11 @@ public class ItemLibrary : MonoBehaviour
         string itemType   = def.Value<string>("itemType")   ?? "Generic";
         int    maxStack   = def.Value<int?>("maxStack")     ?? 1;
 
-        // attr → Dictionary<string, object>
+        // unique → Dictionary<string, object>
         var props = new Dictionary<string, object>();
-        if (def["attr"] is JObject attr)
+        if (def["unique"] is JObject unique)
         {
-            foreach (var kv in attr)
+            foreach (var kv in unique)
                 props[kv.Key] = kv.Value.ToObject<object>();
         }
 
@@ -96,7 +96,7 @@ public class ItemLibrary : MonoBehaviour
             spriteName: spriteName,
             itemType:   itemType,
             maxStack:   maxStack,
-            uniqueProps: props,
+            unique:     props,
             icon:       icon,
             count:      count
         );
