@@ -22,6 +22,7 @@ public class CellLibrary : MonoBehaviour
         public CellType type;
         public bool     gravity;
         public DepFlags depend;
+        public string   interaction; // ← 추가
     }
 
     private static readonly Dictionary<ushort, CellDef> byId = new();
@@ -70,6 +71,9 @@ public class CellLibrary : MonoBehaviour
                 }
             }
 
+            // ATT_Cell의 검색용 속성
+            string interaction = obj["interaction"]?.Value<string>(); // ← 추가
+
             var sp = atlas.GetSprite(key);
             if (sp == null)
                 Debug.LogWarning($"CellLibrary: 스프라이트 '{key}'(ID {id}) 없음", this);
@@ -81,7 +85,8 @@ public class CellLibrary : MonoBehaviour
             }
 
             byId.Add(id, new CellDef {
-                name = key, sprite = sp, id = id, type = type, gravity = gravity, depend = depend
+                name = key, sprite = sp, id = id, type = type, gravity = gravity, depend = depend,
+                interaction = interaction // ← 추가
             });
             idToKey[id] = key;
         }
@@ -93,4 +98,7 @@ public class CellLibrary : MonoBehaviour
     public static Sprite   GetSprite(ushort id)      => byId.TryGetValue(id, out var d) ? d.sprite  : null;
     public static string   GetName(ushort id)        => byId.TryGetValue(id, out var d) ? d.name    : $"Unknown_{id}";
     public static string   GetKey(ushort id)         => idToKey.TryGetValue(id, out var k) ? k : null;
+
+    // 셀 상호작용 조회용 API
+    public static string InteractionOf(ushort id)    => byId.TryGetValue(id, out var d) ? d.interaction : null; // ← 추가
 }

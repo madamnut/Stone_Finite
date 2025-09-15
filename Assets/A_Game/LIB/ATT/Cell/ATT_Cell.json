@@ -29,5 +29,7 @@
   "Granite"            : { "id": 4000, "type": "solid" },
   "Amphibolite"        : { "id": 4001, "type": "solid" },
 
+  "Primal Workbench"   : { "id": 50000, "type": "deco", "interaction": "primalcraftModule" },
+
   "Water"              : { "id": 60000, "type": "liquid" }
 }

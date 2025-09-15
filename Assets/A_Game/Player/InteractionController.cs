@@ -1,6 +1,8 @@
 // InteractionController.cs
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;   // UI 클릭 막기용
+using Newtonsoft.Json.Linq;      // Unique 파싱 안전용
 
 public class InteractionController : MonoBehaviour
 {
@@ -45,11 +47,14 @@ public class InteractionController : MonoBehaviour
     public ItemLibrary   itemLibrary;
 
     [Header("UI Prefabs")]
-    public GameObject handcraftModule;   // HandCraftModule 프리팹
+    public GameObject handcraftModule;        // 인벤 열 때 기본 모듈(E 토글)
+    [Header("Interact Prefabs")]
+    public GameObject primalcraftModule;      // 셀 상호작용용 모듈(예: 프라이멀 워크벤치)
+
     GameObject _moduleInstance;
 
     [Header("Audio")]
-    public AudioManager sound; // Dig 재생용
+    public AudioManager sound; // Dig/Place 재생용
 
     /*────────────── 내부 ──────────────*/
     GameState _state = GameState.Ingame;
@@ -94,7 +99,7 @@ public class InteractionController : MonoBehaviour
                 _state = GameState.Inpanel;
                 if (inventoryPanel != null) inventoryPanel.SetActive(true);
 
-                // 모듈 생성 및 라이브러리 주입
+                // 기본 모듈 생성 및 라이브러리 주입
                 if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
                 {
                     _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
@@ -103,7 +108,7 @@ public class InteractionController : MonoBehaviour
                     for (int i = 0; i < crafts.Length; i++)
                     {
                         crafts[i].recipeLibrary = recipeLibrary;
-                        crafts[i].itemLibrary = itemLibrary;
+                        crafts[i].itemLibrary   = itemLibrary;
                         crafts[i].player        = player;
                     }
                 }
@@ -117,9 +122,7 @@ public class InteractionController : MonoBehaviour
                     else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
                 }
 
-                // 모듈 파괴
                 if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
-
                 _state = GameState.Ingame;
                 if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
@@ -136,9 +139,7 @@ public class InteractionController : MonoBehaviour
                     else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
                 }
 
-                // 모듈 파괴
                 if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
-
                 _state = GameState.Ingame;
                 if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
@@ -164,6 +165,13 @@ public class InteractionController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
             BreakAtCursor();
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            // 우클릭 우선순위: 셀 상호작용 > 아이템 사용
+            if (!TryInteractCell())
+                UseItem();
+        }
     }
 
     /*──────────────────────────────────────────────────────
@@ -195,8 +203,8 @@ public class InteractionController : MonoBehaviour
         {
             bool blocked = hasSolid || hasDeco;
             if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT; // 전경 점유 → 불가
-            else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;     // BG만 존재 → 가능
-            else                       _hlSR.sprite = HighLight_BG;         // 대상 없음 → 기본
+            else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;    // BG만 존재 → 가능
+            else                       _hlSR.sprite = HighLight_BG;        // 대상 없음 → 기본
         }
 
         _hlGO.SetActive(true);
@@ -239,6 +247,133 @@ public class InteractionController : MonoBehaviour
 
         if (sound != null)
             sound.PlayDig();
+    }
+
+    /*──────────────────────────────────────────────────────
+     *  셀 상호작용: 커서 셀에서 CellLibrary.InteractionOf(id) 확인
+     *  반환값: 처리하면 true, 아니면 false
+     *────────────────────────────────────────────────────*/
+    bool TryInteractCell()
+    {
+        if (_state != GameState.Ingame) return false;
+        if (worldManager == null || worldCamera == null) return false;
+        if (!GetMouseCell(out int cx, out int cy)) return false;
+
+        // 우선순위: Deco > Solid
+        ushort id = worldManager.worldMap.deco[cx, cy].id;
+        if (id == 0) id = worldManager.worldMap.solid[cx, cy].id;
+        if (id == 0) return false;
+
+        // CellLibrary에서 interaction 문자열 질의
+        // 주: ATT_Cell의 "interaction"은 검색용 속성. 런타임 보관 X.
+        // API 명칭 가정: InteractionOf(ushort id) → string
+        string interaction = CellLibrary.InteractionOf(id);
+        if (string.IsNullOrEmpty(interaction)) return false;
+
+        switch (interaction)
+        {
+            case "primalcraftModule":
+            {
+                // 인벤토리와 함께 모듈 열기
+                _state = GameState.Inpanel;
+                if (inventoryPanel != null) inventoryPanel.SetActive(true);
+
+                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+                if (primalcraftModule != null && inventoryPanel != null)
+                {
+                    _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
+                    _moduleInstance.transform.SetSiblingIndex(0);
+
+                    // HandCraft 컴포넌트에 라이브러리/플레이어 주입
+                    var crafts = _moduleInstance.GetComponentsInChildren<HandCraft>(true);
+                    for (int i = 0; i < crafts.Length; i++)
+                    {
+                        crafts[i].recipeLibrary = recipeLibrary;
+                        crafts[i].itemLibrary   = itemLibrary;
+                        crafts[i].player        = player;
+                    }
+                }
+                _hlGO.SetActive(false);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /*──────────────────────────────────────────────────────
+     *  아이템 사용 (interaction.type 분기) — 현재 Place만
+     *────────────────────────────────────────────────────*/
+    void UseItem()
+    {
+        if (_state != GameState.Ingame) return;
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (worldManager == null || worldCamera == null) return;
+        if (!GetMouseCell(out int cx, out int cy)) return;
+
+        if (player == null || player.Inventory == null) return;
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count) return;
+
+        var held = items[_hotbarScope];
+        if (held == null || held.Count <= 0) return;
+
+        if (!held.Unique.TryGetValue("interaction", out var interObj)) return;
+
+        Dictionary<string, object> inter = null;
+        if (interObj is Dictionary<string, object> d) inter = d;
+        else if (interObj is JObject jo) inter = jo.ToObject<Dictionary<string, object>>();
+        if (inter == null || !inter.TryGetValue("type", out var typeObj)) return;
+
+        string typeStr = typeObj?.ToString();
+        switch (typeStr)
+        {
+            case "Place":
+                HandlePlace(held, cx, cy, inter);
+                break;
+            // 다른 타입은 추후 추가
+        }
+    }
+
+    /*──────────────────────────────────────────────────────
+     *  Place 처리: layer=Deco, 점유 검사, 배치, 소모, 사운드
+     *────────────────────────────────────────────────────*/
+    void HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    {
+        if (!inter.TryGetValue("params", out var paramObj)) return;
+
+        Dictionary<string, object> param = null;
+        if (paramObj is Dictionary<string, object> p) param = p;
+        else if (paramObj is JObject jp) param = jp.ToObject<Dictionary<string, object>>();
+        if (param == null) return;
+
+        string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
+        string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
+
+        if (layerStr != "Deco" || string.IsNullOrEmpty(cellName)) return;
+
+        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        if (hasSolid || hasDeco) return;
+
+        // 이름 → ID 해석(역매핑 API 없을 때 보조)
+        ushort placeId = 0;
+        for (ushort id = 1; id < ushort.MaxValue; id++)
+        {
+            var nm = CellLibrary.GetName(id);
+            if (!string.IsNullOrEmpty(nm) && nm == cellName) { placeId = id; break; }
+        }
+        if (placeId == 0) { Debug.LogWarning($"[Place] 셀 이름을 찾을 수 없음: {cellName}"); return; }
+
+        bool ok = worldManager.PlaceCell(cx, cy, placeId);
+        if (!ok) return;
+
+        if (sound != null) sound.PlayPlace();
+
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+
+        LogScopeItem();
     }
 
     /*──────────────────────────────────────────────────────

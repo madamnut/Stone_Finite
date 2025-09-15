@@ -238,9 +238,15 @@
     "name": "Primal Workbench",
     "spriteName": "Primal Workbench",
     "itemType": "Misc",
-    "maxStack": 1,
+    "maxStack": 100,
     "unique": {
-      "interactPanel": ["Primal Workbench"]
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Deco",
+          "cell": "Primal Workbench"
+        }
+      }
     }
   }
 }
