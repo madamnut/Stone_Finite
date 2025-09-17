@@ -5,7 +5,7 @@
       { "itemId": "Plant", "count": 1 },
       { "itemId": "Plant", "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
@@ -19,7 +19,7 @@
       { "itemId": "Plant Fiber", "count": 1 },
       { "itemId": "Plant Fiber", "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
@@ -33,7 +33,7 @@
       { "itemId": "Plant Twine", "count": 1 },
       { "unique": { "toolActions": ["Cut"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -50,7 +50,7 @@
       { "itemId": "Twig", "count": 1 },
       { "unique": { "toolActions": ["Cut"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -64,7 +64,7 @@
       { "itemId": "Thick Twig", "count": 1 },
       { "unique": { "toolActions": ["Cut"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -78,7 +78,7 @@
       { "itemId": "Wooden Thick Stick", "count": 1 },
       { "unique": { "toolActions": ["Cut"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -92,7 +92,7 @@
       { "itemId": "Log", "count": 1 },
       { "unique": { "toolActions": ["Chop"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -109,7 +109,7 @@
       { "itemId": "Flint Shard", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -123,7 +123,7 @@
       { "itemId": "Stone Shard", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -137,7 +137,7 @@
       { "itemId": "Stone Tool", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -151,7 +151,7 @@
       { "itemId": "Stone Hammer Head", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -165,7 +165,7 @@
       { "itemId": "Flint Tool", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -179,7 +179,7 @@
       { "itemId": "Flint Knife Head", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
@@ -189,12 +189,12 @@
   },
 
   {
-    "isOrdered": false,
+    "isOrdered": true,
     "inputs": [
       { "itemId": "Wooden Crude Plank", "count": 1 },
       { "itemId": "Wooden Crude Plank", "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],

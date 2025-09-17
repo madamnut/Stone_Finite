@@ -123,17 +123,17 @@
     "itemType": "Misc",
     "maxStack": 100,
     "unique": {
-      "partType": "Long Handle",
+      "partType": "Short Handle",
       "toolDurability": 16
     }
   },
-  "Wooden Short Stick": {
-    "name": "Wooden Short Stick",
-    "spriteName": "Wooden Short Stick",
+  "Wooden Thick Stick": {
+    "name": "Wooden Thick Stick",
+    "spriteName": "Wooden Thick Stick",
     "itemType": "Misc",
     "maxStack": 100,
     "unique": {
-      "partType": "Short Handle",
+      "partType": "Long Handle",
       "toolDurability": 16
     }
   },
@@ -185,8 +185,8 @@
     "unique": {
       "partType": "Light Head",
       "tier": 3,
-      "toolActions": ["Cut"],
-      "weaponActions": [],
+      "toolActions_potential": ["Cut"],
+      "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
     }
@@ -199,8 +199,8 @@
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
-      "toolActions": [],
-      "weaponActions": [],
+      "toolActions_potential": [],
+      "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
     }
@@ -213,8 +213,8 @@
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
-      "toolActions": ["Chop"],
-      "weaponActions": [],
+      "toolActions_potential": ["Chop"],
+      "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
     }
@@ -227,8 +227,8 @@
     "unique": {
       "partType": "Heavy Head",
       "tier": 3,
-      "toolActions": ["Crush"],
-      "weaponActions": [],
+      "toolActions_potential": ["Crush"],
+      "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
     }

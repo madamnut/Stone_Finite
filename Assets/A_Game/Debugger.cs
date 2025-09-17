@@ -1,0 +1,61 @@
+using UnityEngine;
+using TMPro;
+
+public class Debugger : MonoBehaviour
+{
+    [Header("Toggle Root")]
+    public GameObject debugRoot; // F3로 토글
+
+    [Header("UI Text")]
+    public TMP_Text fpsText;     // "FPS: 0"
+    public TMP_Text timeText;    // "Time: 00:00 [Band]"
+
+    [Header("World Time Source")]
+    public WorldManager worldManager;
+
+    [Header("FPS Settings")]
+    [Range(0.05f, 1f)] public float fpsUpdateInterval = 0.25f;
+
+    float accum;
+    int frames;
+    float t;
+
+    void Start()
+    {
+        if (debugRoot) debugRoot.SetActive(true);
+        if (fpsText)  fpsText.text  = "FPS: 0";
+        if (timeText) timeText.text = "Time: 00:00 [Unknown]";
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F3) && debugRoot)
+            debugRoot.SetActive(!debugRoot.activeSelf);
+
+        accum += 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-6f);
+        frames += 1;
+        t      += Time.unscaledDeltaTime;
+
+        if (t >= fpsUpdateInterval)
+        {
+            float fps = accum / Mathf.Max(frames, 1);
+            if (fpsText) fpsText.text = $"FPS: {fps:F1}";
+            accum = 0f; frames = 0; t = 0f;
+        }
+
+        if (timeText)
+        {
+            if (worldManager)
+            {
+                int hh = worldManager.worldHour;
+                int mm = worldManager.worldMinute % 60;
+                var band = worldManager.GetTimeBand(); // WorldManager.TimeBand
+                timeText.text = $"Time: {hh:00}:{mm:00} [{band}]";
+            }
+            else
+            {
+                timeText.text = "Time: 00:00 [Unknown]";
+            }
+        }
+    }
+}

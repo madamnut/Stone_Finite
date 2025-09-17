@@ -2,167 +2,57 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "attr": { "partType": "Heavy Head" }, "count": 1 },
-      { "attr": { "partType": "Long Handle" }, "count": 1 }
+      { "unique": { "partType": "Heavy Head" }, "count": 1 },
+      { "unique": { "partType": "Long Binding" }, "count": 1 },
+      { "unique": { "partType": "Long Handle" }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "HandHeldTemplate",
+    "output": "Head_Binding_Handle",
+    "outputCount": 1,
     "outputActions": [
-      { "type": "copyId", "fromInput": 0, "toField": "head" },
-      { "type": "copyField", "fromInput": 0, "inputField": "durability", "toField": "headDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "maxDurability", "toField": "headMaxDurability" },
-      { "type": "setValue", "field": "headType", "fromInput": 0, "inputField": "partType" },
-      { "type": "setValue", "field": "headTier", "fromInput": 0, "inputField": "tier" },
-      { "type": "copyId", "fromInput": 1, "toField": "handle" },
-      { "type": "copyField", "fromInput": 1, "inputField": "durability", "toField": "handleDurability" },
-      { "type": "copyField", "fromInput": 1, "inputField": "maxDurability", "toField": "handleMaxDurability" },
-      { "type": "setValue", "field": "handleType", "fromInput": 1, "inputField": "partType" },
-      { "type": "setValue", "field": "handleTier", "fromInput": 1, "inputField": "tier" },
-      { "type": "setValue", "field": "binding", "value": null },
-      { "type": "setValue", "field": "bindingDurability", "value": 8 },
-      { "type": "setValue", "field": "bindingMaxDurability", "value": 8 },
-      { "type": "setValue", "field": "bindingType", "value": null },
-      { "type": "setValue", "field": "bindingTier", "value": 0 },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions", "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
+      { "type": "setValue", "field": "head",    "fromInput": 0, "inputField": "name" },
+      { "type": "setValue", "field": "binding", "fromInput": 1, "inputField": "name" },
+      { "type": "setValue", "field": "handle",  "fromInput": 2, "inputField": "name" },
+      { "type": "setValue", "field": "Tier", "fromInput": 0, "inputField": "tier" },
+      { "type": "sumFields", "field": "Durability",    "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
+      { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
       { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
-      {
-        "type": "setValue",
-        "field": "spriteName",
-        "valueFromFields": ["head", "handle"],
-        "separator": " + ",
-        "prefixEach": "Module_"
-      },
-      { "type": "setValue", "field": "itemId", "value": "$name$_$timestamp$" }
-    ],
-    "outputCount": 1
+      { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
+      { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+    ]
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "attr": { "partType": "Light Head" }, "count": 1 },
-      { "attr": { "partType": "Short Handle" }, "count": 1 }
+      { "unique": { "partType": "Light Head" }, "count": 1 },
+      { "unique": { "partType": "Short Binding" }, "count": 1 },
+      { "unique": { "partType": "Short Handle" }, "count": 1 }
     ],
-    "actions": [
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "HandHeldTemplate",
+    "output": "Head_Binding_Handle",
+    "outputCount": 1,
     "outputActions": [
-      { "type": "copyId", "fromInput": 0, "toField": "head" },
-      { "type": "copyField", "fromInput": 0, "inputField": "durability", "toField": "headDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "maxDurability", "toField": "headMaxDurability" },
-      { "type": "setValue", "field": "headType", "fromInput": 0, "inputField": "partType" },
-      { "type": "setValue", "field": "headTier", "fromInput": 0, "inputField": "tier" },
-      { "type": "copyId", "fromInput": 1, "toField": "handle" },
-      { "type": "copyField", "fromInput": 1, "inputField": "durability", "toField": "handleDurability" },
-      { "type": "copyField", "fromInput": 1, "inputField": "maxDurability", "toField": "handleMaxDurability" },
-      { "type": "setValue", "field": "handleType", "fromInput": 1, "inputField": "partType" },
-      { "type": "setValue", "field": "handleTier", "fromInput": 1, "inputField": "tier" },
-      { "type": "setValue", "field": "binding", "value": null },
-      { "type": "setValue", "field": "bindingDurability", "value": 8 },
-      { "type": "setValue", "field": "bindingMaxDurability", "value": 8 },
-      { "type": "setValue", "field": "bindingType", "value": null },
-      { "type": "setValue", "field": "bindingTier", "value": 0 },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions", "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
+      { "type": "setValue", "field": "head",    "fromInput": 0, "inputField": "name" },
+      { "type": "setValue", "field": "binding", "fromInput": 1, "inputField": "name" },
+      { "type": "setValue", "field": "handle",  "fromInput": 2, "inputField": "name" },
+      { "type": "setValue", "field": "Tier", "fromInput": 0, "inputField": "tier" },
+      { "type": "sumFields", "field": "Durability",    "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
+      { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
       { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
-      {
-        "type": "setValue",
-        "field": "spriteName",
-        "valueFromFields": ["head", "handle"],
-        "separator": " + ",
-        "prefixEach": "Module_"
-      },
-      { "type": "setValue", "field": "itemId", "value": "$name$_$timestamp$" }
-    ],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "attr": { "itemType": "HandHeld", "headType": "Heavy Head", "handleType": "Long Handle", "binding": null }, "count": 1 },
-      { "attr": { "partType": "Long Binding" }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
-    ],
-    "output": "HandHeldTemplate",
-    "outputActions": [
-      { "type": "copyField", "fromInput": 0, "inputField": "head", "toField": "head" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headDurability", "toField": "headDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headMaxDurability", "toField": "headMaxDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headType", "toField": "headType" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headTier", "toField": "headTier" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handle", "toField": "handle" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleDurability", "toField": "handleDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleMaxDurability", "toField": "handleMaxDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleType", "toField": "handleType" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleTier", "toField": "handleTier" },
-      { "type": "copyId", "fromInput": 1, "toField": "binding" },
-      { "type": "copyField", "fromInput": 1, "inputField": "durability", "toField": "bindingDurability" },
-      { "type": "copyField", "fromInput": 1, "inputField": "maxDurability", "toField": "bindingMaxDurability" },
-      { "type": "setValue", "field": "bindingType", "fromInput": 1, "inputField": "partType" },
-      { "type": "setValue", "field": "bindingTier", "fromInput": 1, "inputField": "tier" },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions", "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "name", "toField": "name" },
-      { "type": "copyField", "fromInput": 0, "inputField": "icon", "toField": "icon" },
-      {
-        "type": "setValue",
-        "field": "spriteName",
-        "valueFromFields": ["head", "handle", "binding"],
-        "separator": " + ",
-        "prefixEach": "Module_"
-      },
-      { "type": "setValue", "field": "itemId", "value": "$name$_$timestamp$" }
-    ],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "attr": { "itemType": "HandHeld", "headType": "Light Head", "handleType": "Short Handle", "binding": null }, "count": 1 },
-      { "attr": { "partType": "Short Binding" }, "count": 1 }
-    ],
-    "actions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
-    ],
-    "output": "HandHeldTemplate",
-    "outputActions": [
-      { "type": "copyField", "fromInput": 0, "inputField": "head", "toField": "head" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headDurability", "toField": "headDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headMaxDurability", "toField": "headMaxDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headType", "toField": "headType" },
-      { "type": "copyField", "fromInput": 0, "inputField": "headTier", "toField": "headTier" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handle", "toField": "handle" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleDurability", "toField": "handleDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleMaxDurability", "toField": "handleMaxDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleType", "toField": "handleType" },
-      { "type": "copyField", "fromInput": 0, "inputField": "handleTier", "toField": "handleTier" },
-      { "type": "copyId", "fromInput": 1, "toField": "binding" },
-      { "type": "copyField", "fromInput": 1, "inputField": "durability", "toField": "bindingDurability" },
-      { "type": "copyField", "fromInput": 1, "inputField": "maxDurability", "toField": "bindingMaxDurability" },
-      { "type": "setValue", "field": "bindingType", "fromInput": 1, "inputField": "partType" },
-      { "type": "setValue", "field": "bindingTier", "fromInput": 1, "inputField": "tier" },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions", "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "name", "toField": "name" },
-      { "type": "copyField", "fromInput": 0, "inputField": "icon", "toField": "icon" },
-      {
-        "type": "setValue",
-        "field": "spriteName",
-        "valueFromFields": ["head", "handle", "binding"],
-        "separator": " + ",
-        "prefixEach": "Module_"
-      },
-      { "type": "setValue", "field": "itemId", "value": "$name$_$timestamp$" }
-    ],
-    "outputCount": 1
+      { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
+      { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+    ]
   }
 ]

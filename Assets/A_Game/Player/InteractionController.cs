@@ -78,6 +78,9 @@ public class InteractionController : MonoBehaviour
 
         if (hotbar != null) hotbar.SetScope(_hotbarScope);
         LogScopeItem();
+
+        // RecipeLibrary에 ItemLibrary 연결(엔진 역할)
+        if (recipeLibrary != null) recipeLibrary.itemLibrary = itemLibrary;
     }
 
     void Update()
@@ -104,11 +107,12 @@ public class InteractionController : MonoBehaviour
                 {
                     _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
                     _moduleInstance.transform.SetSiblingIndex(0);
-                    var crafts = _moduleInstance.GetComponentsInChildren<HandCraft>(true);
+
+                    // CraftModule 주입
+                    var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
                     for (int i = 0; i < crafts.Length; i++)
                     {
                         crafts[i].recipeLibrary = recipeLibrary;
-                        crafts[i].itemLibrary   = itemLibrary;
                         crafts[i].player        = player;
                     }
                 }
@@ -264,9 +268,6 @@ public class InteractionController : MonoBehaviour
         if (id == 0) id = worldManager.worldMap.solid[cx, cy].id;
         if (id == 0) return false;
 
-        // CellLibrary에서 interaction 문자열 질의
-        // 주: ATT_Cell의 "interaction"은 검색용 속성. 런타임 보관 X.
-        // API 명칭 가정: InteractionOf(ushort id) → string
         string interaction = CellLibrary.InteractionOf(id);
         if (string.IsNullOrEmpty(interaction)) return false;
 
@@ -274,7 +275,6 @@ public class InteractionController : MonoBehaviour
         {
             case "primalcraftModule":
             {
-                // 인벤토리와 함께 모듈 열기
                 _state = GameState.Inpanel;
                 if (inventoryPanel != null) inventoryPanel.SetActive(true);
 
@@ -284,12 +284,11 @@ public class InteractionController : MonoBehaviour
                     _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
                     _moduleInstance.transform.SetSiblingIndex(0);
 
-                    // HandCraft 컴포넌트에 라이브러리/플레이어 주입
-                    var crafts = _moduleInstance.GetComponentsInChildren<HandCraft>(true);
+                    // CraftModule 주입
+                    var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
                     for (int i = 0; i < crafts.Length; i++)
                     {
                         crafts[i].recipeLibrary = recipeLibrary;
-                        crafts[i].itemLibrary   = itemLibrary;
                         crafts[i].player        = player;
                     }
                 }
@@ -331,7 +330,6 @@ public class InteractionController : MonoBehaviour
             case "Place":
                 HandlePlace(held, cx, cy, inter);
                 break;
-            // 다른 타입은 추후 추가
         }
     }
 

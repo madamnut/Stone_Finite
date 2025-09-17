@@ -443,7 +443,6 @@ public class WorldManager : MonoBehaviour
             worldHour = worldMinute / 60;
 
             var band = GetTimeBand();
-            Debug.Log($"[TIME] Day {worldDay}, {worldHour:00}:{worldMinute % 60:00}  Band={band}");
         }
     }
 

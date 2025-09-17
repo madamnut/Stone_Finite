@@ -1209,7 +1209,7 @@ GameObject:
   - component: {fileID: 541380234928889383}
   - component: {fileID: 6860579866082091650}
   - component: {fileID: 1362530102597431860}
-  - component: {fileID: 5483806011534396529}
+  - component: {fileID: 3673901155527060586}
   m_Layer: 5
   m_Name: HandCraftPrefab
   m_TagString: Untagged
@@ -1229,9 +1229,9 @@ RectTransform:
   m_LocalScale: {x: 4.4, y: 4.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5354857555306075391}
-  - {fileID: 5935356578676957371}
   - {fileID: 3375725467222304332}
+  - {fileID: 5935356578676957371}
+  - {fileID: 5354857555306075391}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -1277,7 +1277,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &5483806011534396529
+--- !u!114 &3673901155527060586
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1286,14 +1286,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6778416462143988762}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cb596606b92c7b40877c55040e6f330, type: 3}
+  m_Script: {fileID: 11500000, guid: 1689f7091c923fe4d9730c7fa859b3b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input0: {fileID: 2214668382110179641}
-  input1: {fileID: 7769143337707294408}
+  inputs:
+  - {fileID: 2214668382110179641}
+  - {fileID: 7769143337707294408}
   output: {fileID: 5025665129331278272}
   recipeLibrary: {fileID: 0}
-  itemLibrary: {fileID: 0}
+  player: {fileID: 0}
 --- !u!1 &7322644474638655278
 GameObject:
   m_ObjectHideFlags: 0

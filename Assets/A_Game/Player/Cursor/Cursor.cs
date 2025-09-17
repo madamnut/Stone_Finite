@@ -13,7 +13,7 @@ public class Cursor : MonoBehaviour
     public ItemSlot cursorSlot;
 
     [Header("Tooltip")]
-    public RectTransform tooltipRoot;  // ← 추가: 툴팁 패널
+    public RectTransform tooltipRoot;  // ← 툴팁 패널
     public TMP_Text tooltipText;       // 내용 텍스트
     public GameObject tooltipObject;   // 보이기/숨기기
     public Vector2 tooltipOffset = new(16, -16);
@@ -144,6 +144,14 @@ public class Cursor : MonoBehaviour
         }
         if (slotView == null) return;
 
+        // ===== 결과 슬롯 픽업 우선 분기 =====
+        if (slotView.denyUserPut)
+        {
+            var cm = slotView.GetComponentInParent<CraftModule>();
+            if (cm != null) { cm.TryTakeOutput(cursorSlot); return; }
+            return;
+        }
+
         var cur = cursorSlot.Item;
 
         bool useLocal =
@@ -154,13 +162,6 @@ public class Cursor : MonoBehaviour
 
         if (useLocal)
         {
-            if (slotView.denyUserPut)
-            {
-                var hc = slotView.GetComponentInParent<HandCraft>();
-                if (hc != null) hc.TryTakeOutput(cursorSlot);
-                return;
-            }
-
             var slot = slotView.Item;
             bool same = (cur != null && slot != null && cur.ItemId == slot.ItemId);
             int room  = slot != null ? (slot.MaxStack - slot.Count) : 0;
@@ -200,10 +201,11 @@ public class Cursor : MonoBehaviour
                 if (cur == null && slot != null)
                 {
                     int take = (slot.Count + 1) / 2;
+                    var uniq = slot.Unique != null ? new Dictionary<string, object>(slot.Unique)
+                                                   : new Dictionary<string, object>();
                     var copy = new ItemData(
                         slot.ItemId, slot.Name, slot.SpriteName, slot.ItemType,
-                        slot.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slot.Unique),
-                        slot.Icon, take);
+                        slot.MaxStack, uniq, slot.Icon, take);
                     cursorSlot.Set(copy);
 
                     slot.Count -= take;
@@ -214,10 +216,11 @@ public class Cursor : MonoBehaviour
 
                 if (cur != null && slot == null)
                 {
+                    var uniq = cur.Unique != null ? new Dictionary<string, object>(cur.Unique)
+                                                  : new Dictionary<string, object>();
                     slotView.Set(new ItemData(
                         cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                        cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.Unique),
-                        cur.Icon, 1));
+                        cur.MaxStack, uniq, cur.Icon, 1));
                     cur.Count -= 1;
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
@@ -281,10 +284,11 @@ public class Cursor : MonoBehaviour
             if (cur == null && slotInv != null)
             {
                 int take = (slotInv.Count + 1) / 2;
+                var uniq = slotInv.Unique != null ? new Dictionary<string, object>(slotInv.Unique)
+                                                  : new Dictionary<string, object>();
                 var copy = new ItemData(
                     slotInv.ItemId, slotInv.Name, slotInv.SpriteName, slotInv.ItemType,
-                    slotInv.MaxStack, new System.Collections.Generic.Dictionary<string, object>(slotInv.Unique),
-                    slotInv.Icon, take);
+                    slotInv.MaxStack, uniq, slotInv.Icon, take);
                 cursorSlot.Set(copy);
 
                 slotInv.Count -= take;
@@ -295,10 +299,11 @@ public class Cursor : MonoBehaviour
 
             if (cur != null && slotInv == null)
             {
+                var uniq = cur.Unique != null ? new Dictionary<string, object>(cur.Unique)
+                                              : new Dictionary<string, object>();
                 items[idx] = new ItemData(
                     cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                    cur.MaxStack, new System.Collections.Generic.Dictionary<string, object>(cur.Unique),
-                    cur.Icon, 1);
+                    cur.MaxStack, uniq, cur.Icon, 1);
                 cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);
                 else cursorSlot.Refresh();
