@@ -258,6 +258,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93f50db664811174897c007505062b0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
+  targetUI: {fileID: 1960623954}
+  filterMode: 0
+  flipY: 1
+  unknownColor: {r: 1, g: 0, b: 1, a: 1}
+  air: {r: 1, g: 0, b: 0.87986803, a: 1}
+  rock: {r: 0.35, g: 0.35, b: 0.35, a: 1}
+  dirt: {r: 0.47, g: 0.28, b: 0.19, a: 1}
+  grass_Left: {r: 0.16, g: 0.67, b: 0.24, a: 1}
+  grass_Top: {r: 0.2, g: 0.71, b: 0.27, a: 1}
+  grass_Right: {r: 0.16, g: 0.67, b: 0.24, a: 1}
+  grass_TopLeft: {r: 0.18, g: 0.69, b: 0.25, a: 1}
+  grass_TopRight: {r: 0.18, g: 0.69, b: 0.25, a: 1}
+  grass_LeftRight: {r: 0.18, g: 0.69, b: 0.25, a: 1}
+  grass_TopLeftRight: {r: 0.2, g: 0.71, b: 0.27, a: 1}
+  clay: {r: 1, g: 0.3654716, b: 0.16509432, a: 1}
+  sand: {r: 0.82, g: 0.75, b: 0.47, a: 1}
+  gravel: {r: 0.55, g: 0.51, b: 0.47, a: 1}
+  trunk: {r: 0.43, g: 0.27, b: 0.12, a: 1}
+  leaf: {r: 0.16, g: 0.63, b: 0.24, a: 1}
+  plant: {r: 0.24, g: 0.67, b: 0.31, a: 1}
+  bush: {r: 0.27, g: 0.59, b: 0.27, a: 1}
+  stone_Pile: {r: 0.51, g: 0.51, b: 0.51, a: 1}
+  small_Stone_Pile: {r: 0.59, g: 0.59, b: 0.59, a: 1}
+  ore_Coal: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  ore_Copper: {r: 0.78, g: 0.47, b: 0.2, a: 1}
+  ore_Iron: {r: 0.71, g: 0.71, b: 0.78, a: 1}
+  ore_Tin: {r: 0.71, g: 0.78, b: 0.86, a: 1}
+  granite: {r: 0.59, g: 0.59, b: 0.67, a: 1}
+  amphibolite: {r: 0.55, g: 0.63, b: 0.71, a: 1}
+  water: {r: 0, g: 0.37341785, b: 1, a: 0.78}
 --- !u!1 &1666139427
 GameObject:
   m_ObjectHideFlags: 0

@@ -40,6 +40,13 @@ MonoBehaviour:
   amphibNoiseOctaves: 5
   amphibNoisePersistence: 0.5
   amphibNoiseLacunarity: 2.4
+  clayMinHeight: 700
+  clayMaxHeight: 900
+  clayClusterSizeMean: 35
+  clayClusterSizeStdDev: 9
+  claySeedDensity: 0.0018
+  clayExpansionProb: 0.45
+  clayMaxGrowthFactor: 1.4
   coalMinHeight: 600
   coalMaxHeight: 900
   coalClusterSizeMean: 80

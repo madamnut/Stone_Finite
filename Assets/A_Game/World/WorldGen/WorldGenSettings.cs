@@ -47,6 +47,18 @@ public class WorldGenSettings : ScriptableObject
     [Range(0f,1f)] public float amphibNoisePersistence = 0.5f;
     public float amphibNoiseLacunarity    = 2.4f;
 
+    // ─────────────────────────────────────────────────────────
+    // Clay 추가 세팅
+    // ─────────────────────────────────────────────────────────
+    [Header("Clay Cluster Settings")]
+    public int   clayMinHeight          = 200;     // Dirt 층 하부 포함
+    public int   clayMaxHeight          = 900;     // 지표 근처까지 허용
+    public float clayClusterSizeMean    = 70f;
+    public float clayClusterSizeStdDev  = 18f;
+    public float claySeedDensity        = 0.0018f; // Dirt 전용 시드 밀도
+    public float clayExpansionProb      = 0.45f;   // 확장 확률
+    public float clayMaxGrowthFactor    = 1.4f;    // 최대 성장 배수
+
     [Header("Ore: Coal Cluster Settings")]
     public int coalMinHeight = 200;
     public int coalMaxHeight = 600;
@@ -95,4 +107,5 @@ public class WorldGenSettings : ScriptableObject
 
     [Header("Tree Settings")]
     [Range(0f,1f)] public float treeDensity    = 0.02f;    // 한 x열당 나무 심을 확률
+
 }

@@ -17,6 +17,8 @@ public static class WorldDataGenerator
     private const ushort ID_GRASS_LEFTRIGHT     = 8;
     private const ushort ID_GRASS_TOPLEFTRIGHT  = 9;
 
+    private const ushort ID_CLAY                = 10;    // ← Clay 추가
+
     private const ushort ID_SAND                = 1000;
     private const ushort ID_GRAVEL              = 1001;
 
@@ -40,12 +42,80 @@ public static class WorldDataGenerator
     // ── 라이트 파라미터 ──
     private const byte NATURAL_MAX = 20;
 
+    /// <summary>
+    /// 월드 전체 생성. (기존 공개 API 유지)
+    /// </summary>
     public static WorldData Generate(WorldGenSettings s)
     {
         int w = s.width, h = s.height;
 
-        var common = new ushort[w, h];
-        var bg     = new ushort[w, h];
+        // 공통 파이프라인 1회 실행 → common, bg 획득
+        BuildCommonAndBg(s, out var common, out var bg);
+
+        // 10) 레이어 주입
+        var world = new WorldData(w, h);
+
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            world.bg[x, y] = bg[x, y];
+
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            ushort id = common[x, y];
+            switch (CellLibrary.TypeOf(id))
+            {
+                case CellType.Solid:
+                    world.solid[x, y]  = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    break;
+
+                case CellType.Liquid:
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    world.liquid[x, y] = new LiquidCell { id = id, amount = 100 };
+                    break;
+
+                case CellType.Deco:
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = id, depend = CellLibrary.DependFlagsOf(id) };
+                    break;
+
+                default:
+                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
+                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
+                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+                    break;
+            }
+        }
+
+        // 11) 자연광
+        PropagateNaturalLight(world);
+
+        return world;
+    }
+
+    /// <summary>
+    /// 프리뷰용: common만 바로 뽑아 사용. 연산 중복 없음.
+    /// bg도 필요하면 out으로 함께 수령.
+    /// </summary>
+    public static ushort[,] GenerateCommon(WorldGenSettings s, out ushort[,] bg)
+    {
+        BuildCommonAndBg(s, out var common, out bg);
+        return common;
+    }
+
+    /// <summary>
+    /// 내부 파이프라인: common/bg 구성 단계(1~9단계). 외부에 노출하지 않음.
+    /// </summary>
+    private static void BuildCommonAndBg(WorldGenSettings s, out ushort[,] common, out ushort[,] bg)
+    {
+        int w = s.width, h = s.height;
+
+        common = new ushort[w, h];
+        bg     = new ushort[w, h];
 
         // 1) 해수면 시드
         for (int x = 0; x < w; x++)
@@ -98,6 +168,9 @@ public static class WorldDataGenerator
         // 4) 광물
         ApplyOreClusters(s, common);
 
+        // 4.5) 점토 클러스터 (Dirt에만 생성)
+        ApplyClayClusters(s, common);
+
         // 5) 동굴 캐브아웃
         bool[,] cave = ProceduralUtil.GenerateMixedCave(
             w, h,
@@ -112,8 +185,8 @@ public static class WorldDataGenerator
         // 6) 물 플러드필
         FloodFillWater(common, w, h, ID_WATER, ID_AIR);
 
-        // 6.5) 지형 변환: 모래 → 자갈 (플러드필 이후, 잔디 이전)
-        ApplySandAndGravel(s, common);
+        // 6.5) 지형 변환: 모래/자갈/점토 (플러드필 이후, 잔디 이전)
+        ApplySandAndGravelAndClay(s, common);
 
         // 7) 잔디 변형
         for (int x = 0; x < w; x++)
@@ -126,56 +199,12 @@ public static class WorldDataGenerator
 
         // 9) 데코
         PlaceDecorAfterTrees(s, common);
-
-        // 10) 레이어 주입
-        var world = new WorldData(w, h);
-
-        for (int x = 0; x < w; x++)
-        for (int y = 0; y < h; y++)
-            world.bg[x, y] = bg[x, y];
-
-        for (int x = 0; x < w; x++)
-        for (int y = 0; y < h; y++)
-        {
-            ushort id = common[x, y];
-            switch (CellLibrary.TypeOf(id))
-            {
-                case CellType.Solid:
-                    world.solid[x, y]  = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    break;
-
-                case CellType.Liquid:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    world.liquid[x, y] = new LiquidCell { id = id, amount = 100 };
-                    break;
-
-                case CellType.Deco:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = id, depend = CellLibrary.DependFlagsOf(id) };
-                    break;
-
-                default:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    break;
-            }
-        }
-
-        // 11) 자연광
-        PropagateNaturalLight(world);
-
-        return world;
     }
 
     // ─────────────────────────────────────────────────────────
-    // 모래/자갈 변환: 모래 먼저, 자갈 이후
+    // 모래/자갈/점토 변환
     // ─────────────────────────────────────────────────────────
-    private static void ApplySandAndGravel(WorldGenSettings s, ushort[,] common)
+    private static void ApplySandAndGravelAndClay(WorldGenSettings s, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
         var rand = new System.Random(s.seed ^ 0xA11CE);
@@ -244,7 +273,7 @@ public static class WorldDataGenerator
             if (nearDirt && rand.NextDouble() < 0.30) common[x, y] = ID_GRAVEL;
         }
 
-        // 2-B) Dirt → Gravel (반경3 내 Sand → 40%)
+        // 2-B) Dirt → Gravel/Clay (반경3 내 Sand → 40%/40%)
         var snap3 = (ushort[,])common.Clone();
         int rDirtSand = 3;
         for (int x = 0; x < w; x++)
@@ -262,8 +291,37 @@ public static class WorldDataGenerator
                     if (snap3[nx, ny] == ID_SAND) { nearSand = true; break; }
                 }
             }
-            if (nearSand && rand.NextDouble() < 0.40) common[x, y] = ID_GRAVEL;
+            if (nearSand)
+            {
+                double r = rand.NextDouble();
+                if      (r < 0.40) common[x, y] = ID_GRAVEL; // 40%
+                else if (r < 0.80) common[x, y] = ID_CLAY;   // 40%
+                // 나머지 20%는 유지
+            }
         }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 내부: 점토 클러스터 (Dirt에만 부여)
+    // ─────────────────────────────────────────────────────────
+    private static void ApplyClayClusters(WorldGenSettings s, ushort[,] common)
+    {
+        int w = common.GetLength(0), h = common.GetLength(1);
+
+        var seeds    = ProceduralUtil.SampleSeedPositions(w, s.clayMinHeight, s.clayMaxHeight, s.claySeedDensity);
+        var offsets  = ProceduralUtil.GetNeighborOffsets(s.neighborMode == WorldGenSettings.NeighborMode.EightDir);
+        var clusters = ProceduralUtil.GenerateClusters(
+            seeds,
+            s.clayClusterSizeMean, s.clayClusterSizeStdDev,
+            s.clayMaxGrowthFactor, s.clayExpansionProb,
+            offsets,
+            s.frontierMode == WorldGenSettings.FrontierMode.Random
+        );
+
+        foreach (var cl in clusters)
+        foreach (var p in cl)
+            if ((uint)p.x < w && (uint)p.y < h && common[p.x, p.y] == ID_DIRT)
+                common[p.x, p.y] = ID_CLAY;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -423,7 +481,6 @@ public static class WorldDataGenerator
             }
         }
     }
-
 
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 이후 데코

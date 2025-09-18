@@ -32,6 +32,10 @@
     { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
   ],
 
+  "Clay": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+
   "Rock": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 4, "max": 4 }
   ],

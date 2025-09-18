@@ -10,9 +10,13 @@
   "Grass_TopRight"     : { "id":    7, "type": "solid" },
   "Grass_LeftRight"    : { "id":    8, "type": "solid" },
   "Grass_TopLeftRight" : { "id":    9, "type": "solid" },
+  
+  "Clay"               : { "id":   10, "type": "solid" },
+
 
   "Sand"               : { "id": 1000, "type": "solid", "gravity": true },
   "Gravel"             : { "id": 1001, "type": "solid", "gravity": true },
+
 
   "Trunk"              : { "id": 2000, "type": "deco" },
   "Leaf"               : { "id": 2001, "type": "deco" },

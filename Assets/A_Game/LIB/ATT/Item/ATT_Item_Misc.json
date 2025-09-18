@@ -13,6 +13,13 @@
     "maxStack": 100,
     "unique": {}
   },
+  "Clay Chunk": {
+    "name": "Clay Chunk",
+    "spriteName": "Clay Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
   "Flint Shard": {
     "name": "Flint Shard",
     "spriteName": "Flint Shard",
