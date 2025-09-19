@@ -54,5 +54,23 @@
       { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
       { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
     ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Dirt",
+    "outputCount": 1,
+    "outputActions": []
   }
 ]

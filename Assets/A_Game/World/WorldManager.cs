@@ -65,6 +65,16 @@ public class WorldManager : MonoBehaviour
     public const int ChunkSize = 16;
     private const byte NAT_MAX = 20;
 
+    // ── Day/Night Debug ──
+    [Header("Day/Night Debug")]
+    public KeyCode cycleKey = KeyCode.T;
+    [Range(0,20)] public byte dayOffset = 0; // 자연광 전역 감산(0..20). 디버그용은 0..20 핑퐁
+    int _dayDir = 1; // +1 ↔ -1
+
+    // Light 공유타일/색상 LUT
+    private static Tile sSharedLightTile;
+    private static readonly Color[] kAlphaLut = new Color[NAT_MAX + 1]; // 0..20 → 알파
+
     // 전역 월드 크기 캐시
     private int W, H;
 
@@ -88,16 +98,14 @@ public class WorldManager : MonoBehaviour
     // ─────────────────────────────────────────────────────
     // 월드 시간 상태
     // ─────────────────────────────────────────────────────
-    public long worldTick;                 // 누적 틱 (오버플로 방지)
+    public long worldTick;                 // 누적 틱
     public int  worldMinute;               // 0..1439
     public int  worldHour;                 // 0..23
     public int  worldDay;                  // 0..N
-    private long _lastLoggedSecondTick = -1;// 마지막 로그 지점(틱)
+    private long _lastLoggedSecondTick = -1;
 
     // ─────────────────────────────────────────────────────
-    // 글로벌 틱(물/중력) : 단일 좌표 큐(더블버퍼)로 통합
-    //  - EnqTick(x,y)로 항상 next 버퍼에 쌓임
-    //  - StepTick()에서 curr 전부 소모, 처리 중 추가는 next로
+    // 글로벌 틱(물/중력)
     // ─────────────────────────────────────────────────────
     private HashSet<Vector2Int> tickCurr = new();
     private HashSet<Vector2Int> tickNext = new();
@@ -123,7 +131,6 @@ public class WorldManager : MonoBehaviour
 
         foreach (var p in tickCurr)
         {
-            // 중력 → 물 순서로 처리
             StepGravityAt(p.x, p.y);
             StepWaterAt(p.x, p.y);
         }
@@ -131,14 +138,13 @@ public class WorldManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────
-    // 물 로직(단일 좌표)
+    // 물 로직
     // ─────────────────────────────────────────────────────
     void StepWaterAt(int x, int y)
     {
         ref var cell = ref worldMap.liquid[x, y];
         int Wc = cell.amount;
 
-        // 0이 되었으면 id 정리 + 렌더 더티
         if (Wc <= 0)
         {
             if (cell.id != 0)
@@ -149,7 +155,6 @@ public class WorldManager : MonoBehaviour
             return;
         }
 
-        // 고체 차단
         bool Blocked(int gx, int gy)
         {
             if ((uint)gx >= W || (uint)gy >= H) return true;
@@ -168,14 +173,13 @@ public class WorldManager : MonoBehaviour
                 WriteWater(x,  y,  Wc - move);
                 WriteWater(x,  dy, Wd + move);
 
-                // 연쇄: 원천/도착 기준으로 5방 인큐
                 OnCellEditedFG(x, y);
                 OnCellEditedFG(x, dy);
                 return;
             }
         }
 
-        // 2) 좌우 동시 분배 (각 방향 최대 20, diff/2 정수, 최소 1)
+        // 2) 좌우 동시 분배
         int xl = x - 1, xr = x + 1;
         bool canL = xl >= 0 && !Blocked(xl, y);
         bool canR = xr < W  && !Blocked(xr, y);
@@ -228,14 +232,12 @@ public class WorldManager : MonoBehaviour
             if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
             if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
 
-            // 연쇄
             OnCellEditedFG(x, y);
             if (takeL > 0) OnCellEditedFG(xl, y);
             if (takeR > 0) OnCellEditedFG(xr, y);
         }
     }
 
-    // 전역 쓰기 + 해당 청크 Liquid 레이어만 Dirty
     void WriteWater(int x, int y, int newAmount)
     {
         int cur = worldMap.liquid[x, y].amount;
@@ -249,7 +251,7 @@ public class WorldManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────
-    // 중력 블록 로직(단일 좌표)
+    // 중력 블록
     // ─────────────────────────────────────────────────────
     void StepGravityAt(int x, int y)
     {
@@ -259,16 +261,13 @@ public class WorldManager : MonoBehaviour
 
         int by = y - 1;
         if (by < 0) return;
-        if (worldMap.solid[x, by].id != 0) return; // 아래가 차있으면 종료
+        if (worldMap.solid[x, by].id != 0) return;
 
-        // 원본 제거 + 더티
         worldMap.SetSolid(x, y, 0, false);
         MarkChunkDirty(x, y, markFG:true);
 
-        // 연쇄: 해당 지점 기준
         OnCellEditedFG(x, y);
 
-        // 낙하 프리팹 스폰
         if (fallingBlockPrefab != null)
         {
             var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
@@ -279,9 +278,8 @@ public class WorldManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────
-    // 설치 진입점
+    // 설치
     // ─────────────────────────────────────────────────────
-    /// <summary>좌표에 셀 id 배치. 타입은 CellLibrary로 판정.</summary>
     public bool PlaceCell(int x, int y, ushort id)
     {
         if ((uint)x >= W || (uint)y >= H) return false;
@@ -290,7 +288,7 @@ public class WorldManager : MonoBehaviour
         {
             case CellType.Solid:
                 if (worldMap.solid[x, y].id != 0) return false;
-                worldMap.SetSolid(x, y, id, CellLibrary.HasGravity(id)); // 액체/데코 정리 포함
+                worldMap.SetSolid(x, y, id, CellLibrary.HasGravity(id));
                 MarkChunkDirty(x, y, markFG:true, markBG:false, markDeco:false, markLiquid:true);
                 OnCellEditedFG(x, y);
                 return true;
@@ -307,7 +305,6 @@ public class WorldManager : MonoBehaviour
                 if (worldMap.solid[x, y].id != 0) return false;
                 worldMap.SetLiquid(x, y, id, 100);
                 MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:false, markLiquid:true);
-                // 주변 흐름 유도
                 EnqTick(x, y);
                 EnqTick(x-1, y); EnqTick(x+1, y);
                 EnqTick(x, y+1); if (y > 0) EnqTick(x, y-1);
@@ -317,7 +314,7 @@ public class WorldManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────
-    // 파괴 진입점
+    // 파괴
     // ─────────────────────────────────────────────────────
     public ushort BreakCell(int x, int y, CellLayer layer)
     {
@@ -330,13 +327,9 @@ public class WorldManager : MonoBehaviour
                 ushort removed = worldMap.BreakFG(x, y);
                 if (removed == 0) return 0;
 
-                // FG(=Solid+Deco) 더티
                 MarkChunkDirty(x, y, markFG:true, markBG:false, markDeco:true, markLiquid:false);
-
-                // 통합 후처리
                 OnCellEditedFG(x, y);
 
-                // 드랍 + VFX
                 string key = CellLibrary.GetKey(removed);
                 if (!string.IsNullOrEmpty(key))
                 {
@@ -351,11 +344,9 @@ public class WorldManager : MonoBehaviour
                 ushort removed = worldMap.BreakBG(x, y);
                 if (removed == 0) return 0;
 
-                // BG 더티 + 라이트
                 MarkChunkDirty(x, y, markFG:false, markBG:true, markDeco:false, markLiquid:false);
                 RecalculateLightAt(x, y);
 
-                // 드랍 + VFX
                 string key = CellLibrary.GetKey(removed);
                 if (!string.IsNullOrEmpty(key))
                 {
@@ -369,21 +360,17 @@ public class WorldManager : MonoBehaviour
         return 0;
     }
 
-    /// <summary>
-    /// FG 편집(파괴/설치) 직후 호출: 틱 인큐(자기+상하좌우) + 라이트 계산
-    /// </summary>
+    /// <summary>FG 편집 후 틱 인큐 + 라이트 계산</summary>
     public void OnCellEditedFG(int gx, int gy)
     {
         if ((uint)gx >= W || (uint)gy >= H) return;
 
-        // 틱 인큐: 자기 포함 상/하/좌/우
         EnqTick(gx, gy);
         EnqTick(gx + 1, gy);
         EnqTick(gx - 1, gy);
         EnqTick(gx, gy + 1);
         EnqTick(gx, gy - 1);
 
-        // 라이트는 즉시
         RecalculateLightAt(gx, gy);
     }
 
@@ -416,9 +403,44 @@ public class WorldManager : MonoBehaviour
         worldHour = 0;
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
+
+        // Light 공유 타일/알파 LUT 초기화
+        if (sSharedLightTile == null)
+        {
+            sSharedLightTile = ScriptableObject.CreateInstance<Tile>();
+            sSharedLightTile.sprite = lightSprite;
+            sSharedLightTile.colliderType = Tile.ColliderType.None;
+            sSharedLightTile.name = "LightShared";
+        }
+        for (int i = 0; i <= NAT_MAX; i++)
+        {
+            float a = 1f - (i / (float)NAT_MAX);
+            kAlphaLut[i] = new Color(0f, 0f, 0f, a);
+        }
     }
 
-    void Update() => UpdateVisibleChunks();
+    void Update()
+    {
+        // T 키로 dayOffset 0..20..19..0 핑퐁
+        if (Input.GetKeyDown(cycleKey))
+        {
+            int next = (int)dayOffset + _dayDir;
+            if (next > 20) { next = 19; _dayDir = -1; }
+            else if (next < 0) { next = 1; _dayDir = 1; }
+
+            dayOffset = (byte)next;
+
+            foreach (var kv in activeChunks)
+            {
+                var c = kv.Value.GetComponent<Chunk>();
+                if (c != null) c.lightDirty = true;
+            }
+            Debug.Log($"[DayNight] dayOffset={dayOffset}");
+        }
+
+        UpdateVisibleChunks();
+    }
+
     void LateUpdate() => ProcessDirtyChunks();
 
     // 글로벌 틱 + 월드 시간
@@ -426,15 +448,13 @@ public class WorldManager : MonoBehaviour
     {
         StepTick();
 
-        // 시간 진행
         worldTick++;
 
-        // 매 현실 1초마다(=ticksPerSecond 틱) 분 증가 및 로그
         if (worldTick - _lastLoggedSecondTick >= ticksPerSecond)
         {
             _lastLoggedSecondTick += ticksPerSecond;
 
-            worldMinute++;                      // 현실 1초 = 게임 1분
+            worldMinute++;
             if (worldMinute >= minutesPerDay)
             {
                 worldMinute = 0;
@@ -529,10 +549,9 @@ public class WorldManager : MonoBehaviour
         if (c == null) return;
 
         var bgBuf     = c.bgBuffer;
-        var fgBuf     = c.fgBuffer;     // Solid 전개용
+        var fgBuf     = c.fgBuffer;
         var decoBuf   = c.decoBuffer;
         var liquidBuf = c.liquidBuffer;
-        var lightBuf  = c.lightBuffer;
         int size = ChunkSize * ChunkSize;
 
         for (int i = 0; i < size; i++)
@@ -541,7 +560,6 @@ public class WorldManager : MonoBehaviour
             fgBuf[i]     = null;
             decoBuf[i]   = null;
             liquidBuf[i] = null;
-            lightBuf[i]  = null;
         }
 
         var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
@@ -558,7 +576,7 @@ public class WorldManager : MonoBehaviour
                 // BG
                 bgBuf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
 
-                // Solid(FG의 Solid 파트)
+                // Solid
                 ushort solidId = worldMap.solid[wx, wy].id;
                 if (solidId != 0)
                 {
@@ -567,7 +585,7 @@ public class WorldManager : MonoBehaviour
                     fgBuf[idx] = tile;
                 }
 
-                // Deco(FG의 Deco 파트)
+                // Deco
                 ushort decoId = worldMap.deco[wx, wy].id;
                 if (decoId != 0)
                 {
@@ -576,19 +594,22 @@ public class WorldManager : MonoBehaviour
                     decoBuf[idx] = tile;
                 }
 
-                // Liquid → 10단계 시각화
+                // Liquid
                 var liq = worldMap.liquid[wx, wy];
                 liquidBuf[idx] = (liq.amount > 0 && liq.id != 0)
                     ? TileCache.GetWaterByAmount(liq.id, liq.amount)
                     : null;
 
-                // Light
-                byte lvl = worldMap.light[wx, wy].natural; // 0..20
-                float alpha = 1f - Mathf.Clamp01(lvl / (float)NAT_MAX);
-                var lt = ScriptableObject.CreateInstance<Tile>();
-                lt.sprite = lightSprite;
-                lt.color = new Color(0, 0, 0, alpha);
-                lightBuf[idx] = lt;
+                // Light: 공유 타일 + 색상
+                byte n0  = worldMap.light[wx, wy].natural;
+                int  ns  = n0 - dayOffset; if (ns < 0) ns = 0;
+                byte art = worldMap.light[wx, wy].artificial;
+                byte fin = (byte)((ns > art) ? ns : art);
+
+                var cell = new Vector3Int(x, y, 0);
+                c.lightTilemap.SetTile(cell, sSharedLightTile);
+                c.lightTilemap.SetTileFlags(cell, TileFlags.None);
+                c.lightTilemap.SetColor(cell, kAlphaLut[fin]);
             }
         }
 
@@ -596,7 +617,6 @@ public class WorldManager : MonoBehaviour
         c.fgTilemap.SetTilesBlock(bounds, fgBuf);
         c.decoTilemap.SetTilesBlock(bounds, decoBuf);
         c.liquidTilemap.SetTilesBlock(bounds, liquidBuf);
-        c.lightTilemap.SetTilesBlock(bounds, lightBuf);
 
         var coll = c.fgTilemap.GetComponent<TilemapCollider2D>();
         if (coll != null)
@@ -610,9 +630,7 @@ public class WorldManager : MonoBehaviour
         activeChunks[coord] = go;
     }
 
-    /// <summary>
-    /// Dirty 플래그가 설정된 청크 레이어들을 갱신. FG 갱신 후 국소 라이트 재계산.
-    /// </summary>
+    /// <summary>Dirty 청크 갱신</summary>
     private void ProcessDirtyChunks()
     {
         foreach (var kv in activeChunks)
@@ -660,7 +678,7 @@ public class WorldManager : MonoBehaviour
 
     private enum LayerType { BG, FG, Deco, Liquid }
 
-    /// <summary>지정한 좌표의 청크 레이어 하나만 다시 그립니다.</summary>
+    /// <summary>지정한 좌표의 청크 레이어 하나만 다시 그림.</summary>
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
         var go = activeChunks[coord];
@@ -686,7 +704,7 @@ public class WorldManager : MonoBehaviour
             }
             case LayerType.FG:
             {
-                var buf = c.fgBuffer; // Solid
+                var buf = c.fgBuffer;
                 for (int y = 0; y < ChunkSize; y++)
                     for (int x = 0; x < ChunkSize; x++)
                     {
@@ -752,33 +770,29 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /// <summary>지정한 좌표의 라이트 레이어만 다시 그립니다.</summary>
+    /// <summary>라이트 레이어만 색 갱신.</summary>
     private void RefreshLightLayer(Vector2Int coord)
     {
         var go = activeChunks[coord];
         var c  = go.GetComponent<Chunk>();
-        var buf = c.lightBuffer;
-        var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
 
         int sx = coord.x * ChunkSize, sy = coord.y * ChunkSize;
         for (int y = 0; y < ChunkSize; y++)
-            for (int x = 0; x < ChunkSize; x++)
-            {
-                int wx = sx + x, wy = sy + y, idx = y * ChunkSize + x;
-                byte lvl = worldMap.light[wx, wy].natural;
-                float alpha = 1f - Mathf.Clamp01(lvl / (float)NAT_MAX);
-                var lt = ScriptableObject.CreateInstance<Tile>();
-                lt.sprite = lightSprite;
-                lt.color = new Color(0, 0, 0, alpha);
-                buf[idx] = lt;
-            }
+        for (int x = 0; x < ChunkSize; x++)
+        {
+            int wx = sx + x, wy = sy + y;
 
-        c.lightTilemap.SetTilesBlock(bounds, buf);
+            byte n0  = worldMap.light[wx, wy].natural;
+            int  ns  = n0 - dayOffset; if (ns < 0) ns = 0;
+            byte art = worldMap.light[wx, wy].artificial;
+            byte fin = (byte)((ns > art) ? ns : art);
+
+            var cell = new Vector3Int(x, y, 0);
+            c.lightTilemap.SetColor(cell, kAlphaLut[fin]);
+        }
     }
 
-    /// <summary>
-    /// (x0,y0)에서 시작해 국소 BFS로 자연광 재계산. 영향 청크에 lightDirty 설정.
-    /// </summary>
+    /// <summary>(x0,y0) 국소 BFS로 자연광 재계산.</summary>
     public void RecalculateLightAt(int x0, int y0)
     {
         if ((uint)x0 >= W || (uint)y0 >= H) return;
@@ -840,7 +854,7 @@ public class WorldManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────
-    // 타임밴드 판정(영문 반환, 한글은 주석)
+    // 타임밴드 판정
     // ─────────────────────────────────────────────────────
     public TimeBand GetTimeBand()
     {
@@ -848,19 +862,19 @@ public class WorldManager : MonoBehaviour
         int m = worldMinute % 60;
         int t = h * 100 + m; // HHMM
 
-        if (t == 0)   return TimeBand.Midnight;     // 자정
-        if (t < 400)  return TimeBand.LateNight;    // 심야 00:00–03:59
-        if (t < 600)  return TimeBand.Dawn;         // 새벽 04:00–05:59
-        if (t < 900)  return TimeBand.EarlyMorning; // 이른아침 06:00–08:59
-        if (t < 1200) return TimeBand.Morning;      // 오전 09:00–11:59
-        if (t == 1200)return TimeBand.Noon;         // 정오 12:00
-        if (t < 1700) return TimeBand.Afternoon;    // 오후 12:01–16:59
-        if (t < 1900) return TimeBand.Evening;      // 저녁 17:00–18:59
-        if (t < 2100) return TimeBand.Dusk;         // 해질녘 19:00–20:59
-        return TimeBand.Night;                      // 밤 21:00–23:59
+        if (t == 0)   return TimeBand.Midnight;
+        if (t < 400)  return TimeBand.LateNight;
+        if (t < 600)  return TimeBand.Dawn;
+        if (t < 900)  return TimeBand.EarlyMorning;
+        if (t < 1200) return TimeBand.Morning;
+        if (t == 1200)return TimeBand.Noon;
+        if (t < 1700) return TimeBand.Afternoon;
+        if (t < 1900) return TimeBand.Evening;
+        if (t < 2100) return TimeBand.Dusk;
+        return TimeBand.Night;
     }
 
-    // ── 타일 캐시: id → Tile ──
+    // ── 타일 캐시 ──
     private static class TileCache
     {
         private static readonly Dictionary<ushort, Tile> cache = new Dictionary<ushort, Tile>();
@@ -877,7 +891,6 @@ public class WorldManager : MonoBehaviour
             return t;
         }
 
-        // amount(1..100) → 10단계 물 타일
         public static Tile GetWaterByAmount(ushort waterId, int amount)
         {
             if (amount <= 0) return null;
@@ -897,7 +910,7 @@ public class WorldManager : MonoBehaviour
             Rect r = s.textureRect;
             int fullW = Mathf.RoundToInt(r.width);
             int fullH = Mathf.RoundToInt(r.height);
-            int copyH = Mathf.CeilToInt(fullH * (level / 10f)); // 아래로부터 복사 높이
+            int copyH = Mathf.CeilToInt(fullH * (level / 10f));
 
             var newTex = new Texture2D(fullW, fullH, TextureFormat.RGBA32, false);
             newTex.filterMode = tex.filterMode;

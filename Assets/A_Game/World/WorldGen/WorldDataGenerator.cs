@@ -92,7 +92,10 @@ public static class WorldDataGenerator
         }
 
         // 11) 자연광
+        float start = Time.realtimeSinceStartup;
         PropagateNaturalLight(world);
+        float end = Time.realtimeSinceStartup;
+        Debug.Log($"PropagateNaturalLight took {(end - start) * 1000f} ms");
 
         return world;
     }

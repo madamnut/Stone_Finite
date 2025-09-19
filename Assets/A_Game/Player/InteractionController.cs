@@ -232,20 +232,17 @@ public class InteractionController : MonoBehaviour
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
-        // 파괴 가능 여부 로컬 판정
+        // 로컬 점유 상태
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
         bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
         bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
+        // BG 모드: 전경이 하나라도 있으면 파괴 금지
         bool canBreak =
             (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
             : /* BG */                             (hasBg && !(hasSolid || hasDeco));
 
-        if (!canBreak)
-        {
-            worldManager.BreakCell(cx, cy, layer); // 로직 유지(내부 처리를 원할 수 있음)
-            return;
-        }
+        if (!canBreak) return;
 
         worldManager.BreakCell(cx, cy, layer);
 
@@ -334,7 +331,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  Place 처리: layer=Deco, 점유 검사, 배치, 소모, 사운드
+     *  Place 처리: layer=Solid/Deco/Flexible 규칙 준수
      *────────────────────────────────────────────────────*/
     void HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
@@ -347,14 +344,12 @@ public class InteractionController : MonoBehaviour
 
         string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
         string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
-
-        if (layerStr != "Deco" || string.IsNullOrEmpty(cellName)) return;
+        if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return;
 
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
         bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
-        if (hasSolid || hasDeco) return;
 
-        // 이름 → ID 해석(역매핑 API 없을 때 보조)
+        // 이름 → ID 해석
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
@@ -363,6 +358,17 @@ public class InteractionController : MonoBehaviour
         }
         if (placeId == 0) { Debug.LogWarning($"[Place] 셀 이름을 찾을 수 없음: {cellName}"); return; }
 
+        // 레이어 정책
+        bool wantFG;
+        if (layerStr == "Solid")       wantFG = true;
+        else if (layerStr == "Deco")   wantFG = true;   // Deco도 전경 점유 규칙을 따른다(전경 점유 시 배치 금지)
+        else if (layerStr == "Flexible") wantFG = (_breakMode == BreakMode.FG);
+        else return;
+
+        // 전경 점유 검사: 전경(Solid/Deco) 중 하나라도 있으면 어떤 배치도 금지
+        if (hasSolid || hasDeco) return;
+
+        // 배치 시도
         bool ok = worldManager.PlaceCell(cx, cy, placeId);
         if (!ok) return;
 

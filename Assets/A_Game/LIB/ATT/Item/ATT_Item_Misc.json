@@ -6,6 +6,25 @@
     "maxStack": 100,
     "unique": {}
   },
+  "Dirt": {
+    "name": "Dirt",
+    "spriteName": "Dirt",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Flexible",
+          "cell": "Dirt"
+        }
+      }
+    }
+  },
+
+
+
+
     "Sand Pile": {
     "name": "Sand Pile",
     "spriteName": "Sand Pile",
@@ -121,6 +140,37 @@
     "maxStack": 100,
     "unique": {}
   },
+
+  "---": {
+    "name": "---",
+    "spriteName": "---",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+
+  "Charcoal": {
+    "name": "Charcoal",
+    "spriteName": "Charcoal",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+
+  "-- ": {
+    "name": "--",
+    "spriteName": "--",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+
+
+
+
+
+
+
 
 
 
