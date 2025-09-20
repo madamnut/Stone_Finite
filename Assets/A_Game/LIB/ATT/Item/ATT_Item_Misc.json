@@ -305,5 +305,21 @@
         }
       }
     }
+  },
+
+  "Torch": {
+    "name": "Torch",
+    "spriteName": "Torch",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Deco",
+          "cell": "Torch"
+        }
+      }
+    }
   }
 }

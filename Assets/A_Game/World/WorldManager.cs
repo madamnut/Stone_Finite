@@ -11,7 +11,7 @@ using UnityEngine.Tilemaps;
 /// • 플레이어 반경 ChunkRadius 청크만 활성화
 /// • 매 프레임 최대 maxLoadsPerFrame개의 청크 로드
 /// • Dirty 플래그 기반 레이어별 갱신 지원
-/// • Light 레이어 지원, FG(=Solid+Deco) 변경 시 국소 재계산
+/// • Light: 타일맵 대신 청크당 라이트 메쉬(정점색 보간) 사용
 /// • 글로벌 틱(물/중력): FixedUpdate에서 단일 큐(더블버퍼) 처리
 /// • 월드 시간: FixedUpdate(0.05s, 20틱/초) 기준, 24분=1일(1440분=1440초=28800틱)
 //// </summary>
@@ -32,9 +32,6 @@ public class WorldManager : MonoBehaviour
     public int ChunkRadius = 7;
     [Tooltip("한 프레임당 최대 로드할 청크 개수")]
     public int maxLoadsPerFrame = 2;
-
-    [Header("Light 레이어용 검정 스프라이트")]
-    public Sprite lightSprite;
 
     [Header("Falling Blocks")]
     public FallingBlock fallingBlockPrefab;
@@ -70,10 +67,6 @@ public class WorldManager : MonoBehaviour
     public KeyCode cycleKey = KeyCode.T;
     [Range(0,20)] public byte dayOffset = 0; // 자연광 전역 감산(0..20). 디버그용은 0..20 핑퐁
     int _dayDir = 1; // +1 ↔ -1
-
-    // Light 공유타일/색상 LUT
-    private static Tile sSharedLightTile;
-    private static readonly Color[] kAlphaLut = new Color[NAT_MAX + 1]; // 0..20 → 알파
 
     // 전역 월드 크기 캐시
     private int W, H;
@@ -403,20 +396,6 @@ public class WorldManager : MonoBehaviour
         worldHour = 0;
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
-
-        // Light 공유 타일/알파 LUT 초기화
-        if (sSharedLightTile == null)
-        {
-            sSharedLightTile = ScriptableObject.CreateInstance<Tile>();
-            sSharedLightTile.sprite = lightSprite;
-            sSharedLightTile.colliderType = Tile.ColliderType.None;
-            sSharedLightTile.name = "LightShared";
-        }
-        for (int i = 0; i <= NAT_MAX; i++)
-        {
-            float a = 1f - (i / (float)NAT_MAX);
-            kAlphaLut[i] = new Color(0f, 0f, 0f, a);
-        }
     }
 
     void Update()
@@ -599,17 +578,6 @@ public class WorldManager : MonoBehaviour
                 liquidBuf[idx] = (liq.amount > 0 && liq.id != 0)
                     ? TileCache.GetWaterByAmount(liq.id, liq.amount)
                     : null;
-
-                // Light: 공유 타일 + 색상
-                byte n0  = worldMap.light[wx, wy].natural;
-                int  ns  = n0 - dayOffset; if (ns < 0) ns = 0;
-                byte art = worldMap.light[wx, wy].artificial;
-                byte fin = (byte)((ns > art) ? ns : art);
-
-                var cell = new Vector3Int(x, y, 0);
-                c.lightTilemap.SetTile(cell, sSharedLightTile);
-                c.lightTilemap.SetTileFlags(cell, TileFlags.None);
-                c.lightTilemap.SetColor(cell, kAlphaLut[fin]);
             }
         }
 
@@ -625,9 +593,13 @@ public class WorldManager : MonoBehaviour
             coll.ProcessTilemapChanges();
         }
 
-        c.bgDirty = c.fgDirty = c.decoDirty = c.liquidDirty = c.lightDirty = false;
-
+        // ✅ 먼저 등록해야 RefreshLightLayer가 접근 가능
         activeChunks[coord] = go;
+
+        // 초기 라이트 메쉬 정점색 세팅
+        RefreshLightLayer(coord);
+
+        c.bgDirty = c.fgDirty = c.decoDirty = c.liquidDirty = c.lightDirty = false;
     }
 
     /// <summary>Dirty 청크 갱신</summary>
@@ -770,26 +742,65 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /// <summary>라이트 레이어만 색 갱신.</summary>
+    /// <summary>라이트 메쉬 정점색 갱신(3×3 가중 평균, 8이웃 포함)</summary>
     private void RefreshLightLayer(Vector2Int coord)
     {
-        var go = activeChunks[coord];
-        var c  = go.GetComponent<Chunk>();
+        if (!activeChunks.TryGetValue(coord, out var go)) return;
+        var c = go.GetComponent<Chunk>();
+        if (c == null || c.lightMeshFilter == null) return;
+
+        var mesh = c.lightMeshFilter.sharedMesh;
+        if (mesh == null) return;
+
+        int vW = ChunkSize + 1;
+        int vH = ChunkSize + 1;
+        int vCount = vW * vH;
+
+        var cols = (c.lightColors != null && c.lightColors.Length == vCount)
+            ? c.lightColors
+            : new Color32[vCount];
 
         int sx = coord.x * ChunkSize, sy = coord.y * ChunkSize;
-        for (int y = 0; y < ChunkSize; y++)
-        for (int x = 0; x < ChunkSize; x++)
+
+        for (int vy = 0; vy <= ChunkSize; vy++)
         {
-            int wx = sx + x, wy = sy + y;
+            for (int vx = 0; vx <= ChunkSize; vx++)
+            {
+                int gx = sx + vx;
+                int gy = sy + vy;
 
-            byte n0  = worldMap.light[wx, wy].natural;
-            int  ns  = n0 - dayOffset; if (ns < 0) ns = 0;
-            byte art = worldMap.light[wx, wy].artificial;
-            byte fin = (byte)((ns > art) ? ns : art);
+                int sumW = 0;
+                int sumF = 0;
 
-            var cell = new Vector3Int(x, y, 0);
-            c.lightTilemap.SetColor(cell, kAlphaLut[fin]);
+                // 3×3 커널: [ [1,2,1],[2,4,2],[1,2,1] ] 총합 16
+                for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int cx = Mathf.Clamp(gx + dx, 0, W - 1);
+                    int cy = Mathf.Clamp(gy + dy, 0, H - 1);
+
+                    int w = ((dx == 0) ? 2 : 1) * ((dy == 0) ? 2 : 1); // 1,2,4
+
+                    byte n0  = worldMap.light[cx, cy].natural;
+                    int  ns  = n0 - dayOffset; if (ns < 0) ns = 0;
+                    byte art = worldMap.light[cx, cy].artificial;
+                    int  f   = ns > art ? ns : art; // 0..NAT_MAX
+
+                    sumW += w;
+                    sumF += f * w;
+                }
+
+                float s = (sumW > 0) ? (sumF / (float)sumW) : 0f; // 0..NAT_MAX
+                float a = 1f - (s / NAT_MAX);                     // 0..1
+                byte  A = (byte)Mathf.RoundToInt(a * 255f);
+
+                int vidx = vy * vW + vx;
+                cols[vidx] = new Color32(0, 0, 0, A);
+            }
         }
+
+        c.lightColors = cols;
+        mesh.colors32 = cols;
     }
 
     /// <summary>(x0,y0) 국소 BFS로 자연광 재계산.</summary>
@@ -832,9 +843,37 @@ public class WorldManager : MonoBehaviour
                     q.Enqueue((mx, my));
                 }
 
+                // 해당 청크 + 경계면 이웃 청크 라이트 갱신 표시
                 var coord = new Vector2Int(x / ChunkSize, y / ChunkSize);
                 if (activeChunks.TryGetValue(coord, out var go))
                     go.GetComponent<Chunk>().lightDirty = true;
+
+                int rx = x % ChunkSize;
+                int ry = y % ChunkSize;
+                if (rx == 0)
+                {
+                    var left = new Vector2Int(coord.x - 1, coord.y);
+                    if (activeChunks.TryGetValue(left, out var goL))
+                        goL.GetComponent<Chunk>().lightDirty = true;
+                }
+                else if (rx == ChunkSize - 1)
+                {
+                    var right = new Vector2Int(coord.x + 1, coord.y);
+                    if (activeChunks.TryGetValue(right, out var goR))
+                        goR.GetComponent<Chunk>().lightDirty = true;
+                }
+                if (ry == 0)
+                {
+                    var down = new Vector2Int(coord.x, coord.y - 1);
+                    if (activeChunks.TryGetValue(down, out var goD))
+                        goD.GetComponent<Chunk>().lightDirty = true;
+                }
+                else if (ry == ChunkSize - 1)
+                {
+                    var up = new Vector2Int(coord.x, coord.y + 1);
+                    if (activeChunks.TryGetValue(up, out var goU))
+                        goU.GetComponent<Chunk>().lightDirty = true;
+                }
             }
         }
     }
