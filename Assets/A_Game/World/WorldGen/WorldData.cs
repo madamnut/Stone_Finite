@@ -7,7 +7,7 @@ public struct WorldData
     public ushort[,]     bg;        // 배경
     public DecoCell[,]   deco;      // 데코
     public LiquidCell[,] liquid;    // 액체
-    public LightCell[,]  light;     // 라이트 (natural/artificial)
+    public LightCell[,]  light;     // 라이트 (natural / artificial)
 
     public WorldData(int width, int height)
     {
@@ -117,6 +117,6 @@ public struct DecoCell
 [Serializable]
 public struct LightCell
 {
-    public byte natural;
-    public byte artificial;
+    public byte natural;     // 0..20
+    public byte artificial;  // 0..20
 }

@@ -17,7 +17,7 @@ public static class WorldDataGenerator
     private const ushort ID_GRASS_LEFTRIGHT     = 8;
     private const ushort ID_GRASS_TOPLEFTRIGHT  = 9;
 
-    private const ushort ID_CLAY                = 10;    // ← Clay 추가
+    private const ushort ID_CLAY                = 10;
 
     private const ushort ID_SAND                = 1000;
     private const ushort ID_GRAVEL              = 1001;
@@ -43,7 +43,7 @@ public static class WorldDataGenerator
     private const byte NATURAL_MAX = 20;
 
     /// <summary>
-    /// 월드 전체 생성. (기존 공개 API 유지)
+    /// 월드 전체 생성.
     /// </summary>
     public static WorldData Generate(WorldGenSettings s)
     {
@@ -52,7 +52,7 @@ public static class WorldDataGenerator
         // 공통 파이프라인 1회 실행 → common, bg 획득
         BuildCommonAndBg(s, out var common, out var bg);
 
-        // 10) 레이어 주입
+        // 레이어 주입
         var world = new WorldData(w, h);
 
         for (int x = 0; x < w; x++)
@@ -91,7 +91,7 @@ public static class WorldDataGenerator
             }
         }
 
-        // 11) 자연광
+        // 자연광
         float start = Time.realtimeSinceStartup;
         PropagateNaturalLight(world);
         float end = Time.realtimeSinceStartup;
@@ -100,19 +100,14 @@ public static class WorldDataGenerator
         return world;
     }
 
-    /// <summary>
-    /// 프리뷰용: common만 바로 뽑아 사용. 연산 중복 없음.
-    /// bg도 필요하면 out으로 함께 수령.
-    /// </summary>
+    /// <summary>프리뷰용: common만.</summary>
     public static ushort[,] GenerateCommon(WorldGenSettings s, out ushort[,] bg)
     {
         BuildCommonAndBg(s, out var common, out bg);
         return common;
     }
 
-    /// <summary>
-    /// 내부 파이프라인: common/bg 구성 단계(1~9단계). 외부에 노출하지 않음.
-    /// </summary>
+    /// <summary>내부 파이프라인: common/bg 구성 단계.</summary>
     private static void BuildCommonAndBg(WorldGenSettings s, out ushort[,] common, out ushort[,] bg)
     {
         int w = s.width, h = s.height;
@@ -188,7 +183,7 @@ public static class WorldDataGenerator
         // 6) 물 플러드필
         FloodFillWater(common, w, h, ID_WATER, ID_AIR);
 
-        // 6.5) 지형 변환: 모래/자갈/점토 (플러드필 이후, 잔디 이전)
+        // 6.5) 지형 변환: 모래/자갈/점토
         ApplySandAndGravelAndClay(s, common);
 
         // 7) 잔디 변형
@@ -297,9 +292,8 @@ public static class WorldDataGenerator
             if (nearSand)
             {
                 double r = rand.NextDouble();
-                if      (r < 0.40) common[x, y] = ID_GRAVEL; // 40%
-                else if (r < 0.80) common[x, y] = ID_CLAY;   // 40%
-                // 나머지 20%는 유지
+                if      (r < 0.40) common[x, y] = ID_GRAVEL;
+                else if (r < 0.80) common[x, y] = ID_CLAY;
             }
         }
     }

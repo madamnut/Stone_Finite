@@ -201,5 +201,20 @@
     "output": "Primal Workbench",
     "outputActions": [],
     "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Leaf", "count": 1 },
+      { "itemId": "Leaf", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Torch",
+    "outputActions": [],
+    "outputCount": 10
   }
 ]

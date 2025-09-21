@@ -22,7 +22,8 @@ public class CellLibrary : MonoBehaviour
         public CellType type;
         public bool     gravity;
         public DepFlags depend;
-        public string   interaction; // ← 추가
+        public string   interaction; // 검색용
+        public byte     brightness;  // 인공광 트리거(0..20)
     }
 
     private static readonly Dictionary<ushort, CellDef> byId = new();
@@ -71,8 +72,12 @@ public class CellLibrary : MonoBehaviour
                 }
             }
 
-            // ATT_Cell의 검색용 속성
-            string interaction = obj["interaction"]?.Value<string>(); // ← 추가
+            string interaction = obj["interaction"]?.Value<string>();
+
+            // 인공광: 스칼라만 사용(0..20)
+            byte brightness = 0;
+            if (obj["brightness"] != null)
+                brightness = (byte)Mathf.Clamp(obj["brightness"]!.Value<int>(), 0, 20);
 
             var sp = atlas.GetSprite(key);
             if (sp == null)
@@ -86,19 +91,19 @@ public class CellLibrary : MonoBehaviour
 
             byId.Add(id, new CellDef {
                 name = key, sprite = sp, id = id, type = type, gravity = gravity, depend = depend,
-                interaction = interaction // ← 추가
+                interaction = interaction, brightness = brightness
             });
             idToKey[id] = key;
         }
     }
 
-    public static CellType TypeOf(ushort id)        => byId.TryGetValue(id, out var d) ? d.type    : CellType.None;
+    public static CellType TypeOf(ushort id)         => byId.TryGetValue(id, out var d) ? d.type    : CellType.None;
     public static bool     HasGravity(ushort id)     => byId.TryGetValue(id, out var d) && d.gravity;
-    public static DepFlags DependFlagsOf(ushort id)  => byId.TryGetValue(id, out var d) ? d.depend : DepFlags.None;
+    public static DepFlags DependFlagsOf(ushort id)  => byId.TryGetValue(id, out var d) ? d.depend  : DepFlags.None;
     public static Sprite   GetSprite(ushort id)      => byId.TryGetValue(id, out var d) ? d.sprite  : null;
     public static string   GetName(ushort id)        => byId.TryGetValue(id, out var d) ? d.name    : $"Unknown_{id}";
     public static string   GetKey(ushort id)         => idToKey.TryGetValue(id, out var k) ? k : null;
+    public static string   InteractionOf(ushort id)  => byId.TryGetValue(id, out var d) ? d.interaction : null;
 
-    // 셀 상호작용 조회용 API
-    public static string InteractionOf(ushort id)    => byId.TryGetValue(id, out var d) ? d.interaction : null; // ← 추가
+    public static byte     BrightnessOf(ushort id)   => byId.TryGetValue(id, out var d) ? d.brightness : (byte)0;
 }
