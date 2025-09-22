@@ -298,7 +298,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  아이템 사용 (interaction.type 분기) — 현재 Place만
+     *  아이템 사용 (interaction.type 분기) — Place, UseOnLiquid
      *────────────────────────────────────────────────────*/
     void UseItem()
     {
@@ -326,6 +326,9 @@ public class InteractionController : MonoBehaviour
         {
             case "Place":
                 HandlePlace(held, cx, cy, inter);
+                break;
+            case "UseOnLiquid":
+                HandleUseOnLiquid(held, cx, cy, inter);
                 break;
         }
     }
@@ -360,8 +363,8 @@ public class InteractionController : MonoBehaviour
 
         // 레이어 정책
         bool wantFG;
-        if (layerStr == "Solid")       wantFG = true;
-        else if (layerStr == "Deco")   wantFG = true;   // Deco도 전경 점유 규칙을 따른다(전경 점유 시 배치 금지)
+        if (layerStr == "Solid")         wantFG = true;
+        else if (layerStr == "Deco")     wantFG = true;   // Deco도 전경 점유 규칙을 따른다(전경 점유 시 배치 금지)
         else if (layerStr == "Flexible") wantFG = (_breakMode == BreakMode.FG);
         else return;
 
@@ -374,8 +377,75 @@ public class InteractionController : MonoBehaviour
 
         if (sound != null) sound.PlayPlace();
 
+        // 소비
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        // 갱신 통지
+        player.Inventory.NotifyChanged();
+
+        LogScopeItem();
+    }
+
+    /*──────────────────────────────────────────────────────
+     *  UseOnLiquid 처리: 물 cost만큼 소모 → 결과 아이템 지급
+     *  - Dirt Pile 같은 소모품은 항상 1개 소모
+     *────────────────────────────────────────────────────*/
+    void HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    {
+        if (!inter.TryGetValue("params", out var paramObj)) return;
+
+        Dictionary<string, object> param = null;
+        if (paramObj is Dictionary<string, object> p) param = p;
+        else if (paramObj is JObject jp) param = jp.ToObject<Dictionary<string, object>>();
+        if (param == null) return;
+
+        string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
+        string outputName = param.TryGetValue("output", out var oo) ? oo?.ToString() : null;
+        int    cost       = 1;
+        if (param.TryGetValue("cost", out var co))
+        {
+            try { cost = Mathf.Max(1, System.Convert.ToInt32(co)); }
+            catch { cost = 1; }
+        }
+        if (string.IsNullOrEmpty(liquidName) || string.IsNullOrEmpty(outputName)) return;
+
+        // 이름 → ID 해석
+        ushort targetLiquidId = 0;
+        for (ushort id = 1; id < ushort.MaxValue; id++)
+        {
+            var nm = CellLibrary.GetName(id);
+            if (!string.IsNullOrEmpty(nm) && nm == liquidName) { targetLiquidId = id; break; }
+        }
+        if (targetLiquidId == 0) { Debug.LogWarning($"[UseOnLiquid] 액체 이름을 찾을 수 없음: {liquidName}"); return; }
+
+        // 대상 셀의 액체 상태 확인
+        var lc = worldManager.worldMap.liquid[cx, cy];
+        if (lc.id != targetLiquidId || lc.amount < cost) return;
+
+        // held 1개 소모
+        if (held.Count < 1) return;
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        // 갱신 통지
+        player.Inventory.NotifyChanged();
+
+        // 액체 amount 감소 및 렌더 더티
+        int newAmt = Mathf.Clamp(lc.amount - cost, 0, 100);
+        worldManager.worldMap.liquid[cx, cy].amount = (byte)newAmt;
+        worldManager.worldMap.liquid[cx, cy].id     = (ushort)(newAmt > 0 ? targetLiquidId : 0);
+        worldManager.MarkChunkDirty(cx, cy, markFG:false, markBG:false, markDeco:false, markLiquid:true);
+        worldManager.EnqTick(cx, cy);
+
+        // 결과 아이템 지급
+        var outItem = itemLibrary.Create(outputName, 1);
+        if (outItem != null)
+        {
+            int left = player.Inventory.AddItem(outItem);
+            if (left > 0)
+            {
+                Debug.LogWarning("[UseOnLiquid] 인벤토리가 가득 찼습니다. 결과 일부를 수용하지 못했습니다.");
+            }
+        }
 
         LogScopeItem();
     }

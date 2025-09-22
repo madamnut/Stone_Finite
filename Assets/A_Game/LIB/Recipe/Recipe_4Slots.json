@@ -72,5 +72,24 @@
     "output": "Dirt",
     "outputCount": 1,
     "outputActions": []
+  },
+
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Mud Chunk", "count": 1 },
+      { "itemId": "Mud Chunk", "count": 1 },      
+      { "itemId": "Mud Chunk", "count": 1 },
+      { "itemId": "Mud Chunk", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Mud",
+    "outputCount": 1,
+    "outputActions": []
   }
 ]

@@ -4,8 +4,18 @@
     "spriteName": "Dirt Pile",
     "itemType": "Misc",
     "maxStack": 100,
-    "unique": {}
+    "unique": {
+      "interaction": {
+        "type": "UseOnLiquid",
+        "params": {
+          "liquid": "Water",
+          "cost": 1,
+          "output": "Mud Chunk"
+        }
+      }
+    }
   },
+
   "Dirt": {
     "name": "Dirt",
     "spriteName": "Dirt",
@@ -22,8 +32,28 @@
     }
   },
 
-
-
+    "Mud Chunk": {
+    "name": "Mud Chunk",
+    "spriteName": "Mud Chunk",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {}
+  },
+    "Mud": {
+    "name": "Mud",
+    "spriteName": "Mud",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Flexible",
+          "cell": "Mud"
+        }
+      }
+    }
+  },
 
     "Sand Pile": {
     "name": "Sand Pile",
