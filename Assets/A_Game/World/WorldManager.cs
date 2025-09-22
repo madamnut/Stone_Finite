@@ -54,10 +54,9 @@ public class WorldManager : MonoBehaviour
     private const byte NAT_MAX = 20;
     private const byte ART_MAX = 20;
 
-    [Header("Day/Night Debug")]
-    public KeyCode cycleKey = KeyCode.T;
-    [Range(0,20)] public byte dayOffset = 0;
-    int _dayDir = 1;
+    [Header("Global Brightness Offset (auto by time) 0=밝음, 18=어두움")]
+    [Range(0,18)] public byte globalBrightnessOffset = 0; // 시간 동기화로 자동 갱신
+    private byte _lastBrightnessOffset = 255;             // 변경 감지용
 
     // 인공광 감쇄(공기=1, BG=2, FG=3)
     private const int ATT_AIR = 1;
@@ -381,26 +380,13 @@ public class WorldManager : MonoBehaviour
         worldHour = 0;
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
+
+        // 시작 시 오프셋 초기화 강제 적용
+        ApplyTimeSyncedBrightness(forceDirty:true);
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(cycleKey))
-        {
-            int next = (int)dayOffset + _dayDir;
-            if (next > 20) { next = 19; _dayDir = -1; }
-            else if (next < 0) { next = 1; _dayDir = 1; }
-
-            dayOffset = (byte)next;
-
-            foreach (var kv in activeChunks)
-            {
-                var c = kv.Value.GetComponent<Chunk>();
-                if (c != null) c.lightDirty = true;
-            }
-            Debug.Log($"[DayNight] dayOffset={dayOffset}");
-        }
-
         UpdateVisibleChunks();
     }
 
@@ -424,7 +410,37 @@ public class WorldManager : MonoBehaviour
             }
             worldHour = worldMinute / 60;
 
+            // 분 단위 갱신 시 시간동기 전역 밝기 오프셋 계산 및 반영
+            ApplyTimeSyncedBrightness(forceDirty:false);
+
             var band = GetTimeBand();
+        }
+    }
+
+    // 시간→전역 밝기 오프셋(0=밝음, 18=어두움), 변경 시 모든 활성 청크 lightDirty
+    private void ApplyTimeSyncedBrightness(bool forceDirty)
+    {
+        int m = worldHour * 60 + (worldMinute % 60); // 0..1439
+        float off =
+            (m >= 300  && m < 540 ) ? 18f * (1f - (m - 300) / 240f) : // 05:00→09:00 18→0
+            (m >= 540  && m < 1080) ? 0f                          : // 09:00→18:00 0
+            (m >= 1080 && m < 1260) ? 18f * ((m - 1080) / 180f)   : // 18:00→21:00 0→18
+                                       18f;                         // 21:00→05:00 18
+        byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, 18f));
+
+        if (forceDirty || newOffset != globalBrightnessOffset)
+        {
+            globalBrightnessOffset = newOffset;
+
+            if (newOffset != _lastBrightnessOffset || forceDirty)
+            {
+                _lastBrightnessOffset = newOffset;
+                foreach (var kv in activeChunks)
+                {
+                    var c = kv.Value.GetComponent<Chunk>();
+                    if (c != null) c.lightDirty = true;
+                }
+            }
         }
     }
 
@@ -761,9 +777,9 @@ public class WorldManager : MonoBehaviour
                 void Sample(int x, int y)
                 {
                     var L = worldMap.light[x, y];
-                    int ns = L.natural - dayOffset; if (ns < 0) ns = 0;          // 0..NAT_MAX
+                    int ns = L.natural - globalBrightnessOffset; if (ns < 0) ns = 0; // 0..NAT_MAX
                     float n01 = ns / (float)NAT_MAX;
-                    float a01 = L.artificial / (float)ART_MAX;                   // 0..ART_MAX
+                    float a01 = L.artificial / (float)ART_MAX;                      // 0..ART_MAX
                     sum += Mathf.Max(n01, a01);
                 }
 
