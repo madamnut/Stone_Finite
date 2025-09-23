@@ -2960,8 +2960,7 @@ MonoBehaviour:
   ticksPerSecond: 20
   minutesPerDay: 1440
   ticksPerDay: 28800
-  cycleKey: 116
-  dayOffset: 0
+  globalBrightnessOffset: 0
   worldTick: 0
   worldMinute: 0
   worldHour: 0
@@ -7204,6 +7203,13 @@ MonoBehaviour:
   a: 23
   b: 12
   orbitSmooth: 6
+  dark:
+    serializedVersion: 2
+    rgba: 4280163870
+  bright:
+    serializedVersion: 2
+    rgba: 4294967295
+  brightnessSmoothTime: 0.6
 --- !u!1 &1561819275
 GameObject:
   m_ObjectHideFlags: 0
