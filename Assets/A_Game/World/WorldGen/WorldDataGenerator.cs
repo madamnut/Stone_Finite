@@ -43,14 +43,14 @@ public static class WorldDataGenerator
     private const byte NATURAL_MAX = 20;
 
     /// <summary>
-    /// 월드 전체 생성.
+    /// 월드 전체 생성. 시드는 별도 인자.
     /// </summary>
-    public static WorldData Generate(WorldGenSettings s)
+    public static WorldData Generate(WorldGenSettings s, int seed)
     {
         int w = s.width, h = s.height;
 
         // 공통 파이프라인 1회 실행 → common, bg 획득
-        BuildCommonAndBg(s, out var common, out var bg);
+        BuildCommonAndBg(s, seed, out var common, out var bg);
 
         // 레이어 주입
         var world = new WorldData(w, h);
@@ -100,15 +100,15 @@ public static class WorldDataGenerator
         return world;
     }
 
-    /// <summary>프리뷰용: common만.</summary>
-    public static ushort[,] GenerateCommon(WorldGenSettings s, out ushort[,] bg)
+    /// <summary>프리뷰용: common만. 시드 별도 인자.</summary>
+    public static ushort[,] GenerateCommon(WorldGenSettings s, int seed, out ushort[,] bg)
     {
-        BuildCommonAndBg(s, out var common, out bg);
+        BuildCommonAndBg(s, seed, out var common, out bg);
         return common;
     }
 
     /// <summary>내부 파이프라인: common/bg 구성 단계.</summary>
-    private static void BuildCommonAndBg(WorldGenSettings s, out ushort[,] common, out ushort[,] bg)
+    private static void BuildCommonAndBg(WorldGenSettings s, int seed, out ushort[,] common, out ushort[,] bg)
     {
         int w = s.width, h = s.height;
 
@@ -124,7 +124,7 @@ public static class WorldDataGenerator
         float[,] dirtH = new float[w, h], rockH = new float[w, h], granH = new float[w, h], amphH = new float[w, h];
         for (int x = 0; x < w; x++)
         {
-            float sx = x + s.seed;
+            float sx = x + seed;
             for (int y = 0; y < h; y++)
             {
                 dirtH[x, y] = ProceduralUtil.FractalPerlin1D(
@@ -164,10 +164,10 @@ public static class WorldDataGenerator
         }
 
         // 4) 광물
-        ApplyOreClusters(s, common);
+        ApplyOreClusters(s, seed, common);
 
         // 4.5) 점토 클러스터 (Dirt에만 생성)
-        ApplyClayClusters(s, common);
+        ApplyClayClusters(s, seed, common);
 
         // 5) 동굴 캐브아웃
         bool[,] cave = ProceduralUtil.GenerateMixedCave(
@@ -184,7 +184,7 @@ public static class WorldDataGenerator
         FloodFillWater(common, w, h, ID_WATER, ID_AIR);
 
         // 6.5) 지형 변환: 모래/자갈/점토
-        ApplySandAndGravelAndClay(s, common);
+        ApplySandAndGravelAndClay(s, seed, common);
 
         // 7) 잔디 변형
         for (int x = 0; x < w; x++)
@@ -193,21 +193,20 @@ public static class WorldDataGenerator
                 common[x, y] = GetGrassVariant(x, y, common);
 
         // 8) 나무
-        PlaceTrees(s, common);
+        PlaceTrees(s, seed, common);
 
         // 9) 데코
-        PlaceDecorAfterTrees(s, common);
+        PlaceDecorAfterTrees(s, seed, common);
     }
 
     // ─────────────────────────────────────────────────────────
     // 모래/자갈/점토 변환
     // ─────────────────────────────────────────────────────────
-    private static void ApplySandAndGravelAndClay(WorldGenSettings s, ushort[,] common)
+    private static void ApplySandAndGravelAndClay(WorldGenSettings s, int seed, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
-        var rand = new System.Random(s.seed ^ 0xA11CE);
+        var rand = new System.Random(seed ^ 0xA11CE);
 
-        // 스냅샷
         var snap = (ushort[,])common.Clone();
 
         // 1) Dirt → Sand (반경3 내 Water)
@@ -301,7 +300,7 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 점토 클러스터 (Dirt에만 부여)
     // ─────────────────────────────────────────────────────────
-    private static void ApplyClayClusters(WorldGenSettings s, ushort[,] common)
+    private static void ApplyClayClusters(WorldGenSettings s, int seed, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
 
@@ -324,7 +323,7 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 광물 클러스터
     // ─────────────────────────────────────────────────────────
-    private static void ApplyOreClusters(WorldGenSettings s, ushort[,] common)
+    private static void ApplyOreClusters(WorldGenSettings s, int seed, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
 
@@ -419,12 +418,11 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 배치
     // ─────────────────────────────────────────────────────────
-    private static void PlaceTrees(WorldGenSettings s, ushort[,] common)
+    private static void PlaceTrees(WorldGenSettings s, int seed, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
-        var rand = new System.Random(s.seed);
+        var rand = new System.Random(seed);
 
-        // 템플릿 로드
         var tpl = StructureLoader.Load("Tree");
         if (tpl == null || tpl.layers == null || tpl.layers.deco == null) return;
         var deco = tpl.layers.deco;
@@ -445,10 +443,10 @@ public static class WorldDataGenerator
             int worldOx = x - ax;
             int worldOy = seedY - ay;
 
-            // 템플릿 페인트 (JSON top→bottom → 로컬 bottom-up 변환)
+            // 템플릿 페인트
             for (int ty = 0; ty < tplH; ty++)
             {
-                int ly = tplH - 1 - ty; // 로컬 y (아래=0)
+                int ly = tplH - 1 - ty;
                 for (int tx = 0; tx < tplW; tx++)
                 {
                     int id = deco[ty][tx];
@@ -461,7 +459,6 @@ public static class WorldDataGenerator
                     int curr = common[wx, wy];
                     bool canWrite = false;
 
-                    // id별 덮어쓰기 규칙
                     if (tpl.writeRules != null && tpl.writeRules.TryGetValue(id, out var rule) && rule?.targets != null)
                     {
                         for (int k = 0; k < rule.targets.Length; k++)
@@ -469,7 +466,6 @@ public static class WorldDataGenerator
                     }
                     else
                     {
-                        // 기본: 공기만
                         canWrite = (curr == ID_AIR);
                     }
 
@@ -482,10 +478,10 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 이후 데코
     // ─────────────────────────────────────────────────────────
-    private static void PlaceDecorAfterTrees(WorldGenSettings s, ushort[,] common)
+    private static void PlaceDecorAfterTrees(WorldGenSettings s, int seed, ushort[,] common)
     {
         int w = common.GetLength(0), h = common.GetLength(1);
-        var rand = new System.Random(s.seed ^ 0xDEC0);
+        var rand = new System.Random(seed ^ 0xDEC0);
 
         for (int x = 1; x < w - 1; x++)
         for (int y = 1; y < h - 1; y++)

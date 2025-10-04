@@ -4,7 +4,6 @@ using UnityEngine;
 public class WorldGenSettings : ScriptableObject
 {
     [Header("Base Settings")]
-    public int seed = 42;
     public int width = 5120;
     public int height = 1536;
 

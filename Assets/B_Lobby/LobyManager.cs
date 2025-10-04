@@ -2,124 +2,126 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Text.RegularExpressions;
-using UnityEngine.SceneManagement; // 씬 전환용
+using UnityEngine.SceneManagement;
+using System.IO;
+using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 public class LobyManager : MonoBehaviour
 {
-    [Header("패널 오브젝트 (Canvas 자식)")]
-    public GameObject singlePanel;      // 싱글플레이 패널
-    public GameObject newGamePanel;     // 싱글플레이 패널의 자식 (오버레이)
-    public GameObject creditPanel;      // 크레딧 패널
+    [Header("패널")]
+    public GameObject singlePanel;
+    public GameObject newGamePanel;
+    public GameObject creditPanel;
 
-    [Header("싱글플레이 패널 UI")]
+    [Header("싱글플레이 패널")]
     public Button continueButton;
     public Button newGameButton;
     public Button singleBackButton;
 
-    [Header("뉴게임 패널 UI")]
+    [Header("뉴게임 패널")]
     public TMP_InputField worldNameInput;
     public TMP_InputField seedInput;
     public Button newGameStartButton;
     public Button newGameBackButton;
 
-    [Header("로비(메인 메뉴) 버튼 (Canvas 자식, 항상 보임)")]
+    [Header("메인 메뉴")]
     public Button singlePlayButton;
     public Button multiPlayButton;
     public Button optionsButton;
     public Button creditButton;
     public Button exitButton;
 
-    [Header("크레딧 패널 UI")]
+    [Header("크레딧")]
     public Button creditBackButton;
 
-    [Header("스플래시 텍스트(로고 등)")]
+    [Header("스플래시")]
     public TMP_Text splashText;
-    public TextAsset splashTextJson; // 인스펙터에서 splash_texts.json 연결
-
-    [Header("스플래시 애니메이션 속도/스케일")]
-    public float splashAnimPeriod = 1f;     // 1초 주기
+    public TextAsset splashTextJson;
+    public float splashAnimPeriod = 1f;
     public float splashScaleMin = 0.7f;
     public float splashScaleMax = 1.3f;
-    float splashAnimTimer = 0f;
 
-    // 파일명 허용 문자 (윈도우 기준: 영어, 숫자, 언더바, 하이픈, 공백, 괄호, 대괄호, 점)
-    static readonly Regex FileNameSafeRegex = new Regex(@"[^a-zA-Z0-9 _\-\(\)\[\]\.]", RegexOptions.Compiled);
+    [Header("씬/목록")]
+    public string ingameSceneName = "Ingame";
+    public Transform worldListContentRoot;
+    public GameObject worldEntryPrefab;
+
+    float splashAnimTimer;
+    static readonly Regex FileNameSafeRegex = new Regex(@"[^a-zA-Z0-9 _\\-\\(\\)\\[\\]\\.]", RegexOptions.Compiled);
+
+    string _selectedWorldName;
+    readonly Dictionary<GameObject, string> _entryToWorld = new();
 
     void Start()
     {
         SetAllPanelsOff();
-
-        // 스플래시 텍스트 랜덤 적용
         ApplyRandomSplashText();
 
-        // 로비(메인 메뉴) 버튼
-        if (singlePlayButton != null) singlePlayButton.onClick.AddListener(() => { singlePanel.SetActive(true); newGamePanel.SetActive(false); });
-        if (multiPlayButton != null) multiPlayButton.interactable = false;
-        if (optionsButton != null) optionsButton.interactable = false;
-        if (creditButton != null) creditButton.onClick.AddListener(() => creditPanel.SetActive(true));
-        if (exitButton != null) exitButton.onClick.AddListener(OnClickExit);
+        if (singlePlayButton) singlePlayButton.onClick.AddListener(() => { singlePanel.SetActive(true); newGamePanel.SetActive(false); });
+        if (multiPlayButton)  multiPlayButton.interactable = false;
+        if (optionsButton)    optionsButton.interactable = false;
+        if (creditButton)     creditButton.onClick.AddListener(() => creditPanel.SetActive(true));
+        if (exitButton)       exitButton.onClick.AddListener(OnClickExit);
 
-        // 싱글플레이 패널
-        if (singleBackButton != null) singleBackButton.onClick.AddListener(() => singlePanel.SetActive(false));
-        if (newGameButton != null) newGameButton.onClick.AddListener(() => newGamePanel.SetActive(true));
+        if (singleBackButton) singleBackButton.onClick.AddListener(() => singlePanel.SetActive(false));
+        if (newGameButton)    newGameButton.onClick.AddListener(() => newGamePanel.SetActive(true));
 
-        // 뉴게임 패널
-        if (newGameStartButton != null) newGameStartButton.onClick.AddListener(OnClickStartNewGame);
-        if (newGameBackButton != null) newGameBackButton.onClick.AddListener(() => newGamePanel.SetActive(false));
+        if (newGameStartButton) newGameStartButton.onClick.AddListener(OnClickStartNewGame);
+        if (newGameBackButton)  newGameBackButton.onClick.AddListener(() => newGamePanel.SetActive(false));
 
-        // 크레딧 패널
-        if (creditBackButton != null) creditBackButton.onClick.AddListener(() => creditPanel.SetActive(false));
+        if (creditBackButton) creditBackButton.onClick.AddListener(() => creditPanel.SetActive(false));
 
-        // 입력 제한 리스너
-        if (worldNameInput != null)
-            worldNameInput.onValueChanged.AddListener(OnWorldNameChanged);
-        if (seedInput != null)
-            seedInput.onValueChanged.AddListener(OnSeedChanged);
+        if (worldNameInput) worldNameInput.onValueChanged.AddListener(OnWorldNameChanged);
+        if (seedInput)      seedInput.onValueChanged.AddListener(OnSeedChanged);
+
+        if (continueButton) { continueButton.interactable = false; continueButton.onClick.AddListener(OnContinue); }
+
+        RefreshWorldList();
+        RebuildScrollContent();
     }
 
     void Update()
     {
-        // ESC 키: 가장 최근에 띄운 패널 Back
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (newGamePanel != null && newGamePanel.activeSelf)
-                newGamePanel.SetActive(false);      // 뉴게임 패널만 닫기 (싱글패널은 남김)
-            else if (singlePanel != null && singlePanel.activeSelf)
-                singlePanel.SetActive(false);       // 싱글패널 닫으면 메인메뉴로
-            else if (creditPanel != null && creditPanel.activeSelf)
-                creditPanel.SetActive(false);       // 크레딧 닫으면 메인메뉴로
+            if (newGamePanel && newGamePanel.activeSelf) newGamePanel.SetActive(false);
+            else if (singlePanel && singlePanel.activeSelf) singlePanel.SetActive(false);
+            else if (creditPanel && creditPanel.activeSelf) creditPanel.SetActive(false);
         }
 
-        // ===== 스플래시 텍스트 애니메이션 =====
-        if (splashText != null)
+        if (splashText)
         {
             splashAnimTimer += Time.deltaTime;
-            float t = (splashAnimTimer % splashAnimPeriod) / splashAnimPeriod; // 0~1
+            float t = (splashAnimTimer % splashAnimPeriod) / splashAnimPeriod;
             float scale = Mathf.Lerp(splashScaleMin, splashScaleMax, 0.5f - 0.5f * Mathf.Cos(2 * Mathf.PI * t));
             splashText.transform.localScale = new Vector3(scale, scale, 1f);
         }
+
+        RebuildScrollContent();
     }
+
+    void OnTransformChildrenChanged() => RebuildScrollContent();
 
     void SetAllPanelsOff()
     {
-        if (singlePanel != null) singlePanel.SetActive(false);
-        if (newGamePanel != null) newGamePanel.SetActive(false);
-        if (creditPanel != null) creditPanel.SetActive(false);
+        if (singlePanel) singlePanel.SetActive(false);
+        if (newGamePanel) newGamePanel.SetActive(false);
+        if (creditPanel) creditPanel.SetActive(false);
     }
 
     void OnClickStartNewGame()
     {
-        string worldName = worldNameInput != null ? worldNameInput.text : "";
-        string seedText = seedInput != null ? seedInput.text : "";
+        string worldName = worldNameInput ? worldNameInput.text.Trim() : "";
+        string seedText  = seedInput ? seedInput.text : "";
 
-        // [1단계] 씬 전환용 월드 데이터 저장 (WorldLoadContext 사용)
-        WorldLoadContext.WorldName = worldName;
-        WorldLoadContext.Seed = seedText;
+        if (string.IsNullOrEmpty(worldName)) { Debug.LogWarning("worldName empty"); return; }
 
-        Debug.Log($"[뉴게임] 월드 이름: {worldName}, 시드: {seedText}");
+        int seedValue = 0;
+        if (!string.IsNullOrEmpty(seedText)) int.TryParse(seedText, out seedValue);
 
-        // [1단계] 실제 게임 씬으로 이동 (씬 이름은 인스펙터에서 지정)
-        SceneManager.LoadScene("Game");
+        WorldLoadContext.SetNewWorld(worldName, seedValue);
+        SceneManager.LoadScene(ingameSceneName);
     }
 
     void OnClickExit()
@@ -131,11 +133,10 @@ public class LobyManager : MonoBehaviour
 #endif
     }
 
-    // 월드명: 파일명 허용 문자만
     void OnWorldNameChanged(string text)
     {
         string filtered = FileNameSafeRegex.Replace(text, "");
-        if (filtered != text)
+        if (filtered != text && worldNameInput)
         {
             int caret = worldNameInput.caretPosition;
             worldNameInput.text = filtered;
@@ -143,11 +144,10 @@ public class LobyManager : MonoBehaviour
         }
     }
 
-    // 시드: 숫자만
     void OnSeedChanged(string text)
     {
         string filtered = Regex.Replace(text, @"[^0-9]", "");
-        if (filtered != text)
+        if (filtered != text && seedInput)
         {
             int caret = seedInput.caretPosition;
             seedInput.text = filtered;
@@ -155,34 +155,103 @@ public class LobyManager : MonoBehaviour
         }
     }
 
-    // 제이슨 파일(string 배열)을 파싱해서 랜덤으로 splashText에 표시
     void ApplyRandomSplashText()
     {
+        if (!splashText) return;
+
         if (splashTextJson == null || string.IsNullOrWhiteSpace(splashTextJson.text))
-        {
-            if (splashText != null)
-                splashText.text = "The Beginning!";
-            return;
-        }
+        { splashText.text = "The Beginning!"; return; }
 
         try
         {
             string[] arr = JsonHelper.FromJson<string>(splashTextJson.text);
-            if (arr != null && arr.Length > 0)
-            {
-                string msg = arr[Random.Range(0, arr.Length)];
-                if (splashText != null)
-                    splashText.text = msg;
-            }
+            splashText.text = (arr != null && arr.Length > 0) ? arr[Random.Range(0, arr.Length)] : "The Beginning!";
         }
-        catch
+        catch { splashText.text = "The Beginning!"; }
+    }
+
+    // === 월드 목록 ===
+    public void RefreshWorldList()
+    {
+        if (!worldListContentRoot) return;
+
+        string worldsRoot = Path.Combine(Application.persistentDataPath, "Worlds");
+        foreach (Transform c in worldListContentRoot) Destroy(c.gameObject);
+        _entryToWorld.Clear();
+        _selectedWorldName = null;
+        if (continueButton) continueButton.interactable = false;
+
+        if (!Directory.Exists(worldsRoot)) return;
+
+        var worldDirs = Directory.GetDirectories(worldsRoot);
+        foreach (var dir in worldDirs)
         {
-            if (splashText != null)
-                splashText.text = "The Beginning!";
+            string metaPath = Path.Combine(dir, "world_meta.json");
+            if (!File.Exists(metaPath)) continue;
+
+            string worldName = Path.GetFileName(dir);
+            var meta = JsonUtility.FromJson<WorldMetaData>(File.ReadAllText(metaPath));
+
+            GameObject entry = Instantiate(worldEntryPrefab, worldListContentRoot);
+            _entryToWorld[entry] = worldName;
+
+            var label = entry.GetComponentInChildren<TMP_Text>();
+            if (label) label.text = $"{meta.worldName}\nSeed: {meta.seed}";
+
+            var button = entry.GetComponent<Button>();
+            if (button) button.onClick.AddListener(() => OnEntryClick(entry));
+
+            var click = entry.AddComponent<WorldEntryClickHandler>();
+            click.Init(() => OnEntryClick(entry), () => OnEntryDoubleClick(entry));
         }
     }
 
-    // Unity의 JsonUtility는 루트 배열 지원X → 임시 래퍼 유틸
+    void OnEntryClick(GameObject entry)
+    {
+        _selectedWorldName = _entryToWorld[entry];
+        if (continueButton) continueButton.interactable = true;
+
+        foreach (var kv in _entryToWorld)
+        {
+            var img = kv.Key.GetComponent<Image>();
+            if (img) img.color = (kv.Key == entry) ? new Color(0.85f, 0.95f, 1f, 1f) : Color.white;
+        }
+    }
+
+    void OnEntryDoubleClick(GameObject entry)
+    {
+        _selectedWorldName = _entryToWorld[entry];
+        LoadSelectedWorld();
+    }
+
+    void OnContinue() => LoadSelectedWorld();
+
+    void LoadSelectedWorld()
+    {
+        if (string.IsNullOrEmpty(_selectedWorldName)) return;
+        WorldLoadContext.SetLoadWorld(_selectedWorldName);
+        SceneManager.LoadScene(ingameSceneName);
+    }
+
+    void RebuildScrollContent()
+    {
+        if (!worldListContentRoot) return;
+        var rt = worldListContentRoot as RectTransform;
+        if (!rt) return;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+        float prefH = LayoutUtility.GetPreferredHeight(rt);
+        var size = rt.sizeDelta;
+        rt.sizeDelta = new Vector2(size.x, prefH);
+    }
+
+    [System.Serializable]
+    public class WorldMetaData
+    {
+        public string worldName;
+        public int    seed;
+        public string lastPlayed;
+    }
+
     public static class JsonHelper
     {
         public static T[] FromJson<T>(string json)
@@ -191,7 +260,29 @@ public class LobyManager : MonoBehaviour
             Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(newJson);
             return wrapper.array;
         }
-        [System.Serializable]
-        private class Wrapper<T> { public T[] array; }
+        [System.Serializable] private class Wrapper<T> { public T[] array; }
+    }
+}
+
+// 내장 더블클릭 핸들러
+public class WorldEntryClickHandler : MonoBehaviour, IPointerClickHandler
+{
+    public System.Action onSingleClick;
+    public System.Action onDoubleClick;
+
+    float lastClickTime;
+    const float doubleClickThreshold = 0.25f;
+
+    public void Init(System.Action singleClick, System.Action doubleClick)
+    {
+        onSingleClick = singleClick;
+        onDoubleClick = doubleClick;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        float t = Time.unscaledTime;
+        if (t - lastClickTime < doubleClickThreshold) { onDoubleClick?.Invoke(); lastClickTime = 0f; }
+        else { onSingleClick?.Invoke(); lastClickTime = t; }
     }
 }

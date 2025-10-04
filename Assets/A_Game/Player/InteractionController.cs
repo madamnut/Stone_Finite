@@ -13,6 +13,8 @@ public class InteractionController : MonoBehaviour
     [Header("UI")]
     [Tooltip("Canvas 안 인벤토리 패널 오브젝트")]
     public GameObject inventoryPanel;
+    [Tooltip("일시정지 메뉴 루트(ESC)")]
+    public GameObject pauseMenuRoot;
 
     [Header("Key Settings")]
     public KeyCode toggleInventoryKey = KeyCode.E;
@@ -69,6 +71,10 @@ public class InteractionController : MonoBehaviour
     void Awake()
     {
         if (inventoryPanel != null) { inventoryPanel.SetActive(true); inventoryPanel.SetActive(false); }
+        if (pauseMenuRoot   != null) pauseMenuRoot.SetActive(false);
+        Time.timeScale = 1f;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
 
         _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
@@ -79,7 +85,6 @@ public class InteractionController : MonoBehaviour
         if (hotbar != null) hotbar.SetScope(_hotbarScope);
         LogScopeItem();
 
-        // RecipeLibrary에 ItemLibrary 연결(엔진 역할)
         if (recipeLibrary != null) recipeLibrary.itemLibrary = itemLibrary;
     }
 
@@ -94,44 +99,27 @@ public class InteractionController : MonoBehaviour
             LogScopeItem();
         }
 
-        /*── 상태 전환 ──*/
-        if (Input.GetKeyDown(toggleInventoryKey))
+        /*── 인벤토리 토글(E): Ingame에서만 ──*/
+        if (Input.GetKeyDown(toggleInventoryKey) && _state == GameState.Ingame)
         {
-            if (_state == GameState.Ingame)
+            _state = GameState.Inpanel;
+            if (inventoryPanel != null) inventoryPanel.SetActive(true);
+
+            if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
             {
-                _state = GameState.Inpanel;
-                if (inventoryPanel != null) inventoryPanel.SetActive(true);
+                _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
+                _moduleInstance.transform.SetSiblingIndex(0);
 
-                // 기본 모듈 생성 및 라이브러리 주입
-                if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
+                var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
+                for (int i = 0; i < crafts.Length; i++)
                 {
-                    _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
-                    _moduleInstance.transform.SetSiblingIndex(0);
-
-                    // CraftModule 주입
-                    var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
-                    for (int i = 0; i < crafts.Length; i++)
-                    {
-                        crafts[i].recipeLibrary = recipeLibrary;
-                        crafts[i].player        = player;
-                    }
+                    crafts[i].recipeLibrary = recipeLibrary;
+                    crafts[i].player        = player;
                 }
-            }
-            else if (_state == GameState.Inpanel)
-            {
-                if (player != null && cursorSlot != null && cursorSlot.Item != null)
-                {
-                    int left = player.Inventory.AddItem(cursorSlot.Item);
-                    if (left == 0) cursorSlot.Set(null);
-                    else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
-                }
-
-                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
-                _state = GameState.Ingame;
-                if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
         }
 
+        /*── ESC: 패널 닫기 또는 일시정지 토글 ──*/
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (_state == GameState.Inpanel)
@@ -149,12 +137,26 @@ public class InteractionController : MonoBehaviour
             }
             else if (_state == GameState.Inmenu)
             {
+                // 일시정지 해제
                 _state = GameState.Ingame;
+                if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+                Time.timeScale = 1f;
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+            }
+            else // Ingame → Pause
+            {
+                _state = GameState.Inmenu;
+                if (pauseMenuRoot != null) pauseMenuRoot.SetActive(true);
+                Time.timeScale = 0f;
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+                _hlGO.SetActive(false);
             }
         }
 
         /*── 모드 전환 ──*/
-        if (Input.GetKeyDown(toggleBreakModeKey))
+        if (Input.GetKeyDown(toggleBreakModeKey) && _state == GameState.Ingame)
         {
             _breakMode = (_breakMode == BreakMode.FG) ? BreakMode.BG : BreakMode.FG;
             _hlSR.sprite = (_breakMode == BreakMode.FG) ? HighLight_FG : HighLight_BG;
@@ -172,7 +174,6 @@ public class InteractionController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            // 우클릭 우선순위: 셀 상호작용 > 아이템 사용
             if (!TryInteractCell())
                 UseItem();
         }
@@ -232,12 +233,10 @@ public class InteractionController : MonoBehaviour
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
-        // 로컬 점유 상태
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
         bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
         bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
-        // BG 모드: 전경이 하나라도 있으면 파괴 금지
         bool canBreak =
             (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
             : /* BG */                             (hasBg && !(hasSolid || hasDeco));
@@ -251,8 +250,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  셀 상호작용: 커서 셀에서 CellLibrary.InteractionOf(id) 확인
-     *  반환값: 처리하면 true, 아니면 false
+     *  셀 상호작용
      *────────────────────────────────────────────────────*/
     bool TryInteractCell()
     {
@@ -260,7 +258,6 @@ public class InteractionController : MonoBehaviour
         if (worldManager == null || worldCamera == null) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        // 우선순위: Deco > Solid
         ushort id = worldManager.worldMap.deco[cx, cy].id;
         if (id == 0) id = worldManager.worldMap.solid[cx, cy].id;
         if (id == 0) return false;
@@ -281,7 +278,6 @@ public class InteractionController : MonoBehaviour
                     _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
                     _moduleInstance.transform.SetSiblingIndex(0);
 
-                    // CraftModule 주입
                     var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
                     for (int i = 0; i < crafts.Length; i++)
                     {
@@ -298,7 +294,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  아이템 사용 (interaction.type 분기) — Place, UseOnLiquid
+     *  아이템 사용 — Place, UseOnLiquid
      *────────────────────────────────────────────────────*/
     void UseItem()
     {
@@ -334,7 +330,7 @@ public class InteractionController : MonoBehaviour
     }
 
     /*──────────────────────────────────────────────────────
-     *  Place 처리: layer=Solid/Deco/Flexible 규칙 준수
+     *  Place 처리
      *────────────────────────────────────────────────────*/
     void HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
@@ -352,7 +348,6 @@ public class InteractionController : MonoBehaviour
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
         bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
 
-        // 이름 → ID 해석
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
@@ -361,34 +356,28 @@ public class InteractionController : MonoBehaviour
         }
         if (placeId == 0) { Debug.LogWarning($"[Place] 셀 이름을 찾을 수 없음: {cellName}"); return; }
 
-        // 레이어 정책
         bool wantFG;
         if (layerStr == "Solid")         wantFG = true;
-        else if (layerStr == "Deco")     wantFG = true;   // Deco도 전경 점유 규칙을 따른다(전경 점유 시 배치 금지)
+        else if (layerStr == "Deco")     wantFG = true;
         else if (layerStr == "Flexible") wantFG = (_breakMode == BreakMode.FG);
         else return;
 
-        // 전경 점유 검사: 전경(Solid/Deco) 중 하나라도 있으면 어떤 배치도 금지
         if (hasSolid || hasDeco) return;
 
-        // 배치 시도
         bool ok = worldManager.PlaceCell(cx, cy, placeId);
         if (!ok) return;
 
         if (sound != null) sound.PlayPlace();
 
-        // 소비
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-        // 갱신 통지
         player.Inventory.NotifyChanged();
 
         LogScopeItem();
     }
 
     /*──────────────────────────────────────────────────────
-     *  UseOnLiquid 처리: 물 cost만큼 소모 → 결과 아이템 지급
-     *  - Dirt Pile 같은 소모품은 항상 1개 소모
+     *  UseOnLiquid 처리
      *────────────────────────────────────────────────────*/
     void HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
@@ -409,7 +398,6 @@ public class InteractionController : MonoBehaviour
         }
         if (string.IsNullOrEmpty(liquidName) || string.IsNullOrEmpty(outputName)) return;
 
-        // 이름 → ID 해석
         ushort targetLiquidId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
@@ -418,25 +406,20 @@ public class InteractionController : MonoBehaviour
         }
         if (targetLiquidId == 0) { Debug.LogWarning($"[UseOnLiquid] 액체 이름을 찾을 수 없음: {liquidName}"); return; }
 
-        // 대상 셀의 액체 상태 확인
         var lc = worldManager.worldMap.liquid[cx, cy];
         if (lc.id != targetLiquidId || lc.amount < cost) return;
 
-        // held 1개 소모
         if (held.Count < 1) return;
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-        // 갱신 통지
         player.Inventory.NotifyChanged();
 
-        // 액체 amount 감소 및 렌더 더티
         int newAmt = Mathf.Clamp(lc.amount - cost, 0, 100);
         worldManager.worldMap.liquid[cx, cy].amount = (byte)newAmt;
         worldManager.worldMap.liquid[cx, cy].id     = (ushort)(newAmt > 0 ? targetLiquidId : 0);
         worldManager.MarkChunkDirty(cx, cy, markFG:false, markBG:false, markDeco:false, markLiquid:true);
         worldManager.EnqTick(cx, cy);
 
-        // 결과 아이템 지급
         var outItem = itemLibrary.Create(outputName, 1);
         if (outItem != null)
         {
@@ -482,5 +465,26 @@ public class InteractionController : MonoBehaviour
         var it = items[_hotbarScope];
         if (it == null) Debug.Log($"[HOTBAR] scope={_hotbarScope} empty");
         else Debug.Log($"[HOTBAR] scope={_hotbarScope} {it.ItemId} x{it.Count}");
+    }
+
+    /*──────────────────────────────────────────────────────
+     *  버튼 콜백(일시정지 메뉴)
+     *────────────────────────────────────────────────────*/
+    public void OnClickResume()
+    {
+        if (_state != GameState.Inmenu) return;
+        _state = GameState.Ingame;
+        if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+        Time.timeScale = 1f;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    public void OnClickQuitToLobby()
+    {
+        Time.timeScale = 1f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Loby"); // 실제 로비 씬명으로 교체
     }
 }

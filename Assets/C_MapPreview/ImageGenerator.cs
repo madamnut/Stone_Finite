@@ -6,6 +6,8 @@ public class ImageGenerator : MonoBehaviour
 {
     [Header("Generator")]
     public WorldGenSettings settings;
+    [Tooltip("프리뷰에 사용할 시드")]
+    public int seed = 0;
 
     [Header("Target")]
     public RawImage targetUI;
@@ -53,7 +55,7 @@ public class ImageGenerator : MonoBehaviour
             return;
         }
 
-        ushort[,] common = WorldDataGenerator.GenerateCommon(settings, out _);
+        ushort[,] common = WorldDataGenerator.GenerateCommon(settings, seed, out _);
         EnsureTexture(common.GetLength(0), common.GetLength(1));
         Paint(common);
     }
@@ -61,7 +63,7 @@ public class ImageGenerator : MonoBehaviour
     public void Repaint()
     {
         if (settings == null || targetUI == null) return;
-        ushort[,] common = WorldDataGenerator.GenerateCommon(settings, out _);
+        ushort[,] common = WorldDataGenerator.GenerateCommon(settings, seed, out _);
         EnsureTexture(common.GetLength(0), common.GetLength(1));
         Paint(common);
     }

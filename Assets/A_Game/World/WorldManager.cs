@@ -5,16 +5,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-/// <summary>
-/// WorldManager: 청크 풀링, 버퍼 재사용, 타일 캐싱
-/// • 청크 크기: 16×16
-/// • 플레이어 반경 ChunkRadius 청크만 활성화
-/// • 매 프레임 최대 maxLoadsPerFrame개의 청크 로드
-/// • Dirty 플래그 기반 레이어별 갱신 지원
-/// • Light: 타일맵 대신 청크당 라이트 메쉬(정점색 보간) 사용
-/// • 글로벌 틱(물/중력): FixedUpdate에서 단일 큐(더블버퍼) 처리
-/// • 월드 시간: FixedUpdate(0.05s, 20틱/초) 기준, 24분=1일(1440분=1440초=28800틱)
-//// </summary>
 public class WorldManager : MonoBehaviour
 {
     public enum CellLayer { FG, BG }
@@ -55,10 +45,9 @@ public class WorldManager : MonoBehaviour
     private const byte ART_MAX = 20;
 
     [Header("Global Brightness Offset (auto by time) 0=밝음, 18=어두움")]
-    [Range(0,18)] public byte globalBrightnessOffset = 0; // 시간 동기화로 자동 갱신
-    private byte _lastBrightnessOffset = 255;             // 변경 감지용
+    [Range(0,18)] public byte globalBrightnessOffset = 0;
+    private byte _lastBrightnessOffset = 255;
 
-    // 인공광 감쇄(공기=1, BG=2, FG=3)
     private const int ATT_AIR = 1;
     private const int ATT_BG  = 2;
     private const int ATT_FG  = 3;
@@ -279,10 +268,6 @@ public class WorldManager : MonoBehaviour
                 worldMap.SetDeco(x, y, id, CellLibrary.DependFlagsOf(id));
                 MarkChunkDirty(x, y, markFG:false, markBG:false, markDeco:true, markLiquid:false);
 
-                // 자연광 BFS 호출 제거(데코는 투과 영향 없음)
-                // OnCellEditedFG(x, y);
-
-                // 인공광만 갱신
                 HandleArtificialChange(x, y, oldId, id, isDeco:true);
                 return true;
             }
@@ -360,7 +345,19 @@ public class WorldManager : MonoBehaviour
         W = settings.width;
         H = settings.height;
 
-        worldMap = WorldDataGenerator.Generate(settings);
+        // 시드 분리 반영
+        if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
+        {
+            worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
+        }
+        else if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
+        {
+            // TODO: 저장된 WorldData 로드 후 worldMap = LoadedData;
+            // 임시 대체: 시드 0으로 생성
+            worldMap = WorldDataGenerator.Generate(settings, 0);
+            Debug.LogWarning("LoadWorld 경로 미구현. 임시로 seed=0 신규 생성.");
+        }
+
         if (chunkRoot == null) chunkRoot = transform;
 
         for (int i = 0; i < initialPoolSize; i++)
@@ -381,7 +378,6 @@ public class WorldManager : MonoBehaviour
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
 
-        // 시작 시 오프셋 초기화 강제 적용
         ApplyTimeSyncedBrightness(forceDirty:true);
     }
 
@@ -410,22 +406,19 @@ public class WorldManager : MonoBehaviour
             }
             worldHour = worldMinute / 60;
 
-            // 분 단위 갱신 시 시간동기 전역 밝기 오프셋 계산 및 반영
             ApplyTimeSyncedBrightness(forceDirty:false);
-
             var band = GetTimeBand();
         }
     }
 
-    // 시간→전역 밝기 오프셋(0=밝음, 18=어두움), 변경 시 모든 활성 청크 lightDirty
     private void ApplyTimeSyncedBrightness(bool forceDirty)
     {
         int m = worldHour * 60 + (worldMinute % 60); // 0..1439
         float off =
-            (m >= 300  && m < 540 ) ? 18f * (1f - (m - 300) / 240f) : // 05:00→09:00 18→0
-            (m >= 540  && m < 1080) ? 0f                          : // 09:00→18:00 0
-            (m >= 1080 && m < 1260) ? 18f * ((m - 1080) / 180f)   : // 18:00→21:00 0→18
-                                       18f;                         // 21:00→05:00 18
+            (m >= 300  && m < 540 ) ? 18f * (1f - (m - 300) / 240f) :
+            (m >= 540  && m < 1080) ? 0f :
+            (m >= 1080 && m < 1260) ? 18f * ((m - 1080) / 180f) :
+                                       18f;
         byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, 18f));
 
         if (forceDirty || newOffset != globalBrightnessOffset)
@@ -599,7 +592,6 @@ public class WorldManager : MonoBehaviour
         c.bgDirty = c.fgDirty = c.decoDirty = c.liquidDirty = c.lightDirty = false;
     }
 
-    /// <summary>Dirty 청크 갱신</summary>
     private void ProcessDirtyChunks()
     {
         foreach (var kv in activeChunks)
@@ -647,7 +639,6 @@ public class WorldManager : MonoBehaviour
 
     private enum LayerType { BG, FG, Deco, Liquid }
 
-    /// <summary>지정한 좌표의 청크 레이어 하나만 다시 그림.</summary>
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
         var go = activeChunks[coord];
@@ -739,12 +730,6 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 라이트 메쉬 정점색 갱신(정점 기준 2×2 평균, 스칼라 합성)
-    /// Blend One, OneMinusSrcAlpha
-    /// A = 1 - avg( max(natural, artificial) )
-    /// RGB = (0,0,0)
-    /// </summary>
     private void RefreshLightLayer(Vector2Int coord)
     {
         if (!activeChunks.TryGetValue(coord, out var go)) return;
@@ -766,7 +751,6 @@ public class WorldManager : MonoBehaviour
             {
                 int gx = sx + vx, gy = sy + vy;
 
-                // 정점 주변 사분면 셀 2×2 샘플 (모서리 클램프)
                 int cx0 = Mathf.Clamp(gx - 1, 0, W - 1);
                 int cy0 = Mathf.Clamp(gy - 1, 0, H - 1);
                 int cx1 = Mathf.Clamp(gx    , 0, W - 1);
@@ -777,9 +761,9 @@ public class WorldManager : MonoBehaviour
                 void Sample(int x, int y)
                 {
                     var L = worldMap.light[x, y];
-                    int ns = L.natural - globalBrightnessOffset; if (ns < 0) ns = 0; // 0..NAT_MAX
+                    int ns = L.natural - globalBrightnessOffset; if (ns < 0) ns = 0;
                     float n01 = ns / (float)NAT_MAX;
-                    float a01 = L.artificial / (float)ART_MAX;                      // 0..ART_MAX
+                    float a01 = L.artificial / (float)ART_MAX;
                     sum += Mathf.Max(n01, a01);
                 }
 
@@ -788,8 +772,8 @@ public class WorldManager : MonoBehaviour
                 Sample(cx0, cy1);
                 Sample(cx1, cy1);
 
-                float avg = sum * 0.25f;                                       // 4샘플 평균
-                float A01 = 1f - Mathf.Clamp01(avg);                            // 밝을수록 투명
+                float avg = sum * 0.25f;
+                float A01 = 1f - Mathf.Clamp01(avg);
                 byte Ab  = (byte)Mathf.RoundToInt(A01 * 255f);
 
                 cols[vy * vW + vx] = new Color32(0, 0, 0, Ab);
@@ -800,7 +784,6 @@ public class WorldManager : MonoBehaviour
         mesh.colors32 = cols;
     }
 
-    /// <summary>(x0,y0) 국소 BFS로 자연광 재계산.</summary>
     public void RecalculateLightAt(int x0, int y0)
     {
         if ((uint)x0 >= W || (uint)y0 >= H) return;
@@ -876,7 +859,6 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /// <summary>월드 좌표의 청크 레이어 Dirty 설정.</summary>
     public void MarkChunkDirty(int worldX, int worldY, bool markFG, bool markBG = false, bool markDeco = false, bool markLiquid = false)
     {
         int cx = Mathf.FloorToInt(worldX / (float)ChunkSize);
@@ -890,7 +872,6 @@ public class WorldManager : MonoBehaviour
         if (markLiquid) c.liquidDirty = true;
     }
 
-    // 라이트메시 더티: 사각형 범위 포함 청크
     private void MarkLightDirtyRect(int x, int y, int w, int h)
     {
         int x0 = Mathf.Clamp(x, 0, W-1);
@@ -910,7 +891,6 @@ public class WorldManager : MonoBehaviour
             }
     }
 
-    // ───────── 타임밴드 ─────────
     public TimeBand GetTimeBand()
     {
         int h = worldHour;
@@ -929,7 +909,6 @@ public class WorldManager : MonoBehaviour
         return TimeBand.Night;
     }
 
-    // ── 타일 캐시 ──
     private static class TileCache
     {
         private static readonly Dictionary<ushort, Tile> cache = new();
@@ -997,8 +976,6 @@ public class WorldManager : MonoBehaviour
     }
 
     // ───────── 인공광(스칼라) ─────────
-
-    // 배치/파괴 등 셀 변경 시 호출
     private void HandleArtificialChange(int x, int y, ushort oldId, ushort newId, bool isDeco)
     {
         byte oldB = CellLibrary.BrightnessOf(oldId);
@@ -1009,7 +986,6 @@ public class WorldManager : MonoBehaviour
         int x0 = Mathf.Max(0, x - r), y0 = Mathf.Max(0, y - r);
         int x1 = Mathf.Min(W - 1, x + r), y1 = Mathf.Min(H - 1, y + r);
 
-        // 1) 영역 인공빛 초기화
         for (int yy = y0; yy <= y1; yy++)
         for (int xx = x0; xx <= x1; xx++)
         {
@@ -1018,7 +994,6 @@ public class WorldManager : MonoBehaviour
             worldMap.light[xx, yy] = lc;
         }
 
-        // 2) 영역 내 광원 재시드
         for (int yy = y0; yy <= y1; yy++)
         for (int xx = x0; xx <= x1; xx++)
         {
@@ -1032,11 +1007,9 @@ public class WorldManager : MonoBehaviour
             if (b > 0) AddLightScalar(xx, yy, b);
         }
 
-        // 3) 영향 청크 라이트 더티
         MarkLightDirtyRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
     }
 
-    // 스칼라 인공빛 확산(겹침=최댓값)
     private void AddLightScalar(int sx, int sy, byte b)
     {
         if ((uint)sx >= W || (uint)sy >= H || b == 0) return;
@@ -1050,7 +1023,7 @@ public class WorldManager : MonoBehaviour
             if ((uint)x >= W || (uint)y >= H) continue;
 
             var cell = worldMap.light[x, y];
-            if (v <= cell.artificial) continue; // 이미 더 밝음
+            if (v <= cell.artificial) continue;
             cell.artificial = v;
             worldMap.light[x, y] = cell;
 

@@ -9,6 +9,7 @@ public class Debugger : MonoBehaviour
     [Header("UI Text")]
     public TMP_Text fpsText;     // "FPS: 0"
     public TMP_Text timeText;    // "Time: 00:00 [Band]"
+    public TMP_Text seedText;    // "Seed: 123456"
 
     [Header("World Time Source")]
     public WorldManager worldManager;
@@ -25,6 +26,7 @@ public class Debugger : MonoBehaviour
         if (debugRoot) debugRoot.SetActive(true);
         if (fpsText)  fpsText.text  = "FPS: 0";
         if (timeText) timeText.text = "Time: 00:00 [Unknown]";
+        if (seedText) seedText.text = $"Seed: {WorldLoadContext.seed}";
     }
 
     void Update()
@@ -57,5 +59,8 @@ public class Debugger : MonoBehaviour
                 timeText.text = "Time: 00:00 [Unknown]";
             }
         }
+
+        if (seedText)
+            seedText.text = $"Seed: {WorldLoadContext.seed}";
     }
 }
