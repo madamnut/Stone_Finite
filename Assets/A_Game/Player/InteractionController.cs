@@ -73,8 +73,6 @@ public class InteractionController : MonoBehaviour
         if (inventoryPanel != null) { inventoryPanel.SetActive(true); inventoryPanel.SetActive(false); }
         if (pauseMenuRoot   != null) pauseMenuRoot.SetActive(false);
         Time.timeScale = 1f;
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
 
         _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
@@ -137,20 +135,15 @@ public class InteractionController : MonoBehaviour
             }
             else if (_state == GameState.Inmenu)
             {
-                // 일시정지 해제
                 _state = GameState.Ingame;
                 if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
                 Time.timeScale = 1f;
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
             }
             else // Ingame → Pause
             {
                 _state = GameState.Inmenu;
                 if (pauseMenuRoot != null) pauseMenuRoot.SetActive(true);
                 Time.timeScale = 0f;
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
                 _hlGO.SetActive(false);
             }
         }
@@ -476,15 +469,11 @@ public class InteractionController : MonoBehaviour
         _state = GameState.Ingame;
         if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
         Time.timeScale = 1f;
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
     }
 
     public void OnClickQuitToLobby()
     {
         Time.timeScale = 1f;
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
         UnityEngine.SceneManagement.SceneManager.LoadScene("Loby"); // 실제 로비 씬명으로 교체
     }
 }
