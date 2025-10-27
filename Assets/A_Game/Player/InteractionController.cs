@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;   // UI 클릭 막기용
 using Newtonsoft.Json.Linq;      // Unique 파싱 안전용
 
-public class InteractionController : MonoBehaviour
+public class InteractionController : MonoBehaviour 
 {
     public enum GameState { Ingame, Inpanel, Inmenu }
     enum BreakMode { FG, BG }
