@@ -184,7 +184,9 @@ public class LobyManager : MonoBehaviour
         try
         {
             string[] arr = JsonHelper.FromJson<string>(splashTextJson.text);
-            splashText.text = (arr != null && arr.Length > 0) ? arr[Random.Range(0, arr.Length)] : "The Beginning!";
+            splashText.text = (arr != null && arr.Length > 0)
+                ? arr[UnityEngine.Random.Range(0, arr.Length)]
+                : "The Beginning!";
         }
         catch { splashText.text = "The Beginning!"; }
     }

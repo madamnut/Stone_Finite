@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Loby.unity
+    guid: be6e4c5623832b849b65596acb5eb04f
+  - enabled: 1
     path: Assets/Game.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects: {}
