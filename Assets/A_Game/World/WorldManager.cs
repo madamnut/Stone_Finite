@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -75,6 +76,10 @@ public class WorldManager : MonoBehaviour
     // 글로벌 틱(물/중력)
     private HashSet<Vector2Int> tickCurr = new();
     private HashSet<Vector2Int> tickNext = new();
+
+    // 저장 포맷
+    const string SAVE_FILE = "world.bin";
+    const byte   SAVE_VER  = 1;
 
     public void EnqTick(int x, int y)
     {
@@ -345,17 +350,20 @@ public class WorldManager : MonoBehaviour
         W = settings.width;
         H = settings.height;
 
-        // 시드 분리 반영
+        // 생성/로드 분기
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
             worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
+            SaveWorld();
         }
         else if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
         {
-            // TODO: 저장된 WorldData 로드 후 worldMap = LoadedData;
-            // 임시 대체: 시드 0으로 생성
-            worldMap = WorldDataGenerator.Generate(settings, 0);
-            Debug.LogWarning("LoadWorld 경로 미구현. 임시로 seed=0 신규 생성.");
+            if (!LoadWorldFromDisk(out worldMap))
+            {
+                worldMap = WorldDataGenerator.Generate(settings, 0);
+                Debug.LogWarning("저장 없음 또는 버전 불일치. 새 월드 생성.");
+                SaveWorld();
+            }
         }
 
         if (chunkRoot == null) chunkRoot = transform;
@@ -379,6 +387,21 @@ public class WorldManager : MonoBehaviour
         _lastLoggedSecondTick = -ticksPerSecond;
 
         ApplyTimeSyncedBrightness(forceDirty:true);
+    }
+
+    void Start()
+    {
+        StartCoroutine(AutosaveLoop());
+    }
+
+    void OnApplicationQuit()
+    {
+        SaveWorld();
+    }
+
+    public void OnClickSave()
+    {
+        SaveWorld();
     }
 
     void Update()
@@ -409,6 +432,12 @@ public class WorldManager : MonoBehaviour
             ApplyTimeSyncedBrightness(forceDirty:false);
             var band = GetTimeBand();
         }
+    }
+
+    IEnumerator AutosaveLoop()
+    {
+        var wait = new WaitForSecondsRealtime(300f);
+        while (true) { yield return wait; SaveWorld(); }
     }
 
     private void ApplyTimeSyncedBrightness(bool forceDirty)
@@ -1047,5 +1076,116 @@ public class WorldManager : MonoBehaviour
             Prop(x, y + 1);
             Prop(x, y - 1);
         }
+    }
+
+    // ───────── 저장/로드 ─────────
+    void SaveWorld()
+    {
+        string dir = WorldLoadContext.GetSavePath();
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+        using var fs = new FileStream(Path.Combine(dir, SAVE_FILE), FileMode.Create, FileAccess.Write, FileShare.None);
+        using var bw = new BinaryWriter(fs);
+
+        bw.Write(SAVE_VER);
+        bw.Write(W);
+        bw.Write(H);
+
+        // bg
+        for (int y = 0; y < H; y++)
+        for (int x = 0; x < W; x++)
+            bw.Write(worldMap.bg[x, y]);
+
+        // solid
+        for (int y = 0; y < H; y++)
+        for (int x = 0; x < W; x++)
+        {
+            bw.Write(worldMap.solid[x, y].id);
+            bw.Write(worldMap.solid[x, y].hasGravity);
+        }
+
+        // deco
+        for (int y = 0; y < H; y++)
+        for (int x = 0; x < W; x++)
+        {
+            bw.Write(worldMap.deco[x, y].id);
+            bw.Write((byte)worldMap.deco[x, y].depend);
+        }
+
+        // liquid
+        for (int y = 0; y < H; y++)
+        for (int x = 0; x < W; x++)
+        {
+            bw.Write(worldMap.liquid[x, y].id);
+            bw.Write(worldMap.liquid[x, y].amount);
+        }
+
+        // light
+        for (int y = 0; y < H; y++)
+        for (int x = 0; x < W; x++)
+        {
+            bw.Write(worldMap.light[x, y].natural);
+            bw.Write(worldMap.light[x, y].artificial);
+        }
+    }
+
+    bool LoadWorldFromDisk(out WorldData loaded)
+    {
+        loaded = default;
+
+        string path = Path.Combine(WorldLoadContext.GetSavePath(), SAVE_FILE);
+        if (!File.Exists(path)) return false;
+
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var br = new BinaryReader(fs);
+
+        byte ver = br.ReadByte();
+        if (ver != SAVE_VER) return false;
+
+        int w = br.ReadInt32();
+        int h = br.ReadInt32();
+
+        var data = new WorldData(w, h);
+
+        // bg
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            data.bg[x, y] = br.ReadUInt16();
+
+        // solid
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            data.solid[x, y].id = br.ReadUInt16();
+            data.solid[x, y].hasGravity = br.ReadBoolean();
+        }
+
+        // deco
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            data.deco[x, y].id = br.ReadUInt16();
+            data.deco[x, y].depend = (DepFlags)br.ReadByte();
+        }
+
+        // liquid
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            data.liquid[x, y].id = br.ReadUInt16();
+            data.liquid[x, y].amount = br.ReadByte();
+        }
+
+        // light
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            data.light[x, y].natural = br.ReadByte();
+            data.light[x, y].artificial = br.ReadByte();
+        }
+
+        W = w; H = h;
+        loaded = data;
+        return true;
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -112,14 +113,32 @@ public class LobyManager : MonoBehaviour
 
     void OnClickStartNewGame()
     {
-        string worldName = worldNameInput ? worldNameInput.text.Trim() : "";
-        string seedText  = seedInput ? seedInput.text : "";
+        string worldNameRaw = worldNameInput ? worldNameInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(worldNameRaw)) { Debug.LogWarning("worldName empty"); return; }
 
-        if (string.IsNullOrEmpty(worldName)) { Debug.LogWarning("worldName empty"); return; }
+        // 파일명 안전 처리 재확인
+        string worldName = FileNameSafeRegex.Replace(worldNameRaw, "");
+        if (string.IsNullOrEmpty(worldName)) { Debug.LogWarning("invalid worldName"); return; }
 
+        string seedText = seedInput ? seedInput.text : "";
         int seedValue = 0;
         if (!string.IsNullOrEmpty(seedText)) int.TryParse(seedText, out seedValue);
 
+        // 폴더 및 메타 생성
+        string worldsRoot = Path.Combine(Application.persistentDataPath, "Worlds");
+        string worldDir   = Path.Combine(worldsRoot, worldName);
+        if (!Directory.Exists(worldsRoot)) Directory.CreateDirectory(worldsRoot);
+        if (!Directory.Exists(worldDir))   Directory.CreateDirectory(worldDir);
+
+        var meta = new WorldMetaData
+        {
+            worldName  = worldName,
+            seed       = seedValue,
+            lastPlayed = DateTime.UtcNow.ToString("o")
+        };
+        File.WriteAllText(Path.Combine(worldDir, "world_meta.json"), JsonUtility.ToJson(meta, true));
+
+        // 컨텍스트 세팅 후 씬 로드
         WorldLoadContext.SetNewWorld(worldName, seedValue);
         SceneManager.LoadScene(ingameSceneName);
     }
@@ -229,6 +248,25 @@ public class LobyManager : MonoBehaviour
     void LoadSelectedWorld()
     {
         if (string.IsNullOrEmpty(_selectedWorldName)) return;
+
+        string dir = Path.Combine(Application.persistentDataPath, "Worlds", _selectedWorldName);
+        string metaPath = Path.Combine(dir, "world_meta.json");
+        if (!Directory.Exists(dir) || !File.Exists(metaPath))
+        {
+            Debug.LogWarning("선택한 월드가 존재하지 않음");
+            RefreshWorldList();
+            return;
+        }
+
+        // lastPlayed 갱신
+        try
+        {
+            var meta = JsonUtility.FromJson<WorldMetaData>(File.ReadAllText(metaPath));
+            meta.lastPlayed = DateTime.UtcNow.ToString("o");
+            File.WriteAllText(metaPath, JsonUtility.ToJson(meta, true));
+        }
+        catch { /* 무시 */ }
+
         WorldLoadContext.SetLoadWorld(_selectedWorldName);
         SceneManager.LoadScene(ingameSceneName);
     }
