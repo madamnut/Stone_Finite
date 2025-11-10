@@ -20,6 +20,8 @@ public class WorldManager : MonoBehaviour
 
     [Header("플레이어 및 렌더링 설정")]
     public Transform player;
+    [Tooltip("인벤토리 저장/로드 안전 참조용 Player 컴포넌트")]
+    public Player playerComp;
     public int ChunkRadius = 7;
     [Tooltip("한 프레임당 최대 로드할 청크 개수")]
     public int maxLoadsPerFrame = 2;
@@ -77,9 +79,20 @@ public class WorldManager : MonoBehaviour
     private HashSet<Vector2Int> tickCurr = new();
     private HashSet<Vector2Int> tickNext = new();
 
+    [Header("아이템 라이브러리(인벤 복원용)")]
+    public ItemLibrary itemLibrary;
+
     // 저장 포맷
     const string SAVE_FILE = "world.bin";
-    const byte   SAVE_VER  = 1;
+    const byte   SAVE_VER  = 2;
+
+    // 종료 저장 가드
+    private bool _didQuitSave = false;
+
+    // 로드시 임시 보관(플레이어/인벤)
+    private bool   _hasLoadedPlayerData = false;
+    private Vector2 _loadedPlayerPos;
+    private List<(string id, int count)> _loadedInventory;
 
     public void EnqTick(int x, int y)
     {
@@ -350,9 +363,15 @@ public class WorldManager : MonoBehaviour
         W = settings.width;
         H = settings.height;
 
+        // BOOT 로그
+        string dirBoot = WorldLoadContext.GetSavePath();
+        string pathBoot = Path.Combine(dirBoot, SAVE_FILE);
+        Debug.Log($"[BOOT] loadType={WorldLoadContext.loadType}, seed={WorldLoadContext.seed}, saveExists={File.Exists(pathBoot)}, path={pathBoot}");
+
         // 생성/로드 분기
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
+            Debug.Log("[BOOT] NewWorld branch: Generate → SaveWorld()");
             worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
             SaveWorld();
         }
@@ -378,6 +397,16 @@ public class WorldManager : MonoBehaviour
         if (chunkPrefab == null) Debug.LogError("WorldManager: Chunk Prefab이 없습니다.");
         if (player == null) Debug.LogError("WorldManager: Player Transform이 없습니다.");
 
+        // Player 컴포넌트 자동 보정
+        if (playerComp == null && player != null)
+        {
+            playerComp = player.GetComponent<Player>();
+            if (playerComp == null) playerComp = player.GetComponentInParent<Player>();
+            if (playerComp == null) playerComp = player.GetComponentInChildren<Player>();
+        }
+        if (playerComp == null)
+            Debug.LogWarning("WorldManager: Player 컴포넌트를 찾지 못했습니다. 인벤토리 저장/로드가 비활성화됩니다.");
+
         lastPlayerChunk = GetPlayerChunk();
 
         worldTick = 0L;
@@ -386,17 +415,30 @@ public class WorldManager : MonoBehaviour
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
 
+        // 인벤 복원은 Start에서 호출
         ApplyTimeSyncedBrightness(forceDirty:true);
     }
 
     void Start()
     {
+        ApplyLoadedPlayerAndInventory(); // 모든 Awake 이후 시점
         StartCoroutine(AutosaveLoop());
     }
 
     void OnApplicationQuit()
     {
+        if (_didQuitSave) return;
+        _didQuitSave = true;
         SaveWorld();
+    }
+
+    void OnDestroy()
+    {
+        if (Application.isPlaying && !_didQuitSave)
+        {
+            _didQuitSave = true;
+            SaveWorld();
+        }
     }
 
     public void OnClickSave()
@@ -474,10 +516,21 @@ public class WorldManager : MonoBehaviour
             loadList.Clear();
         lastPlayerChunk = playerChunk;
 
+        // 유효 청크 범위 계산
+        int cxMin = 0;
+        int cyMin = 0;
+        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
+        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
+
         currentNeeded.Clear();
         for (int dy = -ChunkRadius; dy <= ChunkRadius; dy++)
-            for (int dx = -ChunkRadius; dx <= ChunkRadius; dx++)
-                currentNeeded.Add(new Vector2Int(playerChunk.x + dx, playerChunk.y + dy));
+        for (int dx = -ChunkRadius; dx <= ChunkRadius; dx++)
+        {
+            int cx = playerChunk.x + dx;
+            int cy = playerChunk.y + dy;
+            if (cx < cxMin || cy < cyMin || cx > cxMax || cy > cyMax) continue; // 범위 밖 제외
+            currentNeeded.Add(new Vector2Int(cx, cy));
+        }
 
         unloadList.Clear();
         foreach (var coord in activeChunks.Keys)
@@ -502,12 +555,19 @@ public class WorldManager : MonoBehaviour
     private IEnumerator ProcessLoadQueue()
     {
         isLoading = true;
+
+        // 유효 청크 범위 계산
+        int cxMin = 0, cyMin = 0;
+        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
+        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
+
         int loads = 0;
         while (loads < maxLoadsPerFrame && loadList.Count > 0)
         {
             var coord = loadList[0];
             loadList.RemoveAt(0);
             if (!currentNeeded.Contains(coord)) continue;
+            if (coord.x < cxMin || coord.y < cyMin || coord.x > cxMax || coord.y > cyMax) continue; // 범위 밖 스킵
             CreateChunk(coord);
             loads++;
         }
@@ -540,6 +600,11 @@ public class WorldManager : MonoBehaviour
 
     private void CreateChunk(Vector2Int coord)
     {
+        // 유효 청크 범위 하드 가드
+        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
+        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
+        if (coord.x < 0 || coord.y < 0 || coord.x > cxMax || coord.y > cyMax) return;
+
         var go = GetFromPool();
         go.SetActive(true);
         go.name = $"Chunk_{coord.x}_{coord.y}";
@@ -1079,53 +1144,112 @@ public class WorldManager : MonoBehaviour
     }
 
     // ───────── 저장/로드 ─────────
-    void SaveWorld()
+    public void SaveWorld()
     {
-        string dir = WorldLoadContext.GetSavePath();
-        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-        using var fs = new FileStream(Path.Combine(dir, SAVE_FILE), FileMode.Create, FileAccess.Write, FileShare.None);
-        using var bw = new BinaryWriter(fs);
-
-        bw.Write(SAVE_VER);
-        bw.Write(W);
-        bw.Write(H);
-
-        // bg
-        for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
-            bw.Write(worldMap.bg[x, y]);
-
-        // solid
-        for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
+        try
         {
-            bw.Write(worldMap.solid[x, y].id);
-            bw.Write(worldMap.solid[x, y].hasGravity);
+            string dir = WorldLoadContext.GetSavePath();
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            string path = Path.Combine(dir, SAVE_FILE);
+            string tmp  = Path.Combine(dir, SAVE_FILE + ".tmp");
+
+            using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var bw = new BinaryWriter(fs))
+            {
+                bw.Write(SAVE_VER);
+                bw.Write(W);
+                bw.Write(H);
+
+                // bg
+                for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                    bw.Write(worldMap.bg[x, y]);
+
+                // solid
+                for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    bw.Write(worldMap.solid[x, y].id);
+                    bw.Write(worldMap.solid[x, y].hasGravity);
+                }
+
+                // deco
+                for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    bw.Write(worldMap.deco[x, y].id);
+                    bw.Write((byte)worldMap.deco[x, y].depend);
+                }
+
+                // liquid
+                for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    bw.Write(worldMap.liquid[x, y].id);
+                    bw.Write(worldMap.liquid[x, y].amount);
+                }
+
+                // light
+                for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    bw.Write(worldMap.light[x, y].natural);
+                    bw.Write(worldMap.light[x, y].artificial);
+                }
+
+                // ── v2: 플레이어 위치 + 인벤토리 ──
+                float px = 0f, py = 0f;
+                if (player != null) { px = player.position.x; py = player.position.y; }
+                bw.Write(px);
+                bw.Write(py);
+
+                int slotCount = 0;
+                List<ItemData> slots = null;
+
+                Player pComp = playerComp;
+                if (pComp == null && player != null)
+                {
+                    pComp = player.GetComponent<Player>();
+                    if (pComp == null) pComp = player.GetComponentInParent<Player>();
+                    if (pComp == null) pComp = player.GetComponentInChildren<Player>();
+                }
+
+                if (pComp != null && pComp.Inventory != null)
+                {
+                    slots = pComp.Inventory.items;
+                    slotCount = slots.Count;
+                }
+                bw.Write(slotCount);
+                if (slotCount > 0)
+                {
+                    for (int i = 0; i < slotCount; i++)
+                    {
+                        var it = slots[i];
+                        bool has = it != null && it.Count > 0 && !string.IsNullOrEmpty(it.ItemId);
+                        bw.Write(has);
+                        if (has)
+                        {
+                            bw.Write(it.ItemId);
+                            bw.Write(it.Count);
+                        }
+                    }
+                }
+            }
+
+            if (File.Exists(path)) File.Delete(path);
+            File.Move(tmp, path);
+
+            // 요약 로그
+            long bytes = new FileInfo(path).Length;
+            int slotCountLog = 0;
+            Player pCompLog = playerComp ?? player?.GetComponent<Player>() ?? player?.GetComponentInParent<Player>() ?? player?.GetComponentInChildren<Player>();
+            if (pCompLog != null && pCompLog.Inventory != null) slotCountLog = pCompLog.Inventory.items.Count;
+            Debug.Log($"[SAVE] end bytes={bytes}, slotCount={slotCountLog}, hasPlayer={(pCompLog!=null)}");
         }
-
-        // deco
-        for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
+        catch (System.Exception e)
         {
-            bw.Write(worldMap.deco[x, y].id);
-            bw.Write((byte)worldMap.deco[x, y].depend);
-        }
-
-        // liquid
-        for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
-        {
-            bw.Write(worldMap.liquid[x, y].id);
-            bw.Write(worldMap.liquid[x, y].amount);
-        }
-
-        // light
-        for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
-        {
-            bw.Write(worldMap.light[x, y].natural);
-            bw.Write(worldMap.light[x, y].artificial);
+            Debug.LogError($"SaveWorld 실패: {e}");
         }
     }
 
@@ -1134,16 +1258,22 @@ public class WorldManager : MonoBehaviour
         loaded = default;
 
         string path = Path.Combine(WorldLoadContext.GetSavePath(), SAVE_FILE);
-        if (!File.Exists(path)) return false;
+        if (!File.Exists(path))
+        {
+            Debug.Log("[LOAD] file not found");
+            return false;
+        }
 
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        long bytes = fs.Length;
         using var br = new BinaryReader(fs);
 
         byte ver = br.ReadByte();
-        if (ver != SAVE_VER) return false;
-
         int w = br.ReadInt32();
         int h = br.ReadInt32();
+        Debug.Log($"[LOAD] start ver={ver}, size={w}x{h}, bytes={bytes}");
+
+        if (ver != SAVE_VER && ver != 1) return false;
 
         var data = new WorldData(w, h);
 
@@ -1184,8 +1314,73 @@ public class WorldManager : MonoBehaviour
             data.light[x, y].artificial = br.ReadByte();
         }
 
+        // v2 추가 데이터
+        if (ver >= 2 && br.BaseStream.Position < br.BaseStream.Length)
+        {
+            float px = br.ReadSingle();
+            float py = br.ReadSingle();
+            _hasLoadedPlayerData = true;
+            _loadedPlayerPos = new Vector2(px, py);
+
+            int slotCount = br.ReadInt32();
+            _loadedInventory = new List<(string id, int count)>(slotCount);
+            for (int i = 0; i < slotCount; i++)
+            {
+                bool has = br.ReadBoolean();
+                if (has)
+                {
+                    string id = br.ReadString();
+                    int cnt = br.ReadInt32();
+                    _loadedInventory.Add((id, cnt));
+                }
+                else _loadedInventory.Add((null, 0));
+            }
+        }
+
         W = w; H = h;
         loaded = data;
+
+        Debug.Log("[LOAD] success");
         return true;
+    }
+
+    private void ApplyLoadedPlayerAndInventory()
+    {
+        if (!_hasLoadedPlayerData || player == null) return;
+
+        // 플레이어 위치 적용
+        var pos = player.position;
+        player.position = new Vector3(_loadedPlayerPos.x, _loadedPlayerPos.y, pos.z);
+
+        // 인벤토리 적용
+        if (_loadedInventory == null) return;
+
+        Player pComp = playerComp;
+        if (pComp == null && player != null)
+        {
+            pComp = player.GetComponent<Player>();
+            if (pComp == null) pComp = player.GetComponentInParent<Player>();
+            if (pComp == null) pComp = player.GetComponentInChildren<Player>();
+        }
+        if (pComp == null || pComp.Inventory == null) return;
+
+        var slots = pComp.Inventory.items;
+        int n = Mathf.Min(slots.Count, _loadedInventory.Count);
+
+        for (int i = 0; i < n; i++)
+        {
+            var rec = _loadedInventory[i];
+            if (!string.IsNullOrEmpty(rec.id) && rec.count > 0)
+            {
+                var it = itemLibrary != null ? itemLibrary.Create(rec.id, rec.count) : null;
+                slots[i] = it;
+            }
+            else
+            {
+                slots[i] = null;
+            }
+        }
+
+        pComp.Inventory.NotifyChanged();
     }
 }

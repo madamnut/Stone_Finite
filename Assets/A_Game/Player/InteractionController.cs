@@ -17,6 +17,7 @@ public class InteractionController : MonoBehaviour
     public GameObject inventoryPanel;
     [Tooltip("일시정지 메뉴 루트(ESC)")]
     public GameObject pauseMenuRoot;
+
     [Header("Pause Buttons")]
     public Button resumeButton;
     public Button exitButton;
@@ -86,8 +87,9 @@ public class InteractionController : MonoBehaviour
 
         if (recipeLibrary != null) recipeLibrary.itemLibrary = itemLibrary;
 
+        // 버튼 연결(인스펙터 연결도 병행 가능)
         if (resumeButton) resumeButton.onClick.AddListener(OnClickResume);
-        if (exitButton) exitButton.onClick.AddListener(OnClickQuitToLobby);
+        if (exitButton)   exitButton.onClick.AddListener(OnClickQuitToLobby);
     }
 
     void Update()
@@ -114,7 +116,7 @@ public class InteractionController : MonoBehaviour
                 foreach (var c in crafts)
                 {
                     c.recipeLibrary = recipeLibrary;
-                    c.player = player;
+                    c.player        = player;
                 }
             }
         }
@@ -180,8 +182,8 @@ public class InteractionController : MonoBehaviour
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco = worldManager.worldMap.deco[cx, cy].id != 0;
-        bool hasBg = worldManager.worldMap.bg[cx, cy] != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
         if (_breakMode == BreakMode.FG)
         {
@@ -191,16 +193,16 @@ public class InteractionController : MonoBehaviour
         else
         {
             bool blocked = hasSolid || hasDeco;
-            if (hasBg && blocked) _hlSR.sprite = HighLight_BG_CANNOT;
-            else if (hasBg) _hlSR.sprite = HighLight_BG_CAN;
-            else _hlSR.sprite = HighLight_BG;
+            if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT;
+            else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;
+            else                       _hlSR.sprite = HighLight_BG;
         }
 
         _hlGO.SetActive(true);
         _timer += Time.deltaTime;
-        float t = (_timer / period) % 1f;
+        float t   = (_timer / period) % 1f;
         float sin = Mathf.Sin(t * Mathf.PI * 2f) * 0.5f + 0.5f;
-        float s = Mathf.Lerp(minScale, maxScale, sin);
+        float s   = Mathf.Lerp(minScale, maxScale, sin);
         _hlGO.transform.localScale = Vector3.one * s;
     }
 
@@ -214,13 +216,15 @@ public class InteractionController : MonoBehaviour
             : WorldManager.CellLayer.BG;
 
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco = worldManager.worldMap.deco[cx, cy].id != 0;
-        bool hasBg = worldManager.worldMap.bg[cx, cy] != 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
-        bool canBreak = (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
-                        : (hasBg && !(hasSolid || hasDeco));
+        bool canBreak =
+            (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
+            : /* BG */                             (hasBg && !(hasSolid || hasDeco));
 
         if (!canBreak) return;
+
         worldManager.BreakCell(cx, cy, layer);
         if (sound != null) sound.PlayDig();
     }
@@ -242,6 +246,7 @@ public class InteractionController : MonoBehaviour
         {
             _state = GameState.Inpanel;
             if (inventoryPanel != null) inventoryPanel.SetActive(true);
+
             if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
             if (primalcraftModule != null && inventoryPanel != null)
             {
@@ -252,7 +257,7 @@ public class InteractionController : MonoBehaviour
                 foreach (var c in crafts)
                 {
                     c.recipeLibrary = recipeLibrary;
-                    c.player = player;
+                    c.player        = player;
                 }
             }
             _hlGO.SetActive(false);
@@ -276,11 +281,13 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0) return;
         if (!held.Unique.TryGetValue("interaction", out var interObj)) return;
 
-        Dictionary<string, object> inter = interObj as Dictionary<string, object> ?? (interObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
+        Dictionary<string, object> inter =
+            interObj as Dictionary<string, object> ??
+            (interObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
         if (inter == null || !inter.TryGetValue("type", out var typeObj)) return;
 
         string typeStr = typeObj?.ToString();
-        if (typeStr == "Place") HandlePlace(held, cx, cy, inter);
+        if (typeStr == "Place")       HandlePlace(held, cx, cy, inter);
         else if (typeStr == "UseOnLiquid") HandleUseOnLiquid(held, cx, cy, inter);
     }
 
@@ -291,13 +298,13 @@ public class InteractionController : MonoBehaviour
         if (param == null) return;
 
         string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
-        string cellName = param.TryGetValue("cell", out var cellObj) ? cellObj?.ToString() : null;
+        string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
         if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return;
 
         bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco = worldManager.worldMap.deco[cx, cy].id != 0;
-        ushort placeId = 0;
+        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
 
+        ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
             var nm = CellLibrary.GetName(id);
@@ -342,7 +349,7 @@ public class InteractionController : MonoBehaviour
 
         int newAmt = Mathf.Clamp(lc.amount - 1, 0, 100);
         worldManager.worldMap.liquid[cx, cy].amount = (byte)newAmt;
-        worldManager.worldMap.liquid[cx, cy].id = (ushort)(newAmt > 0 ? targetLiquidId : 0);
+        worldManager.worldMap.liquid[cx, cy].id     = (ushort)(newAmt > 0 ? targetLiquidId : 0);
         worldManager.MarkChunkDirty(cx, cy, false, false, false, true);
         worldManager.EnqTick(cx, cy);
 
@@ -356,7 +363,7 @@ public class InteractionController : MonoBehaviour
         Vector3 wp = worldCamera.ScreenToWorldPoint(Input.mousePosition);
         x = Mathf.FloorToInt(wp.x / cellSize);
         y = Mathf.FloorToInt(wp.y / cellSize);
-        if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height) return false;
+        if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height) { x = y = 0; return false; }
         return true;
     }
 
@@ -370,6 +377,7 @@ public class InteractionController : MonoBehaviour
         else Debug.Log($"[HOTBAR] scope={_hotbarScope} {it.ItemId} x{it.Count}");
     }
 
+    // ───────── 일시정지 메뉴 버튼 ─────────
     public void OnClickResume()
     {
         if (_state != GameState.Inmenu) return;
@@ -380,7 +388,9 @@ public class InteractionController : MonoBehaviour
 
     public void OnClickQuitToLobby()
     {
+        // 저장 후 로비 복귀
         Time.timeScale = 1f;
-        SceneManager.LoadScene("Loby");
+        if (worldManager != null) worldManager.SaveWorld();
+        SceneManager.LoadScene("Loby"); // 실제 로비 씬 이름 확인
     }
 }

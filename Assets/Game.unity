@@ -3029,6 +3029,7 @@ MonoBehaviour:
   chunkRoot: {fileID: 105343928}
   initialPoolSize: 200
   player: {fileID: 1746062756}
+  playerComp: {fileID: 1746062761}
   ChunkRadius: 10
   maxLoadsPerFrame: 4
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
@@ -3042,6 +3043,7 @@ MonoBehaviour:
   worldMinute: 0
   worldHour: 0
   worldDay: 0
+  itemLibrary: {fileID: 236639235}
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0
@@ -7546,7 +7548,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1552801293
 Transform:
   m_ObjectHideFlags: 0
