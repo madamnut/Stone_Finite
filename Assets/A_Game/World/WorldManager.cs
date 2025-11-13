@@ -394,9 +394,6 @@ public class WorldManager : MonoBehaviour
             chunkPool.Enqueue(go);
         }
 
-        if (chunkPrefab == null) Debug.LogError("WorldManager: Chunk Prefab이 없습니다.");
-        if (player == null) Debug.LogError("WorldManager: Player Transform이 없습니다.");
-
         // Player 컴포넌트 자동 보정
         if (playerComp == null && player != null)
         {
@@ -410,8 +407,8 @@ public class WorldManager : MonoBehaviour
         lastPlayerChunk = GetPlayerChunk();
 
         worldTick = 0L;
-        worldMinute = 0;
-        worldHour = 0;
+        worldMinute = 180;
+        worldHour = 6;
         worldDay = 0;
         _lastLoggedSecondTick = -ticksPerSecond;
 
