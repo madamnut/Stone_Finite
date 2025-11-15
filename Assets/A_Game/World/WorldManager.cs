@@ -1,10 +1,10 @@
-// WorldManager.cs
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.SceneManagement;
 
 public class WorldManager : MonoBehaviour
 {
@@ -83,8 +83,8 @@ public class WorldManager : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     // 저장 포맷
-    const string SAVE_FILE = "world.bin";
-    const byte   SAVE_VER  = 2;
+    const string SAVE_FILE        = "world.bin";   // 월드 셀/라이트 전용
+    const string PLAYER_SAVE_FILE = "player.bin";  // 플레이어 위치/인벤토리 전용
 
     // 종료 저장 가드
     private bool _didQuitSave = false;
@@ -379,10 +379,13 @@ public class WorldManager : MonoBehaviour
         {
             if (!LoadWorldFromDisk(out worldMap))
             {
-                worldMap = WorldDataGenerator.Generate(settings, 0);
-                Debug.LogWarning("저장 없음 또는 버전 불일치. 새 월드 생성.");
-                SaveWorld();
+                Debug.LogError("[BOOT] 저장 파일을 읽을 수 없습니다. (없음 or 포맷 불일치)");
+                SceneManager.LoadScene("Loby");
+                return;
             }
+
+            // 월드 로드 성공 시 플레이어 데이터 로드
+            LoadPlayerData();
         }
 
         if (chunkRoot == null) chunkRoot = transform;
@@ -427,15 +430,6 @@ public class WorldManager : MonoBehaviour
         if (_didQuitSave) return;
         _didQuitSave = true;
         SaveWorld();
-    }
-
-    void OnDestroy()
-    {
-        if (Application.isPlaying && !_didQuitSave)
-        {
-            _didQuitSave = true;
-            SaveWorld();
-        }
     }
 
     public void OnClickSave()
@@ -1122,7 +1116,7 @@ public class WorldManager : MonoBehaviour
 
             void Prop(int nx, int ny)
             {
-                if ((uint)nx >= W || (uint)ny >= H) return;
+                if ((uint)nx >= W || ((uint)ny >= H)) return;
 
                 int cost = ATT_AIR;
                 if (worldMap.solid[nx, ny].id != 0) cost = ATT_FG;
@@ -1154,7 +1148,7 @@ public class WorldManager : MonoBehaviour
             using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
             using (var bw = new BinaryWriter(fs))
             {
-                bw.Write(SAVE_VER);
+                // 버전 없이 W, H부터 저장 (월드 셀/라이트 전용)
                 bw.Write(W);
                 bw.Write(H);
 
@@ -1194,13 +1188,55 @@ public class WorldManager : MonoBehaviour
                     bw.Write(worldMap.light[x, y].natural);
                     bw.Write(worldMap.light[x, y].artificial);
                 }
+            }
 
-                // ── v2: 플레이어 위치 + 인벤토리 ──
-                float px = 0f, py = 0f;
-                if (player != null) { px = player.position.x; py = player.position.y; }
+            if (File.Exists(path)) File.Delete(path);
+            File.Move(tmp, path);
+
+            // 플레이어 데이터는 별도 파일로 저장
+            SavePlayerData();
+
+            // 요약 로그
+            long bytes = new FileInfo(path).Length;
+            int slotCountLog = 0;
+            Player pCompLog = playerComp ?? player?.GetComponent<Player>() ?? player?.GetComponentInParent<Player>() ?? player?.GetComponentInChildren<Player>();
+            if (pCompLog != null && pCompLog.Inventory != null) slotCountLog = pCompLog.Inventory.items.Count;
+            Debug.Log($"[SAVE] worldBytes={bytes}, slotCount={slotCountLog}, hasPlayer={(pCompLog!=null)}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"SaveWorld 실패: {e}");
+        }
+    }
+
+    private void SavePlayerData()
+    {
+        try
+        {
+            string dir = WorldLoadContext.GetSavePath();
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            string path = Path.Combine(dir, PLAYER_SAVE_FILE);
+            string tmp  = path + ".tmp";
+
+            float px = 0f, py = 0f;
+            if (player != null)
+            {
+                px = player.position.x;
+                py = player.position.y;
+            }
+
+            // 매 세이브마다 플레이어 위치 로그 출력
+            Debug.Log($"[SAVE] PlayerPos=({px:F2}, {py:F2})");
+
+            using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var bw = new BinaryWriter(fs))
+            {
+                // 위치
                 bw.Write(px);
                 bw.Write(py);
 
+                // 인벤토리
                 int slotCount = 0;
                 List<ItemData> slots = null;
 
@@ -1217,6 +1253,7 @@ public class WorldManager : MonoBehaviour
                     slots = pComp.Inventory.items;
                     slotCount = slots.Count;
                 }
+
                 bw.Write(slotCount);
                 if (slotCount > 0)
                 {
@@ -1236,17 +1273,10 @@ public class WorldManager : MonoBehaviour
 
             if (File.Exists(path)) File.Delete(path);
             File.Move(tmp, path);
-
-            // 요약 로그
-            long bytes = new FileInfo(path).Length;
-            int slotCountLog = 0;
-            Player pCompLog = playerComp ?? player?.GetComponent<Player>() ?? player?.GetComponentInParent<Player>() ?? player?.GetComponentInChildren<Player>();
-            if (pCompLog != null && pCompLog.Inventory != null) slotCountLog = pCompLog.Inventory.items.Count;
-            Debug.Log($"[SAVE] end bytes={bytes}, slotCount={slotCountLog}, hasPlayer={(pCompLog!=null)}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"SaveWorld 실패: {e}");
+            Debug.LogError($"SavePlayerData 실패: {e}");
         }
     }
 
@@ -1265,12 +1295,10 @@ public class WorldManager : MonoBehaviour
         long bytes = fs.Length;
         using var br = new BinaryReader(fs);
 
-        byte ver = br.ReadByte();
+        // 버전 없이 W, H부터 읽기 (월드 셀/라이트 전용)
         int w = br.ReadInt32();
         int h = br.ReadInt32();
-        Debug.Log($"[LOAD] start ver={ver}, size={w}x{h}, bytes={bytes}");
-
-        if (ver != SAVE_VER && ver != 1) return false;
+        Debug.Log($"[LOAD] start size={w}x{h}, bytes={bytes}");
 
         var data = new WorldData(w, h);
 
@@ -1311,34 +1339,60 @@ public class WorldManager : MonoBehaviour
             data.light[x, y].artificial = br.ReadByte();
         }
 
-        // v2 추가 데이터
-        if (ver >= 2 && br.BaseStream.Position < br.BaseStream.Length)
-        {
-            float px = br.ReadSingle();
-            float py = br.ReadSingle();
-            _hasLoadedPlayerData = true;
-            _loadedPlayerPos = new Vector2(px, py);
-
-            int slotCount = br.ReadInt32();
-            _loadedInventory = new List<(string id, int count)>(slotCount);
-            for (int i = 0; i < slotCount; i++)
-            {
-                bool has = br.ReadBoolean();
-                if (has)
-                {
-                    string id = br.ReadString();
-                    int cnt = br.ReadInt32();
-                    _loadedInventory.Add((id, cnt));
-                }
-                else _loadedInventory.Add((null, 0));
-            }
-        }
-
         W = w; H = h;
         loaded = data;
 
         Debug.Log("[LOAD] success");
         return true;
+    }
+
+    private void LoadPlayerData()
+    {
+        _hasLoadedPlayerData = false;
+        _loadedInventory = null;
+
+        try
+        {
+            string path = Path.Combine(WorldLoadContext.GetSavePath(), PLAYER_SAVE_FILE);
+            if (!File.Exists(path))
+            {
+                Debug.Log("[LOAD-PLAYER] player.bin not found");
+                return;
+            }
+
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var br = new BinaryReader(fs);
+
+            float px = br.ReadSingle();
+            float py = br.ReadSingle();
+            _hasLoadedPlayerData = true;
+            _loadedPlayerPos = new Vector2(px, py);
+
+            if (br.BaseStream.Position < br.BaseStream.Length)
+            {
+                int slotCount = br.ReadInt32();
+                _loadedInventory = new List<(string id, int count)>(slotCount);
+                for (int i = 0; i < slotCount; i++)
+                {
+                    bool has = br.ReadBoolean();
+                    if (has)
+                    {
+                        string id = br.ReadString();
+                        int cnt   = br.ReadInt32();
+                        _loadedInventory.Add((id, cnt));
+                    }
+                    else _loadedInventory.Add((null, 0));
+                }
+            }
+
+            Debug.Log("[LOAD-PLAYER] success");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"LoadPlayerData 실패: {e}");
+            _hasLoadedPlayerData = false;
+            _loadedInventory = null;
+        }
     }
 
     private void ApplyLoadedPlayerAndInventory()
