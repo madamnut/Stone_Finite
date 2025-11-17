@@ -420,7 +420,7 @@ public class WorldManager : MonoBehaviour
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
             worldTick   = 0L;
-            worldMinute = 180;
+            worldMinute = 360;
             worldHour   = 6;
             worldDay    = 0;
         }
