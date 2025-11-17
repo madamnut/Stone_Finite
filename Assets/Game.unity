@@ -3169,8 +3169,8 @@ MonoBehaviour:
   initialPoolSize: 200
   player: {fileID: 1746062756}
   playerComp: {fileID: 1746062761}
-  ChunkRadius: 10
-  maxLoadsPerFrame: 4
+  ChunkRadius: 16
+  maxLoadsPerFrame: 8
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
   itemDropper: {fileID: 1159117176}
   vfx: {fileID: 672136422}
