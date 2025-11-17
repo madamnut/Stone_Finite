@@ -58,16 +58,8 @@ public class WorldManager : MonoBehaviour
     private int W, H;
     public WorldData worldMap;
 
-    private readonly Queue<GameObject> chunkPool = new();
-    private List<Vector2Int> loadList = new();
-    private int loadIndex = 0;
-    private readonly List<Vector2Int> unloadList = new();
-    private readonly HashSet<Vector2Int> currentNeeded = new();
-
-    private bool isLoading = false;
-    private Vector2Int lastPlayerChunk;
-
-    private readonly Dictionary<Vector2Int, GameObject> activeChunks = new();
+    // 청크 시스템
+    private WorldChunkSystem chunkSystem;
 
     // 월드 시간
     public long worldTick;
@@ -461,12 +453,19 @@ public class WorldManager : MonoBehaviour
 
         if (chunkRoot == null) chunkRoot = transform;
 
-        for (int i = 0; i < initialPoolSize; i++)
-        {
-            var go = Instantiate(chunkPrefab, chunkRoot);
-            go.SetActive(false);
-            chunkPool.Enqueue(go);
-        }
+        // 청크 시스템 생성 및 초기화
+        chunkSystem = new WorldChunkSystem(
+            W,
+            H,
+            ChunkSize,
+            ChunkRadius,
+            maxLoadsPerFrame,
+            worldMap,
+            chunkPrefab,
+            chunkRoot,
+            RecalculateLightAt
+        );
+        chunkSystem.InitializePool(initialPoolSize);
 
         // Player 컴포넌트 자동 보정
         if (playerComp == null && player != null)
@@ -477,8 +476,6 @@ public class WorldManager : MonoBehaviour
         }
         if (playerComp == null)
             Debug.LogWarning("WorldManager: Player 컴포넌트를 찾지 못했습니다. 인벤토리 저장/로드가 비활성화됩니다.");
-
-        lastPlayerChunk = GetPlayerChunk();
 
         // 월드 시간 초기화/복원
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
@@ -522,6 +519,10 @@ public class WorldManager : MonoBehaviour
 
         // 인벤 복원은 Start에서 호출
         ApplyTimeSyncedBrightness(forceDirty:true);
+
+        // 플레이어 위치 기준 청크 기준점 초기화
+        if (player != null && chunkSystem != null)
+            chunkSystem.ResetLastPlayerChunk(player.position);
     }
 
     void Start()
@@ -544,10 +545,15 @@ public class WorldManager : MonoBehaviour
 
     void Update()
     {
-        UpdateVisibleChunks();
+        if (player != null && chunkSystem != null)
+            chunkSystem.UpdateVisibleChunks(player.position, this);
     }
 
-    void LateUpdate() => ProcessDirtyChunks();
+    void LateUpdate()
+    {
+        if (chunkSystem != null)
+            chunkSystem.ProcessDirtyChunks();
+    }
 
     void FixedUpdate()
     {
@@ -592,423 +598,34 @@ public class WorldManager : MonoBehaviour
         {
             globalBrightnessOffset = newOffset;
 
-            if (newOffset != _lastBrightnessOffset || forceDirty)
+            if ((newOffset != _lastBrightnessOffset || forceDirty) && chunkSystem != null)
             {
                 _lastBrightnessOffset = newOffset;
-                foreach (var kv in activeChunks)
-                {
-                    var c = kv.Value.GetComponent<Chunk>();
-                    if (c != null) c.lightDirty = true;
-                }
+                chunkSystem.SetGlobalBrightnessOffset(globalBrightnessOffset);
+                chunkSystem.MarkAllChunksLightDirty();
             }
         }
     }
 
-    private void UpdateVisibleChunks()
+    public TimeBand GetTimeBand()
     {
-        Vector2Int playerChunk = GetPlayerChunk();
+        int h = worldHour;
+        int m = worldMinute % 60;
+        int t = h * 100 + m;
 
-        // 같은 청크에 머물러 있고, 로드 큐도 비었고, 이미 청크가 떠 있으면 계산 스킵
-        if (playerChunk == lastPlayerChunk &&
-            loadList.Count == 0 &&
-            activeChunks.Count > 0)
-            return;
-
-        // 순간이동 수준으로 멀리 이동했으면 로드 큐 초기화
-        if ((playerChunk - lastPlayerChunk).sqrMagnitude > (ChunkRadius * ChunkRadius * 4))
-        {
-            loadList.Clear();
-            loadIndex = 0;
-        }
-        lastPlayerChunk = playerChunk;
-
-        // 유효 청크 범위 계산
-        int cxMin = 0;
-        int cyMin = 0;
-        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
-        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
-
-        // 필요한 청크 집합 구성
-        currentNeeded.Clear();
-        for (int dy = -ChunkRadius; dy <= ChunkRadius; dy++)
-        for (int dx = -ChunkRadius; dx <= ChunkRadius; dx++)
-        {
-            int cx = playerChunk.x + dx;
-            int cy = playerChunk.y + dy;
-            if (cx < cxMin || cy < cyMin || cx > cxMax || cy > cyMax) continue; // 범위 밖 제외
-            currentNeeded.Add(new Vector2Int(cx, cy));
-        }
-
-        // 언로드 대상 계산
-        unloadList.Clear();
-        foreach (var coord in activeChunks.Keys)
-            if (!currentNeeded.Contains(coord)) unloadList.Add(coord);
-        foreach (var coord in unloadList)
-        {
-            ReturnToPool(activeChunks[coord]);
-            activeChunks.Remove(coord);
-        }
-
-        // 로드 대상 리스트 재구성 (아직 없는 청크만)
-        loadList.Clear();
-        foreach (var c in currentNeeded)
-        {
-            if (!activeChunks.ContainsKey(c))
-                loadList.Add(c);
-        }
-
-        // 플레이어와의 거리 기준 정렬 (가장 가까운 청크부터)
-        loadList.Sort((a, b) =>
-        {
-            int ax = a.x - playerChunk.x;
-            int ay = a.y - playerChunk.y;
-            int bx = b.x - playerChunk.x;
-            int by = b.y - playerChunk.y;
-
-            int da2 = ax * ax + ay * ay;
-            int db2 = bx * bx + by * by;
-            return da2.CompareTo(db2);
-        });
-
-        loadIndex = 0;
-
-        if (!isLoading && loadList.Count > 0)
-            StartCoroutine(ProcessLoadQueue());
+        if (t == 0)   return TimeBand.Midnight;
+        if (t < 400)  return TimeBand.LateNight;
+        if (t < 600)  return TimeBand.Dawn;
+        if (t < 900)  return TimeBand.EarlyMorning;
+        if (t < 1200) return TimeBand.Morning;
+        if (t == 1200)return TimeBand.Noon;
+        if (t < 1700) return TimeBand.Afternoon;
+        if (t < 1900) return TimeBand.Evening;
+        if (t < 2100) return TimeBand.Dusk;
+        return TimeBand.Night;
     }
 
-    private IEnumerator ProcessLoadQueue()
-    {
-        isLoading = true;
-
-        // 유효 청크 범위 계산
-        int cxMin = 0, cyMin = 0;
-        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
-        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
-
-        int loads = 0;
-        while (loads < maxLoadsPerFrame && loadIndex < loadList.Count)
-        {
-            var coord = loadList[loadIndex++];
-            if (!currentNeeded.Contains(coord)) continue;
-            if (coord.x < cxMin || coord.y < cyMin || coord.x > cxMax || coord.y > cyMax) continue; // 범위 밖 스킵
-
-            CreateChunk(coord);
-            loads++;
-        }
-
-        if (loadIndex >= loadList.Count)
-        {
-            loadList.Clear();
-            loadIndex = 0;
-        }
-
-        yield return null;
-        isLoading = false;
-    }
-
-    private Vector2Int GetPlayerChunk()
-    {
-        Vector3 p = player.position;
-        return new Vector2Int(
-            Mathf.FloorToInt(p.x / ChunkSize),
-            Mathf.FloorToInt(p.y / ChunkSize)
-        );
-    }
-
-    private GameObject GetFromPool()
-    {
-        if (chunkPool.Count > 0) return chunkPool.Dequeue();
-        var go = Instantiate(chunkPrefab, chunkRoot);
-        go.SetActive(false);
-        return go;
-    }
-
-    private void ReturnToPool(GameObject go)
-    {
-        go.SetActive(false);
-        chunkPool.Enqueue(go);
-    }
-
-    private void CreateChunk(Vector2Int coord)
-    {
-        // 유효 청크 범위 하드 가드
-        int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
-        int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
-        if (coord.x < 0 || coord.y < 0 || coord.x > cxMax || coord.y > cyMax) return;
-
-        var go = GetFromPool();
-        go.SetActive(true);
-        go.name = $"Chunk_{coord.x}_{coord.y}";
-        go.transform.localPosition = new Vector3(coord.x * ChunkSize, coord.y * ChunkSize, 0f);
-
-        var c = go.GetComponent<Chunk>();
-        if (c == null) return;
-
-        var bgBuf     = c.bgBuffer;
-        var fgBuf     = c.fgBuffer;
-        var decoBuf   = c.decoBuffer;
-        var liquidBuf = c.liquidBuffer;
-        int size = ChunkSize * ChunkSize;
-
-        for (int i = 0; i < size; i++)
-        {
-            bgBuf[i]     = null;
-            fgBuf[i]     = null;
-            decoBuf[i]   = null;
-            liquidBuf[i] = null;
-        }
-
-        var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
-        for (int y = 0; y < ChunkSize; y++)
-        {
-            for (int x = 0; x < ChunkSize; x++)
-            {
-                int wx = coord.x * ChunkSize + x;
-                int wy = coord.y * ChunkSize + y;
-                int idx = y * ChunkSize + x;
-                if (wx < 0 || wx >= W || wy < 0 || wy >= H)
-                    continue;
-
-                // BG
-                bgBuf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
-
-                // Solid
-                ushort solidId = worldMap.solid[wx, wy].id;
-                if (solidId != 0)
-                {
-                    var tile = TileCache.Get(solidId);
-                    tile.colliderType = Tile.ColliderType.Sprite;
-                    fgBuf[idx] = tile;
-                }
-
-                // Deco
-                ushort decoId = worldMap.deco[wx, wy].id;
-                if (decoId != 0)
-                {
-                    var tile = TileCache.Get(decoId);
-                    tile.colliderType = Tile.ColliderType.None;
-                    decoBuf[idx] = tile;
-                }
-
-                // Liquid
-                var liq = worldMap.liquid[wx, wy];
-                liquidBuf[idx] = (liq.amount > 0 && liq.id != 0)
-                    ? TileCache.GetWaterByAmount(liq.id, liq.amount)
-                    : null;
-            }
-        }
-
-        c.bgTilemap.SetTilesBlock(bounds, bgBuf);
-        c.fgTilemap.SetTilesBlock(bounds, fgBuf);
-        c.decoTilemap.SetTilesBlock(bounds, decoBuf);
-        c.liquidTilemap.SetTilesBlock(bounds, liquidBuf);
-
-        var coll = c.fgTilemap.GetComponent<TilemapCollider2D>();
-        if (coll != null)
-        {
-            c.fgTilemap.RefreshAllTiles();
-            coll.ProcessTilemapChanges();
-        }
-
-        activeChunks[coord] = go;
-
-        RefreshLightLayer(coord);
-
-        c.bgDirty = c.fgDirty = c.decoDirty = c.liquidDirty = c.lightDirty = false;
-    }
-
-    private void ProcessDirtyChunks()
-    {
-        foreach (var kv in activeChunks)
-        {
-            var coord = kv.Key;
-            var go    = kv.Value;
-            var c     = go.GetComponent<Chunk>();
-
-            if (c.bgDirty)
-            {
-                RefreshChunkLayer(coord, LayerType.BG);
-                c.bgDirty = false;
-            }
-
-            if (c.fgDirty)
-            {
-                RefreshChunkLayer(coord, LayerType.FG);
-                c.fgDirty = false;
-
-                int sx = coord.x * ChunkSize, sy = coord.y * ChunkSize;
-                for (int y = 0; y < ChunkSize; y++)
-                    for (int x = 0; x < ChunkSize; x++)
-                        RecalculateLightAt(sx + x, sy + y);
-            }
-
-            if (c.decoDirty)
-            {
-                RefreshChunkLayer(coord, LayerType.Deco);
-                c.decoDirty = false;
-            }
-
-            if (c.liquidDirty)
-            {
-                RefreshChunkLayer(coord, LayerType.Liquid);
-                c.liquidDirty = false;
-            }
-
-            if (c.lightDirty)
-            {
-                RefreshLightLayer(coord);
-                c.lightDirty = false;
-            }
-        }
-    }
-
-    private enum LayerType { BG, FG, Deco, Liquid }
-
-    private void RefreshChunkLayer(Vector2Int coord, LayerType type)
-    {
-        var go = activeChunks[coord];
-        var c  = go.GetComponent<Chunk>();
-        var bounds = new BoundsInt(0, 0, 0, ChunkSize, ChunkSize, 1);
-
-        switch (type)
-        {
-            case LayerType.BG:
-            {
-                var buf = c.bgBuffer;
-                for (int y = 0; y < ChunkSize; y++)
-                    for (int x = 0; x < ChunkSize; x++)
-                    {
-                        int wx = coord.x * ChunkSize + x;
-                        int wy = coord.y * ChunkSize + y;
-                        int idx = y * ChunkSize + x;
-                        if ((uint)wx >= W || (uint)wy >= H) continue;
-                        buf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
-                    }
-                c.bgTilemap.SetTilesBlock(bounds, buf);
-                break;
-            }
-            case LayerType.FG:
-            {
-                var buf = c.fgBuffer;
-                for (int y = 0; y < ChunkSize; y++)
-                    for (int x = 0; x < ChunkSize; x++)
-                    {
-                        int wx = coord.x * ChunkSize + x;
-                        int wy = coord.y * ChunkSize + y;
-                        int idx = y * ChunkSize + x;
-                        if ((uint)wx >= W || (uint)wy >= H) continue;
-
-                        ushort id = worldMap.solid[wx, wy].id;
-                        if (id != 0)
-                        {
-                            var tile = TileCache.Get(id);
-                            tile.colliderType = Tile.ColliderType.Sprite;
-                            buf[idx] = tile;
-                        }
-                        else buf[idx] = null;
-                    }
-                c.fgTilemap.SetTilesBlock(bounds, buf);
-                var coll = c.fgTilemap.GetComponent<TilemapCollider2D>();
-                if (coll != null)
-                {
-                    c.fgTilemap.RefreshAllTiles();
-                    coll.ProcessTilemapChanges();
-                }
-                break;
-            }
-            case LayerType.Deco:
-            {
-                var buf = c.decoBuffer;
-                for (int y = 0; y < ChunkSize; y++)
-                    for (int x = 0; x < ChunkSize; x++)
-                    {
-                        int wx = coord.x * ChunkSize + x;
-                        int wy = coord.y * ChunkSize + y;
-                        int idx = y * ChunkSize + x;
-                        if ((uint)wx >= W || (uint)wy >= H) continue;
-
-                        ushort id = worldMap.deco[wx, wy].id;
-                        buf[idx] = id != 0 ? TileCache.Get(id) : null;
-                    }
-                c.decoTilemap.SetTilesBlock(bounds, buf);
-                break;
-            }
-            case LayerType.Liquid:
-            {
-                var buf = c.liquidBuffer;
-                for (int y = 0; y < ChunkSize; y++)
-                    for (int x = 0; x < ChunkSize; x++)
-                    {
-                        int wx = coord.x * ChunkSize + x;
-                        int wy = coord.y * ChunkSize + y;
-                        int idx = y * ChunkSize + x;
-                        if ((uint)wx >= W || (uint)wy >= H) continue;
-
-                        var liq = worldMap.liquid[wx, wy];
-                        buf[idx] = (liq.amount > 0 && liq.id != 0)
-                            ? TileCache.GetWaterByAmount(liq.id, liq.amount)
-                            : null;
-                    }
-                c.liquidTilemap.SetTilesBlock(bounds, buf);
-                break;
-            }
-        }
-    }
-
-    private void RefreshLightLayer(Vector2Int coord)
-    {
-        if (!activeChunks.TryGetValue(coord, out var go)) return;
-        var c = go.GetComponent<Chunk>();
-        if (c == null || c.lightMeshFilter == null) return;
-
-        var mesh = c.lightMeshFilter.sharedMesh;
-        if (mesh == null) return;
-
-        int vW = ChunkSize + 1, vH = ChunkSize + 1, vCount = vW * vH;
-        var cols = (c.lightColors != null && c.lightColors.Length == vCount)
-            ? c.lightColors : new Color32[vCount];
-
-        int sx = coord.x * ChunkSize, sy = coord.y * ChunkSize;
-
-        for (int vy = 0; vy <= ChunkSize; vy++)
-        {
-            for (int vx = 0; vx <= ChunkSize; vx++)
-            {
-                int gx = sx + vx, gy = sy + vy;
-
-                int cx0 = Mathf.Clamp(gx - 1, 0, W - 1);
-                int cy0 = Mathf.Clamp(gy - 1, 0, H - 1);
-                int cx1 = Mathf.Clamp(gx    , 0, W - 1);
-                int cy1 = Mathf.Clamp(gy    , 0, H - 1);
-
-                float sum = 0f;
-
-                void Sample(int x, int y)
-                {
-                    var L = worldMap.light[x, y];
-                    int ns = L.natural - globalBrightnessOffset; if (ns < 0) ns = 0;
-                    float n01 = ns / (float)NAT_MAX;
-                    float a01 = L.artificial / (float)ART_MAX;
-                    sum += Mathf.Max(n01, a01);
-                }
-
-                Sample(cx0, cy0);
-                Sample(cx1, cy0);
-                Sample(cx0, cy1);
-                Sample(cx1, cy1);
-
-                float avg = sum * 0.25f;
-                float A01 = 1f - Mathf.Clamp01(avg);
-                byte Ab  = (byte)Mathf.RoundToInt(A01 * 255f);
-
-                cols[vy * vW + vx] = new Color32(0, 0, 0, Ab);
-            }
-        }
-
-        c.lightColors = cols;
-        mesh.colors32 = cols;
-    }
-
+    // ───────── 라이트 재계산 ─────────
     public void RecalculateLightAt(int x0, int y0)
     {
         if ((uint)x0 >= W || (uint)y0 >= H) return;
@@ -1050,154 +667,55 @@ public class WorldManager : MonoBehaviour
                     q.Enqueue((mx, my));
                 }
 
-                var coord = new Vector2Int(x / ChunkSize, y / ChunkSize);
-                if (activeChunks.TryGetValue(coord, out var go))
-                    go.GetComponent<Chunk>().lightDirty = true;
+                if (chunkSystem != null)
+                {
+                    var active = chunkSystem.ActiveChunks;
+                    var coord = new Vector2Int(x / ChunkSize, y / ChunkSize);
+                    if (active.TryGetValue(coord, out var go))
+                        go.GetComponent<Chunk>().lightDirty = true;
 
-                int rx = x % ChunkSize;
-                int ry = y % ChunkSize;
-                if (rx == 0)
-                {
-                    var left = new Vector2Int(coord.x - 1, coord.y);
-                    if (activeChunks.TryGetValue(left, out var goL))
-                        goL.GetComponent<Chunk>().lightDirty = true;
-                }
-                else if (rx == ChunkSize - 1)
-                {
-                    var right = new Vector2Int(coord.x + 1, coord.y);
-                    if (activeChunks.TryGetValue(right, out var goR))
-                        goR.GetComponent<Chunk>().lightDirty = true;
-                }
-                if (ry == 0)
-                {
-                    var down = new Vector2Int(coord.x, coord.y - 1);
-                    if (activeChunks.TryGetValue(down, out var goD))
-                        goD.GetComponent<Chunk>().lightDirty = true;
-                }
-                else if (ry == ChunkSize - 1)
-                {
-                    var up = new Vector2Int(coord.x, coord.y + 1);
-                    if (activeChunks.TryGetValue(up, out var goU))
-                        goU.GetComponent<Chunk>().lightDirty = true;
+                    int rx = x % ChunkSize;
+                    int ry = y % ChunkSize;
+                    if (rx == 0)
+                    {
+                        var left = new Vector2Int(coord.x - 1, coord.y);
+                        if (active.TryGetValue(left, out var goL))
+                            goL.GetComponent<Chunk>().lightDirty = true;
+                    }
+                    else if (rx == ChunkSize - 1)
+                    {
+                        var right = new Vector2Int(coord.x + 1, coord.y);
+                        if (active.TryGetValue(right, out var goR))
+                            goR.GetComponent<Chunk>().lightDirty = true;
+                    }
+                    if (ry == 0)
+                    {
+                        var down = new Vector2Int(coord.x, coord.y - 1);
+                        if (active.TryGetValue(down, out var goD))
+                            goD.GetComponent<Chunk>().lightDirty = true;
+                    }
+                    else if (ry == ChunkSize - 1)
+                    {
+                        var up = new Vector2Int(coord.x, coord.y + 1);
+                        if (active.TryGetValue(up, out var goU))
+                            goU.GetComponent<Chunk>().lightDirty = true;
+                    }
                 }
             }
         }
     }
 
+    // ───────── 청크 더티 플래그 위임 ─────────
     public void MarkChunkDirty(int worldX, int worldY, bool markFG, bool markBG = false, bool markDeco = false, bool markLiquid = false)
     {
-        int cx = Mathf.FloorToInt(worldX / (float)ChunkSize);
-        int cy = Mathf.FloorToInt(worldY / (float)ChunkSize);
-        var coord = new Vector2Int(cx, cy);
-        if (!activeChunks.TryGetValue(coord, out var go)) return;
-        var c = go.GetComponent<Chunk>();
-        if (markFG)     c.fgDirty = true;
-        if (markBG)     c.bgDirty = true;
-        if (markDeco)   c.decoDirty = true;
-        if (markLiquid) c.liquidDirty = true;
+        if (chunkSystem == null) return;
+        chunkSystem.MarkChunkDirty(worldX, worldY, markFG, markBG, markDeco, markLiquid);
     }
 
     private void MarkLightDirtyRect(int x, int y, int w, int h)
     {
-        int x0 = Mathf.Clamp(x, 0, W-1);
-        int y0 = Mathf.Clamp(y, 0, H-1);
-        int x1 = Mathf.Clamp(x + w - 1, 0, W-1);
-        int y1 = Mathf.Clamp(y + h - 1, 0, H-1);
-
-        int cx0 = x0 / ChunkSize, cy0 = y0 / ChunkSize;
-        int cx1 = x1 / ChunkSize, cy1 = y1 / ChunkSize;
-
-        for (int cy = cy0; cy <= cy1; cy++)
-            for (int cx = cx0; cx <= cx1; cx++)
-            {
-                var coord = new Vector2Int(cx, cy);
-                if (activeChunks.TryGetValue(coord, out var go))
-                    go.GetComponent<Chunk>().lightDirty = true;
-            }
-    }
-
-    public TimeBand GetTimeBand()
-    {
-        int h = worldHour;
-        int m = worldMinute % 60;
-        int t = h * 100 + m;
-
-        if (t == 0)   return TimeBand.Midnight;
-        if (t < 400)  return TimeBand.LateNight;
-        if (t < 600)  return TimeBand.Dawn;
-        if (t < 900)  return TimeBand.EarlyMorning;
-        if (t < 1200) return TimeBand.Morning;
-        if (t == 1200)return TimeBand.Noon;
-        if (t < 1700) return TimeBand.Afternoon;
-        if (t < 1900) return TimeBand.Evening;
-        if (t < 2100) return TimeBand.Dusk;
-        return TimeBand.Night;
-    }
-
-    private static class TileCache
-    {
-        private static readonly Dictionary<ushort, Tile> cache = new();
-        private static Tile[] waterLevelTiles;
-
-        public static Tile Get(ushort id)
-        {
-            if (id == 0) return null;
-            if (cache.TryGetValue(id, out var tile)) return tile;
-            var t = ScriptableObject.CreateInstance<Tile>();
-            t.sprite = CellLibrary.GetSprite(id);
-            t.name = CellLibrary.GetName(id);
-            cache[id] = t;
-            return t;
-        }
-
-        public static Tile GetWaterByAmount(ushort waterId, int amount)
-        {
-            if (amount <= 0) return null;
-            if (amount > 100) amount = 100;
-
-            int level = (amount - 1) / 10 + 1; // 1..10
-            waterLevelTiles ??= new Tile[11];
-            if (waterLevelTiles[level] != null) return waterLevelTiles[level];
-
-            var baseTile = Get(waterId);
-            var s = baseTile != null ? baseTile.sprite : null;
-            if (s == null) return null;
-
-            var tex = s.texture;
-            if (tex == null) return null;
-
-            Rect r = s.textureRect;
-            int fullW = Mathf.RoundToInt(r.width);
-            int fullH = Mathf.RoundToInt(r.height);
-            int copyH = Mathf.CeilToInt(fullH * (level / 10f));
-
-            var newTex = new Texture2D(fullW, fullH, TextureFormat.RGBA32, false);
-            newTex.filterMode = tex.filterMode;
-            newTex.wrapMode = TextureWrapMode.Clamp;
-
-            var clear = new Color32(0, 0, 0, 0);
-            var buf = new Color32[fullW * fullH];
-            for (int i = 0; i < buf.Length; i++) buf[i] = clear;
-            newTex.SetPixels32(buf);
-
-            int srcX = Mathf.RoundToInt(r.x);
-            int srcY = Mathf.RoundToInt(r.y);
-            Color[] src = tex.GetPixels(srcX, srcY, fullW, copyH);
-            newTex.SetPixels(0, 0, fullW, copyH, src);
-
-            newTex.Apply(false, false);
-
-            var spr = Sprite.Create(newTex, new Rect(0, 0, fullW, fullH), new Vector2(0.5f, 0.5f), s.pixelsPerUnit, 0, SpriteMeshType.FullRect);
-            spr.name = $"Water_L{level}";
-
-            var t = ScriptableObject.CreateInstance<Tile>();
-            t.sprite = spr;
-            t.name   = $"Water_L{level}";
-            t.colliderType = Tile.ColliderType.None;
-
-            waterLevelTiles[level] = t;
-            return t;
-        }
+        if (chunkSystem == null) return;
+        chunkSystem.MarkLightDirtyRect(x, y, w, h);
     }
 
     // ───────── 인공광(스칼라) ─────────
