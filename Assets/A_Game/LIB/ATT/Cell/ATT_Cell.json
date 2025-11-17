@@ -12,7 +12,7 @@
   "Grass_TopLeftRight" : { "id":    9, "type": "solid" },
   
   "Clay"               : { "id":   10, "type": "solid" },
-  "Mud"                : { "id":   10, "type": "Deco" },
+  "Mud"                : { "id":   11, "type": "Deco" },
 
   "Sand"               : { "id": 1000, "type": "solid", "gravity": true },
   "Gravel"             : { "id": 1001, "type": "solid", "gravity": true },
