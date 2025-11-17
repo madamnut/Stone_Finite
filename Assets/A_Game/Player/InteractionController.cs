@@ -102,26 +102,45 @@ public class InteractionController : MonoBehaviour
             LogScopeItem();
         }
 
-        if (Input.GetKeyDown(toggleInventoryKey) && _state == GameState.Ingame)
+        bool invDown = Input.GetKeyDown(toggleInventoryKey);
+        bool escDown = Input.GetKeyDown(KeyCode.Escape);
+
+        if (invDown)
         {
-            _state = GameState.Inpanel;
-            if (inventoryPanel != null) inventoryPanel.SetActive(true);
-
-            if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
+            if (_state == GameState.Ingame)
             {
-                _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
-                _moduleInstance.transform.SetSiblingIndex(0);
+                _state = GameState.Inpanel;
+                if (inventoryPanel != null) inventoryPanel.SetActive(true);
 
-                var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
-                foreach (var c in crafts)
+                if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
                 {
-                    c.recipeLibrary = recipeLibrary;
-                    c.player        = player;
+                    _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
+                    _moduleInstance.transform.SetSiblingIndex(0);
+
+                    var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
+                    foreach (var c in crafts)
+                    {
+                        c.recipeLibrary = recipeLibrary;
+                        c.player        = player;
+                    }
                 }
+            }
+            else if (_state == GameState.Inpanel)
+            {
+                if (player != null && cursorSlot != null && cursorSlot.Item != null)
+                {
+                    int left = player.Inventory.AddItem(cursorSlot.Item);
+                    if (left == 0) cursorSlot.Set(null);
+                    else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
+                }
+
+                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+                _state = GameState.Ingame;
+                if (inventoryPanel != null) inventoryPanel.SetActive(false);
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (escDown)
         {
             if (_state == GameState.Inpanel)
             {

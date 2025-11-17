@@ -61,6 +61,7 @@ public class WorldManager : MonoBehaviour
 
     private readonly Queue<GameObject> chunkPool = new();
     private List<Vector2Int> loadList = new();
+    private int loadIndex = 0;
     private readonly List<Vector2Int> unloadList = new();
     private readonly HashSet<Vector2Int> currentNeeded = new();
 
@@ -379,6 +380,76 @@ public class WorldManager : MonoBehaviour
         {
             Debug.Log("[BOOT] NewWorld branch: Generate → SaveWorld()");
             worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
+
+            // ───────── 새 월드 최초 스폰 위치 결정 ─────────
+            if (player != null)
+            {
+                int centerX = 2500;
+                if (centerX < 0) centerX = 0;
+                if (centerX >= W) centerX = W - 1;
+
+                bool found = false;
+                int spawnX = centerX;
+                int spawnY = 0;
+
+                // 2500 → 2499 → 2501 → 2498 → 2502 ... 순서로 탐색
+                for (int radius = 0; radius < W; radius++)
+                {
+                    int[] xs =
+                    {
+                        centerX,
+                        centerX - radius,
+                        centerX + radius
+                    };
+
+                    foreach (int x in xs)
+                    {
+                        if (found) break;
+                        if (x < 0 || x >= W) continue;
+
+                        // 위에서 아래로 스캔하면서 solid 또는 liquid 중 먼저 만나는 것 판단
+                        for (int y = H - 1; y >= 0; y--)
+                        {
+                            ushort solid = worldMap.solid[x, y].id;
+                            byte   water = worldMap.liquid[x, y].amount;
+
+                            if (water > 0)
+                            {
+                                // 액체가 먼저 나오면 이 x 전체 스킵
+                                break;
+                            }
+
+                            if (solid != 0)
+                            {
+                                // 솔리드가 먼저 나왔으므로 스폰 지점은 y + 5
+                                int ySpawn = Mathf.Min(y + 5, H - 1);
+
+                                spawnX = x;
+                                spawnY = ySpawn;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (found) break;
+                }
+
+                if (found)
+                {
+                    float px = spawnX + 0.5f;
+                    float py = spawnY + 0.5f;
+                    player.position = new Vector3(px, py, player.position.z);
+                    Debug.Log($"[SPAWN] Spawn at X={spawnX}, Y={spawnY}");
+                }
+                else
+                {
+                    Debug.LogWarning("[SPAWN] 적절한 스폰 위치를 찾지 못했습니다. 기존 플레이어 위치 유지.");
+                }
+            }
+
+
+            // 스폰까지 반영된 상태로 첫 저장
             SaveWorld();
         }
         else if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
@@ -419,19 +490,29 @@ public class WorldManager : MonoBehaviour
         // 월드 시간 초기화/복원
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
-            worldTick   = 0L;
-            worldMinute = 360;
-            worldHour   = 6;
-            worldDay    = 0;
+            // worldTick = 0을 12:00 기준으로 사용
+            worldTick = 0L;
+            worldMinute = 12 * 60; // 720 = 12:00
+            worldHour = 12;
+            worldDay = 0;
         }
         else
         {
             if (ticksPerDay > 0 && minutesPerDay > 0)
             {
-                long day        = worldTick / ticksPerDay;
-                long tickOfDay  = worldTick % ticksPerDay;
-                int  ticksPerMin = ticksPerDay / minutesPerDay;
-                int  minuteOfDay = ticksPerMin > 0 ? (int)(tickOfDay / ticksPerMin) : 0;
+                // worldTick = 0 을 "12:00" 으로 간주하는 새로운 기준
+
+                long day       = worldTick / ticksPerDay;
+                long tickOfDay = worldTick % ticksPerDay;
+                int ticksPerMin = ticksPerDay / minutesPerDay;
+
+                // base = 12:00 (720분)
+                int baseMinutes = 12 * 60;
+
+                int minuteOfDay = baseMinutes + (ticksPerMin > 0 ? (int)(tickOfDay / ticksPerMin) : 0);
+
+                // 하루 범위 보정
+                minuteOfDay %= minutesPerDay;
 
                 worldDay    = (int)day;
                 worldMinute = minuteOfDay;
@@ -534,8 +615,18 @@ public class WorldManager : MonoBehaviour
     {
         Vector2Int playerChunk = GetPlayerChunk();
 
+        // 같은 청크에 머물러 있고, 로드 큐도 비었고, 이미 청크가 떠 있으면 계산 스킵
+        if (playerChunk == lastPlayerChunk &&
+            loadList.Count == 0 &&
+            activeChunks.Count > 0)
+            return;
+
+        // 순간이동 수준으로 멀리 이동했으면 로드 큐 초기화
         if ((playerChunk - lastPlayerChunk).sqrMagnitude > (ChunkRadius * ChunkRadius * 4))
+        {
             loadList.Clear();
+            loadIndex = 0;
+        }
         lastPlayerChunk = playerChunk;
 
         // 유효 청크 범위 계산
@@ -544,6 +635,7 @@ public class WorldManager : MonoBehaviour
         int cxMax = Mathf.Max(0, (W - 1) / ChunkSize);
         int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
 
+        // 필요한 청크 집합 구성
         currentNeeded.Clear();
         for (int dy = -ChunkRadius; dy <= ChunkRadius; dy++)
         for (int dx = -ChunkRadius; dx <= ChunkRadius; dx++)
@@ -554,6 +646,7 @@ public class WorldManager : MonoBehaviour
             currentNeeded.Add(new Vector2Int(cx, cy));
         }
 
+        // 언로드 대상 계산
         unloadList.Clear();
         foreach (var coord in activeChunks.Keys)
             if (!currentNeeded.Contains(coord)) unloadList.Add(coord);
@@ -563,12 +656,28 @@ public class WorldManager : MonoBehaviour
             activeChunks.Remove(coord);
         }
 
-        loadList = currentNeeded
-            .Where(c => !activeChunks.ContainsKey(c))
-            .OrderBy(c =>
-                (c.x - playerChunk.x) * (c.x - playerChunk.x) +
-                (c.y - playerChunk.y) * (c.y - playerChunk.y))
-            .ToList();
+        // 로드 대상 리스트 재구성 (아직 없는 청크만)
+        loadList.Clear();
+        foreach (var c in currentNeeded)
+        {
+            if (!activeChunks.ContainsKey(c))
+                loadList.Add(c);
+        }
+
+        // 플레이어와의 거리 기준 정렬 (가장 가까운 청크부터)
+        loadList.Sort((a, b) =>
+        {
+            int ax = a.x - playerChunk.x;
+            int ay = a.y - playerChunk.y;
+            int bx = b.x - playerChunk.x;
+            int by = b.y - playerChunk.y;
+
+            int da2 = ax * ax + ay * ay;
+            int db2 = bx * bx + by * by;
+            return da2.CompareTo(db2);
+        });
+
+        loadIndex = 0;
 
         if (!isLoading && loadList.Count > 0)
             StartCoroutine(ProcessLoadQueue());
@@ -584,15 +693,22 @@ public class WorldManager : MonoBehaviour
         int cyMax = Mathf.Max(0, (H - 1) / ChunkSize);
 
         int loads = 0;
-        while (loads < maxLoadsPerFrame && loadList.Count > 0)
+        while (loads < maxLoadsPerFrame && loadIndex < loadList.Count)
         {
-            var coord = loadList[0];
-            loadList.RemoveAt(0);
+            var coord = loadList[loadIndex++];
             if (!currentNeeded.Contains(coord)) continue;
             if (coord.x < cxMin || coord.y < cyMin || coord.x > cxMax || coord.y > cyMax) continue; // 범위 밖 스킵
+
             CreateChunk(coord);
             loads++;
         }
+
+        if (loadIndex >= loadList.Count)
+        {
+            loadList.Clear();
+            loadIndex = 0;
+        }
+
         yield return null;
         isLoading = false;
     }
