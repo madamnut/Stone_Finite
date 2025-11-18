@@ -1,8 +1,8 @@
 {
   "Air"                : { "id":    0, "type": "none" },
 
-  "Rock"               : { "id":    1, "type": "dynamic" },
-  "Dirt"               : { "id":    2, "type": "dynamic" },
+  "Rock"               : { "id":    1, "type": "solid" },
+  "Dirt"               : { "id":    2, "type": "solid" },
   "Grass_Left"         : { "id":    3, "type": "solid" },
   "Grass_Top"          : { "id":    4, "type": "solid" },
   "Grass_Right"        : { "id":    5, "type": "solid" },
@@ -11,8 +11,8 @@
   "Grass_LeftRight"    : { "id":    8, "type": "solid" },
   "Grass_TopLeftRight" : { "id":    9, "type": "solid" },
   
-  "Clay"               : { "id":   10, "type": "dynamic" },
-  "Mud"                : { "id":   11, "type": "dynamic" },
+  "Clay"               : { "id":   10, "type": "solid" },
+  "Mud"                : { "id":   11, "type": "solid" },
 
   "Sand"               : { "id": 1000, "type": "solid", "gravity": true },
   "Gravel"             : { "id": 1001, "type": "solid", "gravity": true },
@@ -30,8 +30,8 @@
   "Ore_Iron"           : { "id": 3002, "type": "solid" },
   "Ore_Tin"            : { "id": 3003, "type": "solid" },
 
-  "Granite"            : { "id": 4000, "type": "dynamic" },
-  "Amphibolite"        : { "id": 4001, "type": "dynamic" },
+  "Granite"            : { "id": 4000, "type": "solid" },
+  "Amphibolite"        : { "id": 4001, "type": "solid" },
 
   "Primal Workbench"   : { "id": 50000, "type": "deco", "interaction": "primalcraftModule" },
   
