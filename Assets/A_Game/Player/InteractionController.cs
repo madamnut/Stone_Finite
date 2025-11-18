@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 public class InteractionController : MonoBehaviour
 {
     public enum GameState { Ingame, Inpanel, Inmenu }
-    enum BreakMode { FG, BG }
+    enum LayerMode { FG, BG }
 
     /*────────────── UI ──────────────*/
     [Header("UI")]
@@ -64,7 +64,7 @@ public class InteractionController : MonoBehaviour
     public AudioManager sound;
 
     GameState _state = GameState.Ingame;
-    BreakMode _breakMode = BreakMode.FG;
+    LayerMode _layerMode = LayerMode.FG;
     GameObject _hlGO;
     SpriteRenderer _hlSR;
     float _timer;
@@ -83,7 +83,6 @@ public class InteractionController : MonoBehaviour
         _hlGO.SetActive(false);
 
         if (hotbar != null) hotbar.SetScope(_hotbarScope);
-        LogScopeItem();
 
         if (recipeLibrary != null) recipeLibrary.itemLibrary = itemLibrary;
 
@@ -99,7 +98,6 @@ public class InteractionController : MonoBehaviour
         {
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
             if (hotbar != null) hotbar.SetScope(_hotbarScope);
-            LogScopeItem();
         }
 
         bool invDown = Input.GetKeyDown(toggleInventoryKey);
@@ -172,8 +170,8 @@ public class InteractionController : MonoBehaviour
 
         if (Input.GetKeyDown(toggleBreakModeKey) && _state == GameState.Ingame)
         {
-            _breakMode = (_breakMode == BreakMode.FG) ? BreakMode.BG : BreakMode.FG;
-            _hlSR.sprite = (_breakMode == BreakMode.FG) ? HighLight_FG : HighLight_BG;
+            _layerMode = (_layerMode == LayerMode.FG) ? LayerMode.BG : LayerMode.FG;
+            _hlSR.sprite = (_layerMode == LayerMode.FG) ? HighLight_FG : HighLight_BG;
         }
 
         if (_state != GameState.Ingame) { _hlGO.SetActive(false); return; }
@@ -204,7 +202,7 @@ public class InteractionController : MonoBehaviour
         bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
         bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
 
-        if (_breakMode == BreakMode.FG)
+        if (_layerMode == LayerMode.FG)
         {
             bool canBreak = hasSolid || hasDeco;
             _hlSR.sprite = canBreak ? HighLight_FG_CAN : HighLight_FG;
@@ -230,7 +228,7 @@ public class InteractionController : MonoBehaviour
         if (worldManager == null) return;
         if (!GetMouseCell(out int cx, out int cy)) return;
 
-        var layer = (_breakMode == BreakMode.FG)
+        var layer = (_layerMode == LayerMode.FG)
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
@@ -338,7 +336,6 @@ public class InteractionController : MonoBehaviour
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
-        LogScopeItem();
     }
 
     void HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
@@ -374,7 +371,6 @@ public class InteractionController : MonoBehaviour
 
         var outItem = itemLibrary.Create(outputName, 1);
         if (outItem != null) player.Inventory.AddItem(outItem);
-        LogScopeItem();
     }
 
     bool GetMouseCell(out int x, out int y)
@@ -384,16 +380,6 @@ public class InteractionController : MonoBehaviour
         y = Mathf.FloorToInt(wp.y / cellSize);
         if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height) { x = y = 0; return false; }
         return true;
-    }
-
-    void LogScopeItem()
-    {
-        if (player == null || player.Inventory == null) return;
-        var items = player.Inventory.items;
-        if (_hotbarScope < 0 || _hotbarScope >= items.Count) return;
-        var it = items[_hotbarScope];
-        if (it == null) Debug.Log($"[HOTBAR] scope={_hotbarScope} empty");
-        else Debug.Log($"[HOTBAR] scope={_hotbarScope} {it.ItemId} x{it.Count}");
     }
 
     // ───────── 일시정지 메뉴 버튼 ─────────

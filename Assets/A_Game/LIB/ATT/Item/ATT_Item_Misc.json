@@ -25,7 +25,7 @@
       "interaction": {
         "type": "Place",
         "params": {
-          "layer": "Flexible",
+          "layer": "Dynamic",
           "cell": "Dirt"
         }
       }
@@ -48,7 +48,7 @@
       "interaction": {
         "type": "Place",
         "params": {
-          "layer": "Flexible",
+          "layer": "Dynamic",
           "cell": "Mud"
         }
       }
@@ -315,6 +315,20 @@
       "partType": "Heavy Head",
       "tier": 3,
       "toolActions_potential": ["Crush"],
+      "weaponActions_potential": [],
+      "toolDurability": 32,
+      "attackPower": 0
+    }
+  },
+    "Stone Mallet Head": {
+    "name": "Stone Mallet Head",
+    "spriteName": "Stone Mallet Head",
+    "itemType": "Misc",
+    "maxStack": 1,
+    "unique": {
+      "partType": "Light Head",
+      "tier": 3,
+      "toolActions_potential": ["Build"],
       "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0

@@ -162,6 +162,21 @@
   {
     "isOrdered": false,
     "inputs": [
+      { "itemId": "Stone Axe Head", "count": 1 },
+      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Mallet Head",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
       { "itemId": "Flint Tool", "count": 1 },
       { "unique": { "toolActions": ["Knap"] }, "count": 1 }
     ],
