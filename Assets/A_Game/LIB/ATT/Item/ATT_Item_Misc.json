@@ -16,43 +16,12 @@
     }
   },
 
-  "Dirt": {
-    "name": "Dirt",
-    "spriteName": "Dirt",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Dynamic",
-          "cell": "Dirt"
-        }
-      }
-    }
-  },
-
     "Mud Chunk": {
     "name": "Mud Chunk",
     "spriteName": "Mud Chunk",
     "itemType": "Misc",
     "maxStack": 100,
     "unique": {}
-  },
-    "Mud": {
-    "name": "Mud",
-    "spriteName": "Mud",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Dynamic",
-          "cell": "Mud"
-        }
-      }
-    }
   },
 
     "Sand Pile": {
@@ -171,13 +140,6 @@
     "unique": {}
   },
 
-  "---": {
-    "name": "---",
-    "spriteName": "---",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {}
-  },
 
   "Charcoal": {
     "name": "Charcoal",
@@ -186,23 +148,6 @@
     "maxStack": 100,
     "unique": {}
   },
-
-  "-- ": {
-    "name": "--",
-    "spriteName": "--",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {}
-  },
-
-
-
-
-
-
-
-
-
 
   "Wooden Stick": {
     "name": "Wooden Stick",
@@ -332,38 +277,6 @@
       "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
-    }
-  },
-
-  "Primal Workbench": {
-    "name": "Primal Workbench",
-    "spriteName": "Primal Workbench",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Deco",
-          "cell": "Primal Workbench"
-        }
-      }
-    }
-  },
-
-  "Torch": {
-    "name": "Torch",
-    "spriteName": "Torch",
-    "itemType": "Misc",
-    "maxStack": 100,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Deco",
-          "cell": "Torch"
-        }
-      }
     }
   }
 }

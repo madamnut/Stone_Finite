@@ -35,7 +35,7 @@
 
   "Primal Workbench"   : { "id": 50000, "type": "deco", "interaction": "primalcraftModule" },
   
-  "Torch": { "id": 50001, "type": "deco", "brightness": 15},
+  "Torch"              : { "id": 50001, "type": "deco", "brightness": 15},
 
   "Water"              : { "id": 60000, "type": "liquid" }
 }

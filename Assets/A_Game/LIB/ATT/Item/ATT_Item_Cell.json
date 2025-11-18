@@ -1,0 +1,64 @@
+{
+  "Dirt": {
+    "name": "Dirt",
+    "spriteName": "Dirt",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Dynamic",
+          "cell": "Dirt"
+        }
+      }
+    }
+  },
+    "Mud": {
+    "name": "Mud",
+    "spriteName": "Mud",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Dynamic",
+          "cell": "Mud"
+        }
+      }
+    }
+  },
+  
+  "Primal Workbench": {
+    "name": "Primal Workbench",
+    "spriteName": "Primal Workbench",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Deco",
+          "cell": "Primal Workbench"
+        }
+      }
+    }
+  },
+
+  "Torch": {
+    "name": "Torch",
+    "spriteName": "Torch",
+    "itemType": "Misc",
+    "maxStack": 100,
+    "unique": {
+      "interaction": {
+        "type": "Place",
+        "params": {
+          "layer": "Deco",
+          "cell": "Torch"
+        }
+      }
+    }
+  }
+}
