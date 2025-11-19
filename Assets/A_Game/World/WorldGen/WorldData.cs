@@ -3,120 +3,272 @@ using System;
 [Serializable]
 public struct WorldData
 {
-    public SolidCell[,]  solid;     // 전경(솔리드)
-    public ushort[,]     bg;        // 배경
-    public DecoCell[,]   deco;      // 데코
-    public LiquidCell[,] liquid;    // 액체
-    public LightCell[,]  light;     // 라이트 (natural / artificial)
+    public const byte MaxFluid = 128;
+    public ushort[,]   bg;      // 후경
+    public FgCell[,]   fg;      // 전경(본체(솔리드 + 데코) + 유체)
+    public LightCell[,] light;  // 빛 (자연 / 인공)
 
     public WorldData(int width, int height)
     {
-        solid   = new SolidCell [width, height];
-        bg      = new ushort    [width, height];
-        deco    = new DecoCell  [width, height];
-        liquid  = new LiquidCell[width, height];
-        light   = new LightCell [width, height];
+        bg    = new ushort  [width, height];
+        fg    = new FgCell  [width, height];
+        light = new LightCell[width, height];
 
         for (int x = 0; x < width; x++)
         for (int y = 0; y < height; y++)
         {
-            solid[x,y]  = new SolidCell  { id = 0, hasGravity = false };
-            bg[x,y]     = 0;
-            deco[x,y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-            liquid[x,y] = new LiquidCell { id = 0, amount = 0 };
-            light[x,y]  = new LightCell  { natural = 0, artificial = 0 };
+            bg[x, y] = 0;
+            fg[x, y] = new FgCell
+            {
+                id           = 0,
+                fluidId      = 0,
+                fluidAmount  = 0,
+                brightness   = 0,
+                flags        = FgFlags.None
+            };
+            light[x, y] = new LightCell
+            {
+                natural     = 0,
+                artificial  = 0
+            };
         }
     }
 
-    /// <summary>
-    /// 전경 파괴: 솔리드와 데코 제거. 제거된 블록 ID 반환(없으면 0).
-    /// </summary>
-    public ushort BreakFG(int x, int y)
+    #region Empty[초기화]
+    public void EmptyCell(int x, int y)
     {
-        ushort decoId  = deco[x,y].id;
-        ushort solidId = solid[x,y].id;
+        fg[x, y] = new FgCell
+        {
+            id          = 0,
+            fluidId     = 0,
+            fluidAmount = 0,
+            brightness  = 0,
+            flags       = FgFlags.None
+        };
+    }
+    #endregion
 
-        deco[x,y]  = new DecoCell { id = 0, depend = DepFlags.None };
-        solid[x,y] = new SolidCell { id = 0, hasGravity = false };
+    #region Remove[제거]
+    public ushort RemoveFG(int x, int y)
+    {
+        var cell = fg[x, y];
+        ushort removedId = cell.id;
 
-        return (decoId != 0) ? decoId : solidId;
+        cell.id         = 0;
+        cell.brightness = 0;
+        cell.flags      = FgFlags.None;
+
+        fg[x, y] = cell;
+        return removedId;
     }
 
-    /// <summary>
-    /// 후경 파괴: BG 제거. 제거된 블록 ID 반환(없으면 0).
-    /// </summary>
-    public ushort BreakBG(int x, int y)
+    public (ushort removedFluidId, byte removedFluidAmount) RemoveFluid(int x, int y)
     {
-        ushort bgId = bg[x,y];
-        bg[x,y] = 0;
+        var cell = fg[x, y];
+
+        ushort removedFluidId = cell.fluidId;
+        byte   removedFluidAmount  = cell.fluidAmount;
+
+        cell.fluidId     = 0;
+        cell.fluidAmount = 0;
+
+        fg[x, y] = cell;
+
+        return (removedFluidId, removedFluidAmount);
+    }
+
+    public ushort RemoveBG(int x, int y)
+    {
+        ushort bgId = bg[x, y];
+        bg[x, y] = 0;
         return bgId;
     }
+    #endregion
 
-    // ─────────────────────────────────────────────────────────────
-    // 겹침 금지 우선순위: Solid > Liquid > Deco
-    // Set 메서드는 우선순위를 보장하며 필요한 경우 하위 레이어를 비운다.
-    // ─────────────────────────────────────────────────────────────
-
-    /// <summary>솔리드 배치. 액체/데코는 제거.</summary>
-    public void SetSolid(int x, int y, ushort id, bool hasGravity = false)
+    #region TryPlace[배치시도]
+    public bool TryPlaceFG(int x, int y, in FgCell src)
     {
-        solid[x,y]  = new SolidCell  { id = id, hasGravity = hasGravity };
-        liquid[x,y] = new LiquidCell { id = 0,  amount = 0 };
-        deco[x,y]   = new DecoCell   { id = 0,  depend = DepFlags.None };
+        if (src.id == 0)
+            return false;
+
+        var cell = fg[x, y];
+
+        if (cell.id != 0)
+            return false;
+
+        // 정책: Collidable 블록은 유체와 공존 불가 → 유체 제거
+        // 비충돌 블록(풀, 장식 등)은 유체 위에 존재 가능 → 유체 유지
+        // 일단 이렇게 두고 나중에 고려
+
+        // 기존 유체 보존 여부 결정 (Collidable 이면 유체 제거, 아니면 유지)
+        ushort prevFluidId     = cell.fluidId;
+        byte   prevFluidAmount = cell.fluidAmount;
+
+        cell = src;
+
+        bool isCollidable = (cell.flags & FgFlags.Collidable) != 0;
+        if (isCollidable)
+        {
+            cell.fluidId     = 0;
+            cell.fluidAmount = 0;
+        }
+        else
+        {
+            cell.fluidId     = prevFluidId;
+            cell.fluidAmount = prevFluidAmount;
+        }
+
+        fg[x, y] = cell;
+        return true;
     }
 
-    /// <summary>액체 배치. 솔리드 존재 시 무시. 데코는 제거.</summary>
-    public void SetLiquid(int x, int y, ushort id, byte amount)
+    public bool TryPlaceFluid(int x, int y, ushort fluidId, byte amount, out byte leftover)
     {
-        if (solid[x,y].id != 0) return; // 솔리드가 있으면 배치 금지
-        liquid[x,y] = new LiquidCell { id = id, amount = amount };
-        deco[x,y]   = new DecoCell   { id = 0, depend = DepFlags.None };
+        leftover = amount;
+
+        if (fluidId == 0 || amount == 0)
+            return false;
+
+        var cell = fg[x, y];
+
+        if (cell.id != 0)
+            return false;
+
+        if (cell.fluidId != 0 && cell.fluidId != fluidId && cell.fluidAmount > 0)
+            return false;
+
+        int current = cell.fluidAmount;
+        int space   = WorldData.MaxFluid - current;
+
+        if (space <= 0)
+            return false;
+
+        int insert = (amount <= space) ? amount : space;
+
+        cell.fluidId     = fluidId;
+        cell.fluidAmount = (byte)(current + insert);
+        fg[x, y] = cell;
+
+        leftover = (byte)(amount - insert);
+
+        // 전부 들어갔으면 true, 일부만 들어갔거나 못 넣은 양이 남으면 false
+        return leftover == 0;
     }
 
-    /// <summary>데코 배치. 솔리드/액체 존재 시 무시.</summary>
-    public void SetDeco(int x, int y, ushort id, DepFlags depend = DepFlags.None)
+    public bool TryPlaceBG(int x, int y, ushort id)
     {
-        if (solid[x,y].id != 0) return;        // 솔리드가 있으면 금지
-        if (liquid[x,y].amount > 0) return;    // 액체가 있으면 금지
-        deco[x,y] = new DecoCell { id = id, depend = depend };
+        if (id == 0 || bg[x, y] != 0)
+            return false;
+
+        bg[x, y] = id;
+        return true;
     }
+
+    #endregion
+
+    #region  Force[강제배치]
+    public void ForceFG(int x, int y, in FgCell src)
+    {
+        fg[x, y] = src;
+    }
+
+    public void ForceFluid(int x, int y, ushort fluidId, byte amount)
+    {
+        fg[x, y] = new FgCell
+        {
+            id          = 0,
+            fluidId     = fluidId,
+            fluidAmount = amount,
+            brightness  = 0,
+            flags       = FgFlags.None
+        };
+    }
+
+    public void ForceBG(int x, int y, ushort id)
+    {
+        bg[x, y] = id;
+    }
+    #endregion
+
+    #region 쿼리
+    // 월드 경계 이탈 여부
+    public bool InBounds(int x, int y)
+    {
+        return 
+            x >= 0 && 
+            y >= 0 &&
+            x < fg.GetLength(0) &&
+            y < fg.GetLength(1);
+    }
+
+    // 해당 좌표 Id 여부
+    public ushort GetFGId(int x, int y)
+    {
+        return fg[x, y].id;
+    }
+
+    public ushort GetFluidId(int x, int y, out byte amount)
+    {
+        var cell = fg[x, y];
+        amount = cell.fluidAmount;
+        return cell.fluidId;
+    }
+
+    public ushort GetBGId(int x, int y)
+    {
+        return bg[x, y];
+    }
+
+    // 콜라이더 여부
+    public bool IsCollidable(int x, int y)
+    {
+        var cell = fg[x, y];
+        return cell.id != 0 && (cell.flags & FgFlags.Collidable) != 0;
+    }
+
+    // 완전히 비어있는지 여부
+    public bool IsAir(int x, int y)
+    {
+        var cell = fg[x, y];
+        return cell.id == 0 && cell.fluidAmount == 0 && bg[x, y] == 0;
+    }
+
+    // FG가 비어있는지 여부
+    public bool IsEmptyFG(int x, int y)
+    {
+        return fg[x, y].id == 0;
+    }
+    #endregion
 }
 
-[System.Flags]
-public enum DepFlags : byte
-{
-    None       = 0,
-    Background = 1 << 0,
-    Up         = 1 << 1,
-    Down       = 1 << 2,
-    Left       = 1 << 3,
-    Right      = 1 << 4,
-}
-
+#region HelperStruct
 [Serializable]
-public struct SolidCell
+public struct FgCell
 {
-    public ushort id;
-    public bool   hasGravity; // 솔리드는 항상 콜라이더 존재 가정
-}
-
-[Serializable]
-public struct LiquidCell
-{
-    public ushort id;
-    public byte   amount;     // 0~100 사용 가정
-}
-
-[Serializable]
-public struct DecoCell
-{
-    public ushort  id;
-    public DepFlags depend;   // 배경/방향 의존 비트마스크
+    public ushort  id;          // 본체 ID
+    public ushort  fluidId;     // 유체 ID (없으면 0)
+    public byte    fluidAmount; // 0 = 없음, 1~128 = 유체량
+    public byte    brightness;  // 0~15
+    public FgFlags flags;
 }
 
 [Serializable]
 public struct LightCell
 {
-    public byte natural;     // 0..20
-    public byte artificial;  // 0..20
+    public byte natural;
+    public byte artificial;
 }
+
+[Flags]
+public enum FgFlags : ushort
+{
+    None          = 0,
+    HasGravity    = 1 << 0,
+    Collidable    = 1 << 1,
+    DepBackground = 1 << 2,
+    DepUp         = 1 << 3,
+    DepDown       = 1 << 4,
+    DepLeft       = 1 << 5,
+    DepRight      = 1 << 6,
+}
+#endregion

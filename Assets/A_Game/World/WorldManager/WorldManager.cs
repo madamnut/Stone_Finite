@@ -16,7 +16,7 @@ public class WorldManager : MonoBehaviour
     [Header("청크 Prefab & 관리")]
     public GameObject chunkPrefab;
     public Transform chunkRoot;
-    public int initialPoolSize = 50;
+    public int initialPoolSize = 200;
 
     [Header("플레이어 및 렌더링 설정")]
     public Transform player;
@@ -24,7 +24,7 @@ public class WorldManager : MonoBehaviour
     public Player playerComp;
     public int ChunkRadius = 7;
     [Tooltip("한 프레임당 최대 로드할 청크 개수")]
-    public int maxLoadsPerFrame = 2;
+    public int maxLoadsPerFrame = 4;
 
     [Header("Falling Blocks")]
     public FallingBlock fallingBlockPrefab;

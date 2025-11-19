@@ -3,30 +3,27 @@ using UnityEngine;
 using UnityEngine.U2D;
 using Newtonsoft.Json.Linq;
 
-public enum CellType : byte { None, Solid, Liquid, Deco }
-
 [DefaultExecutionOrder(-100)]
 public class CellLibrary : MonoBehaviour
 {
     [Header("스프라이트 아틀라스")]
     [SerializeField] private SpriteAtlas atlas;
 
-    [Header("ATT_Cell.json (딕셔너리 형식)")]
+    [Header("ATT_Cell.json (딕셔너리 구조)")]
     [SerializeField] private TextAsset cellJson;
 
     public struct CellDef
     {
-        public string   name;
-        public Sprite   sprite;
-        public ushort   id;
-        public CellType type;
-        public bool     gravity;
-        public DepFlags depend;
-        public string   interaction; // 검색용
-        public byte     brightness;  // 인공광 트리거(0..20)
+        public string  name;
+        public Sprite  sprite;
+        public ushort  id;
+
+        public FgFlags flags;       // HasGravity / Collidable / Dep* 등
+        public byte    brightness;  // 0~15
+        public string  interaction; // 상호작용 태그
     }
 
-    private static readonly Dictionary<ushort, CellDef> byId = new();
+    private static readonly Dictionary<ushort, CellDef> byId    = new();
     private static readonly Dictionary<ushort, string>  idToKey = new();
 
     void Awake()
@@ -35,75 +32,130 @@ public class CellLibrary : MonoBehaviour
         idToKey.Clear();
 
         var root = JObject.Parse(cellJson.text);
+
         foreach (var pair in root)
         {
             string key = pair.Key;
-            var obj = (JObject)pair.Value;
+            var obj    = (JObject)pair.Value;
 
-            ushort id      = (ushort)(obj["id"]?.Value<int>() ?? 0);
-            string typeStr = obj["type"]?.Value<string>() ?? "none";
+            ushort id = (ushort)(obj["id"]?.Value<int>() ?? 0);
 
-            CellType type = typeStr.ToLowerInvariant() switch
-            {
-                "solid"  => CellType.Solid,
-                "liquid" => CellType.Liquid,
-                "deco"   => CellType.Deco,
-                _        => CellType.None
-            };
+            // ───────────────── Flag 조립 ─────────────────
+            FgFlags flags = FgFlags.None;
 
+            // gravity
             bool gravity = obj["gravity"]?.Value<bool>() ?? false;
+            if (gravity)
+                flags |= FgFlags.HasGravity;
 
-            DepFlags depend = DepFlags.None;
+            // collidable
+            bool collidable = obj["collidable"]?.Value<bool>() ?? false;
+            if (collidable)
+                flags |= FgFlags.Collidable;
+
+            // depend
             if (obj["depend"] is JArray deps)
             {
                 foreach (var t in deps)
                 {
-                    switch ((t.Value<string>() ?? "").ToLowerInvariant())
+                    string dep = (t.Value<string>() ?? "").ToLowerInvariant();
+                    switch (dep)
                     {
-                        case "background": depend |= DepFlags.Background; break;
-                        case "up":   depend |= DepFlags.Up;   break;
-                        case "down": depend |= DepFlags.Down; break;
-                        case "left": depend |= DepFlags.Left; break;
-                        case "right":depend |= DepFlags.Right;break;
-                        default:
-                            Debug.LogWarning($"CellLibrary: 알 수 없는 depend '{t}' @ {key}({id})");
-                            break;
+                        case "background": flags |= FgFlags.DepBackground; break;
+                        case "up":         flags |= FgFlags.DepUp;         break;
+                        case "down":       flags |= FgFlags.DepDown;       break;
+                        case "left":       flags |= FgFlags.DepLeft;       break;
+                        case "right":      flags |= FgFlags.DepRight;      break;
                     }
                 }
             }
 
+            // interaction
             string interaction = obj["interaction"]?.Value<string>();
 
-            // 인공광: 스칼라만 사용(0..20)
+            // brightness (0~15)
             byte brightness = 0;
             if (obj["brightness"] != null)
-                brightness = (byte)Mathf.Clamp(obj["brightness"]!.Value<int>(), 0, 20);
+            {
+                int raw = obj["brightness"]!.Value<int>();
+                brightness = (byte)Mathf.Clamp(raw, 0, 15);
+            }
 
-            var sp = atlas.GetSprite(key);
+            // sprite
+            Sprite sp = atlas.GetSprite(key);
             if (sp == null)
-                Debug.LogWarning($"CellLibrary: 스프라이트 '{key}'(ID {id}) 없음", this);
+            {
+                Debug.LogWarning($"CellLibrary: 스프라이트 '{key}' 없음 (ID {id})", this);
+            }
 
+            // 중복 ID 검사
             if (byId.ContainsKey(id))
             {
                 Debug.LogWarning($"CellLibrary: 중복 ID {id} ('{key}') 무시", this);
                 continue;
             }
 
-            byId.Add(id, new CellDef {
-                name = key, sprite = sp, id = id, type = type, gravity = gravity, depend = depend,
-                interaction = interaction, brightness = brightness
-            });
+            // 등록
+            var def = new CellDef
+            {
+                name        = key,
+                sprite      = sp,
+                id          = id,
+                flags       = flags,
+                brightness  = brightness,
+                interaction = interaction
+            };
+
+            byId.Add(id, def);
             idToKey[id] = key;
         }
     }
 
-    public static CellType TypeOf(ushort id)         => byId.TryGetValue(id, out var d) ? d.type    : CellType.None;
-    public static bool     HasGravity(ushort id)     => byId.TryGetValue(id, out var d) && d.gravity;
-    public static DepFlags DependFlagsOf(ushort id)  => byId.TryGetValue(id, out var d) ? d.depend  : DepFlags.None;
-    public static Sprite   GetSprite(ushort id)      => byId.TryGetValue(id, out var d) ? d.sprite  : null;
-    public static string   GetName(ushort id)        => byId.TryGetValue(id, out var d) ? d.name    : $"Unknown_{id}";
-    public static string   GetKey(ushort id)         => idToKey.TryGetValue(id, out var k) ? k : null;
-    public static string   InteractionOf(ushort id)  => byId.TryGetValue(id, out var d) ? d.interaction : null;
+    // ───────────────────── 기본 쿼리 ─────────────────────
 
-    public static byte     BrightnessOf(ushort id)   => byId.TryGetValue(id, out var d) ? d.brightness : (byte)0;
+    public static FgFlags FlagsOf(ushort id)
+        => byId.TryGetValue(id, out var d) ? d.flags : FgFlags.None;
+
+    public static Sprite GetSprite(ushort id)
+        => byId.TryGetValue(id, out var d) ? d.sprite : null;
+
+    public static string GetName(ushort id)
+        => byId.TryGetValue(id, out var d) ? d.name : $"Unknown_{id}";
+
+    public static string GetKey(ushort id)
+        => idToKey.TryGetValue(id, out var k) ? k : null;
+
+    public static string InteractionOf(ushort id)
+        => byId.TryGetValue(id, out var d) ? d.interaction : null;
+
+    public static byte BrightnessOf(ushort id)
+        => byId.TryGetValue(id, out var d) ? d.brightness : (byte)0;
+
+
+    // ───────────────────── FgCell 생성 ─────────────────────
+
+    public static FgCell MakeFgCell(ushort id)
+    {
+        if (!byId.TryGetValue(id, out var d))
+        {
+            // 정의 없는 경우 → 완전 빈 셀 반환
+            return new FgCell
+            {
+                id          = 0,
+                fluidId     = 0,
+                fluidAmount = 0,
+                brightness  = 0,
+                flags       = FgFlags.None
+            };
+        }
+
+        return new FgCell
+        {
+            id          = id,
+            fluidId     = 0,
+            fluidAmount = 0,
+            brightness  = d.brightness,
+            flags       = d.flags
+        };
+    }
 }

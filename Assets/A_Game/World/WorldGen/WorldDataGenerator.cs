@@ -52,43 +52,36 @@ public static class WorldDataGenerator
         // 공통 파이프라인 1회 실행 → common, bg 획득
         BuildCommonAndBg(s, seed, out var common, out var bg);
 
-        // 레이어 주입
+        // WorldData 생성
         var world = new WorldData(w, h);
 
+        // BG 주입
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
-            world.bg[x, y] = bg[x, y];
+        {
+            ushort bgId = bg[x, y];
+            if (bgId != ID_AIR)
+                world.ForceBG(x, y, bgId);
+        }
 
+        // FG / Fluid 주입
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
             ushort id = common[x, y];
-            switch (CellLibrary.TypeOf(id))
+            if (id == ID_AIR)
+                continue;
+
+            if (id == ID_WATER)
             {
-                case CellType.Solid:
-                    world.solid[x, y]  = new SolidCell  { id = id, hasGravity = CellLibrary.HasGravity(id) };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    break;
-
-                case CellType.Liquid:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    world.liquid[x, y] = new LiquidCell { id = id, amount = 100 };
-                    break;
-
-                case CellType.Deco:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = id, depend = CellLibrary.DependFlagsOf(id) };
-                    break;
-
-                default:
-                    world.solid[x, y]  = new SolidCell  { id = 0, hasGravity = false };
-                    world.liquid[x, y] = new LiquidCell { id = 0, amount = 0 };
-                    world.deco[x, y]   = new DecoCell   { id = 0, depend = DepFlags.None };
-                    break;
+                // 초기 물은 가득 찬 유체로 강제 배치
+                world.ForceFluid(x, y, ID_WATER, 128); // fluidAmount: 1~128, 가득 참 = 128
+                continue;
             }
+
+            // 나머지는 전부 본체(FG)로 강제 배치
+            var cell = CellLibrary.MakeFgCell(id);
+            world.ForceFG(x, y, in cell);
         }
 
         // 자연광
@@ -547,7 +540,7 @@ public static class WorldDataGenerator
 
                 int atten = 0;
                 if (world.bg[nx, ny] != ID_AIR) atten += 1;
-                if (world.solid[nx, ny].id != 0) atten += 2;
+                if (world.IsCollidable(nx, ny)) atten += 2;
 
                 int next = curr - atten;
                 if (next <= 0) continue;

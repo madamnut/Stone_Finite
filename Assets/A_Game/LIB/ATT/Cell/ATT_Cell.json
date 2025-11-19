@@ -1,41 +1,50 @@
 {
-  "Air"                : { "id":    0, "type": "none" },
+  "Air":                { "id": 0,     "collidable": false, "gravity": false },
 
-  "Rock"               : { "id":    1, "type": "solid" },
-  "Dirt"               : { "id":    2, "type": "solid" },
-  "Grass_Left"         : { "id":    3, "type": "solid" },
-  "Grass_Top"          : { "id":    4, "type": "solid" },
-  "Grass_Right"        : { "id":    5, "type": "solid" },
-  "Grass_TopLeft"      : { "id":    6, "type": "solid" },
-  "Grass_TopRight"     : { "id":    7, "type": "solid" },
-  "Grass_LeftRight"    : { "id":    8, "type": "solid" },
-  "Grass_TopLeftRight" : { "id":    9, "type": "solid" },
+  "Rock":               { "id": 1,     "collidable": true,  "gravity": false },
+  "Dirt":               { "id": 2,     "collidable": true,  "gravity": false },
+  "Grass_Left":         { "id": 3,     "collidable": true,  "gravity": false },
+  "Grass_Top":          { "id": 4,     "collidable": true,  "gravity": false },
+  "Grass_Right":        { "id": 5,     "collidable": true,  "gravity": false },
+  "Grass_TopLeft":      { "id": 6,     "collidable": true,  "gravity": false },
+  "Grass_TopRight":     { "id": 7,     "collidable": true,  "gravity": false },
+  "Grass_LeftRight":    { "id": 8,     "collidable": true,  "gravity": false },
+  "Grass_TopLeftRight": { "id": 9,     "collidable": true,  "gravity": false },
+  "Clay":               { "id": 10,    "collidable": true,  "gravity": false },
+  "Mud":                { "id": 11,    "collidable": true,  "gravity": false },
+
+
+
+  "Sand":               { "id": 1000,  "collidable": true,  "gravity": true  },
+  "Gravel":             { "id": 1001,  "collidable": true,  "gravity": true  },
+
+
+
+  "Trunk":              { "id": 2000,  "collidable": false, "gravity": false },
+  "Leaf":               { "id": 2001,  "collidable": false, "gravity": false },
+  "Plant":              { "id": 2002,  "collidable": false, "gravity": false, "depend": ["down"] },
+  "Bush":               { "id": 2003,  "collidable": false, "gravity": false, "depend": ["down"] },
+  "Stone_Pile":         { "id": 2004,  "collidable": false, "gravity": false, "depend": ["down"] },
+  "Small_Stone_Pile":   { "id": 2005,  "collidable": false, "gravity": false, "depend": ["down"] },
   
-  "Clay"               : { "id":   10, "type": "solid" },
-  "Mud"                : { "id":   11, "type": "solid" },
-
-  "Sand"               : { "id": 1000, "type": "solid", "gravity": true },
-  "Gravel"             : { "id": 1001, "type": "solid", "gravity": true },
-
-
-  "Trunk"              : { "id": 2000, "type": "deco" },
-  "Leaf"               : { "id": 2001, "type": "deco" },
-  "Plant"              : { "id": 2002, "type": "deco", "depend": ["Down"] },
-  "Bush"               : { "id": 2003, "type": "deco", "depend": ["Down"] },
-  "Stone_Pile"         : { "id": 2004, "type": "deco", "depend": ["Down"] },
-  "Small_Stone_Pile"   : { "id": 2005, "type": "deco", "depend": ["Down"] },
-
-  "Ore_Coal"           : { "id": 3000, "type": "solid" },
-  "Ore_Copper"         : { "id": 3001, "type": "solid" },
-  "Ore_Iron"           : { "id": 3002, "type": "solid" },
-  "Ore_Tin"            : { "id": 3003, "type": "solid" },
-
-  "Granite"            : { "id": 4000, "type": "solid" },
-  "Amphibolite"        : { "id": 4001, "type": "solid" },
-
-  "Primal Workbench"   : { "id": 50000, "type": "deco", "interaction": "primalcraftModule" },
   
-  "Torch"              : { "id": 50001, "type": "deco", "brightness": 15},
+  
+  "Ore_Coal":           { "id": 3000,  "collidable": true,  "gravity": false },
+  "Ore_Copper":         { "id": 3001,  "collidable": true,  "gravity": false },
+  "Ore_Iron":           { "id": 3002,  "collidable": true,  "gravity": false },
+  "Ore_Tin":            { "id": 3003,  "collidable": true,  "gravity": false },
 
-  "Water"              : { "id": 60000, "type": "liquid" }
+
+
+  "Granite":            { "id": 4000,  "collidable": true,  "gravity": false },
+  "Amphibolite":        { "id": 4001,  "collidable": true,  "gravity": false },
+  
+  
+  
+  "Primal Workbench":   { "id": 50000, "collidable": true,  "gravity": false, "interaction": "primalcraftModule" },
+  "Torch":              { "id": 50001, "collidable": false, "gravity": false, "brightness": 15 },
+  
+  
+  
+  "Water":              { "id": 60000, "collidable": false, "gravity": false }
 }
