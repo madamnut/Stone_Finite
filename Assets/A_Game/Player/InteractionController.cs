@@ -198,18 +198,20 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
-        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
+        var fgCell = worldManager.worldMap.fg[cx, cy];
+        bool hasBody = fgCell.id != 0;
+        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
 
         if (_layerMode == LayerMode.FG)
         {
-            bool canBreak = hasSolid || hasDeco;
+            // 유체는 파괴 대상이 아님 → 본체(id)만 기준
+            bool canBreak = hasBody;
             _hlSR.sprite = canBreak ? HighLight_FG_CAN : HighLight_FG;
         }
         else
         {
-            bool blocked = hasSolid || hasDeco;
+            // BG 파괴는 여전히 FG 본체가 있으면 막힌 것으로 취급 (유체는 무시)
+            bool blocked = hasBody;
             if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT;
             else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;
             else                       _hlSR.sprite = HighLight_BG;
@@ -232,13 +234,13 @@ public class InteractionController : MonoBehaviour
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
-        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
-        bool hasBg    = worldManager.worldMap.bg[cx, cy]       != 0;
+        var fgCell = worldManager.worldMap.fg[cx, cy];
+        bool hasBody = fgCell.id != 0;
+        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
 
         bool canBreak =
-            (layer == WorldManager.CellLayer.FG) ? (hasSolid || hasDeco)
-            : /* BG */                             (hasBg && !(hasSolid || hasDeco));
+            (layer == WorldManager.CellLayer.FG) ? hasBody
+            : /* BG */                             (hasBg && !hasBody);
 
         if (!canBreak) return;
 
@@ -252,8 +254,7 @@ public class InteractionController : MonoBehaviour
         if (worldManager == null || worldCamera == null) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        ushort id = worldManager.worldMap.deco[cx, cy].id;
-        if (id == 0) id = worldManager.worldMap.solid[cx, cy].id;
+        ushort id = worldManager.worldMap.fg[cx, cy].id;
         if (id == 0) return false;
 
         string interaction = CellLibrary.InteractionOf(id);
@@ -304,8 +305,8 @@ public class InteractionController : MonoBehaviour
         if (inter == null || !inter.TryGetValue("type", out var typeObj)) return;
 
         string typeStr = typeObj?.ToString();
-        if (typeStr == "Place")       HandlePlace(held, cx, cy, inter);
-        else if (typeStr == "UseOnLiquid") HandleUseOnLiquid(held, cx, cy, inter);
+        if (typeStr == "Place")             HandlePlace(held, cx, cy, inter);
+        else if (typeStr == "UseOnLiquid")  HandleUseOnLiquid(held, cx, cy, inter);
     }
 
     void HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
@@ -318,8 +319,9 @@ public class InteractionController : MonoBehaviour
         string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
         if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return;
 
-        bool hasSolid = worldManager.worldMap.solid[cx, cy].id != 0;
-        bool hasDeco  = worldManager.worldMap.deco[cx, cy].id  != 0;
+        // FG 본체가 이미 있으면 배치 불가 (유체만 있는 경우는 허용)
+        var fgCell = worldManager.worldMap.fg[cx, cy];
+        if (fgCell.id != 0) return;
 
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
@@ -329,7 +331,6 @@ public class InteractionController : MonoBehaviour
         }
         if (placeId == 0) return;
 
-        if (hasSolid || hasDeco) return;
         if (!worldManager.PlaceCell(cx, cy, placeId)) return;
         if (sound != null) sound.PlayPlace();
 
@@ -356,17 +357,23 @@ public class InteractionController : MonoBehaviour
         }
         if (targetLiquidId == 0) return;
 
-        var lc = worldManager.worldMap.liquid[cx, cy];
-        if (lc.id != targetLiquidId || lc.amount < 1) return;
+        byte amount;
+        ushort fluidId = worldManager.worldMap.GetFluidId(cx, cy, out amount);
+        if (fluidId != targetLiquidId || amount < 1) return;
 
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
-        int newAmt = Mathf.Clamp(lc.amount - 1, 0, 100);
-        worldManager.worldMap.liquid[cx, cy].amount = (byte)newAmt;
-        worldManager.worldMap.liquid[cx, cy].id     = (ushort)(newAmt > 0 ? targetLiquidId : 0);
-        worldManager.MarkChunkDirty(cx, cy, false, false, false, true);
+        const int MaxFluid = 128;
+        int newAmt = Mathf.Clamp(amount - 1, 0, MaxFluid);
+
+        var cell = worldManager.worldMap.fg[cx, cy];
+        cell.fluidAmount = (byte)newAmt;
+        if (newAmt == 0) cell.fluidId = 0;
+        worldManager.worldMap.fg[cx, cy] = cell;
+
+        worldManager.MarkChunkDirty(cx, cy, markFG: true);
         worldManager.EnqTick(cx, cy);
 
         var outItem = itemLibrary.Create(outputName, 1);

@@ -5,11 +5,11 @@ public class Chunk : MonoBehaviour
 {
     public const int ChunkSize = 16;
 
-    // ── Tilemap 레이어(라이트 타일맵 사용 안 함) ──
+    // ── Tilemap 레이어: 후경 + 전경 ──
     public Tilemap bgTilemap;
     public Tilemap fgTilemap;
-    public Tilemap decoTilemap;
-    public Tilemap liquidTilemap;
+
+    // ── 라이트 메쉬 오브젝트 ──
     public GameObject lightMeshObject;
 
     [HideInInspector] public MeshFilter   lightMeshFilter;
@@ -19,24 +19,18 @@ public class Chunk : MonoBehaviour
     // ── 타일 버퍼(재사용) ──
     [HideInInspector] public TileBase[] bgBuffer;
     [HideInInspector] public TileBase[] fgBuffer;
-    [HideInInspector] public TileBase[] decoBuffer;
-    [HideInInspector] public TileBase[] liquidBuffer;
 
     // ── Dirty 플래그 ──
-    [HideInInspector] public bool bgDirty     = false;
-    [HideInInspector] public bool fgDirty     = false;
-    [HideInInspector] public bool decoDirty   = false;
-    [HideInInspector] public bool liquidDirty = false;
-    [HideInInspector] public bool lightDirty  = false;
+    [HideInInspector] public bool bgDirty    = false;
+    [HideInInspector] public bool fgDirty    = false;
+    [HideInInspector] public bool lightDirty = false;
 
     void Awake()
     {
         // 타일 버퍼
         int ts = ChunkSize * ChunkSize;
-        bgBuffer     = new TileBase[ts];
-        fgBuffer     = new TileBase[ts];
-        decoBuffer   = new TileBase[ts];
-        liquidBuffer = new TileBase[ts];
+        bgBuffer = new TileBase[ts];
+        fgBuffer = new TileBase[ts];
 
         // ── 라이트 메쉬: 미리 준비해 둔 객체에서 한 번에 참조 ──
         if (lightMeshObject == null)
@@ -63,11 +57,13 @@ public class Chunk : MonoBehaviour
 
         if (needBuild)
         {
-            mesh = new Mesh();
-            mesh.indexFormat = (vCount > 65000)
-                ? UnityEngine.Rendering.IndexFormat.UInt32
-                : UnityEngine.Rendering.IndexFormat.UInt16;
-            mesh.name = "ChunkLightMesh";
+            mesh = new Mesh
+            {
+                indexFormat = (vCount > 65000)
+                    ? UnityEngine.Rendering.IndexFormat.UInt32
+                    : UnityEngine.Rendering.IndexFormat.UInt16,
+                name = "ChunkLightMesh"
+            };
 
             var verts = new Vector3[vCount];
             var uvs   = new Vector2[vCount];

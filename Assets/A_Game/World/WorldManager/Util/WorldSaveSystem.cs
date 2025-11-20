@@ -43,41 +43,29 @@ public static class WorldSaveSystem
                 bw.Write(height);
                 bw.Write(worldTick);
 
-                // bg
+                // bg (ushort)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                     bw.Write(worldMap.bg[x, y]);
 
-                // solid
+                // fg (FgCell: id, fluidId, fluidAmount, brightness, flags)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
-                    bw.Write(worldMap.solid[x, y].id);
-                    bw.Write(worldMap.solid[x, y].hasGravity);
+                    var cell = worldMap.fg[x, y];
+                    bw.Write(cell.id);                       // ushort
+                    bw.Write(cell.fluidId);                  // ushort
+                    bw.Write(cell.fluidAmount);              // byte
+                    bw.Write(cell.brightness);               // byte
+                    bw.Write((ushort)cell.flags);            // ushort
                 }
 
-                // deco
+                // light (LightCell: natural, artificial)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
-                    bw.Write(worldMap.deco[x, y].id);
-                    bw.Write((byte)worldMap.deco[x, y].depend);
-                }
-
-                // liquid
-                for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                {
-                    bw.Write(worldMap.liquid[x, y].id);
-                    bw.Write(worldMap.liquid[x, y].amount);
-                }
-
-                // light
-                for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                {
-                    bw.Write(worldMap.light[x, y].natural);
-                    bw.Write(worldMap.light[x, y].artificial);
+                    bw.Write(worldMap.light[x, y].natural);     // byte
+                    bw.Write(worldMap.light[x, y].artificial);  // byte
                 }
 
                 // tick 큐 (curr / next 분리 저장)
@@ -124,7 +112,6 @@ public static class WorldSaveSystem
             int nextCountLog = (tickNext != null) ? tickNext.Count : 0;
 
             Debug.Log($"[SAVE] worldBytes={bytes}, slotCount={slotCountLog}, hasPlayer={(pCompLog!=null)}, tickCurr={currCountLog}, tickNext={nextCountLog}");
-            Debug.Log($"[SAVE-TICK] curr={currCountLog}, next={nextCountLog}");
         }
         catch (System.Exception e)
         {
@@ -159,8 +146,8 @@ public static class WorldSaveSystem
         using var br = new BinaryReader(fs);
 
         // 버전 없이 W, H, worldTick부터 읽기
-        int  w = br.ReadInt32();
-        int  h = br.ReadInt32();
+        int  w  = br.ReadInt32();
+        int  h  = br.ReadInt32();
         long wt = br.ReadInt64();
         Debug.Log($"[LOAD] start size={w}x{h}, bytes={bytes}");
 
@@ -171,36 +158,24 @@ public static class WorldSaveSystem
         for (int x = 0; x < w; x++)
             data.bg[x, y] = br.ReadUInt16();
 
-        // solid
+        // fg (FgCell: id, fluidId, fluidAmount, brightness, flags)
         for (int y = 0; y < h; y++)
         for (int x = 0; x < w; x++)
         {
-            data.solid[x, y].id         = br.ReadUInt16();
-            data.solid[x, y].hasGravity = br.ReadBoolean();
-        }
-
-        // deco
-        for (int y = 0; y < h; y++)
-        for (int x = 0; x < w; x++)
-        {
-            data.deco[x, y].id     = br.ReadUInt16();
-            data.deco[x, y].depend = (DepFlags)br.ReadByte();
-        }
-
-        // liquid
-        for (int y = 0; y < h; y++)
-        for (int x = 0; x < w; x++)
-        {
-            data.liquid[x, y].id     = br.ReadUInt16();
-            data.liquid[x, y].amount = br.ReadByte();
+            ref var cell = ref data.fg[x, y];
+            cell.id          = br.ReadUInt16();
+            cell.fluidId     = br.ReadUInt16();
+            cell.fluidAmount = br.ReadByte();
+            cell.brightness  = br.ReadByte();
+            cell.flags       = (FgFlags)br.ReadUInt16();
         }
 
         // light
         for (int y = 0; y < h; y++)
         for (int x = 0; x < w; x++)
         {
-            data.light[x, y].natural     = br.ReadByte();
-            data.light[x, y].artificial  = br.ReadByte();
+            data.light[x, y].natural    = br.ReadByte();
+            data.light[x, y].artificial = br.ReadByte();
         }
 
         // tick 큐 로드
