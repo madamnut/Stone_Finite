@@ -119,7 +119,8 @@ public static class WorldDataGenerator
     {
         int w = s.width, h = s.height;
 
-        float t0 = Time.realtimeSinceStartup;
+        float tStartAll = Time.realtimeSinceStartup;
+        float t0 = tStartAll;
 
         common = new ushort[w, h];
         bg     = new ushort[w, h];
@@ -202,20 +203,18 @@ public static class WorldDataGenerator
         Debug.Log($"[WorldGen] Step 4.5 - Clay clusters: {(t1 - t0) * 1000f:F1} ms");
         t0 = t1;
 
-        // 5) 동굴 캐브아웃
-        bool[,] cave = ProceduralUtil.GenerateMixedCave(
-            w, h,
-            s.caveInitialFillPercent, s.caveBirthLimit,
-            s.caveSurvivalLimit, s.caveIterations,
-            s.caveWalkerCount, s.caveWalkLength, s.caveDirectionBias);
+        // 5) 동굴 캐브아웃 (노이즈 기반 A ∪ B)
+        float caveStart = Time.realtimeSinceStartup;
+        bool[,] cave = ProceduralUtil.GenerateNoiseCaveMask(w, h, seed, s);
 
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
-            if (cave[x, y]) common[x, y] = ID_AIR;
+            if (cave[x, y])
+                common[x, y] = ID_AIR;
 
-        t1 = Time.realtimeSinceStartup;
-        Debug.Log($"[WorldGen] Step 5 - Caves carve: {(t1 - t0) * 1000f:F1} ms");
-        t0 = t1;
+        float caveEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 5 - Caves carve (noise): {(caveEnd - caveStart) * 1000f:F1} ms");
+        t0 = caveEnd;
 
         // 6) 물 플러드필
         FloodFillWater(common, w, h, ID_WATER, ID_AIR);
@@ -251,7 +250,7 @@ public static class WorldDataGenerator
         Debug.Log($"[WorldGen] Step 9 - Decor: {(t1 - t0) * 1000f:F1} ms");
 
         float tEnd = Time.realtimeSinceStartup;
-        Debug.Log($"[WorldGen] BuildCommonAndBg TOTAL (Steps 1-9): {(tEnd - (tEnd - (t1 - t0))) * 1000f:F1} ms");
+        Debug.Log($"[WorldGen] BuildCommonAndBg TOTAL (Steps 1-9): {(tEnd - tStartAll) * 1000f:F1} ms");
     }
 
     // ─────────────────────────────────────────────────────────

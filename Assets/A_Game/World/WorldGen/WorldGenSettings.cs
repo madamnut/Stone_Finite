@@ -10,54 +10,69 @@ public class WorldGenSettings : ScriptableObject
     [Header("Base Terrain")]
     public int waterHeight = 800;
 
+    // ─────────────────────────────────────────────────────────
+    // Dirt band
+    // ─────────────────────────────────────────────────────────
     [Header("Dirt Settings")]
     public float dirtBaseHeight = 900f;
     public float dirtRange = 100f;
-    [Space(4)]
+
     public float dirtNoiseBaseFrequency = 0.005f;
     public int   dirtNoiseOctaves       = 4;
     [Range(0f,1f)] public float dirtNoisePersistence = 0.5f;
     public float dirtNoiseLacunarity    = 2f;
 
+    // ─────────────────────────────────────────────────────────
+    // Rock
+    // ─────────────────────────────────────────────────────────
     [Header("Rock Settings")]
     public float rockBaseHeight = 1200f;
     public float rockRange = 100f;
-    [Space(4)]
+
     public float rockNoiseBaseFrequency = 0.005f;
     public int   rockNoiseOctaves       = 4;
     [Range(0f,1f)] public float rockNoisePersistence = 0.5f;
     public float rockNoiseLacunarity    = 2f;
 
+    // ─────────────────────────────────────────────────────────
+    // Granite
+    // ─────────────────────────────────────────────────────────
     [Header("Granite Settings")]
     public float graniteBaseHeight      = 1100f;
     public float graniteRange           = 80f;
-    [Space(4)]
+
     public float graniteNoiseBaseFrequency = 0.006f;
     public int   graniteNoiseOctaves       = 3;
     [Range(0f,1f)] public float graniteNoisePersistence = 0.5f;
     public float graniteNoiseLacunarity    = 2.2f;
 
+    // ─────────────────────────────────────────────────────────
+    // Amphibolite
+    // ─────────────────────────────────────────────────────────
     [Header("Amphibolite Settings")]
     public float amphibBaseHeight       = 1000f;
     public float amphibRange            = 60f;
-    [Space(4)]
+
     public float amphibNoiseBaseFrequency = 0.007f;
     public int   amphibNoiseOctaves       = 3;
     [Range(0f,1f)] public float amphibNoisePersistence = 0.5f;
     public float amphibNoiseLacunarity    = 2.4f;
 
     // ─────────────────────────────────────────────────────────
-    // Clay 추가 세팅
+    // Clay clusters
     // ─────────────────────────────────────────────────────────
     [Header("Clay Cluster Settings")]
-    public int   clayMinHeight          = 200;     // Dirt 층 하부 포함
-    public int   clayMaxHeight          = 900;     // 지표 근처까지 허용
+    public int   clayMinHeight          = 200;
+    public int   clayMaxHeight          = 900;
     public float clayClusterSizeMean    = 70f;
     public float clayClusterSizeStdDev  = 18f;
-    public float claySeedDensity        = 0.0018f; // Dirt 전용 시드 밀도
-    public float clayExpansionProb      = 0.45f;   // 확장 확률
-    public float clayMaxGrowthFactor    = 1.4f;    // 최대 성장 배수
+    public float claySeedDensity        = 0.0018f;
+    public float clayExpansionProb      = 0.45f;
+    public float clayMaxGrowthFactor    = 1.4f;
 
+    // ─────────────────────────────────────────────────────────
+    // Ores
+    // ─────────────────────────────────────────────────────────
     [Header("Ore: Coal Cluster Settings")]
     public int coalMinHeight = 200;
     public int coalMaxHeight = 600;
@@ -85,26 +100,74 @@ public class WorldGenSettings : ScriptableObject
     public float ironExpansionProb = 0.3f;
     public float ironMaxGrowthFactor = 1.3f;
 
+    // 클러스터 공통
     [Header("Cluster Behavior")]
     public int minInterClusterDist = 10;
     public int clusterJitter = 5;
+
     public enum NeighborMode { FourDir, EightDir }
     public NeighborMode neighborMode = NeighborMode.EightDir;
+
     public enum FrontierMode { FIFO, Random }
     public FrontierMode frontierMode = FrontierMode.Random;
 
-    [Header("Cave Settings (Cellular Automata)")]
-    [Range(0,100)] public int caveInitialFillPercent = 45;
-    public int caveBirthLimit        = 5;
-    public int caveSurvivalLimit     = 4;
-    public int caveIterations        = 5;
+    // ─────────────────────────────────────────────────────────
+    // NEW: Noise-Based Cave Generation
+    // A ∪ B (멀티스케일 + 도메인 워핑)
+    // ─────────────────────────────────────────────────────────
+    [Header("Cave A: Multiscale Noise")]
+    public float caveA_FreqLarge = 0.008f;
+    public int   caveA_OctLarge  = 4;
+    public float caveA_PersLarge = 0.5f;
+    public float caveA_LacLarge  = 2.0f;
 
-    [Header("Cave Settings (Drunkard's Walk)")]
-    public int   caveWalkerCount   = 10;
-    public int   caveWalkLength    = 500;
-    [Range(0f,1f)] public float caveDirectionBias = 0.5f;
+    public float caveA_FreqDetail = 0.04f;
+    public int   caveA_OctDetail  = 3;
+    public float caveA_PersDetail = 0.5f;
+    public float caveA_LacDetail  = 2.2f;
 
+    [Range(0f,1f)] 
+    public float caveA_DetailWeight = 0.5f;
+
+    [Range(-1f,1f)]
+    public float caveA_Threshold = -0.10f;
+
+    // ─────────────────────────────────────────────────────────
+    // Cave B: Domain Warping
+    // ─────────────────────────────────────────────────────────
+    [Header("Cave B: Domain Warping (Noise Warp)")]
+    public float caveB_WarpFreq = 0.010f;
+    public int   caveB_WarpOct  = 3;
+    public float caveB_WarpPers = 0.6f;
+    public float caveB_WarpLac  = 2.2f;
+
+    public float caveB_WarpAmpX = 40f;
+    public float caveB_WarpAmpY = 30f;
+
+    [Header("Cave B: Final Noise (before threshold)")]
+    public float caveB_FreqBase = 0.020f;
+    public int   caveB_OctBase  = 3;
+    public float caveB_PersBase = 0.5f;
+    public float caveB_LacBase  = 2.0f;
+
+    [Range(-1f,1f)]
+    public float caveB_Threshold = -0.10f;
+
+    // ─────────────────────────────────────────────────────────
+    // Depth mask: top에서는 거의 동굴 없음 → 아래 갈수록 많아짐
+    // ─────────────────────────────────────────────────────────
+    [Header("Cave Depth Mask")]
+    public bool useCaveDepthMask = true;
+
+    [Range(0f,1f)]
+    public float caveDepthStart = 0.25f;
+
+    [Range(0f,1f)]
+    public float caveDepthEnd = 0.90f;
+
+    // ─────────────────────────────────────────────────────────
+    // Trees
+    // ─────────────────────────────────────────────────────────
     [Header("Tree Settings")]
-    [Range(0f,1f)] public float treeDensity    = 0.02f;    // 한 x열당 나무 심을 확률
-
+    [Range(0f,1f)] public float treeDensity = 0.02f;
 }

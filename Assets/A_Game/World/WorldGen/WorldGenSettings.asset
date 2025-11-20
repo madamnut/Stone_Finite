@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c301846cb220f4d4ebd778889e3eb6df, type: 3}
   m_Name: WorldGenSettings
   m_EditorClassIdentifier: 
-  seed: 23835
   width: 5120
   height: 1536
   waterHeight: 800
@@ -72,11 +71,28 @@ MonoBehaviour:
   clusterJitter: 5
   neighborMode: 1
   frontierMode: 1
-  caveInitialFillPercent: 20
-  caveBirthLimit: 6
-  caveSurvivalLimit: 5
-  caveIterations: 6
-  caveWalkerCount: 600
-  caveWalkLength: 5000
-  caveDirectionBias: 0.701
+  caveA_FreqLarge: 0.03
+  caveA_OctLarge: 3
+  caveA_PersLarge: 0.6
+  caveA_LacLarge: 2.4
+  caveA_FreqDetail: 0.15
+  caveA_OctDetail: 3
+  caveA_PersDetail: 0.65
+  caveA_LacDetail: 2.2
+  caveA_DetailWeight: 0.15
+  caveA_Threshold: -0.36
+  caveB_WarpFreq: 0.022
+  caveB_WarpOct: 3
+  caveB_WarpPers: 0.5
+  caveB_WarpLac: 1.9
+  caveB_WarpAmpX: 0
+  caveB_WarpAmpY: 152
+  caveB_FreqBase: 0.021
+  caveB_OctBase: 2
+  caveB_PersBase: 0.5
+  caveB_LacBase: 2
+  caveB_Threshold: -0.46
+  useCaveDepthMask: 0
+  caveDepthStart: 0.25
+  caveDepthEnd: 0.9
   treeDensity: 0.12
