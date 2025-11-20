@@ -49,13 +49,19 @@ public static class WorldDataGenerator
     {
         int w = s.width, h = s.height;
 
+        float genStart = Time.realtimeSinceStartup;
+
         // 공통 파이프라인 1회 실행 → common, bg 획득
         BuildCommonAndBg(s, seed, out var common, out var bg);
+
+        float afterBuild = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] BuildCommonAndBg total: {(afterBuild - genStart) * 1000f:F1} ms");
 
         // WorldData 생성
         var world = new WorldData(w, h);
 
         // BG 주입
+        float bgStart = Time.realtimeSinceStartup;
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -63,8 +69,11 @@ public static class WorldDataGenerator
             if (bgId != ID_AIR)
                 world.ForceBG(x, y, bgId);
         }
+        float bgEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Inject BG: {(bgEnd - bgStart) * 1000f:F1} ms");
 
         // FG / Fluid 주입
+        float fgStart = Time.realtimeSinceStartup;
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -83,12 +92,17 @@ public static class WorldDataGenerator
             var cell = CellLibrary.MakeFgCell(id);
             world.ForceFG(x, y, in cell);
         }
+        float fgEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Inject FG/Fluid: {(fgEnd - fgStart) * 1000f:F1} ms");
 
         // 자연광
-        float start = Time.realtimeSinceStartup;
+        float lightStart = Time.realtimeSinceStartup;
         PropagateNaturalLight(world);
-        float end = Time.realtimeSinceStartup;
-        Debug.Log($"PropagateNaturalLight took {(end - start) * 1000f} ms");
+        float lightEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] PropagateNaturalLight: {(lightEnd - lightStart) * 1000f:F1} ms");
+
+        float genEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] TOTAL Generate: {(genEnd - genStart) * 1000f:F1} ms");
 
         return world;
     }
@@ -105,6 +119,8 @@ public static class WorldDataGenerator
     {
         int w = s.width, h = s.height;
 
+        float t0 = Time.realtimeSinceStartup;
+
         common = new ushort[w, h];
         bg     = new ushort[w, h];
 
@@ -113,6 +129,10 @@ public static class WorldDataGenerator
         for (int x = 0; x < w; x++)
         for (int y = 0; y < waterH; y++)
             common[x, y] = ID_WATER;
+
+        float t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 1 - Water seed: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 2) 노이즈 높이 (1D로 변경)
         float[] dirtH = new float[w];
@@ -145,6 +165,10 @@ public static class WorldDataGenerator
                 s.amphibBaseHeight, s.amphibRange);
         }
 
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 2 - Noise heights: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
+
         // 3) 지층 덮어쓰기 + BG 확정 (1D 높이 사용)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
@@ -162,11 +186,21 @@ public static class WorldDataGenerator
             }
         }
 
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 3 - Layer fill & BG: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
+
         // 4) 광물
         ApplyOreClusters(s, seed, common);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 4 - Ore clusters: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 4.5) 점토 클러스터 (Dirt에만 생성)
         ApplyClayClusters(s, seed, common);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 4.5 - Clay clusters: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 5) 동굴 캐브아웃
         bool[,] cave = ProceduralUtil.GenerateMixedCave(
@@ -179,11 +213,21 @@ public static class WorldDataGenerator
         for (int y = 0; y < h; y++)
             if (cave[x, y]) common[x, y] = ID_AIR;
 
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 5 - Caves carve: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
+
         // 6) 물 플러드필
         FloodFillWater(common, w, h, ID_WATER, ID_AIR);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 6 - Water flood fill: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 6.5) 지형 변환: 모래/자갈/점토
         ApplySandAndGravelAndClay(s, seed, common);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 6.5 - Sand/Gravel/Clay: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 7) 잔디 변형
         for (int x = 0; x < w; x++)
@@ -191,109 +235,217 @@ public static class WorldDataGenerator
             if (common[x, y] == ID_DIRT)
                 common[x, y] = GetGrassVariant(x, y, common);
 
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 7 - Grass variants: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
+
         // 8) 나무
         PlaceTrees(s, seed, common);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 8 - Trees: {(t1 - t0) * 1000f:F1} ms");
+        t0 = t1;
 
         // 9) 데코
         PlaceDecorAfterTrees(s, seed, common);
+        t1 = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] Step 9 - Decor: {(t1 - t0) * 1000f:F1} ms");
+
+        float tEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] BuildCommonAndBg TOTAL (Steps 1-9): {(tEnd - (tEnd - (t1 - t0))) * 1000f:F1} ms");
     }
 
     // ─────────────────────────────────────────────────────────
-    // 모래/자갈/점토 변환
+    // 모래/자갈/점토 변환 (BFS 기반 거리맵)
     // ─────────────────────────────────────────────────────────
     private static void ApplySandAndGravelAndClay(WorldGenSettings s, int seed, ushort[,] common)
     {
+        float tStart = Time.realtimeSinceStartup;
+
         int w = common.GetLength(0), h = common.GetLength(1);
         var rand = new System.Random(seed ^ 0xA11CE);
 
-        var snap = (ushort[,])common.Clone();
+        const int INF = 1_000_000;
 
-        // 1) Dirt → Sand (반경3 내 Water)
-        int rSand = 3;
+        // Chebyshev 거리용 8방향 (대각 포함)
+        int[] dx8 = { 1,  1,  0, -1, -1, -1,  0,  1 };
+        int[] dy8 = { 0,  1,  1,  1,  0, -1, -1, -1 };
+
+        var q = new Queue<(int x, int y)>();
+
+        // ───────────────── 1) Water 거리 맵 (반경 3) ─────────────────
+        int[,] distWater = new int[w, h];
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            distWater[x, y] = INF;
+
+        q.Clear();
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
-            if (snap[x, y] != ID_DIRT) continue;
-            bool nearWater = false;
-            for (int dx = -rSand; dx <= rSand && !nearWater; dx++)
+            if (common[x, y] == ID_WATER)
             {
-                int nx = x + dx; if ((uint)nx >= w) continue;
-                int maxDy = rSand;
-                for (int dy = -maxDy; dy <= maxDy; dy++)
-                {
-                    int ny = y + dy; if ((uint)ny >= h) continue;
-                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) > rSand) continue;
-                    if (snap[nx, ny] == ID_WATER) { nearWater = true; break; }
-                }
+                distWater[x, y] = 0;
+                q.Enqueue((x, y));
             }
-            if (nearWater) common[x, y] = ID_SAND;
         }
 
-        // 2) Gravel 변환 (업데이트된 common 기준)
-        var snap2 = (ushort[,])common.Clone();
+        int maxWaterR = 3;
+        while (q.Count > 0)
+        {
+            var (cx, cy) = q.Dequeue();
+            int cd = distWater[cx, cy];
+            if (cd >= maxWaterR) continue;
 
-        // 2-A) Rock → Gravel
-        int rRockDirt = 2;
-        int rRockWater = 3;
+            for (int i = 0; i < 8; i++)
+            {
+                int nx = cx + dx8[i];
+                int ny = cy + dy8[i];
+                if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
+
+                int nd = cd + 1;
+                if (nd < distWater[nx, ny])
+                {
+                    distWater[nx, ny] = nd;
+                    q.Enqueue((nx, ny));
+                }
+            }
+        }
+
+        // 1단계: Dirt → Sand (반경3 내 Water)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
-            if (snap2[x, y] != ID_ROCK) continue;
-
-            // 물 반경3 → 확정 자갈
-            bool nearWater = false;
-            for (int dx = -rRockWater; dx <= rRockWater && !nearWater; dx++)
+            if (common[x, y] == ID_DIRT)
             {
-                int nx = x + dx; if ((uint)nx >= w) continue;
-                for (int dy = -rRockWater; dy <= rRockWater; dy++)
-                {
-                    int ny = y + dy; if ((uint)ny >= h) continue;
-                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) > rRockWater) continue;
-                    if (snap2[nx, ny] == ID_WATER) { nearWater = true; break; }
-                }
+                int d = distWater[x, y];
+                if (d > 0 && d <= maxWaterR)
+                    common[x, y] = ID_SAND;
             }
-            if (nearWater) { common[x, y] = ID_GRAVEL; continue; }
-
-            // 흙 반경2 → 30%
-            bool nearDirt = false;
-            for (int dx = -rRockDirt; dx <= rRockDirt && !nearDirt; dx++)
-            {
-                int nx = x + dx; if ((uint)nx >= w) continue;
-                for (int dy = -rRockDirt; dy <= rRockDirt; dy++)
-                {
-                    int ny = y + dy; if ((uint)ny >= h) continue;
-                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) > rRockDirt) continue;
-                    if (snap2[nx, ny] == ID_DIRT) { nearDirt = true; break; }
-                }
-            }
-            if (nearDirt && rand.NextDouble() < 0.30) common[x, y] = ID_GRAVEL;
         }
 
-        // 2-B) Dirt → Gravel/Clay (반경3 내 Sand → 40%/40%)
-        var snap3 = (ushort[,])common.Clone();
-        int rDirtSand = 3;
+        // 2단계 A: Rock → Gravel (반경3 내 Water)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
-            if (snap3[x, y] != ID_DIRT) continue;
-            bool nearSand = false;
-            for (int dx = -rDirtSand; dx <= rDirtSand && !nearSand; dx++)
+            if (common[x, y] == ID_ROCK)
             {
-                int nx = x + dx; if ((uint)nx >= w) continue;
-                for (int dy = -rDirtSand; dy <= rDirtSand; dy++)
-                {
-                    int ny = y + dy; if ((uint)ny >= h) continue;
-                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) > rDirtSand) continue;
-                    if (snap3[nx, ny] == ID_SAND) { nearSand = true; break; }
-                }
-            }
-            if (nearSand)
-            {
-                double r = rand.NextDouble();
-                if      (r < 0.40) common[x, y] = ID_GRAVEL;
-                else if (r < 0.80) common[x, y] = ID_CLAY;
+                int d = distWater[x, y];
+                if (d > 0 && d <= maxWaterR)
+                    common[x, y] = ID_GRAVEL;
             }
         }
+
+        // ───────────────── 2) Dirt 거리 맵 (반경 2) ─────────────────
+        int[,] distDirt = new int[w, h];
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            distDirt[x, y] = INF;
+
+        q.Clear();
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            if (common[x, y] == ID_DIRT)
+            {
+                distDirt[x, y] = 0;
+                q.Enqueue((x, y));
+            }
+        }
+
+        int maxDirtR = 2;
+        while (q.Count > 0)
+        {
+            var (cx, cy) = q.Dequeue();
+            int cd = distDirt[cx, cy];
+            if (cd >= maxDirtR) continue;
+
+            for (int i = 0; i < 8; i++)
+            {
+                int nx = cx + dx8[i];
+                int ny = cy + dy8[i];
+                if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
+
+                int nd = cd + 1;
+                if (nd < distDirt[nx, ny])
+                {
+                    distDirt[nx, ny] = nd;
+                    q.Enqueue((nx, ny));
+                }
+            }
+        }
+
+        // 2단계 B: Rock → Gravel (반경2 내 Dirt, 30%)
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            if (common[x, y] == ID_ROCK)
+            {
+                int d = distDirt[x, y];
+                if (d > 0 && d <= maxDirtR)
+                {
+                    if (rand.NextDouble() < 0.30)
+                        common[x, y] = ID_GRAVEL;
+                }
+            }
+        }
+
+        // ───────────────── 3) Sand 거리 맵 (반경 3) ─────────────────
+        int[,] distSand = new int[w, h];
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            distSand[x, y] = INF;
+
+        q.Clear();
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            if (common[x, y] == ID_SAND)
+            {
+                distSand[x, y] = 0;
+                q.Enqueue((x, y));
+            }
+        }
+
+        int maxSandR = 3;
+        while (q.Count > 0)
+        {
+            var (cx, cy) = q.Dequeue();
+            int cd = distSand[cx, cy];
+            if (cd >= maxSandR) continue;
+
+            for (int i = 0; i < 8; i++)
+            {
+                int nx = cx + dx8[i];
+                int ny = cy + dy8[i];
+                if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
+
+                int nd = cd + 1;
+                if (nd < distSand[nx, ny])
+                {
+                    distSand[nx, ny] = nd;
+                    q.Enqueue((nx, ny));
+                }
+            }
+        }
+
+        // 3단계: Dirt → Gravel/Clay (반경3 내 Sand → 40%/40%)
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            if (common[x, y] == ID_DIRT)
+            {
+                int d = distSand[x, y];
+                if (d > 0 && d <= maxSandR)
+                {
+                    double r = rand.NextDouble();
+                    if      (r < 0.40) common[x, y] = ID_GRAVEL;
+                    else if (r < 0.80) common[x, y] = ID_CLAY;
+                }
+            }
+        }
+
+        float tEnd = Time.realtimeSinceStartup;
+        Debug.Log($"[WorldGen] ApplySandAndGravelAndClay (BFS) TOTAL: {(tEnd - tStart) * 1000f:F1} ms");
     }
 
     // ─────────────────────────────────────────────────────────

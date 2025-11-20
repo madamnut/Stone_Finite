@@ -259,6 +259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
+  seed: 0
   targetUI: {fileID: 1960623954}
   filterMode: 0
   flipY: 1
@@ -286,8 +287,8 @@ MonoBehaviour:
   ore_Copper: {r: 0.78, g: 0.47, b: 0.2, a: 1}
   ore_Iron: {r: 0.71, g: 0.71, b: 0.78, a: 1}
   ore_Tin: {r: 0.71, g: 0.78, b: 0.86, a: 1}
-  granite: {r: 0.59, g: 0.59, b: 0.67, a: 1}
-  amphibolite: {r: 0.55, g: 0.63, b: 0.71, a: 1}
+  granite: {r: 0.20363119, g: 0.20363119, b: 0.3018868, a: 1}
+  amphibolite: {r: 0.14337842, g: 0.15659486, b: 0.16981131, a: 1}
   water: {r: 0, g: 0.37341785, b: 1, a: 0.78}
 --- !u!1 &1666139427
 GameObject:
