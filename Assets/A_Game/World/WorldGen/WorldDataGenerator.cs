@@ -109,45 +109,51 @@ public static class WorldDataGenerator
         bg     = new ushort[w, h];
 
         // 1) 해수면 시드
+        int waterH = Mathf.Min(h, s.waterHeight);
         for (int x = 0; x < w; x++)
-        for (int y = 0; y < Math.Min(h, s.waterHeight); y++)
+        for (int y = 0; y < waterH; y++)
             common[x, y] = ID_WATER;
 
-        // 2) 노이즈 높이
-        float[,] dirtH = new float[w, h], rockH = new float[w, h], granH = new float[w, h], amphH = new float[w, h];
+        // 2) 노이즈 높이 (1D로 변경)
+        float[] dirtH = new float[w];
+        float[] rockH = new float[w];
+        float[] granH = new float[w];
+        float[] amphH = new float[w];
+
         for (int x = 0; x < w; x++)
         {
             float sx = x + seed;
-            for (int y = 0; y < h; y++)
-            {
-                dirtH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx, s.dirtNoiseBaseFrequency, s.dirtNoiseOctaves,
-                    s.dirtNoisePersistence, s.dirtNoiseLacunarity,
-                    s.dirtBaseHeight, s.dirtRange);
-                rockH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 10000, s.rockNoiseBaseFrequency, s.rockNoiseOctaves,
-                    s.rockNoisePersistence, s.rockNoiseLacunarity,
-                    s.rockBaseHeight, s.rockRange);
-                granH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 20000, s.graniteNoiseBaseFrequency, s.graniteNoiseOctaves,
-                    s.graniteNoisePersistence, s.graniteNoiseLacunarity,
-                    s.graniteBaseHeight, s.graniteRange);
-                amphH[x, y] = ProceduralUtil.FractalPerlin1D(
-                    sx + 30000, s.amphibNoiseBaseFrequency, s.amphibNoiseOctaves,
-                    s.amphibNoisePersistence, s.amphibNoiseLacunarity,
-                    s.amphibBaseHeight, s.amphibRange);
-            }
+
+            dirtH[x] = ProceduralUtil.FractalPerlin1D(
+                sx, s.dirtNoiseBaseFrequency, s.dirtNoiseOctaves,
+                s.dirtNoisePersistence, s.dirtNoiseLacunarity,
+                s.dirtBaseHeight, s.dirtRange);
+
+            rockH[x] = ProceduralUtil.FractalPerlin1D(
+                sx + 10000, s.rockNoiseBaseFrequency, s.rockNoiseOctaves,
+                s.rockNoisePersistence, s.rockNoiseLacunarity,
+                s.rockBaseHeight, s.rockRange);
+
+            granH[x] = ProceduralUtil.FractalPerlin1D(
+                sx + 20000, s.graniteNoiseBaseFrequency, s.graniteNoiseOctaves,
+                s.graniteNoisePersistence, s.graniteNoiseLacunarity,
+                s.graniteBaseHeight, s.graniteRange);
+
+            amphH[x] = ProceduralUtil.FractalPerlin1D(
+                sx + 30000, s.amphibNoiseBaseFrequency, s.amphibNoiseOctaves,
+                s.amphibNoisePersistence, s.amphibNoiseLacunarity,
+                s.amphibBaseHeight, s.amphibRange);
         }
 
-        // 3) 지층 덮어쓰기 + BG 확정
+        // 3) 지층 덮어쓰기 + BG 확정 (1D 높이 사용)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
             ushort id = 0;
-            if (y < dirtH[x, y]) id = ID_DIRT;
-            if (y < rockH[x, y]) id = ID_ROCK;
-            if (y < granH[x, y]) id = ID_GRANITE;
-            if (y < amphH[x, y]) id = ID_AMPHIBOLITE;
+            if (y < dirtH[x]) id = ID_DIRT;
+            if (y < rockH[x]) id = ID_ROCK;
+            if (y < granH[x]) id = ID_GRANITE;
+            if (y < amphH[x]) id = ID_AMPHIBOLITE;
 
             if (id != 0)
             {
