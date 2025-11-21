@@ -663,50 +663,97 @@ public static class WorldDataGenerator
     }
 
     // ─────────────────────────────────────────────────────────
-    // 내부: 자연광 전파
+    // 내부: 자연광 전파 (버킷 기반 Wavefront BFS)
     // ─────────────────────────────────────────────────────────
     private static void PropagateNaturalLight(WorldData world)
     {
-        int w = world.bg.GetLength(0), h = world.bg.GetLength(1);
+        int w = world.bg.GetLength(0);
+        int h = world.bg.GetLength(1);
 
+        // 1) 라이트 초기화
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
             world.light[x, y] = new LightCell { natural = 0, artificial = 0 };
 
-        var q = new Queue<(int x, int y)>();
+        // 2) 감쇠량 캐싱 (bg / collidable 기반)
+        byte[,] atten = new byte[w, h];
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            byte a = 0;
+            if (world.bg[x, y] != ID_AIR) a += 1;
+            if (world.IsCollidable(x, y)) a += 2;
+            atten[x, y] = a;
+        }
+
+        // 3) 거리 맵 (dist = 누적 감쇠량, 0~NATURAL_MAX, 그 이상은 의미 없음)
+        const byte INF = 255;
+        byte[,] dist = new byte[w, h];
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+            dist[x, y] = INF;
+
+        // 4) 버킷: dist 0~NATURAL_MAX 까지 각각 리스트 하나씩
+        var buckets = new List<(int x, int y)>[NATURAL_MAX + 1];
+        for (int i = 0; i <= NATURAL_MAX; i++)
+            buckets[i] = new List<(int x, int y)>();
+
+        // 5) 최상단 라인(yTop)을 모든 자연광 소스로 취급
         int yTop = h - 1;
         for (int x = 0; x < w; x++)
         {
-            world.light[x, yTop].natural = NATURAL_MAX;
-            q.Enqueue((x, yTop));
+            dist[x, yTop] = 0;               // 감쇠 0 → 밝기 NATURAL_MAX
+            buckets[0].Add((x, yTop));
         }
 
+        // 4방향
         int[] dx = { 1, -1, 0, 0 };
         int[] dy = { 0, 0, 1, -1 };
 
-        while (q.Count > 0)
+        // 6) Dial-style Dijkstra: dist 0 → NATURAL_MAX 까지 wavefront 순서대로 처리
+        for (byte d = 0; d <= NATURAL_MAX; d++)
         {
-            var (cx, cy) = q.Dequeue();
-            byte curr = world.light[cx, cy].natural;
-            if (curr == 0) continue;
-
-            for (int i = 0; i < 4; i++)
+            var bucket = buckets[d];
+            for (int idx = 0; idx < bucket.Count; idx++)
             {
-                int nx = cx + dx[i], ny = cy + dy[i];
-                if ((uint)nx >= w || (uint)ny >= h) continue;
+                var (cx, cy) = bucket[idx];
 
-                int atten = 0;
-                if (world.bg[nx, ny] != ID_AIR) atten += 1;
-                if (world.IsCollidable(nx, ny)) atten += 2;
+                // 더 좋은 경로로 업데이트 된 경우 스킵
+                if (dist[cx, cy] != d) continue;
 
-                int next = curr - atten;
-                if (next <= 0) continue;
-
-                if (next > world.light[nx, ny].natural)
+                for (int dir = 0; dir < 4; dir++)
                 {
-                    world.light[nx, ny].natural = (byte)Math.Min(next, NATURAL_MAX);
-                    q.Enqueue((nx, ny));
+                    int nx = cx + dx[dir];
+                    int ny = cy + dy[dir];
+                    if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
+
+                    byte a = atten[nx, ny];
+                    int ndInt = d + a;
+                    if (ndInt > NATURAL_MAX) continue;        // 밝기 0 이하 → 전파 의미 없음
+
+                    byte nd = (byte)ndInt;
+                    if (nd >= dist[nx, ny]) continue;         // 기존 경로가 더 좋음 또는 동일
+
+                    dist[nx, ny] = nd;
+                    buckets[nd].Add((nx, ny));
                 }
+            }
+
+            bucket.Clear();
+        }
+
+        // 7) dist → natural 밝기로 환산
+        //    밝기 = NATURAL_MAX - dist (단, dist > NATURAL_MAX 이면 0)
+        for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+        {
+            byte d = dist[x, y];
+            if (d <= NATURAL_MAX)
+            {
+                byte val = (byte)(NATURAL_MAX - d);
+                var lc = world.light[x, y];
+                lc.natural = val;
+                world.light[x, y] = lc;
             }
         }
     }
