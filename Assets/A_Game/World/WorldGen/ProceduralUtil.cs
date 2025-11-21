@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public static class ProceduralUtil
@@ -62,10 +63,10 @@ public static class ProceduralUtil
         float warpAmpX = s.caveB_WarpAmpX;
         float warpAmpY = s.caveB_WarpAmpY;
 
-        float freqB     = s.caveB_FreqBase;
-        int   octB      = Mathf.Clamp(s.caveB_OctBase, 1, 8);
-        float persB     = s.caveB_PersBase;
-        float lacB      = s.caveB_LacBase;
+        float freqB      = s.caveB_FreqBase;
+        int   octB       = Mathf.Clamp(s.caveB_OctBase, 1, 8);
+        float persB      = s.caveB_PersBase;
+        float lacB       = s.caveB_LacBase;
         float thresholdB = s.caveB_Threshold;
 
         // 깊이 마스크
@@ -107,7 +108,7 @@ public static class ProceduralUtil
 
         int hMinus1 = Mathf.Max(1, height - 1);
 
-        for (int x = 0; x < width; x++)
+        Parallel.For(0, width, x =>
         {
             for (int y = 0; y < height; y++)
             {
@@ -167,7 +168,7 @@ public static class ProceduralUtil
 
                 cave[x, y] = caveFinal;
             }
-        }
+        });
 
         return cave;
     }
