@@ -23,11 +23,11 @@ public class WorldChunkSystem
     // FG 타일 편집 시, 해당 영역 라이트 재계산 위해 WorldManager의 메서드를 콜백으로 받음
     private readonly System.Action<int, int> recalcLightAt;
 
-    // 라이트 메쉬 계산용 상수 (WorldManager와 동일)
-    private const byte NAT_MAX = 20;
-    private const byte ART_MAX = 20;
+    // 라이트 메쉬 계산용 상수 (WorldManager와 동일, 0~15)
+    private const byte NAT_MAX = 15;
+    private const byte ART_MAX = 15;
 
-    // 시간에 따라 바뀌는 전역 밝기 오프셋 (WorldManager에서 세팅해줄 것)
+    // 시간에 따라 바뀌는 전역 밝기 오프셋 (WorldManager에서 세팅해줄 것, 0~15)
     private byte globalBrightnessOffset = 0;
 
     // ───────── 풀 / 로드 큐 / 활성 청크 ─────────
@@ -37,6 +37,11 @@ public class WorldChunkSystem
     private readonly List<Vector2Int>                   unloadList    = new();
     private readonly HashSet<Vector2Int>                currentNeeded = new();
     private readonly Dictionary<Vector2Int, GameObject> activeChunks  = new();
+
+    // ───────── 더티 청크 집합 ─────────
+    private readonly HashSet<Vector2Int> fgDirtyChunks    = new();
+    private readonly HashSet<Vector2Int> bgDirtyChunks    = new();
+    private readonly HashSet<Vector2Int> lightDirtyChunks = new();
 
     private bool       isLoading       = false;
     private Vector2Int lastPlayerChunk = Vector2Int.zero;
@@ -62,7 +67,7 @@ public class WorldChunkSystem
         this.chunkRadius      = chunkRadius;
         this.maxLoadsPerFrame = maxLoadsPerFrame;
 
-        this.worldMap   = worldMap;
+        this.worldMap    = worldMap;
         this.chunkPrefab = chunkPrefab;
         this.chunkRoot   = chunkRoot;
 
@@ -174,43 +179,62 @@ public class WorldChunkSystem
     }
 
     /// <summary>
-    /// LateUpdate에서 호출: 더티 플래그가 켜진 청크의 타일/라이트를 실제로 다시 세팅.
+    /// 더티 플래그가 켜진 청크의 타일/라이트를 실제로 다시 세팅.
+    /// (WorldManager의 FixedUpdate 등에서 호출)
     /// </summary>
     public void ProcessDirtyChunks()
     {
-        foreach (var kv in activeChunks)
-        {
-            var coord = kv.Key;
-            var go    = kv.Value;
-            var c     = go.GetComponent<Chunk>();
+        if (fgDirtyChunks.Count == 0 &&
+            bgDirtyChunks.Count == 0 &&
+            lightDirtyChunks.Count == 0)
+            return;
 
-            if (c.bgDirty)
+        // BG
+        if (bgDirtyChunks.Count > 0)
+        {
+            foreach (var coord in bgDirtyChunks)
             {
+                if (!activeChunks.TryGetValue(coord, out var go)) continue;
+                var c = go.GetComponent<Chunk>();
+                if (c == null || !c.bgDirty) continue;
+
                 RefreshChunkLayer(coord, LayerType.BG);
                 c.bgDirty = false;
             }
+            bgDirtyChunks.Clear();
+        }
 
-            if (c.fgDirty)
+        // FG
+        if (fgDirtyChunks.Count > 0)
+        {
+            foreach (var coord in fgDirtyChunks)
             {
+                if (!activeChunks.TryGetValue(coord, out var go)) continue;
+                var c = go.GetComponent<Chunk>();
+                if (c == null || !c.fgDirty) continue;
+
                 RefreshChunkLayer(coord, LayerType.FG);
                 c.fgDirty = false;
 
-                // FG 타일이 바뀌면 해당 청크 영역에 대해 라이트 재계산
-                if (recalcLightAt != null)
-                {
-                    int sx = coord.x * chunkSize;
-                    int sy = coord.y * chunkSize;
-                    for (int y = 0; y < chunkSize; y++)
-                    for (int x = 0; x < chunkSize; x++)
-                        recalcLightAt(sx + x, sy + y);
-                }
+                // FG 변경 시 청크 전체 라이트 재계산은 제거
+                // (개별 셀 변경 시 WorldManager 쪽에서 RecalculateLightAt 호출)
             }
+            fgDirtyChunks.Clear();
+        }
 
-            if (c.lightDirty)
+        // Light
+        if (lightDirtyChunks.Count > 0)
+        {
+            foreach (var coord in lightDirtyChunks)
             {
+                if (!activeChunks.TryGetValue(coord, out var go)) continue;
+                var c = go.GetComponent<Chunk>();
+                if (c == null || !c.lightDirty) continue;
+
                 RefreshLightLayer(coord);
                 c.lightDirty = false;
             }
+            lightDirtyChunks.Clear();
         }
     }
 
@@ -231,8 +255,18 @@ public class WorldChunkSystem
         var coord = new Vector2Int(cx, cy);
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var c = go.GetComponent<Chunk>();
-        if (markFG) c.fgDirty = true;
-        if (markBG) c.bgDirty = true;
+        if (c == null) return;
+
+        if (markFG)
+        {
+            c.fgDirty = true;
+            fgDirtyChunks.Add(coord);
+        }
+        if (markBG)
+        {
+            c.bgDirty = true;
+            bgDirtyChunks.Add(coord);
+        }
     }
 
     /// <summary>
@@ -256,7 +290,11 @@ public class WorldChunkSystem
             if (activeChunks.TryGetValue(coord, out var go))
             {
                 var c = go.GetComponent<Chunk>();
-                if (c != null) c.lightDirty = true;
+                if (c != null)
+                {
+                    c.lightDirty = true;
+                    lightDirtyChunks.Add(coord);
+                }
             }
         }
     }
@@ -269,8 +307,13 @@ public class WorldChunkSystem
     {
         foreach (var kv in activeChunks)
         {
+            var coord = kv.Key;
             var c = kv.Value.GetComponent<Chunk>();
-            if (c != null) c.lightDirty = true;
+            if (c != null)
+            {
+                c.lightDirty = true;
+                lightDirtyChunks.Add(coord);
+            }
         }
     }
 
@@ -512,7 +555,11 @@ public class WorldChunkSystem
                 void Sample(int x, int y)
                 {
                     var L = worldMap.light[x, y];
-                    int ns = L.natural - globalBrightnessOffset; if (ns < 0) ns = 0;
+
+                    // 자연광: 0~15, 전역 오프셋 0~15
+                    int ns = L.natural - globalBrightnessOffset;
+                    if (ns < 0) ns = 0;
+
                     float n01 = ns / (float)NAT_MAX;
                     float a01 = L.artificial / (float)ART_MAX;
                     sum += Mathf.Max(n01, a01);

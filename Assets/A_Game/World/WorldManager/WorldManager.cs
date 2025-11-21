@@ -44,14 +44,14 @@ public class WorldManager : MonoBehaviour
     }
 
     public const int ChunkSize = 16;
-    private const byte NAT_MAX = 20;
-    private const byte ART_MAX = 20;
+    private const byte NAT_MAX = 15;
+    private const byte ART_MAX = 15;
 
     // 유체 ID (ATT_Cell.json과 일치)
     private const ushort ID_WATER = 60000;
 
-    [Header("Global Brightness Offset (auto by time) 0=밝음, 18=어두움")]
-    [Range(0,18)] public byte globalBrightnessOffset = 0;
+    [Header("Global Brightness Offset (auto by time) 0=밝음, 15=어두움")]
+    [Range(0,15)] public byte globalBrightnessOffset = 0;
     private byte _lastBrightnessOffset = 255;
 
     private const int ATT_AIR = 1;
@@ -559,16 +559,12 @@ public class WorldManager : MonoBehaviour
             chunkSystem.UpdateVisibleChunks(player.position, this);
     }
 
-    void LateUpdate()
-    {
-        if (chunkSystem != null)
-            chunkSystem.ProcessDirtyChunks();
-    }
-
     void FixedUpdate()
     {
+        // 월드 시뮬레이션 (물/중력)
         StepTick();
 
+        // 월드 시간 진행
         worldTick++;
 
         if (worldTick - _lastLoggedSecondTick >= ticksPerSecond)
@@ -586,6 +582,10 @@ public class WorldManager : MonoBehaviour
             ApplyTimeSyncedBrightness(forceDirty:false);
             var band = GetTimeBand();
         }
+
+        // 청크/라이트 더티 처리: FixedUpdate(초당 20회)에서만 수행
+        if (chunkSystem != null)
+            chunkSystem.ProcessDirtyChunks();
     }
 
     IEnumerator AutosaveLoop()
@@ -598,11 +598,11 @@ public class WorldManager : MonoBehaviour
     {
         int m = worldHour * 60 + (worldMinute % 60); // 0..1439
         float off =
-            (m >= 300  && m < 540 ) ? 18f * (1f - (m - 300) / 240f) :
+            (m >= 300  && m < 540 ) ? 15f * (1f - (m - 300) / 240f) :
             (m >= 540  && m < 1080) ? 0f :
-            (m >= 1080 && m < 1260) ? 18f * ((m - 1080) / 180f) :
-                                       18f;
-        byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, 18f));
+            (m >= 1080 && m < 1260) ? 15f * ((m - 1080) / 180f) :
+                                       15f;
+        byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, 15f));
 
         if (forceDirty || newOffset != globalBrightnessOffset)
         {
@@ -677,40 +677,10 @@ public class WorldManager : MonoBehaviour
                     q.Enqueue((mx, my));
                 }
 
+                // 이 주변 라이트 메쉬가 영향을 받는 청크들을 라이트 더티로 표시
+                // (3x3 영역 기준으로 겹치는 청크에 대해 lightDirty + HashSet 등록)
                 if (chunkSystem != null)
-                {
-                    var active = chunkSystem.ActiveChunks;
-                    var coord = new Vector2Int(x / ChunkSize, y / ChunkSize);
-                    if (active.TryGetValue(coord, out var go))
-                        go.GetComponent<Chunk>().lightDirty = true;
-
-                    int rx = x % ChunkSize;
-                    int ry = y % ChunkSize;
-                    if (rx == 0)
-                    {
-                        var left = new Vector2Int(coord.x - 1, coord.y);
-                        if (active.TryGetValue(left, out var goL))
-                            goL.GetComponent<Chunk>().lightDirty = true;
-                    }
-                    else if (rx == ChunkSize - 1)
-                    {
-                        var right = new Vector2Int(coord.x + 1, coord.y);
-                        if (active.TryGetValue(right, out var goR))
-                            goR.GetComponent<Chunk>().lightDirty = true;
-                    }
-                    if (ry == 0)
-                    {
-                        var down = new Vector2Int(coord.x, coord.y - 1);
-                        if (active.TryGetValue(down, out var goD))
-                            goD.GetComponent<Chunk>().lightDirty = true;
-                    }
-                    else if (ry == ChunkSize - 1)
-                    {
-                        var up = new Vector2Int(coord.x, coord.y + 1);
-                        if (active.TryGetValue(up, out var goU))
-                            goU.GetComponent<Chunk>().lightDirty = true;
-                    }
-                }
+                    MarkLightDirtyRect(x - 1, y - 1, 3, 3);
             }
         }
     }

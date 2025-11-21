@@ -40,7 +40,7 @@ public static class WorldDataGenerator
     private const ushort ID_WATER               = 60000;
 
     // ── 라이트 파라미터 ──
-    private const byte NATURAL_MAX = 20;
+    private const byte NATURAL_MAX = 15;
 
     /// <summary>
     /// 월드 전체 생성. 시드는 별도 인자.
