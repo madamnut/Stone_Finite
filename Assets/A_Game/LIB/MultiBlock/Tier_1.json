@@ -1,2 +1,17 @@
 {
+  "MudFurnace": [
+    {
+      "name": "Mud Furnace",
+
+      "pattern": [
+        ["Mud"],
+        ["Mud"]
+      ],
+
+      "result": [
+        ["MudFurnace_1"],
+        ["MudFurnace_0"]
+      ]
+    }
+  ]
 }

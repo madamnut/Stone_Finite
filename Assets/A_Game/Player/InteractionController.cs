@@ -179,11 +179,8 @@ public class InteractionController : MonoBehaviour
 
         UpdateHighlight();
 
-        if (Input.GetMouseButtonDown(0)) BreakAtCursor();
-        if (Input.GetMouseButtonDown(1))
-        {
-            if (!TryInteractCell()) UseItem();
-        }
+        if (Input.GetMouseButtonDown(0)) HandleLeftClick();
+        if (Input.GetMouseButtonDown(1)) HandleRightClick();
     }
 
     void UpdateHighlight()
@@ -225,6 +222,11 @@ public class InteractionController : MonoBehaviour
         _hlGO.transform.localScale = Vector3.one * s;
     }
 
+    void HandleLeftClick()
+    {
+        BreakAtCursor();
+    }
+
     void BreakAtCursor()
     {
         if (worldManager == null) return;
@@ -248,7 +250,27 @@ public class InteractionController : MonoBehaviour
         if (sound != null) sound.PlayDig();
     }
 
-    bool TryInteractCell()
+    void HandleRightClick()
+    {
+        bool shift =
+            Input.GetKey(KeyCode.LeftShift) ||
+            Input.GetKey(KeyCode.RightShift);
+
+        if (!shift)
+        {
+            // 기본: 셀 상호작용 → 아이템 상호작용
+            if (TryCellInteraction()) return;
+            if (TryItemInteraction()) return;
+        }
+        else
+        {
+            // Shift: 아이템 상호작용 → 셀 상호작용
+            if (TryItemInteraction()) return;
+            if (TryCellInteraction()) return;
+        }
+    }
+
+    bool TryCellInteraction()
     {
         if (_state != GameState.Ingame) return false;
         if (worldManager == null || worldCamera == null) return false;
@@ -284,44 +306,57 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
-    void UseItem()
+    bool TryItemInteraction()
     {
-        if (_state != GameState.Ingame) return;
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-        if (worldManager == null || worldCamera == null) return;
-        if (!GetMouseCell(out int cx, out int cy)) return;
+        if (_state != GameState.Ingame) return false;
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return false;
+        if (worldManager == null || worldCamera == null) return false;
+        if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        if (player == null || player.Inventory == null) return;
+        if (player == null || player.Inventory == null) return false;
         var items = player.Inventory.items;
-        if (_hotbarScope < 0 || _hotbarScope >= items.Count) return;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count) return false;
 
         var held = items[_hotbarScope];
-        if (held == null || held.Count <= 0) return;
-        if (!held.Unique.TryGetValue("interaction", out var interObj)) return;
+        if (held == null || held.Count <= 0) return false;
+        if (!held.Unique.TryGetValue("interaction", out var interObj)) return false;
 
         Dictionary<string, object> inter =
             interObj as Dictionary<string, object> ??
             (interObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
-        if (inter == null || !inter.TryGetValue("type", out var typeObj)) return;
+        if (inter == null || !inter.TryGetValue("type", out var typeObj)) return false;
 
         string typeStr = typeObj?.ToString();
-        if (typeStr == "Place")             HandlePlace(held, cx, cy, inter);
-        else if (typeStr == "UseOnLiquid")  HandleUseOnLiquid(held, cx, cy, inter);
+        if (typeStr == "Place")
+        {
+            return HandlePlace(held, cx, cy, inter);
+        }
+        else if (typeStr == "UseOnLiquid")
+        {
+            return HandleUseOnLiquid(held, cx, cy, inter);
+        }
+        else if (typeStr == "BuildMultiblock")
+        {
+            // TODO: 멀티블럭 건설 로직은 이후 MultiblockSystem 도입 시 구현
+            return false;
+        }
+
+        return false;
     }
 
-    void HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
-        if (!inter.TryGetValue("params", out var paramObj)) return;
+        if (!inter.TryGetValue("params", out var paramObj)) return false;
         var param = paramObj as Dictionary<string, object> ?? (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
-        if (param == null) return;
+        if (param == null) return false;
 
         string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
         string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
-        if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return;
+        if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return false;
 
         // FG 본체가 이미 있으면 배치 불가 (유체만 있는 경우는 허용)
         var fgCell = worldManager.worldMap.fg[cx, cy];
-        if (fgCell.id != 0) return;
+        if (fgCell.id != 0) return false;
 
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
@@ -329,25 +364,27 @@ public class InteractionController : MonoBehaviour
             var nm = CellLibrary.GetName(id);
             if (!string.IsNullOrEmpty(nm) && nm == cellName) { placeId = id; break; }
         }
-        if (placeId == 0) return;
+        if (placeId == 0) return false;
 
-        if (!worldManager.PlaceCell(cx, cy, placeId)) return;
+        if (!worldManager.PlaceCell(cx, cy, placeId)) return false;
         if (sound != null) sound.PlayPlace();
 
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
+
+        return true;
     }
 
-    void HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
-        if (!inter.TryGetValue("params", out var paramObj)) return;
+        if (!inter.TryGetValue("params", out var paramObj)) return false;
         var param = paramObj as Dictionary<string, object> ?? (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
-        if (param == null) return;
+        if (param == null) return false;
 
         string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
         string outputName = param.TryGetValue("output", out var oo) ? oo?.ToString() : null;
-        if (string.IsNullOrEmpty(liquidName) || string.IsNullOrEmpty(outputName)) return;
+        if (string.IsNullOrEmpty(liquidName) || string.IsNullOrEmpty(outputName)) return false;
 
         ushort targetLiquidId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
@@ -355,11 +392,11 @@ public class InteractionController : MonoBehaviour
             var nm = CellLibrary.GetName(id);
             if (!string.IsNullOrEmpty(nm) && nm == liquidName) { targetLiquidId = id; break; }
         }
-        if (targetLiquidId == 0) return;
+        if (targetLiquidId == 0) return false;
 
         byte amount;
         ushort fluidId = worldManager.worldMap.GetFluidId(cx, cy, out amount);
-        if (fluidId != targetLiquidId || amount < 1) return;
+        if (fluidId != targetLiquidId || amount < 1) return false;
 
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
@@ -378,6 +415,8 @@ public class InteractionController : MonoBehaviour
 
         var outItem = itemLibrary.Create(outputName, 1);
         if (outItem != null) player.Inventory.AddItem(outItem);
+
+        return true;
     }
 
     bool GetMouseCell(out int x, out int y)

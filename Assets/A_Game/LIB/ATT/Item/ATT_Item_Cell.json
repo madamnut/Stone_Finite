@@ -3,7 +3,7 @@
     "name": "Dirt",
     "spriteName": "Dirt",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "interaction": {
         "type": "Place",
@@ -18,7 +18,7 @@
     "name": "Mud",
     "spriteName": "Mud",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "interaction": {
         "type": "Place",
@@ -34,7 +34,7 @@
     "name": "Primal Workbench",
     "spriteName": "Primal Workbench",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "interaction": {
         "type": "Place",
@@ -50,7 +50,7 @@
     "name": "Torch",
     "spriteName": "Torch",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "interaction": {
         "type": "Place",

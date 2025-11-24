@@ -3,7 +3,7 @@
     "name": "Dirt Pile",
     "spriteName": "Dirt Pile",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "interaction": {
         "type": "UseOnLiquid",
@@ -20,7 +20,7 @@
     "name": "Mud Chunk",
     "spriteName": "Mud Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
 
@@ -28,77 +28,77 @@
     "name": "Sand Pile",
     "spriteName": "Sand Pile",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Clay Chunk": {
     "name": "Clay Chunk",
     "spriteName": "Clay Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Flint Shard": {
     "name": "Flint Shard",
     "spriteName": "Flint Shard",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Grass Scrap": {
     "name": "Grass Scrap",
     "spriteName": "Grass Scrap",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Leaf": {
     "name": "Leaf",
     "spriteName": "Leaf",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Pebble": {
     "name": "Pebble",
     "spriteName": "Pebble",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Plant": {
     "name": "Plant",
     "spriteName": "Plant",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Seed": {
     "name": "Seed",
     "spriteName": "Seed",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Twig": {
     "name": "Twig",
     "spriteName": "Twig",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Thick Twig": {
     "name": "Thick Twig",
     "spriteName": "Thick Twig",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Plant Fiber": {
     "name": "Plant Fiber",
     "spriteName": "Plant Fiber",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
 
@@ -107,7 +107,7 @@
     "name": "Plant Twine",
     "spriteName": "Plant Twine",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "partType": "Long Binding",
       "toolDurability": 16
@@ -117,7 +117,7 @@
     "name": "Plant Short Twine",
     "spriteName": "Plant Short Twine",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "partType": "Short Binding",
       "toolDurability": 16
@@ -129,14 +129,14 @@
     "name": "Log",
     "spriteName": "Log",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Wooden Crude Plank": {
     "name": "Wooden Crude Plank",
     "spriteName": "Wooden Crude Plank",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
 
@@ -145,7 +145,7 @@
     "name": "Charcoal",
     "spriteName": "Charcoal",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
 
@@ -153,7 +153,7 @@
     "name": "Wooden Stick",
     "spriteName": "Wooden Stick",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "partType": "Short Handle",
       "toolDurability": 16
@@ -163,7 +163,7 @@
     "name": "Wooden Thick Stick",
     "spriteName": "Wooden Thick Stick",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {
       "partType": "Long Handle",
       "toolDurability": 16
@@ -176,35 +176,35 @@
     "name": "Rock Chunk",
     "spriteName": "Rock Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Coal Chunk": {
     "name": "Coal Chunk",
     "spriteName": "Coal Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Copper Chunk": {
     "name": "Copper Chunk",
     "spriteName": "Copper Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Iron Chunk": {
     "name": "Iron Chunk",
     "spriteName": "Iron Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
   "Tin Chunk": {
     "name": "Tin Chunk",
     "spriteName": "Tin Chunk",
     "itemType": "Misc",
-    "maxStack": 100,
+    "maxStack": 32,
     "unique": {}
   },
 
@@ -273,7 +273,7 @@
     "unique": {
       "partType": "Light Head",
       "tier": 3,
-      "toolActions_potential": ["Build"],
+      "toolActions_potential": ["BuildMultiblock"],
       "weaponActions_potential": [],
       "toolDurability": 32,
       "attackPower": 0
