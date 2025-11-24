@@ -11,6 +11,8 @@ public class InteractionController : MonoBehaviour
     public enum GameState { Ingame, Inpanel, Inmenu }
     enum LayerMode { FG, BG }
 
+    const string LOG_MB = "[MBUILD]";
+
     /*────────────── UI ──────────────*/
     [Header("UI")]
     [Tooltip("Canvas 안 인벤토리 패널 오브젝트")]
@@ -72,8 +74,9 @@ public class InteractionController : MonoBehaviour
 
     void Awake()
     {
-        if (inventoryPanel != null) { inventoryPanel.SetActive(true); inventoryPanel.SetActive(false); }
-        if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+        inventoryPanel.SetActive(true);
+        inventoryPanel.SetActive(false);
+        pauseMenuRoot.SetActive(false);
         Time.timeScale = 1f;
 
         _hlGO = new GameObject("CellHighlight");
@@ -82,13 +85,12 @@ public class InteractionController : MonoBehaviour
         _hlSR.sortingOrder = 1000;
         _hlGO.SetActive(false);
 
-        if (hotbar != null) hotbar.SetScope(_hotbarScope);
+        hotbar.SetScope(_hotbarScope);
 
-        if (recipeLibrary != null) recipeLibrary.itemLibrary = itemLibrary;
+        recipeLibrary.itemLibrary = itemLibrary;
 
-        // 버튼 연결(인스펙터 연결도 병행 가능)
-        if (resumeButton) resumeButton.onClick.AddListener(OnClickResume);
-        if (exitButton)   exitButton.onClick.AddListener(OnClickQuitToLobby);
+        resumeButton.onClick.AddListener(OnClickResume);
+        exitButton.onClick.AddListener(OnClickQuitToLobby);
     }
 
     void Update()
@@ -97,7 +99,7 @@ public class InteractionController : MonoBehaviour
         if (scroll > 0.01f || scroll < -0.01f)
         {
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
-            if (hotbar != null) hotbar.SetScope(_hotbarScope);
+            hotbar.SetScope(_hotbarScope);
         }
 
         bool invDown = Input.GetKeyDown(toggleInventoryKey);
@@ -108,9 +110,9 @@ public class InteractionController : MonoBehaviour
             if (_state == GameState.Ingame)
             {
                 _state = GameState.Inpanel;
-                if (inventoryPanel != null) inventoryPanel.SetActive(true);
+                inventoryPanel.SetActive(true);
 
-                if (_moduleInstance == null && handcraftModule != null && inventoryPanel != null)
+                if (_moduleInstance == null && handcraftModule != null)
                 {
                     _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
                     _moduleInstance.transform.SetSiblingIndex(0);
@@ -125,16 +127,20 @@ public class InteractionController : MonoBehaviour
             }
             else if (_state == GameState.Inpanel)
             {
-                if (player != null && cursorSlot != null && cursorSlot.Item != null)
+                if (cursorSlot.Item != null)
                 {
                     int left = player.Inventory.AddItem(cursorSlot.Item);
                     if (left == 0) cursorSlot.Set(null);
-                    else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
+                    else
+                    {
+                        cursorSlot.Item.Count = left;
+                        cursorSlot.Refresh();
+                    }
                 }
 
                 if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
                 _state = GameState.Ingame;
-                if (inventoryPanel != null) inventoryPanel.SetActive(false);
+                inventoryPanel.SetActive(false);
             }
         }
 
@@ -142,27 +148,31 @@ public class InteractionController : MonoBehaviour
         {
             if (_state == GameState.Inpanel)
             {
-                if (player != null && cursorSlot != null && cursorSlot.Item != null)
+                if (cursorSlot.Item != null)
                 {
                     int left = player.Inventory.AddItem(cursorSlot.Item);
                     if (left == 0) cursorSlot.Set(null);
-                    else { cursorSlot.Item.Count = left; cursorSlot.Refresh(); }
+                    else
+                    {
+                        cursorSlot.Item.Count = left;
+                        cursorSlot.Refresh();
+                    }
                 }
 
                 if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
                 _state = GameState.Ingame;
-                if (inventoryPanel != null) inventoryPanel.SetActive(false);
+                inventoryPanel.SetActive(false);
             }
             else if (_state == GameState.Inmenu)
             {
                 _state = GameState.Ingame;
-                if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+                pauseMenuRoot.SetActive(false);
                 Time.timeScale = 1f;
             }
             else
             {
                 _state = GameState.Inmenu;
-                if (pauseMenuRoot != null) pauseMenuRoot.SetActive(true);
+                pauseMenuRoot.SetActive(true);
                 Time.timeScale = 0f;
                 _hlGO.SetActive(false);
             }
@@ -175,7 +185,11 @@ public class InteractionController : MonoBehaviour
         }
 
         if (_state != GameState.Ingame) { _hlGO.SetActive(false); return; }
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { _hlGO.SetActive(false); return; }
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            _hlGO.SetActive(false);
+            return;
+        }
 
         UpdateHighlight();
 
@@ -185,7 +199,6 @@ public class InteractionController : MonoBehaviour
 
     void UpdateHighlight()
     {
-        if (worldManager == null || worldCamera == null) return;
         if (!GetMouseCell(out int cx, out int cy))
         {
             _hlGO.SetActive(false);
@@ -201,13 +214,11 @@ public class InteractionController : MonoBehaviour
 
         if (_layerMode == LayerMode.FG)
         {
-            // 유체는 파괴 대상이 아님 → 본체(id)만 기준
             bool canBreak = hasBody;
             _hlSR.sprite = canBreak ? HighLight_FG_CAN : HighLight_FG;
         }
         else
         {
-            // BG 파괴는 여전히 FG 본체가 있으면 막힌 것으로 취급 (유체는 무시)
             bool blocked = hasBody;
             if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT;
             else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;
@@ -227,9 +238,28 @@ public class InteractionController : MonoBehaviour
         BreakAtCursor();
     }
 
+    void HandleRightClick()
+    {
+        bool shift =
+            Input.GetKey(KeyCode.LeftShift) ||
+            Input.GetKey(KeyCode.RightShift);
+
+        if (!shift)
+        {
+            // 기본: 셀 → 아이템
+            if (TryCellInteraction()) return;
+            if (TryItemInteraction()) return;
+        }
+        else
+        {
+            // Shift: 아이템 → 셀
+            if (TryItemInteraction()) return;
+            if (TryCellInteraction()) return;
+        }
+    }
+
     void BreakAtCursor()
     {
-        if (worldManager == null) return;
         if (!GetMouseCell(out int cx, out int cy)) return;
 
         var layer = (_layerMode == LayerMode.FG)
@@ -250,30 +280,9 @@ public class InteractionController : MonoBehaviour
         if (sound != null) sound.PlayDig();
     }
 
-    void HandleRightClick()
-    {
-        bool shift =
-            Input.GetKey(KeyCode.LeftShift) ||
-            Input.GetKey(KeyCode.RightShift);
-
-        if (!shift)
-        {
-            // 기본: 셀 상호작용 → 아이템 상호작용
-            if (TryCellInteraction()) return;
-            if (TryItemInteraction()) return;
-        }
-        else
-        {
-            // Shift: 아이템 상호작용 → 셀 상호작용
-            if (TryItemInteraction()) return;
-            if (TryCellInteraction()) return;
-        }
-    }
-
     bool TryCellInteraction()
     {
         if (_state != GameState.Ingame) return false;
-        if (worldManager == null || worldCamera == null) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
         ushort id = worldManager.worldMap.fg[cx, cy].id;
@@ -285,10 +294,10 @@ public class InteractionController : MonoBehaviour
         if (interaction == "primalcraftModule")
         {
             _state = GameState.Inpanel;
-            if (inventoryPanel != null) inventoryPanel.SetActive(true);
+            inventoryPanel.SetActive(true);
 
             if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
-            if (primalcraftModule != null && inventoryPanel != null)
+            if (primalcraftModule != null)
             {
                 _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
                 _moduleInstance.transform.SetSiblingIndex(0);
@@ -308,46 +317,100 @@ public class InteractionController : MonoBehaviour
 
     bool TryItemInteraction()
     {
-        if (_state != GameState.Ingame) return false;
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return false;
-        if (worldManager == null || worldCamera == null) return false;
-        if (!GetMouseCell(out int cx, out int cy)) return false;
+        Debug.Log($"{LOG_MB} TryItemInteraction 진입");
 
-        if (player == null || player.Inventory == null) return false;
+        if (_state != GameState.Ingame)
+        {
+            Debug.Log($"{LOG_MB} 상태 Ingame 아님 → return false");
+            return false;
+        }
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            Debug.Log($"{LOG_MB} UI 위 클릭 → return false");
+            return false;
+        }
+
+        if (!GetMouseCell(out int cx, out int cy))
+        {
+            Debug.Log($"{LOG_MB} GetMouseCell 실패 → return false");
+            return false;
+        }
+
         var items = player.Inventory.items;
-        if (_hotbarScope < 0 || _hotbarScope >= items.Count) return false;
+        Debug.Log($"{LOG_MB} hotbarScope={_hotbarScope}, items.Count={items.Count}");
+
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+        {
+            Debug.Log($"{LOG_MB} 핫바 인덱스 범위 밖 → return false");
+            return false;
+        }
 
         var held = items[_hotbarScope];
-        if (held == null || held.Count <= 0) return false;
-        if (!held.Unique.TryGetValue("interaction", out var interObj)) return false;
+        if (held == null)
+        {
+            Debug.Log($"{LOG_MB} held == null → return false");
+            return false;
+        }
+        if (held.Count <= 0)
+        {
+            Debug.Log($"{LOG_MB} held.Count <= 0 → return false");
+            return false;
+        }
+
+        if (!held.Unique.TryGetValue("interaction", out var interObj))
+        {
+            Debug.Log($"{LOG_MB} held.Unique에 'interaction' 없음 → return false");
+            return false;
+        }
 
         Dictionary<string, object> inter =
             interObj as Dictionary<string, object> ??
             (interObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
-        if (inter == null || !inter.TryGetValue("type", out var typeObj)) return false;
-
-        string typeStr = typeObj?.ToString();
-        if (typeStr == "Place")
+        if (inter == null)
         {
-            return HandlePlace(held, cx, cy, inter);
-        }
-        else if (typeStr == "UseOnLiquid")
-        {
-            return HandleUseOnLiquid(held, cx, cy, inter);
-        }
-        else if (typeStr == "BuildMultiblock")
-        {
-            // TODO: 멀티블럭 건설 로직은 이후 MultiblockSystem 도입 시 구현
+            Debug.Log($"{LOG_MB} interaction 캐스팅 실패 → return false");
             return false;
         }
 
+        if (!inter.TryGetValue("type", out var typeObj))
+        {
+            Debug.Log($"{LOG_MB} interaction에 'type' 없음 → return false");
+            return false;
+        }
+
+        string typeStr = typeObj?.ToString();
+        Debug.Log($"{LOG_MB} interaction.type='{typeStr}' at ({cx},{cy})");
+
+        if (typeStr == "Place")
+        {
+            bool ok = HandlePlace(held, cx, cy, inter);
+            Debug.Log($"{LOG_MB} HandlePlace 결과={ok}");
+            return ok;
+        }
+        else if (typeStr == "UseOnLiquid")
+        {
+            bool ok = HandleUseOnLiquid(held, cx, cy, inter);
+            Debug.Log($"{LOG_MB} HandleUseOnLiquid 결과={ok}");
+            return ok;
+        }
+        else if (typeStr == "BuildMultiblock")
+        {
+            Debug.Log($"{LOG_MB} BuildMultiblock 분기 진입");
+            bool ok = HandleBuildMultiblock(held, cx, cy, inter);
+            Debug.Log($"{LOG_MB} HandleBuildMultiblock 결과={ok}");
+            return ok;
+        }
+
+        Debug.Log($"{LOG_MB} 알 수 없는 interaction.type → return false");
         return false;
     }
 
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
         if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param = paramObj as Dictionary<string, object> ?? (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
+        var param = paramObj as Dictionary<string, object> ??
+                    (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
         if (param == null) return false;
 
         string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
@@ -379,7 +442,8 @@ public class InteractionController : MonoBehaviour
     bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
         if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param = paramObj as Dictionary<string, object> ?? (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
+        var param = paramObj as Dictionary<string, object> ??
+                    (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
         if (param == null) return false;
 
         string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
@@ -419,12 +483,152 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
+    // 2단계: 멀티블럭 패턴 매칭만 수행 (월드 변경 없음)
+    bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    {
+        Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
+
+        var fgCell = worldManager.worldMap.fg[cx, cy];
+        if (fgCell.id == 0)
+        {
+            Debug.Log($"{LOG_MB} 대상 셀이 비어있음(id=0). 취소.");
+            return false;
+        }
+
+        string clickedKey = CellLibrary.GetName(fgCell.id);
+        Debug.Log($"{LOG_MB} 대상 셀 id={fgCell.id}, key='{clickedKey}'");
+
+        if (string.IsNullOrEmpty(clickedKey))
+        {
+            Debug.LogWarning($"{LOG_MB} CellLibrary.GetName({fgCell.id}) 결과가 비어있음. 취소.");
+            return false;
+        }
+
+        if (!MultiblockLibrary.TryGetByIngredient(clickedKey, out var defs) ||
+            defs == null || defs.Count == 0)
+        {
+            Debug.Log($"{LOG_MB} 이 재료를 사용하는 멀티블럭 없음. key='{clickedKey}'");
+            return false;
+        }
+
+        Debug.Log($"{LOG_MB} 후보 레시피 개수: {defs.Count}");
+        for (int i = 0; i < defs.Count; i++)
+        {
+            var d0 = defs[i];
+            Debug.Log($"{LOG_MB}  - [{i}] key='{d0.key}', name='{d0.name}', size={d0.width}x{d0.height}");
+        }
+
+        int worldW = worldManager.settings.width;
+        int worldH = worldManager.settings.height;
+
+        bool anyMatch = false;
+
+        foreach (var def in defs)
+        {
+            Debug.Log($"{LOG_MB} === def='{def.key}' 패턴 매칭 시도 시작 ===");
+
+            int patternWidth  = def.width;   // x
+            int patternHeight = def.height;  // y
+
+            bool defMatched = false;
+
+            // 패턴 안에서 클릭된 셀 key가 들어갈 수 있는 모든 위치를 시도
+            for (int py = 0; py < patternHeight && !defMatched; py++)
+            {
+                for (int px = 0; px < patternWidth && !defMatched; px++)
+                {
+                    string patternKey = def.pattern[px, py]; // pattern[x, y]
+
+                    if (patternKey != clickedKey) continue;
+
+                    int originX = cx - px;
+                    int originY = cy - py;
+
+                    Debug.Log(
+                        $"{LOG_MB} def='{def.key}' 후보 위치: " +
+                        $"pattern({px},{py})=='{clickedKey}', origin=({originX},{originY})"
+                    );
+
+                    // 월드 범위 체크
+                    if (originX < 0 || originY < 0 ||
+                        originX + patternWidth  > worldW ||
+                        originY + patternHeight > worldH)
+                    {
+                        Debug.Log($"{LOG_MB} def='{def.key}' origin=({originX},{originY}) → 월드 범위 밖, 스킵");
+                        continue;
+                    }
+
+                    bool mismatch = false;
+
+                    // 패턴 전체 비교
+                    for (int ly = 0; ly < patternHeight && !mismatch; ly++)
+                    {
+                        for (int lx = 0; lx < patternWidth; lx++)
+                        {
+                            string expectedKey = def.pattern[lx, ly]; // pattern[x, y]
+
+                            // expectedKey가 비어있으면 와일드카드로 취급(무시)
+                            if (string.IsNullOrEmpty(expectedKey))
+                                continue;
+
+                            int wx = originX + lx;
+                            int wy = originY + ly;
+
+                            ushort wid = worldManager.worldMap.fg[wx, wy].id;
+                            string worldKey = CellLibrary.GetName(wid);
+
+                            if (worldKey != expectedKey)
+                            {
+                                Debug.Log(
+                                    $"{LOG_MB} def='{def.key}' 불일치: " +
+                                    $"local({lx},{ly})->world({wx},{wy}) " +
+                                    $"worldKey='{worldKey}', expected='{expectedKey}'"
+                                );
+                                mismatch = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!mismatch)
+                    {
+                        Debug.Log(
+                            $"{LOG_MB} def='{def.key}' 패턴 매칭 성공! " +
+                            $"origin=({originX},{originY}), 클릭 셀 대응 위치=({px},{py})"
+                        );
+                        defMatched = true;
+                        anyMatch = true;
+
+                        // 2단계에서는 여기서도 월드 변경 없음
+                    }
+                }
+            }
+
+            if (!defMatched)
+            {
+                Debug.Log($"{LOG_MB} def='{def.key}'는 어떤 위치에서도 패턴 매칭 실패");
+            }
+        }
+
+        if (!anyMatch)
+        {
+            Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
+        }
+
+        Debug.Log($"{LOG_MB} 패턴 매칭 단계 종료 (월드 변경 없음)");
+        return false; // 아직은 상호작용 처리 안 한 것으로 취급
+    }
+
     bool GetMouseCell(out int x, out int y)
     {
         Vector3 wp = worldCamera.ScreenToWorldPoint(Input.mousePosition);
         x = Mathf.FloorToInt(wp.x / cellSize);
         y = Mathf.FloorToInt(wp.y / cellSize);
-        if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height) { x = y = 0; return false; }
+        if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height)
+        {
+            x = y = 0;
+            return false;
+        }
         return true;
     }
 
@@ -433,15 +637,14 @@ public class InteractionController : MonoBehaviour
     {
         if (_state != GameState.Inmenu) return;
         _state = GameState.Ingame;
-        if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+        pauseMenuRoot.SetActive(false);
         Time.timeScale = 1f;
     }
 
     public void OnClickQuitToLobby()
     {
-        // 저장 후 로비 복귀
         Time.timeScale = 1f;
-        if (worldManager != null) worldManager.SaveWorld();
-        SceneManager.LoadScene("Loby"); // 실제 로비 씬 이름 확인
+        worldManager.SaveWorld();
+        SceneManager.LoadScene("Loby");
     }
 }

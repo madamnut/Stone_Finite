@@ -15,7 +15,9 @@
       "MaxDurability": 0,
       
       "toolActions": [],
-      "weaponActions": []
+      "weaponActions": [],
+      
+      "interaction": []
     }
   }
 }

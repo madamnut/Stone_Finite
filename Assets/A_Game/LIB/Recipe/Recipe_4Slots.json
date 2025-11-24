@@ -22,6 +22,7 @@
       { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
       { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
       { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interaction_potential", "toField": "interaction" },
       { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
       { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
       { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
@@ -50,6 +51,7 @@
       { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
       { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
       { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interaction_potential", "toField": "interaction" },
       { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
       { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
       { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }

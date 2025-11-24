@@ -273,8 +273,11 @@
     "unique": {
       "partType": "Light Head",
       "tier": 3,
-      "toolActions_potential": ["BuildMultiblock"],
+      "toolActions_potential": [],
       "weaponActions_potential": [],
+
+      "interaction_potential": {"type": "BuildMultiblock"},
+
       "toolDurability": 32,
       "attackPower": 0
     }
