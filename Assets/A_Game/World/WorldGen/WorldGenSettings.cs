@@ -113,7 +113,7 @@ public class WorldGenSettings : ScriptableObject
 
     // ─────────────────────────────────────────────────────────
     // NEW: Noise-Based Cave Generation
-    // A ∪ B (멀티스케일 + 도메인 워핑)
+    // (멀티스케일 + 도메인 워핑)
     // ─────────────────────────────────────────────────────────
     [Header("Cave A: Multiscale Noise")]
     public float caveA_FreqLarge = 0.008f;
