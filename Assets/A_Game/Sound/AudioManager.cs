@@ -9,8 +9,9 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
 
     [Header("SFX Clips")]
-    [SerializeField] private AudioClip digClip; // Dig.wav
-    [SerializeField] private AudioClip placeClip; // Place.wav
+    [SerializeField] private AudioClip digClip;               // Dig.wav
+    [SerializeField] private AudioClip placeClip;             // Place.wav
+    [SerializeField] private AudioClip multiblockCompleteClip; // Multiblock_Complete.wav 등
 
     /*────────────── BGM ──────────────*/
     [Header("BGM Source")]
@@ -56,8 +57,14 @@ public class AudioManager : MonoBehaviour
 
     public void PlayPlace()
     {
-        if (digClip != null) sfxSource.PlayOneShot(placeClip);
+        if (placeClip != null) sfxSource.PlayOneShot(placeClip);
     }
+
+    public void PlayMultiblockComplete()
+    {
+        if (multiblockCompleteClip != null) sfxSource.PlayOneShot(multiblockCompleteClip);
+    }
+
     /*────────────── 내부(BGM) ──────────────*/
     IEnumerator CoPlayBgmLoop()
     {

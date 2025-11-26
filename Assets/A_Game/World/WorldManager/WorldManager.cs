@@ -61,6 +61,12 @@ public class WorldManager : MonoBehaviour
     private int W, H;
     public WorldData worldMap;
 
+    // ───────── 멀티블럭 인스턴스 관리 ─────────
+    // 설치된 멀티블럭 인스턴스들
+    public List<MultiblockInstanceBase> multiblocks = new();
+    // 좌표 → 멀티블럭 인스턴스 매핑
+    public Dictionary<Vector2Int, MultiblockInstanceBase> multiblockByCell = new();
+
     // 청크 시스템
     private WorldChunkSystem chunkSystem;
 
@@ -312,23 +318,106 @@ public class WorldManager : MonoBehaviour
         {
             case CellLayer.FG:
             {
-                ushort removed = worldMap.RemoveFG(x, y);
-                if (removed == 0) return 0;
+                var pos = new Vector2Int(x, y);
 
-                MarkChunkDirty(x, y, markFG: true);
-                OnCellEditedFG(x, y);
-
-                HandleArtificialChange(x, y, removed, 0);
-
-                string key = CellLibrary.GetKey(removed);
-                if (!string.IsNullOrEmpty(key))
+                // ───────── 멀티블럭 여부 먼저 확인 ─────────
+                if (multiblockByCell.TryGetValue(pos, out MultiblockInstanceBase inst))
                 {
-                    var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
-                    if (vfx != null) vfx.EmitBlockAtCell(key, x, y, 1, grid:3, count:-1);
-                    if (itemDropper != null) itemDropper.SpawnDroppedItems(key, pos);
+                    // 1) 클릭한 파츠는 기존 BreakCell처럼 "완전히 제거" + 드랍/이펙트
+                    ushort removed = worldMap.RemoveFG(x, y);
+                    if (removed != 0)
+                    {
+                        MarkChunkDirty(x, y, markFG: true);
+                        OnCellEditedFG(x, y);
+                        HandleArtificialChange(x, y, removed, 0);
+
+                        string key = CellLibrary.GetKey(removed);
+                        if (!string.IsNullOrEmpty(key))
+                        {
+                            var dropPos = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                            if (vfx != null)
+                                vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+                            if (itemDropper != null)
+                                itemDropper.SpawnDroppedItems(key, dropPos);
+                        }
+                    }
+
+                    // 2) 되돌릴 기본 블럭(Mud) ID 찾기
+                    //    (현재 단계: MudFurnace 전용이므로 "Mud" 하드코딩)
+                    ushort baseId = 0;
+                    for (ushort id = 1; id < ushort.MaxValue; id++)
+                    {
+                        var nm = CellLibrary.GetName(id);
+                        if (!string.IsNullOrEmpty(nm) && nm == "Mud")
+                        {
+                            baseId = id;
+                            break;
+                        }
+                    }
+
+                    if (baseId == 0)
+                    {
+                        Debug.LogWarning("[MBUILD] BreakCell: 'Mud' 셀 ID를 찾지 못했습니다. 멀티블럭 롤백 생략.");
+                    }
+                    else
+                    {
+                        // 3) 멀티블럭이 차지하던 모든 셀 중
+                        //    "클릭한 칸을 제외한 나머지"를 기본 블럭으로 롤백
+                        foreach (var cellPos in inst.occupiedCells)
+                        {
+                            // 클릭한 부분은 공기(빈칸) 상태로 남겨둔다
+                            if (cellPos == pos) continue;
+
+                            int wx = cellPos.x;
+                            int wy = cellPos.y;
+                            if (!worldMap.InBounds(wx, wy)) continue;
+
+                            ushort oldId2 = worldMap.GetFGId(wx, wy);
+
+                            var src = CellLibrary.MakeFgCell(baseId);
+                            worldMap.ForceFG(wx, wy, in src);
+
+                            MarkChunkDirty(wx, wy, markFG: true);
+                            OnCellEditedFG(wx, wy);
+                            HandleArtificialChange(wx, wy, oldId2, baseId);
+                        }
+                    }
+
+                    // 4) 멀티블럭 매핑 제거
+                    foreach (var cellPos in inst.occupiedCells)
+                        multiblockByCell.Remove(cellPos);
+
+                    multiblocks.Remove(inst);
+
+                    // 5) 인스턴스 훅 (나중에 내부 인벤 드롭 붙일 자리)
+                    inst.OnPartBroken(this, pos);
+
+                    return removed;
                 }
-                return removed;
+
+                // ───────── 일반 단일 FG 블럭 파괴 (기존 로직) ─────────
+                {
+                    ushort removed = worldMap.RemoveFG(x, y);
+                    if (removed == 0) return 0;
+
+                    MarkChunkDirty(x, y, markFG: true);
+                    OnCellEditedFG(x, y);
+
+                    HandleArtificialChange(x, y, removed, 0);
+
+                    string key = CellLibrary.GetKey(removed);
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                        if (vfx != null)
+                            vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+                        if (itemDropper != null)
+                            itemDropper.SpawnDroppedItems(key, pos3);
+                    }
+                    return removed;
+                }
             }
+
             case CellLayer.BG:
             {
                 ushort removed = worldMap.RemoveBG(x, y);
@@ -341,6 +430,8 @@ public class WorldManager : MonoBehaviour
         }
         return 0;
     }
+
+
 
     /// <summary>FG 편집 후 틱 인큐 + 라이트 계산</summary>
     public void OnCellEditedFG(int gx, int gy)
@@ -869,4 +960,95 @@ public class WorldManager : MonoBehaviour
 
         pComp.Inventory.NotifyChanged();
     }
+
+    // ───────── 멀티블럭 생성 헬퍼 (MudFurnace 전용) ─────────
+    public MudFurnaceInstance CreateMudFurnaceInstance(
+        MultiblockLibrary.Definition def,
+        int originX,
+        int originY)
+    {
+        var inst = new MudFurnaceInstance
+        {
+            defKey  = def.key,
+            originX = originX,
+            originY = originY,
+            width   = def.width,
+            height  = def.height
+        };
+
+        inst.occupiedCells.Clear();
+
+        // 1) 패턴 기준으로 실제 월드 좌표 계산해서 occupiedCells 채우기
+        for (int px = 0; px < def.width; px++)
+        {
+            for (int py = 0; py < def.height; py++)
+            {
+                string cellName = def.pattern[px, py];
+                if (string.IsNullOrEmpty(cellName)) continue;
+
+                int wx = originX + px;
+                int wy = originY + py;
+                if (!worldMap.InBounds(wx, wy)) continue;
+
+                var pos = new Vector2Int(wx, wy);
+                inst.occupiedCells.Add(pos);
+                multiblockByCell[pos] = inst;
+            }
+        }
+
+        inst.instanceId = multiblocks.Count;
+        multiblocks.Add(inst);
+
+        Debug.Log(
+            $"[MBUILD] MudFurnaceInstance 생성: def='{def.key}', origin=({originX},{originY}), " +
+            $"id={inst.instanceId}, cells={inst.occupiedCells.Count}"
+        );
+
+        // 2) result 패턴을 실제 셀로 반영 (Mud → MudFurnace_* 교체)
+        for (int px = 0; px < def.width; px++)
+        {
+            for (int py = 0; py < def.height; py++)
+            {
+                string resultName = def.result[px, py];
+                if (string.IsNullOrEmpty(resultName)) continue;
+
+                int wx = originX + px;
+                int wy = originY + py;
+                if (!worldMap.InBounds(wx, wy)) continue;
+
+                // 셀 이름 → ID 역검색 (기존 Place/UseOnLiquid와 동일 패턴)
+                ushort placeId = 0;
+                for (ushort id = 1; id < ushort.MaxValue; id++)
+                {
+                    var nm = CellLibrary.GetName(id);
+                    if (!string.IsNullOrEmpty(nm) && nm == resultName)
+                    {
+                        placeId = id;
+                        break;
+                    }
+                }
+                if (placeId == 0)
+                {
+                    Debug.LogWarning($"[MBUILD] resultName='{resultName}' 에 해당하는 셀 ID를 찾지 못했습니다.");
+                    continue;
+                }
+
+                // 기존 FG id 기억 (인공광 갱신용)
+                ushort oldId = worldMap.GetFGId(wx, wy);
+
+                // 셀라이브러리에서 FgCell 생성 후 WorldData에 강제 배치
+                var src = CellLibrary.MakeFgCell(placeId);
+                worldMap.ForceFG(wx, wy, in src);
+
+                MarkChunkDirty(wx, wy, markFG: true);
+                OnCellEditedFG(wx, wy);
+                HandleArtificialChange(wx, wy, oldId, placeId);
+            }
+        }
+
+        return inst;
+    }
+
+
+
 }

@@ -598,7 +598,9 @@ public class InteractionController : MonoBehaviour
                         );
                         defMatched = true;
                         anyMatch = true;
-
+                        var inst = worldManager.CreateMudFurnaceInstance(def, originX, originY);
+                        Debug.Log($"{LOG_MB} MudFurnaceInstance 생성 완료: instanceId={inst.instanceId}, occupied={inst.occupiedCells.Count}");
+                        sound.PlayMultiblockComplete();
                         // 2단계에서는 여기서도 월드 변경 없음
                     }
                 }
@@ -615,8 +617,8 @@ public class InteractionController : MonoBehaviour
             Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
         }
 
-        Debug.Log($"{LOG_MB} 패턴 매칭 단계 종료 (월드 변경 없음)");
-        return false; // 아직은 상호작용 처리 안 한 것으로 취급
+        Debug.Log($"{LOG_MB} 패턴 매칭 단계 종료");
+        return true;
     }
 
     bool GetMouseCell(out int x, out int y)

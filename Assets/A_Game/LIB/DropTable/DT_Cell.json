@@ -101,5 +101,14 @@
 
     "Mud": [
     { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+
+
+  
+      "Mud Furnace_0": [
+    { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+      "Mud Furnace_1": [
+    { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
   ]
 }
