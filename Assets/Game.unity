@@ -11077,7 +11077,7 @@ MonoBehaviour:
   sfxSource: {fileID: 702342008}
   digClip: {fileID: 8300000, guid: 8911ead2614e6614c8d54be515e9c61b, type: 3}
   placeClip: {fileID: 8300000, guid: 6571d299c0ee7d34abf1f97b07deed5f, type: 3}
-  multiblockCompleteClip: {fileID: 8300000, guid: 582aa075007bd2a47b8d068c2e6f0440, type: 3}
+  multiblockCompleteClip: {fileID: 8300000, guid: b4d2adc4c98dd6c49ac28f35af2f82a8, type: 3}
   bgmSource: {fileID: 2072805836}
   bgmClips:
   - {fileID: 8300000, guid: 6b0f346fa12e2374a97ea9b96b82d842, type: 3}

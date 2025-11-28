@@ -38,13 +38,7 @@
     "maxStack": 32,
     "unique": {}
   },
-  "Flint Shard": {
-    "name": "Flint Shard",
-    "spriteName": "Flint Shard",
-    "itemType": "Misc",
-    "maxStack": 32,
-    "unique": {}
-  },
+
   "Grass Scrap": {
     "name": "Grass Scrap",
     "spriteName": "Grass Scrap",

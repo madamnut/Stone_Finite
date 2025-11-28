@@ -1,0 +1,19 @@
+{
+  "Sample": {
+    "name": "Sample",
+    "spriteName": "Sample",
+    "tags": [],
+
+    "maxStack": 0,
+
+    "maxDurability": null,
+
+    "craftingActions": [],
+    "interActions": [],
+    "toolActions": [],
+    "weaponActions": [],
+
+    "params": {
+    }
+  }
+}
