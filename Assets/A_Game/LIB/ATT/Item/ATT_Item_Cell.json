@@ -2,46 +2,47 @@
   "Dirt": {
     "name": "Dirt",
     "spriteName": "Dirt",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Dynamic",
-          "cell": "Dirt"
-        }
+    "tags": ["Placeable"],
+
+    "interActions": ["Place"],
+
+    "params": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Dirt"
       }
     }
   },
-    "Mud": {
+
+  "Mud": {
     "name": "Mud",
     "spriteName": "Mud",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Dynamic",
-          "cell": "Mud"
-        }
+    "tags": ["Placeable"],
+
+    "interActions": ["Place"],
+
+    "params": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Mud"
       }
     }
   },
-  
+
   "Primal Workbench": {
     "name": "Primal Workbench",
     "spriteName": "Primal Workbench",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Deco",
-          "cell": "Primal Workbench"
-        }
+    "tags": ["Placeable"],
+
+    "interActions": ["Place"],
+
+    "params": {
+      "Place": {
+        "layer": "Deco",
+        "cell": "Primal Workbench"
       }
     }
   },
@@ -49,15 +50,15 @@
   "Torch": {
     "name": "Torch",
     "spriteName": "Torch",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "interaction": {
-        "type": "Place",
-        "params": {
-          "layer": "Deco",
-          "cell": "Torch"
-        }
+    "tags": ["Placeable", "Light"],
+
+    "interActions": ["Place"],
+
+    "params": {
+      "Place": {
+        "layer": "Deco",
+        "cell": "Torch"
       }
     }
   }

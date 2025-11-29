@@ -2,20 +2,43 @@
   "Head_Binding_Handle": {
     "name": null,
     "spriteName": null,
-    "itemType": "HandHeld",
+    "tags": ["Head_Binding_Handle", "Tool"],
     "maxStack": 1,
-    "unique": {
-      "head": null,
-      "handle": null,
-      "binding": null,
 
-      "Durability": 0,
-      "MaxDurability": 0,
-      
-      "toolActions": [],
-      "weaponActions": [],
-      
-      "interaction": []
+    "maxDurability": 0,
+
+    "craftingActions": [],
+    "interActions": [],
+    "toolActions": [],
+    "weaponActions": [],
+
+    "params": {
+      "Parts": {
+        "head": null,
+        "binding": null,
+        "handle": null
+      }
+    }
+  },
+
+  "Head_Binding": {
+    "name": null,
+    "spriteName": null,
+    "tags": ["Head_Binding", "Tool"],
+    "maxStack": 1,
+
+    "maxDurability": 0,
+
+    "craftingActions": [],
+    "interActions": [],
+    "toolActions": [],
+    "weaponActions": [],
+
+    "params": {
+      "Parts": {
+        "head": null,
+        "binding": null
+      }
     }
   }
 }

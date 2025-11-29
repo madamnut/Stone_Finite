@@ -3,11 +3,11 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Plant", "count": 1 },
-      { "itemId": "Plant", "count": 1 }
+      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "output": "Plant Fiber",
     "outputActions": [],
@@ -31,24 +31,103 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 },
-      { "unique": { "toolActions": ["Cut"] }, "count": 1 }
+      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Plant Short Twine",
+    "output": "Plant Fiber",
     "outputActions": [],
     "outputCount": 2
   },
-
-
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Short Plant Twine",
+    "outputActions": [],
+    "outputCount": 2
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Short Plant Twine", "count": 1 },
+      { "itemId": "Short Plant Twine", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Plant Twine",
+    "outputActions": [],
+    "outputCount": 1
+  },
 
   {
     "isOrdered": false,
     "inputs": [
-      { "itemId": "Twig", "count": 1 },
-      { "unique": { "toolActions": ["Cut"] }, "count": 1 }
+      { "itemId": "Plant Twine", "count": 1 },
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Long Plant Twine",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Long Plant Twine", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Plant Twine",
+    "outputActions": [],
+    "outputCount": 2
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Branch", "count": 1 },
+      { "unique": { "craftingActions": ["Cutting"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Short Wooden Stick",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Bough", "count": 1 },
+      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Long Wooden Stick",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "unique": { "craftingActions": ["Chopping"] }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -56,151 +135,93 @@
     ],
     "output": "Wooden Stick",
     "outputActions": [],
-    "outputCount": 1
+    "outputCount": 2
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "itemId": "Thick Twig", "count": 1 },
-      { "unique": { "toolActions": ["Cut"] }, "count": 1 }
+      { "itemId": "Wooden Stick", "count": 1 },
+      { "unique": { "craftingActions": ["Chopping"] }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Wooden Thick Stick",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Wooden Thick Stick", "count": 1 },
-      { "unique": { "toolActions": ["Cut"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Wooden Stick",
+    "output": "Short Wooden Stick",
     "outputActions": [],
     "outputCount": 2
   },
+
+
   {
     "isOrdered": false,
     "inputs": [
       { "itemId": "Log", "count": 1 },
-      { "unique": { "toolActions": ["Chop"] }, "count": 1 }
+      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "transform", "toItemId": "Stripped Log", "toCount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Bark Strip",
+    "outputActions": [],
+    "outputCount": 2
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "unique": { "craftingActions": ["Splitting"] }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Half Log",
+    "outputActions": [],
+    "outputCount": 2
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Half Log", "count": 1 },
+      { "unique": { "craftingActions": ["Splitting"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Quarter Log",
+    "outputActions": [],
+    "outputCount": 4
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Quarter Log", "count": 1 },
+      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "transform", "toItemId": "Wood Shavings", "toCount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Wooden Stick",
+    "outputActions": [],
+    "outputCount": 2
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Half Log", "count": 1 },
+      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "transform", "toItemId": "Wood Shavings", "toCount": 2 },
       { "type": "durability", "amount": -1 }
     ],
     "output": "Wooden Crude Plank",
     "outputActions": [],
-    "outputCount": 4
-  },
-
-
-
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Flint Shard", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Flint Tool",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Stone Shard", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Stone Tool",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Stone Tool", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Stone Hammer Head",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Stone Hammer Head", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Stone Axe Head",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Stone Axe Head", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Stone Mallet Head",
-    "outputActions": [],
-    "outputCount": 1
-  },
-
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Flint Tool", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Flint Knife Head",
-    "outputActions": [],
-    "outputCount": 1
-  },
-  {
-    "isOrdered": false,
-    "inputs": [
-      { "itemId": "Flint Knife Head", "count": 1 },
-      { "unique": { "toolActions": ["Knap"] }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "output": "Flint Spear Head",
-    "outputActions": [],
-    "outputCount": 1
+    "outputCount": 2
   },
 
   {
@@ -231,5 +252,179 @@
     "output": "Torch",
     "outputActions": [],
     "outputCount": 10
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Shard", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Chopper",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Shard", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Pounder",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Chopper", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Handaxe",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Chopper", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Cleaver",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Pounder", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Maul",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Stone Pounder", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Stone Percussor",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Shard", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Blade",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Shard", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Scraper",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Blade", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Awl",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Blade", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Burin",
+    "outputActions": [],
+    "outputCount": 1
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Scraper", "count": 1 },
+      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Graver",
+    "outputActions": [],
+    "outputCount": 1
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Flint Scraper", "count": 1 },
+      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "output": "Flint Denticulate",
+    "outputActions": [],
+    "outputCount": 1
   }
 ]

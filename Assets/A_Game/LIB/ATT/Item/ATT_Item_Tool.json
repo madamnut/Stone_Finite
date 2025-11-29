@@ -1,19 +1,243 @@
 {
-  "Sample": {
-    "name": "Sample",
-    "spriteName": "Sample",
-    "tags": [],
+  "Stone Shard": {
+    "name": "Stone Shard",
+    "spriteName": "Stone Shard",
+    "maxStack": 1,
+    "tags": ["Tool"],
 
-    "maxStack": 0,
+    "maxDurability": 16,
 
-    "maxDurability": null,
+    "craftingActions": ["PercussionFlaking"],
 
-    "craftingActions": [],
-    "interActions": [],
-    "toolActions": [],
-    "weaponActions": [],
+    "params": {}
+  },
+
+  "Stone Chopper": {
+    "name": "Stone Chopper",
+    "spriteName": "Stone Chopper",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Chopping"],
 
     "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Stone Handaxe": {
+    "name": "Stone Handaxe",
+    "spriteName": "Stone Handaxe",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Hewing"],
+
+    "params": {
+      "Head": {
+        "type": "DefaultGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Stone Cleaver": {
+    "name": "Stone Cleaver",
+    "spriteName": "Stone Cleaver",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Splitting"],
+
+    "params": {
+      "Head": {
+        "type": "LongGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Stone Pounder": {
+    "name": "Stone Pounder",
+    "spriteName": "Stone Pounder",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Pounding"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Stone Maul": {
+    "name": "Stone Maul",
+    "spriteName": "Stone Maul",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Smashing"],
+
+    "params": {
+      "Head": {
+        "type": "LongGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Stone Percussor": {
+    "name": "Stone Percussor",
+    "spriteName": "Stone Percussor",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Hammering"],
+
+    "params": {
+      "Head": {
+        "type": "ShortGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Shard": {
+    "name": "Flint Shard",
+    "spriteName": "Flint Shard",
+    "maxStack": 1,
+    "tags": ["Tool"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["PressureFlaking"],
+
+    "params": {}
+  },
+
+  "Flint Blade": {
+    "name": "Flint Blade",
+    "spriteName": "Flint Blade",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Cutting"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Awl": {
+    "name": "Flint Awl",
+    "spriteName": "Flint Awl",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Piercing"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Burin": {
+    "name": "Flint Burin",
+    "spriteName": "Flint Burin",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Engraving"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Scraper": {
+    "name": "Flint Scraper",
+    "spriteName": "Flint Scraper",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Scraping"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Graver": {
+    "name": "Flint Graver",
+    "spriteName": "Flint Graver",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Carving"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+  "Flint Denticulate": {
+    "name": "Flint Denticulate",
+    "spriteName": "Flint Denticulate",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+
+    "maxDurability": 16,
+
+    "craftingActions": ["Notching"],
+
+    "params": {
+      "Head": {
+        "type": "BindGrip",
+        "potentialDurability": 16
+      }
     }
   }
 }

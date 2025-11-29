@@ -2,278 +2,326 @@
   "Dirt Pile": {
     "name": "Dirt Pile",
     "spriteName": "Dirt Pile",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "interaction": {
-        "type": "UseOnLiquid",
-        "params": {
-          "liquid": "Water",
-          "cost": 1,
-          "output": "Mud Chunk"
-        }
+    "tags": [],
+
+    "interActions": ["UseOnLiquid"],
+
+    "params": {
+      "UseOnLiquid": {
+        "liquid": "Water",
+        "cost": 1,
+        "output": "Mud Chunk"
       }
     }
   },
 
-    "Mud Chunk": {
+  "Mud Chunk": {
     "name": "Mud Chunk",
     "spriteName": "Mud Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
 
-    "Sand Pile": {
+  "Sand Pile": {
     "name": "Sand Pile",
     "spriteName": "Sand Pile",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Clay Chunk": {
     "name": "Clay Chunk",
     "spriteName": "Clay Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
 
   "Grass Scrap": {
     "name": "Grass Scrap",
     "spriteName": "Grass Scrap",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Leaf": {
     "name": "Leaf",
     "spriteName": "Leaf",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Pebble": {
     "name": "Pebble",
     "spriteName": "Pebble",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Plant": {
     "name": "Plant",
     "spriteName": "Plant",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
-  "Seed": {
-    "name": "Seed",
-    "spriteName": "Seed",
-    "itemType": "Misc",
-    "maxStack": 32,
-    "unique": {}
-  },
-  "Twig": {
-    "name": "Twig",
-    "spriteName": "Twig",
-    "itemType": "Misc",
-    "maxStack": 32,
-    "unique": {}
-  },
-  "Thick Twig": {
-    "name": "Thick Twig",
-    "spriteName": "Thick Twig",
-    "itemType": "Misc",
-    "maxStack": 32,
-    "unique": {}
-  },
+
   "Plant Fiber": {
     "name": "Plant Fiber",
     "spriteName": "Plant Fiber",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
-  },
+    "tags": [],
 
+    "params": {}
+  },
 
   "Plant Twine": {
     "name": "Plant Twine",
     "spriteName": "Plant Twine",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "partType": "Long Binding",
-      "toolDurability": 16
+    "tags": ["Binding"],
+
+    "params": {
+      "Binding": {
+        "type": "Default",
+        "potentialDurability": 16
+      }
     }
   },
-  "Plant Short Twine": {
-    "name": "Plant Short Twine",
-    "spriteName": "Plant Short Twine",
-    "itemType": "Misc",
+
+  "Short Plant Twine": {
+    "name": "Short Plant Twine",
+    "spriteName": "Short Plant Twine",
     "maxStack": 32,
-    "unique": {
-      "partType": "Short Binding",
-      "toolDurability": 16
+    "tags": ["Binding"],
+
+    "params": {
+      "Binding": {
+        "type": "Short",
+        "potentialDurability": 16
+      }
     }
+  },
+
+  "Long Plant Twine": {
+    "name": "Long Plant Twine",
+    "spriteName": "Long Plant Twine",
+    "maxStack": 32,
+    "tags": ["Binding"],
+
+    "params": {
+      "Binding": {
+        "type": "Long",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+
+  "Twig": {
+    "name": "Twig",
+    "spriteName": "Twig",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Branch": {
+    "name": "Branch",
+    "spriteName": "Branch",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Bough": {
+    "name": "Bough",
+    "spriteName": "Bough",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
   },
 
 
   "Log": {
     "name": "Log",
     "spriteName": "Log",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
+  "Stripped Log": {
+    "name": "Stripped Log",
+    "spriteName": "Stripped Log",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Bark Strip": {
+    "name": "Bark Strip",
+    "spriteName": "Bark Strip",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Half Log": {
+    "name": "Half Log",
+    "spriteName": "Half Log",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Quarter Log": {
+    "name": "Quarter Log",
+    "spriteName": "Quarter Log",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
+  "Wood Shavings": {
+    "name": "Wood Shavings",
+    "spriteName": "Wood Shavings",
+    "maxStack": 32,
+    "tags": [],
+
+    "params": {}
+  },
+
   "Wooden Crude Plank": {
     "name": "Wooden Crude Plank",
     "spriteName": "Wooden Crude Plank",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
 
 
   "Charcoal": {
     "name": "Charcoal",
     "spriteName": "Charcoal",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
 
   "Wooden Stick": {
     "name": "Wooden Stick",
     "spriteName": "Wooden Stick",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {
-      "partType": "Short Handle",
-      "toolDurability": 16
+    "tags": ["Handle"],
+
+    "params": {
+      "Handle": {
+        "type": "Default",
+        "potentialDurability": 16
+      }
     }
   },
-  "Wooden Thick Stick": {
-    "name": "Wooden Thick Stick",
-    "spriteName": "Wooden Thick Stick",
-    "itemType": "Misc",
+
+  "Short Wooden Stick": {
+    "name": "Short Wooden Stick",
+    "spriteName": "Short Wooden Stick",
     "maxStack": 32,
-    "unique": {
-      "partType": "Long Handle",
-      "toolDurability": 16
+    "tags": ["Handle"],
+
+    "params": {
+      "Handle": {
+        "type": "Short",
+        "potentialDurability": 16
+      }
     }
   },
+
+  "Long Wooden Stick": {
+    "name": "Long Wooden Stick",
+    "spriteName": "Long Wooden Stick",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "params": {
+      "Handle": {
+        "type": "Long",
+        "potentialDurability": 16
+      }
+    }
+  },
+
+
+
 
 
 
   "Rock Chunk": {
     "name": "Rock Chunk",
     "spriteName": "Rock Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Coal Chunk": {
     "name": "Coal Chunk",
     "spriteName": "Coal Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Copper Chunk": {
     "name": "Copper Chunk",
     "spriteName": "Copper Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Iron Chunk": {
     "name": "Iron Chunk",
     "spriteName": "Iron Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
+    "tags": [],
+
+    "params": {}
   },
+
   "Tin Chunk": {
     "name": "Tin Chunk",
     "spriteName": "Tin Chunk",
-    "itemType": "Misc",
     "maxStack": 32,
-    "unique": {}
-  },
+    "tags": [],
 
-
-  "Flint Knife Head": {
-    "name": "Flint Knife Head",
-    "spriteName": "Flint Knife Head",
-    "itemType": "Misc",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Light Head",
-      "tier": 3,
-      "toolActions_potential": ["Cut"],
-      "weaponActions_potential": [],
-      "toolDurability": 32,
-      "attackPower": 0
-    }
-  },
-  "Flint Spear Head": {
-    "name": "Flint Spear Head",
-    "spriteName": "Flint Spear Head",
-    "itemType": "Misc",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Heavy Head",
-      "tier": 3,
-      "toolActions_potential": [],
-      "weaponActions_potential": [],
-      "toolDurability": 32,
-      "attackPower": 0
-    }
-  },
-  "Stone Axe Head": {
-    "name": "Stone Axe Head",
-    "spriteName": "Stone Axe Head",
-    "itemType": "Misc",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Heavy Head",
-      "tier": 3,
-      "toolActions_potential": ["Chop"],
-      "weaponActions_potential": [],
-      "toolDurability": 32,
-      "attackPower": 0
-    }
-  },
-  "Stone Hammer Head": {
-    "name": "Stone Hammer Head",
-    "spriteName": "Stone Hammer Head",
-    "itemType": "Misc",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Heavy Head",
-      "tier": 3,
-      "toolActions_potential": ["Crush"],
-      "weaponActions_potential": [],
-      "toolDurability": 32,
-      "attackPower": 0
-    }
-  },
-    "Stone Mallet Head": {
-    "name": "Stone Mallet Head",
-    "spriteName": "Stone Mallet Head",
-    "itemType": "Misc",
-    "maxStack": 1,
-    "unique": {
-      "partType": "Light Head",
-      "tier": 3,
-      "toolActions_potential": [],
-      "weaponActions_potential": [],
-
-      "interaction_potential": {"type": "BuildMultiblock"},
-
-      "toolDurability": 32,
-      "attackPower": 0
-    }
+    "params": {}
   }
 }
