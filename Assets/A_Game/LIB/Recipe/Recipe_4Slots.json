@@ -2,9 +2,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "unique": { "partType": "Heavy Head" }, "count": 1 },
-      { "unique": { "partType": "Long Binding" }, "count": 1 },
-      { "unique": { "partType": "Long Handle" }, "count": 1 }
+      { "params": { "HeadType": "LongGrip" },   "count": 1 },
+      { "params": { "BindingType": "Long" },    "count": 1 },
+      { "params": { "HandleType": "Long" },     "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -14,26 +14,40 @@
     "output": "Head_Binding_Handle",
     "outputCount": 1,
     "outputActions": [
-      { "type": "setValue", "field": "head",    "fromInput": 0, "inputField": "name" },
-      { "type": "setValue", "field": "binding", "fromInput": 1, "inputField": "name" },
-      { "type": "setValue", "field": "handle",  "fromInput": 2, "inputField": "name" },
-      { "type": "setValue", "field": "Tier", "fromInput": 0, "inputField": "tier" },
-      { "type": "sumFields", "field": "Durability",    "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
-      { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "interaction_potential", "toField": "interaction" },
-      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
-      { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
+      { "type": "paramSet", "field": "Parts.head",    "fromInput": 0, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.binding", "fromInput": 1, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.handle",  "fromInput": 2, "inputField": "name" },
+
+      { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "copyField", "fromInput": 0, "inputField": "craftingActions", "toField": "craftingActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interActions",    "toField": "interActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions",     "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions",   "toField": "weaponActions" },
+
+      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "Head.potentialName" },
+      {
+        "type": "setValue",
+        "field": "spriteName",
+        "valueFromFields": ["Parts.binding", "Parts.head", "Parts.handle"],
+        "separator": " + ",
+        "prefixEach": "Module_"
+      },
       { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
     ]
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "unique": { "partType": "Light Head" }, "count": 1 },
-      { "unique": { "partType": "Short Binding" }, "count": 1 },
-      { "unique": { "partType": "Short Handle" }, "count": 1 }
+      { "params": { "HeadType": "ShortGrip" },  "count": 1 },
+      { "params": { "BindingType": "Short" },   "count": 1 },
+      { "params": { "HandleType": "Short" },    "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -43,20 +57,117 @@
     "output": "Head_Binding_Handle",
     "outputCount": 1,
     "outputActions": [
-      { "type": "setValue", "field": "head",    "fromInput": 0, "inputField": "name" },
-      { "type": "setValue", "field": "binding", "fromInput": 1, "inputField": "name" },
-      { "type": "setValue", "field": "handle",  "fromInput": 2, "inputField": "name" },
-      { "type": "setValue", "field": "Tier", "fromInput": 0, "inputField": "tier" },
-      { "type": "sumFields", "field": "Durability",    "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
-      { "type": "sumFields", "field": "MaxDurability", "fromInputs": [0, 1, 2], "inputField": "toolDurability" },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions_potential",   "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions_potential", "toField": "weaponActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "interaction_potential", "toField": "interaction" },
-      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "name", "stripSuffix": " Head" },
-      { "type": "setValue", "field": "spriteName", "valueFromFields": ["binding", "head", "handle"], "separator": " + ", "prefixEach": "Module_" },
+      { "type": "paramSet", "field": "Parts.head",    "fromInput": 0, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.binding", "fromInput": 1, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.handle",  "fromInput": 2, "inputField": "name" },
+
+      { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "copyField", "fromInput": 0, "inputField": "craftingActions", "toField": "craftingActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interActions",    "toField": "interActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions",     "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions",   "toField": "weaponActions" },
+
+      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "Head.potentialName" },
+      {
+        "type": "setValue",
+        "field": "spriteName",
+        "valueFromFields": ["Parts.binding", "Parts.head", "Parts.handle"],
+        "separator": " + ",
+        "prefixEach": "Module_"
+      },
       { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
     ]
   },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "params": { "HeadType": "DefaultGrip" }, "count": 1 },
+      { "params": { "BindingType": "Default" },  "count": 1 },
+      { "params": { "HandleType": "Default" },   "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Head_Binding_Handle",
+    "outputCount": 1,
+    "outputActions": [
+      { "type": "paramSet", "field": "Parts.head",    "fromInput": 0, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.binding", "fromInput": 1, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.handle",  "fromInput": 2, "inputField": "name" },
+
+      { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "Handle.potentialDurability" },
+
+      { "type": "copyField", "fromInput": 0, "inputField": "craftingActions", "toField": "craftingActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interActions",    "toField": "interActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions",     "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions",   "toField": "weaponActions" },
+
+      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "Head.potentialName" },
+      {
+        "type": "setValue",
+        "field": "spriteName",
+        "valueFromFields": ["Parts.binding", "Parts.head", "Parts.handle"],
+        "separator": " + ",
+        "prefixEach": "Module_"
+      },
+      { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "params": { "HeadType": "BindGrip" },   "count": 1 },
+      { "params": { "BindingType": "Default" }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "output": "Head_Binding",
+    "outputCount": 1,
+    "outputActions": [
+      { "type": "paramSet", "field": "Parts.head",    "fromInput": 0, "inputField": "name" },
+      { "type": "paramSet", "field": "Parts.binding", "fromInput": 1, "inputField": "name" },
+
+      { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
+      { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+      { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "Binding.potentialDurability" },
+
+      { "type": "copyField", "fromInput": 0, "inputField": "craftingActions", "toField": "craftingActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "interActions",    "toField": "interActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "toolActions",     "toField": "toolActions" },
+      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions",   "toField": "weaponActions" },
+
+      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "Head.potentialName" },
+      {
+        "type": "setValue",
+        "field": "spriteName",
+        "valueFromFields": ["Parts.binding", "Parts.head"],
+        "separator": " + ",
+        "prefixEach": "Module_"
+      },
+      { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+    ]
+  },
+
   {
     "isOrdered": true,
     "inputs": [
@@ -80,7 +191,7 @@
     "isOrdered": true,
     "inputs": [
       { "itemId": "Mud Chunk", "count": 1 },
-      { "itemId": "Mud Chunk", "count": 1 },      
+      { "itemId": "Mud Chunk", "count": 1 },
       { "itemId": "Mud Chunk", "count": 1 },
       { "itemId": "Mud Chunk", "count": 1 }
     ],

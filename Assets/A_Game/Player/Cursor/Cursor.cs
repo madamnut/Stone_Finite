@@ -75,13 +75,41 @@ public class Cursor : MonoBehaviour
             sb.Append("Type: ").AppendLine(it.ItemType);
             sb.Append("Sprite: ").AppendLine(it.SpriteName);
             sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-            sb.AppendLine("Unique:");
-            if (it.Unique != null && it.Unique.Count > 0)
+
+            // 내구도
+            sb.Append("Durability: ")
+              .Append(it.Durability)
+              .Append(" / ")
+              .AppendLine(it.MaxDurability.ToString());
+
+            // 태그
+            sb.AppendLine("Tags:");
+            if (it.Tags != null && it.Tags.Count > 0)
             {
-                foreach (var kv in it.Unique)
-                    sb.Append(" - ").Append(kv.Key).Append(": ").AppendLine(kv.Value == null ? "null" : kv.Value.ToString());
+                for (int i = 0; i < it.Tags.Count; i++)
+                {
+                    sb.Append(" - ").AppendLine(it.Tags[i]);
+                }
             }
-            else sb.AppendLine(" - (none)");
+            else
+            {
+                sb.AppendLine(" - (none)");
+            }
+
+            // 파라미터(최상위만 간단히 출력)
+            sb.AppendLine("Params:");
+            if (it.Parameters != null && it.Parameters.Count > 0)
+            {
+                foreach (var kv in it.Parameters)
+                    sb.Append(" - ")
+                      .Append(kv.Key)
+                      .Append(": ")
+                      .AppendLine(kv.Value == null ? "null" : kv.Value.ToString());
+            }
+            else
+            {
+                sb.AppendLine(" - (none)");
+            }
 
             tooltipText.text = sb.ToString();
             if (tooltipObject != null && !tooltipObject.activeSelf) tooltipObject.SetActive(true);
@@ -198,14 +226,27 @@ public class Cursor : MonoBehaviour
 
             if (btn == PointerEventData.InputButton.Right)
             {
+                // 슬롯 → 커서 (반 갈라서)
                 if (cur == null && slot != null)
                 {
                     int take = (slot.Count + 1) / 2;
-                    var uniq = slot.Unique != null ? new Dictionary<string, object>(slot.Unique)
-                                                   : new Dictionary<string, object>();
                     var copy = new ItemData(
-                        slot.ItemId, slot.Name, slot.SpriteName, slot.ItemType,
-                        slot.MaxStack, uniq, slot.Icon, take);
+                        itemId:          slot.ItemId,
+                        name:            slot.Name,
+                        spriteName:      slot.SpriteName,
+                        itemType:        slot.ItemType,
+                        maxStack:        slot.MaxStack,
+                        maxDurability:   slot.MaxDurability,
+                        durability:      slot.Durability,
+                        craftingActions: slot.CraftingActions,
+                        interActions:    slot.InterActions,
+                        toolActions:     slot.ToolActions,
+                        weaponActions:   slot.WeaponActions,
+                        tags:            slot.Tags,
+                        parameters:      slot.Parameters,
+                        icon:            slot.Icon,
+                        count:           take
+                    );
                     cursorSlot.Set(copy);
 
                     slot.Count -= take;
@@ -214,19 +255,35 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
+                // 커서 → 빈 슬롯 (1개 내려놓기)
                 if (cur != null && slot == null)
                 {
-                    var uniq = cur.Unique != null ? new Dictionary<string, object>(cur.Unique)
-                                                  : new Dictionary<string, object>();
-                    slotView.Set(new ItemData(
-                        cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                        cur.MaxStack, uniq, cur.Icon, 1));
+                    var newSlot = new ItemData(
+                        itemId:          cur.ItemId,
+                        name:            cur.Name,
+                        spriteName:      cur.SpriteName,
+                        itemType:        cur.ItemType,
+                        maxStack:        cur.MaxStack,
+                        maxDurability:   cur.MaxDurability,
+                        durability:      cur.Durability,
+                        craftingActions: cur.CraftingActions,
+                        interActions:    cur.InterActions,
+                        toolActions:     cur.ToolActions,
+                        weaponActions:   cur.WeaponActions,
+                        tags:            cur.Tags,
+                        parameters:      cur.Parameters,
+                        icon:            cur.Icon,
+                        count:           1
+                    );
+                    slotView.Set(newSlot);
+
                     cur.Count -= 1;
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
                     return;
                 }
 
+                // 커서 → 같은 아이디 슬롯 (1개 합치기)
                 if (cur != null && same && slot.Count < slot.MaxStack)
                 {
                     slot.Count += 1;
@@ -281,14 +338,27 @@ public class Cursor : MonoBehaviour
 
         if (btn == PointerEventData.InputButton.Right)
         {
+            // 인벤토리 슬롯 → 커서 (반 갈라서)
             if (cur == null && slotInv != null)
             {
                 int take = (slotInv.Count + 1) / 2;
-                var uniq = slotInv.Unique != null ? new Dictionary<string, object>(slotInv.Unique)
-                                                  : new Dictionary<string, object>();
                 var copy = new ItemData(
-                    slotInv.ItemId, slotInv.Name, slotInv.SpriteName, slotInv.ItemType,
-                    slotInv.MaxStack, uniq, slotInv.Icon, take);
+                    itemId:          slotInv.ItemId,
+                    name:            slotInv.Name,
+                    spriteName:      slotInv.SpriteName,
+                    itemType:        slotInv.ItemType,
+                    maxStack:        slotInv.MaxStack,
+                    maxDurability:   slotInv.MaxDurability,
+                    durability:      slotInv.Durability,
+                    craftingActions: slotInv.CraftingActions,
+                    interActions:    slotInv.InterActions,
+                    toolActions:     slotInv.ToolActions,
+                    weaponActions:   slotInv.WeaponActions,
+                    tags:            slotInv.Tags,
+                    parameters:      slotInv.Parameters,
+                    icon:            slotInv.Icon,
+                    count:           take
+                );
                 cursorSlot.Set(copy);
 
                 slotInv.Count -= take;
@@ -297,13 +367,26 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
+            // 커서 → 인벤토리 빈 슬롯 (1개 내려놓기)
             if (cur != null && slotInv == null)
             {
-                var uniq = cur.Unique != null ? new Dictionary<string, object>(cur.Unique)
-                                              : new Dictionary<string, object>();
                 items[idx] = new ItemData(
-                    cur.ItemId, cur.Name, cur.SpriteName, cur.ItemType,
-                    cur.MaxStack, uniq, cur.Icon, 1);
+                    itemId:          cur.ItemId,
+                    name:            cur.Name,
+                    spriteName:      cur.SpriteName,
+                    itemType:        cur.ItemType,
+                    maxStack:        cur.MaxStack,
+                    maxDurability:   cur.MaxDurability,
+                    durability:      cur.Durability,
+                    craftingActions: cur.CraftingActions,
+                    interActions:    cur.InterActions,
+                    toolActions:     cur.ToolActions,
+                    weaponActions:   cur.WeaponActions,
+                    tags:            cur.Tags,
+                    parameters:      cur.Parameters,
+                    icon:            cur.Icon,
+                    count:           1
+                );
                 cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);
                 else cursorSlot.Refresh();
@@ -311,6 +394,7 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
+            // 커서 → 같은 아이디 인벤토리 슬롯 (1개 합치기)
             if (cur != null && sameInv && slotInv.Count < slotInv.MaxStack)
             {
                 slotInv.Count += 1;

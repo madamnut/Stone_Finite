@@ -84,9 +84,7 @@ public class CraftModule : MonoBehaviour
         {
             var it = inputs[i]?.Item;
             int c  = it?.Count ?? 0;
-            int d  = 0;
-            if (it != null && it.Unique != null && it.Unique.TryGetValue("durability", out var dv))
-                int.TryParse(dv?.ToString(), out d);
+            int d  = it?.Durability ?? 0;
 
             if (it != _prevItems[i] || c != _prevCounts[i] || d != _prevDurs[i]) return true;
         }
@@ -103,11 +101,7 @@ public class CraftModule : MonoBehaviour
             var it = inputs[i]?.Item;
             _prevItems[i]  = it;
             _prevCounts[i] = it?.Count ?? 0;
-
-            int d = 0;
-            if (it != null && it.Unique != null && it.Unique.TryGetValue("durability", out var dv))
-                int.TryParse(dv?.ToString(), out d);
-            _prevDurs[i] = d;
+            _prevDurs[i]   = it?.Durability ?? 0;
         }
     }
 
@@ -139,6 +133,7 @@ public class CraftModule : MonoBehaviour
         var prod = output.Item;
         if (prod == null) return;
 
+        // 커서에 이미 다른 아이템이 있을 때 스택 가능 여부 검사
         if (cur != null)
         {
             if (cur.ItemId != prod.ItemId) return;
@@ -147,6 +142,7 @@ public class CraftModule : MonoBehaviour
             if (prod.Count > room) return;
         }
 
+        // 현재 슬롯 스냅샷으로 다시 시도 (중간에 인풋이 변했을 수 있으므로)
         var snap = new List<ItemData>(inputs.Count);
         for (int i = 0; i < inputs.Count; i++) snap.Add(inputs[i]?.Item);
         if (!recipeLibrary.TryCraft(snap, out ItemData fresh, out JArray inActs, out JObject matched))
@@ -156,9 +152,11 @@ public class CraftModule : MonoBehaviour
         }
         _inActions = inActs; _matched = matched;
 
+        // 결과 아이템 커서로 이동/합치기
         if (cur == null) cursorSlot.Set(fresh);
         else { cur.Count += fresh.Count; cursorSlot.Refresh(); }
 
+        // 인풋 액션 적용
         ApplyInputActions(_inActions);
 
         Snapshot();
@@ -189,16 +187,16 @@ public class CraftModule : MonoBehaviour
             }
             else if (type == "durability")
             {
-                var uniq = slot.Item.Unique;
-                if (uniq == null) return; // 내구도 시스템 없음 → 스킵
+                // 내구도 시스템 없는 아이템 (MaxDurability == 0) → 스킵
+                if (slot.Item.MaxDurability <= 0) continue;
 
-                int curDur = 0;
-                if (slot.Item.Unique.TryGetValue("durability", out var dv))
-                    int.TryParse(dv?.ToString(), out curDur);
-                curDur += amount; // 음수면 감소
-                slot.Item.Unique["durability"] = curDur;
-                if (curDur <= 0) slot.Set(null);
-                else slot.Refresh();
+                // amount 는 음수면 감소, 양수면 회복
+                slot.Item.ModifyDurability(amount);
+
+                if (slot.Item.Durability <= 0)
+                    slot.Set(null);
+                else
+                    slot.Refresh();
             }
         }
     }

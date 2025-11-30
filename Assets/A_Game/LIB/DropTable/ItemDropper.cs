@@ -60,30 +60,17 @@ public class ItemDropper : MonoBehaviour
 
     void SpawnSingle(string itemId, Vector3 origin, int count)
     {
-        JObject raw = itemLibrary.GetItemJson(itemId);
-        if (raw == null) return;
+        if (itemLibrary == null || droppedItemPrefab == null) return;
 
-        string  name       = raw.Value<string>("name");
-        string  spriteName = raw.Value<string>("spriteName");
-        string  itemType   = raw.Value<string>("itemType");
-        int     maxStack   = raw.Value<int   >("maxStack");
-
-        var uniqueObj  = raw.Value<JObject>("unique");
-        var uniqueDict = uniqueObj != null
-            ? uniqueObj.ToObject<Dictionary<string, object>>()
-            : new Dictionary<string, object>();
-
-        Sprite icon = itemLibrary.GetSprite(spriteName);
-
-        var data = new ItemData(
-            itemId, name, spriteName, itemType,
-            maxStack, uniqueDict, icon, count
-        );
+        // ATT 스키마에 맞게 ItemLibrary.Create로 일관된 ItemData 생성
+        ItemData data = itemLibrary.Create(itemId, count);
+        if (data == null) return;
 
         Vector3 pos = origin + (Vector3)(UnityEngine.Random.insideUnitCircle * spawnRadius);
-        Instantiate(droppedItemPrefab, pos, Quaternion.identity)
-            .GetComponent<DroppedItem>()
-            .Initialize(data);
+        var go = Instantiate(droppedItemPrefab, pos, Quaternion.identity);
+        var comp = go.GetComponent<DroppedItem>();
+        if (comp != null)
+            comp.Initialize(data);
     }
 }
 

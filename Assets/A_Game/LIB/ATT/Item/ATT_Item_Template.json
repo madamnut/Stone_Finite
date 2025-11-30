@@ -40,5 +40,21 @@
         "binding": null
       }
     }
-  }
+  },
+
+  "Example": {
+  "name": "Example",
+  "spriteName": "Example",
+  "tags": [],
+  "maxStack": 1,
+
+  "maxDurability": 0,
+
+  "craftingActions": [],
+  "interActions": [],
+  "toolActions": [],
+  "weaponActions": [],
+
+  "params": {}
+}
 }

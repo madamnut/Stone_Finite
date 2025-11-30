@@ -25,7 +25,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Chopper"
       }
     }
   },
@@ -43,7 +43,7 @@
     "params": {
       "Head": {
         "type": "DefaultGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Handaxe"
       }
     }
   },
@@ -61,7 +61,7 @@
     "params": {
       "Head": {
         "type": "LongGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Cleaver"
       }
     }
   },
@@ -79,7 +79,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Pounder"
       }
     }
   },
@@ -97,7 +97,7 @@
     "params": {
       "Head": {
         "type": "LongGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Sledgehammer"
       }
     }
   },
@@ -115,7 +115,7 @@
     "params": {
       "Head": {
         "type": "ShortGrip",
-        "potentialDurability": 16
+        "potentialName": "Stone Hammer"
       }
     }
   },
@@ -146,7 +146,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Knife"
       }
     }
   },
@@ -164,7 +164,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Awl"
       }
     }
   },
@@ -182,7 +182,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Burin"
       }
     }
   },
@@ -200,7 +200,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Scraper"
       }
     }
   },
@@ -218,7 +218,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Graver"
       }
     }
   },
@@ -236,7 +236,7 @@
     "params": {
       "Head": {
         "type": "BindGrip",
-        "potentialDurability": 16
+        "potentialName": "Flint Denticulate"
       }
     }
   }

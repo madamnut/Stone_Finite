@@ -29,14 +29,14 @@ public class InteractionController : MonoBehaviour
     public KeyCode toggleBreakModeKey = KeyCode.V;
 
     [Header("Player/Hotbar/Cursor")]
-    public Player player;
-    public Hotbar hotbar;
+    public Player   player;
+    public Hotbar   hotbar;
     public ItemSlot cursorSlot;
 
     [Header("World References")]
     public WorldManager worldManager;
-    public Camera worldCamera;
-    public int cellSize = 1;
+    public Camera       worldCamera;
+    public int          cellSize = 1;
 
     [Header("Highlight Sprites")]
     public Sprite HighLight_FG;
@@ -53,7 +53,7 @@ public class InteractionController : MonoBehaviour
 
     [Header("Libraries")]
     public RecipeLibrary recipeLibrary;
-    public ItemLibrary itemLibrary;
+    public ItemLibrary   itemLibrary;
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
@@ -65,12 +65,12 @@ public class InteractionController : MonoBehaviour
     [Header("Audio")]
     public AudioManager sound;
 
-    GameState _state = GameState.Ingame;
-    LayerMode _layerMode = LayerMode.FG;
+    GameState  _state     = GameState.Ingame;
+    LayerMode  _layerMode = LayerMode.FG;
     GameObject _hlGO;
     SpriteRenderer _hlSR;
     float _timer;
-    int _hotbarScope = 0;
+    int   _hotbarScope = 0;
 
     void Awake()
     {
@@ -81,7 +81,7 @@ public class InteractionController : MonoBehaviour
 
         _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
-        _hlSR.sprite = HighLight_FG;
+        _hlSR.sprite       = HighLight_FG;
         _hlSR.sortingOrder = 1000;
         _hlGO.SetActive(false);
 
@@ -138,7 +138,11 @@ public class InteractionController : MonoBehaviour
                     }
                 }
 
-                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+                if (_moduleInstance != null)
+                {
+                    Destroy(_moduleInstance);
+                    _moduleInstance = null;
+                }
                 _state = GameState.Ingame;
                 inventoryPanel.SetActive(false);
             }
@@ -159,7 +163,11 @@ public class InteractionController : MonoBehaviour
                     }
                 }
 
-                if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+                if (_moduleInstance != null)
+                {
+                    Destroy(_moduleInstance);
+                    _moduleInstance = null;
+                }
                 _state = GameState.Ingame;
                 inventoryPanel.SetActive(false);
             }
@@ -184,7 +192,12 @@ public class InteractionController : MonoBehaviour
             _hlSR.sprite = (_layerMode == LayerMode.FG) ? HighLight_FG : HighLight_BG;
         }
 
-        if (_state != GameState.Ingame) { _hlGO.SetActive(false); return; }
+        if (_state != GameState.Ingame)
+        {
+            _hlGO.SetActive(false);
+            return;
+        }
+
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             _hlGO.SetActive(false);
@@ -208,7 +221,7 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        var fgCell = worldManager.worldMap.fg[cx, cy];
+        var fgCell  = worldManager.worldMap.fg[cx, cy];
         bool hasBody = fgCell.id != 0;
         bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
 
@@ -266,7 +279,7 @@ public class InteractionController : MonoBehaviour
             ? WorldManager.CellLayer.FG
             : WorldManager.CellLayer.BG;
 
-        var fgCell = worldManager.worldMap.fg[cx, cy];
+        var fgCell  = worldManager.worldMap.fg[cx, cy];
         bool hasBody = fgCell.id != 0;
         bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
 
@@ -296,7 +309,11 @@ public class InteractionController : MonoBehaviour
             _state = GameState.Inpanel;
             inventoryPanel.SetActive(true);
 
-            if (_moduleInstance != null) { Destroy(_moduleInstance); _moduleInstance = null; }
+            if (_moduleInstance != null)
+            {
+                Destroy(_moduleInstance);
+                _moduleInstance = null;
+            }
             if (primalcraftModule != null)
             {
                 _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
@@ -358,9 +375,9 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
-        if (!held.Unique.TryGetValue("interaction", out var interObj))
+        if (held.Parameters == null || !held.Parameters.TryGetValue("interaction", out var interObj))
         {
-            Debug.Log($"{LOG_MB} held.Unique에 'interaction' 없음 → return false");
+            Debug.Log($"{LOG_MB} Parameters에 'interaction' 없음 → return false");
             return false;
         }
 
@@ -409,8 +426,9 @@ public class InteractionController : MonoBehaviour
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
         if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param = paramObj as Dictionary<string, object> ??
-                    (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
+        var param =
+            paramObj as Dictionary<string, object> ??
+            (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
         if (param == null) return false;
 
         string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
@@ -425,7 +443,11 @@ public class InteractionController : MonoBehaviour
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
             var nm = CellLibrary.GetName(id);
-            if (!string.IsNullOrEmpty(nm) && nm == cellName) { placeId = id; break; }
+            if (!string.IsNullOrEmpty(nm) && nm == cellName)
+            {
+                placeId = id;
+                break;
+            }
         }
         if (placeId == 0) return false;
 
@@ -442,8 +464,9 @@ public class InteractionController : MonoBehaviour
     bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
         if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param = paramObj as Dictionary<string, object> ??
-                    (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
+        var param =
+            paramObj as Dictionary<string, object> ??
+            (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
         if (param == null) return false;
 
         string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
@@ -454,7 +477,11 @@ public class InteractionController : MonoBehaviour
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
             var nm = CellLibrary.GetName(id);
-            if (!string.IsNullOrEmpty(nm) && nm == liquidName) { targetLiquidId = id; break; }
+            if (!string.IsNullOrEmpty(nm) && nm == liquidName)
+            {
+                targetLiquidId = id;
+                break;
+            }
         }
         if (targetLiquidId == 0) return false;
 
@@ -483,7 +510,7 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // 2단계: 멀티블럭 패턴 매칭만 수행 (월드 변경 없음)
+    // 멀티블럭 패턴 매칭 + 인스턴스 생성
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> inter)
     {
         Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
@@ -527,8 +554,8 @@ public class InteractionController : MonoBehaviour
         {
             Debug.Log($"{LOG_MB} === def='{def.key}' 패턴 매칭 시도 시작 ===");
 
-            int patternWidth  = def.width;   // x
-            int patternHeight = def.height;  // y
+            int patternWidth  = def.width;
+            int patternHeight = def.height;
 
             bool defMatched = false;
 
@@ -565,9 +592,9 @@ public class InteractionController : MonoBehaviour
                     {
                         for (int lx = 0; lx < patternWidth; lx++)
                         {
-                            string expectedKey = def.pattern[lx, ly]; // pattern[x, y]
+                            string expectedKey = def.pattern[lx, ly];
 
-                            // expectedKey가 비어있으면 와일드카드로 취급(무시)
+                            // expectedKey가 비어있으면 와일드카드로 취급
                             if (string.IsNullOrEmpty(expectedKey))
                                 continue;
 
@@ -598,10 +625,11 @@ public class InteractionController : MonoBehaviour
                         );
                         defMatched = true;
                         anyMatch = true;
+
                         var inst = worldManager.CreateMudFurnaceInstance(def, originX, originY);
                         Debug.Log($"{LOG_MB} MudFurnaceInstance 생성 완료: instanceId={inst.instanceId}, occupied={inst.occupiedCells.Count}");
-                        sound.PlayMultiblockComplete();
-                        // 2단계에서는 여기서도 월드 변경 없음
+
+                        if (sound != null) sound.PlayMultiblockComplete();
                     }
                 }
             }
@@ -615,6 +643,7 @@ public class InteractionController : MonoBehaviour
         if (!anyMatch)
         {
             Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
+            return false;
         }
 
         Debug.Log($"{LOG_MB} 패턴 매칭 단계 종료");

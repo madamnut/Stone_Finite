@@ -15,7 +15,7 @@ public class ItemLibrary : MonoBehaviour
     // key: itemId, value: 정의 원본(JObject)
     private Dictionary<string, JObject> allItemDict;
 
-    // 합성/단일 공통 캐시
+    // 스프라이트 캐시
     private readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(128);
 
     void Awake()
@@ -43,23 +43,18 @@ public class ItemLibrary : MonoBehaviour
             return;
         }
 
-        foreach (var kv in dict) allItemDict[kv.Key] = kv.Value;
+        foreach (var kv in dict)
+            allItemDict[kv.Key] = kv.Value;
     }
 
-    /// <summary>
-    /// 스프라이트 획득.
-    /// - "A + B + C" 형태면 Resources/Atlas에서 각 토큰을 불러와 합성.
-    ///   C가 맨 밑, B가 중간, A가 최상단이 되도록 역순 합성.
-    ///   합성 결과 텍스처의 FilterMode는 Point(없음)로 설정.
-    /// - 아니면 Atlas/Resources에서 단일 스프라이트 조회.
-    /// - JSON은 기존처럼 "Module_a" 등 짧은 키를 써도 됨. 자동으로 "Textures/ItemParts/" 경로도 탐색.
-    /// </summary>
     public Sprite GetSprite(string spriteName)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
 
-        if (_spriteCache.TryGetValue(spriteName, out var cached)) return cached;
+        if (_spriteCache.TryGetValue(spriteName, out var cached))
+            return cached;
 
+        // 합성 스프라이트 ("A + B + C")
         if (spriteName.Contains(" + "))
         {
             var parts = spriteName.Split(new[] { " + " }, StringSplitOptions.RemoveEmptyEntries);
@@ -75,116 +70,119 @@ public class ItemLibrary : MonoBehaviour
                     continue;
                 }
 
-                // 1) Resources: 원래 키
-                var s = Resources.Load<Sprite>(key);
-                // 2) Resources: ItemParts 경로 자동 보정
+                Sprite s = null;
+
+                // Resources (기본)
+                s = Resources.Load<Sprite>(key);
+                // ItemParts 폴더
                 if (s == null)
                     s = Resources.Load<Sprite>("Textures/ItemParts/" + key);
-                // 3) Atlas 폴백
+                // Atlas
                 if (s == null && itemAtlas != null)
                     s = itemAtlas.GetSprite(key);
 
                 if (s == null)
                 {
-                    Debug.LogWarning($"[ItemLibrary] 합성 소스 스프라이트를 찾을 수 없음: {key}");
+                    Debug.LogWarning($"[ItemLibrary] 합성 스프라이트 소스 없음: {key}");
                     continue;
                 }
 
-                // 캐시는 원래 키로 저장
                 _spriteCache[key] = s;
                 sprites.Add(s);
             }
 
             if (sprites.Count == 0) return null;
 
+            // 합성 작업
             var baseS = sprites[0];
-            var rect  = baseS.rect;
-            int w = Mathf.RoundToInt(rect.width);
-            int h = Mathf.RoundToInt(rect.height);
+            int w = (int)baseS.rect.width;
+            int h = (int)baseS.rect.height;
 
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            tex.filterMode = FilterMode.Point; // ← 합성 결과 필터 없음(포인트)
-            tex.SetPixels32(new Color32[w * h]); // 투명 초기화
+            tex.filterMode = FilterMode.Point;
+            tex.SetPixels32(new Color32[w * h]);
 
-            void BlendOver(Color32[] dst, Color32[] src)
+            var dst = tex.GetPixels32();
+
+            void BlendOver(Color32[] dstBuf, Color32[] srcBuf)
             {
-                for (int i = 0; i < dst.Length; i++)
+                for (int i = 0; i < dstBuf.Length; i++)
                 {
-                    float aS = src[i].a / 255f; if (aS <= 0f) continue;
-                    float aD = dst[i].a / 255f;
+                    float aS = srcBuf[i].a / 255f;
+                    if (aS <= 0f) continue;
+
+                    float aD = dstBuf[i].a / 255f;
                     float outA = aS + aD * (1 - aS);
 
-                    float r = (src[i].r / 255f) * aS + (dst[i].r / 255f) * aD * (1 - aS);
-                    float g = (src[i].g / 255f) * aS + (dst[i].g / 255f) * aD * (1 - aS);
-                    float b = (src[i].b / 255f) * aS + (dst[i].b / 255f) * aD * (1 - aS);
+                    float r = (srcBuf[i].r / 255f) * aS + (dstBuf[i].r / 255f) * aD * (1 - aS);
+                    float g = (srcBuf[i].g / 255f) * aS + (dstBuf[i].g / 255f) * aD * (1 - aS);
+                    float b = (srcBuf[i].b / 255f) * aS + (dstBuf[i].b / 255f) * aD * (1 - aS);
 
-                    if (outA > 0f) { r /= outA; g /= outA; b /= outA; }
+                    if (outA > 0f)
+                    {
+                        r /= outA;
+                        g /= outA;
+                        b /= outA;
+                    }
 
-                    dst[i] = new Color(r, g, b, outA);
+                    dstBuf[i] = new Color(r, g, b, outA);
                 }
             }
 
-            var dstBuf = tex.GetPixels32();
-
-            // 역순 합성: 마지막 파트가 밑, 첫 파트가 최상단
-            for (int idx = sprites.Count - 1; idx >= 0; idx--)
+            for (int i = sprites.Count - 1; i >= 0; i--)
             {
-                var s = sprites[idx];
+                var s = sprites[i];
                 var srcTex = s.texture;
                 var r = s.rect;
-                int sx = Mathf.RoundToInt(r.x);
-                int sy = Mathf.RoundToInt(r.y);
-                int sw = Mathf.RoundToInt(r.width);
-                int sh = Mathf.RoundToInt(r.height);
 
-                int cw = Mathf.Min(sw, w);
-                int ch = Mathf.Min(sh, h);
-                int offX = (w - cw) / 2;
-                int offY = (h - ch) / 2;
+                int sx = (int)r.x;
+                int sy = (int)r.y;
+                int sw = (int)r.width;
+                int sh = (int)r.height;
 
-                // 구버전 호환: GetPixels(x,y,w,h)
-                var srcColors = srcTex.GetPixels(sx + (sw - cw) / 2, sy + (sh - ch) / 2, cw, ch);
-                var src = new Color32[srcColors.Length];
-                for (int j = 0; j < srcColors.Length; j++) src[j] = srcColors[j];
+                var srcColors = srcTex.GetPixels(sx, sy, sw, sh);
+                Color32[] srcBuf = Array.ConvertAll(srcColors, c => (Color32)c);
 
                 var lay = new Color32[w * h];
-                for (int row = 0; row < ch; row++)
-                    Array.Copy(src, row * cw, lay, (offY + row) * w + offX, cw);
+                int offX = (w - sw) / 2;
+                int offY = (h - sh) / 2;
 
-                BlendOver(dstBuf, lay);
+                for (int row = 0; row < sh; row++)
+                {
+                    Array.Copy(srcBuf, row * sw, lay, (offY + row) * w + offX, sw);
+                }
+
+                BlendOver(dst, lay);
             }
 
-            tex.SetPixels32(dstBuf);
-            tex.Apply(false, false);
+            tex.SetPixels32(dst);
+            tex.Apply();
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), baseS.pixelsPerUnit);
-            sprite.name = $"Composite[{spriteName}]";
-            _spriteCache[spriteName] = sprite;
-            return sprite;
+            var finalSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f));
+            _spriteCache[spriteName] = finalSprite;
+
+            return finalSprite;
         }
 
         // 단일 스프라이트
         Sprite single = Resources.Load<Sprite>(spriteName);
         if (single == null)
             single = Resources.Load<Sprite>("Textures/ItemParts/" + spriteName);
-        if (single == null)
-        {
-            if (itemAtlas == null)
-            {
-                Debug.LogError("SpriteAtlas가 할당되지 않았습니다.");
-                return null;
-            }
+        if (single == null && itemAtlas != null)
             single = itemAtlas.GetSprite(spriteName);
-        }
 
-        if (single != null) _spriteCache[spriteName] = single;
+        if (single != null)
+            _spriteCache[spriteName] = single;
+
         return single;
     }
 
     public JObject GetItemJson(string itemId)
     {
-        if (allItemDict.TryGetValue(itemId, out var obj)) return obj;
-        Debug.LogWarning($"아이템 데이터가 존재하지 않습니다: {itemId}");
+        if (allItemDict.TryGetValue(itemId, out var obj))
+            return obj;
+
+        Debug.LogWarning($"아이템 데이터 없음: {itemId}");
         return null;
     }
 
@@ -193,29 +191,92 @@ public class ItemLibrary : MonoBehaviour
         var def = GetItemJson(itemId);
         if (def == null) return null;
 
+        // 기본 메타
         string name       = def.Value<string>("name")       ?? itemId;
         string spriteName = def.Value<string>("spriteName") ?? itemId;
         string itemType   = def.Value<string>("itemType")   ?? "Generic";
         int    maxStack   = def.Value<int?>("maxStack")     ?? 1;
 
-        var props = new Dictionary<string, object>();
-        if (def["unique"] is JObject unique)
+        // 내구도 (ATT 루트의 maxDurability → ItemData.MaxDurability / Durability)
+        int maxDurability = def.Value<int?>("maxDurability") ?? 0;
+        int durability    = maxDurability;
+
+        // 액션 4종 (ATT 루트의 배열을 그대로 계승)
+        var craftingActions = new List<string>();
+        if (def["craftingActions"] is JArray craftingArr)
         {
-            foreach (var kv in unique)
-                props[kv.Key] = kv.Value.ToObject<object>();
+            var list = craftingArr.ToObject<List<string>>();
+            if (list != null)
+                craftingActions.AddRange(list);
         }
 
+        var interActions = new List<string>();
+        if (def["interActions"] is JArray interArr)
+        {
+            var list = interArr.ToObject<List<string>>();
+            if (list != null)
+                interActions.AddRange(list);
+        }
+
+        var toolActions = new List<string>();
+        if (def["toolActions"] is JArray toolArr)
+        {
+            var list = toolArr.ToObject<List<string>>();
+            if (list != null)
+                toolActions.AddRange(list);
+        }
+
+        var weaponActions = new List<string>();
+        if (def["weaponActions"] is JArray weaponArr)
+        {
+            var list = weaponArr.ToObject<List<string>>();
+            if (list != null)
+                weaponActions.AddRange(list);
+        }
+
+        // tags (별도 보관 + 필요 시 Parameters에도 넣을 수 있음)
+        List<string> tags = new List<string>();
+        if (def["tags"] is JArray tagsArray)
+        {
+            var list = tagsArray.ToObject<List<string>>();
+            if (list != null)
+                tags.AddRange(list);
+        }
+
+        // Parameters: ATT의 params 등 확장 필드
+        var parameters = new Dictionary<string, object>();
+
+        // params 블록 통째로 복사 (중첩 구조 유지)
+        if (def["params"] is JObject paramObj)
+        {
+            var paramDict = paramObj.ToObject<Dictionary<string, object>>();
+            if (paramDict != null)
+            {
+                foreach (var kv in paramDict)
+                    parameters[kv.Key] = kv.Value;
+            }
+        }
+
+        // 아이콘
         var icon = GetSprite(spriteName);
 
+        // 최종 ItemData 생성
         return new ItemData(
-            itemId:     itemId,
-            name:       name,
-            spriteName: spriteName,
-            itemType:   itemType,
-            maxStack:   maxStack,
-            unique:     props,
-            icon:       icon,
-            count:      count
+            itemId:          itemId,
+            name:            name,
+            spriteName:      spriteName,
+            itemType:        itemType,
+            maxStack:        maxStack,
+            maxDurability:   maxDurability,
+            durability:      durability,
+            craftingActions: craftingActions,
+            interActions:    interActions,
+            toolActions:     toolActions,
+            weaponActions:   weaponActions,
+            tags:            tags,
+            parameters:      parameters,
+            icon:            icon,
+            count:           count
         );
     }
 }

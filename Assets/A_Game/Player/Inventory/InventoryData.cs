@@ -28,6 +28,9 @@ public class InventoryData
     /// </summary>
     public int AddItem(ItemData incoming)
     {
+        if (incoming == null || incoming.Count <= 0)
+            return 0;
+
         int left = incoming.Count;
 
         /* 1) 같은 ID 스택 채우기 */
@@ -51,9 +54,22 @@ public class InventoryData
 
             int take = left > incoming.MaxStack ? incoming.MaxStack : left;
             items[i] = new ItemData(
-                incoming.ItemId,  incoming.Name,       incoming.SpriteName,
-                incoming.ItemType, incoming.MaxStack,  new Dictionary<string, object>(incoming.Unique),
-                incoming.Icon,     take);
+                itemId:          incoming.ItemId,
+                name:            incoming.Name,
+                spriteName:      incoming.SpriteName,
+                itemType:        incoming.ItemType,
+                maxStack:        incoming.MaxStack,
+                maxDurability:   incoming.MaxDurability,
+                durability:      incoming.Durability,
+                craftingActions: incoming.CraftingActions,
+                interActions:    incoming.InterActions,
+                toolActions:     incoming.ToolActions,
+                weaponActions:   incoming.WeaponActions,
+                tags:            incoming.Tags,
+                parameters:      incoming.Parameters,
+                icon:            incoming.Icon,
+                count:           take
+            );
 
             left -= take;
         }

@@ -273,7 +273,7 @@ public class RecipeLibrary : MonoBehaviour
         return true;
     }
 
-    // 스펙 매칭(itemId/name/unique, 배열 부분집합 지원)
+    // 스펙 매칭(itemId/name/params/hasTag, 배열 부분집합 지원)
     bool MatchSpec(ItemData it, JObject spec)
     {
         if (spec == null) return false;
@@ -298,34 +298,64 @@ public class RecipeLibrary : MonoBehaviour
             if (!string.Equals(it.Name, wantNm, StringComparison.Ordinal)) return false;
         }
 
-        var uniq = spec["unique"] as JObject;
-        if (uniq != null && uniq.Properties().Any())
+        // params 매칭
+        var paramSpec = spec["params"] as JObject;
+        if (paramSpec != null && paramSpec.Properties().Any())
         {
             constraints++;
-            if (it == null || it.Unique == null) return false;
+            if (it == null) return false;
+            if (!MatchParams(it.Parameters, paramSpec)) return false;
+        }
 
-            foreach (var p in uniq.Properties())
+        // 태그 매칭
+        var tagSpec = spec["hasTag"] as JArray;
+        if (tagSpec != null && tagSpec.Count > 0)
+        {
+            constraints++;
+            if (it == null) return false;
+
+            foreach (var t in tagSpec)
             {
-                string key = p.Name;
-                if (!it.Unique.TryGetValue(key, out var have)) return false;
-
-                var wantTok = p.Value;
-                if (wantTok is JArray wantArr)
-                {
-                    var wantList = wantArr.Select(x => x.ToString()).ToList();
-                    var haveList = ToStringList(have);
-                    if (!wantList.All(w => haveList.Contains(w))) return false;
-                }
-                else
-                {
-                    string wantStr = wantTok.ToString();
-                    string haveStr = have?.ToString() ?? "";
-                    if (!string.Equals(haveStr, wantStr, StringComparison.Ordinal)) return false;
-                }
+                string tag = t.ToString();
+                if (!it.HasTag(tag)) return false;
             }
         }
 
         if (constraints == 0) return false;
+        return true;
+    }
+
+    bool MatchParams(Dictionary<string, object> parameters, JObject paramSpec)
+    {
+        if (paramSpec == null || !paramSpec.Properties().Any())
+            return true;
+
+        if (parameters == null)
+            return false;
+
+        foreach (var p in paramSpec.Properties())
+        {
+            string key = p.Name;
+            var wantTok = p.Value;
+            if (!parameters.TryGetValue(key, out var have))
+                return false;
+
+            if (wantTok is JArray wantArr)
+            {
+                var wantList = wantArr.Select(x => x.ToString()).ToList();
+                var haveList = ToStringList(have);
+                if (!wantList.All(w => haveList.Contains(w)))
+                    return false;
+            }
+            else
+            {
+                string wantStr = wantTok.ToString();
+                string haveStr = have?.ToString() ?? "";
+                if (!string.Equals(haveStr, wantStr, StringComparison.Ordinal))
+                    return false;
+            }
+        }
+
         return true;
     }
 
@@ -342,16 +372,18 @@ public class RecipeLibrary : MonoBehaviour
         return new List<string> { v.ToString() };
     }
 
-    // 출력액션(루트 name/spriteName/itemId 반영 + 나머지는 Unique)
+    // 출력액션(루트 name/spriteName/itemId/durability/maxDurability 반영 + 나머지는 Parameters/params)
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign)
     {
         if (dst == null) return null;
         if (outActs == null || outActs.Count == 0) return dst;
-        if (dst.Unique == null) return dst;
+        if (dst.Parameters == null) return dst;
 
-        string overrideName = null;
-        string overrideSprite = null;
-        string overrideItemId = null;
+        string overrideName       = null;
+        string overrideSprite     = null;
+        string overrideItemId     = null;
+        int?   overrideDurability = null;
+        int?   overrideMaxDur     = null;
 
         for (int i = 0; i < outActs.Count; i++)
         {
@@ -372,7 +404,20 @@ public class RecipeLibrary : MonoBehaviour
                     if (field == "spriteName")  { overrideSprite = val?.ToString(); continue; }
                     if (field == "itemId")      { overrideItemId = val?.ToString(); continue; }
 
-                    dst.Unique[field] = val;
+                    if (field == "durability")
+                    {
+                        if (val != null && int.TryParse(val.ToString(), out int iv))
+                            overrideDurability = iv;
+                        continue;
+                    }
+                    if (field == "maxDurability")
+                    {
+                        if (val != null && int.TryParse(val.ToString(), out int iv))
+                            overrideMaxDur = iv;
+                        continue;
+                    }
+
+                    dst.SetParamPath(field, val);
                     continue;
                 }
 
@@ -395,7 +440,20 @@ public class RecipeLibrary : MonoBehaviour
                     if (field == "spriteName")  { overrideSprite = sVal; continue; }
                     if (field == "itemId")      { overrideItemId = sVal; continue; }
 
-                    dst.Unique[field] = val;
+                    if (field == "durability")
+                    {
+                        if (val != null && int.TryParse(val.ToString(), out int iv))
+                            overrideDurability = iv;
+                        continue;
+                    }
+                    if (field == "maxDurability")
+                    {
+                        if (val != null && int.TryParse(val.ToString(), out int iv))
+                            overrideMaxDur = iv;
+                        continue;
+                    }
+
+                    dst.SetParamPath(field, val);
                     continue;
                 }
 
@@ -409,7 +467,7 @@ public class RecipeLibrary : MonoBehaviour
                     foreach (var jf in vff)
                     {
                         string key = jf.ToString();
-                        object v = ReadFromUnique(dst, key);
+                        object v = ReadFromParameters(dst, key);
                         if (v != null)
                         {
                             string s = v.ToString();
@@ -423,7 +481,8 @@ public class RecipeLibrary : MonoBehaviour
                     if (field == "spriteName")  { overrideSprite = joined; continue; }
                     if (field == "itemId")      { overrideItemId = joined; continue; }
 
-                    dst.Unique[field] = joined;
+                    // join 결과는 문자열이므로 durability/maxDurability에는 쓰지 않음
+                    dst.SetParamPath(field, joined);
                     continue;
                 }
             }
@@ -439,7 +498,7 @@ public class RecipeLibrary : MonoBehaviour
                 if (toField == "spriteName")  { overrideSprite = val; continue; }
                 if (toField == "itemId")      { overrideItemId = val; continue; }
 
-                dst.Unique[toField] = val;
+                dst.SetParamPath(toField, val);
             }
             else if (type == "copyField")
             {
@@ -455,7 +514,20 @@ public class RecipeLibrary : MonoBehaviour
                 if (toField == "spriteName")  { overrideSprite = sVal; continue; }
                 if (toField == "itemId")      { overrideItemId = sVal; continue; }
 
-                dst.Unique[toField] = val;
+                if (toField == "durability")
+                {
+                    if (val != null && int.TryParse(val.ToString(), out int iv))
+                        overrideDurability = iv;
+                    continue;
+                }
+                if (toField == "maxDurability")
+                {
+                    if (val != null && int.TryParse(val.ToString(), out int iv))
+                        overrideMaxDur = iv;
+                    continue;
+                }
+
+                dst.SetParamPath(toField, val);
             }
             else if (type == "sumFields")
             {
@@ -479,60 +551,164 @@ public class RecipeLibrary : MonoBehaviour
                 if (outField == "spriteName")  { overrideSprite = sum.ToString(); continue; }
                 if (outField == "itemId")      { overrideItemId = sum.ToString(); continue; }
 
-                dst.Unique[outField] = sum;
+                if (outField == "durability")
+                {
+                    overrideDurability = (overrideDurability ?? 0) + sum;
+                    continue;
+                }
+                if (outField == "maxDurability")
+                {
+                    overrideMaxDur = (overrideMaxDur ?? 0) + sum;
+                    continue;
+                }
+
+                dst.SetParamPath(outField, sum);
+            }
+            else if (type == "paramSet")
+            {
+                string field = act.Value<string>("field");
+
+                // value 우선
+                if (act.TryGetValue("value", out var jv))
+                {
+                    object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
+                    dst.SetParamPath(field, val);
+                    continue;
+                }
+
+                // fromInput + inputField
+                int? from = act.Value<int?>("fromInput");
+                string inputField = act.Value<string>("inputField");
+                if (from.HasValue && !string.IsNullOrEmpty(inputField))
+                {
+                    int si = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
+                    var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
+                    var val = ReadField(src, inputField);
+                    dst.SetParamPath(field, val);
+                    continue;
+                }
+            }
+            else if (type == "paramSum")
+            {
+                string field = act.Value<string>("field");
+                string inField  = act.Value<string>("inputField");
+                var fromInputs  = act["fromInputs"] as JArray;
+                int sum = 0;
+                if (fromInputs != null)
+                {
+                    foreach (var jf in fromInputs)
+                    {
+                        int fi = jf.Value<int>();
+                        int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
+                        var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
+                        var v = ReadField(src, inField);
+                        if (v != null && int.TryParse(v.ToString(), out int iv)) sum += iv;
+                    }
+                }
+                dst.SetParamPath(field, sum);
             }
         }
 
-        // 루트 오버라이드가 있으면 새 인스턴스로 재구성
-        if (overrideName != null || overrideSprite != null || overrideItemId != null)
-        {
-            string finalName   = overrideName   ?? dst.Name;
-            string finalSprite = overrideSprite ?? dst.SpriteName;
-            string finalId     = overrideItemId ?? dst.ItemId;
-            var finalIcon = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
+        bool changed =
+            overrideName       != null ||
+            overrideSprite     != null ||
+            overrideItemId     != null ||
+            overrideDurability.HasValue ||
+            overrideMaxDur.HasValue;
 
-            return new ItemData(
-                itemId:     finalId,
-                name:       finalName,
-                spriteName: finalSprite,
-                itemType:   dst.ItemType,
-                maxStack:   dst.MaxStack,
-                unique:     dst.Unique,
-                icon:       finalIcon,
-                count:      dst.Count
-            );
-        }
+        if (!changed)
+            return dst;
 
-        return dst;
+        string finalName       = overrideName       ?? dst.Name;
+        string finalSprite     = overrideSprite     ?? dst.SpriteName;
+        string finalId         = overrideItemId     ?? dst.ItemId;
+        int    finalMaxDur     = overrideMaxDur     ?? dst.MaxDurability;
+        int    finalDurability = overrideDurability ?? dst.Durability;
+
+        var finalIcon = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
+
+        return new ItemData(
+            itemId:          finalId,
+            name:            finalName,
+            spriteName:      finalSprite,
+            itemType:        dst.ItemType,
+            maxStack:        dst.MaxStack,
+            maxDurability:   finalMaxDur,
+            durability:      finalDurability,
+            craftingActions: dst.CraftingActions,
+            interActions:    dst.InterActions,
+            toolActions:     dst.ToolActions,
+            weaponActions:   dst.WeaponActions,
+            tags:            dst.Tags,
+            parameters:      dst.Parameters,
+            icon:            finalIcon,
+            count:           dst.Count
+        );
     }
 
     object ReadField(ItemData src, string field)
     {
         if (src == null) return null;
 
-        if (src.Unique != null && src.Unique.TryGetValue(field, out var v)) return v;
+        // params 우선 (dot-path 지원)
+        var val = ReadFromParameters(src, field);
+        if (val != null) return val;
 
         switch (field)
         {
-            case "name":       return src.Name;
-            case "spriteName": return src.SpriteName;
-            case "itemId":     return src.ItemId;
+            case "name":          return src.Name;
+            case "spriteName":    return src.SpriteName;
+            case "itemId":        return src.ItemId;
+            case "durability":    return src.Durability;
+            case "maxDurability": return src.MaxDurability;
         }
         return null;
     }
 
-    object ReadFromUnique(ItemData dst, string field)
+    object ReadFromParameters(ItemData dst, string field)
     {
-        if (dst?.Unique == null) return null;
-        dst.Unique.TryGetValue(field, out var v);
-        return v;
+        if (dst?.Parameters == null || string.IsNullOrEmpty(field)) return null;
+
+        var parts = field.Split('.');
+        object current = dst.Parameters;
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            string key = parts[i];
+
+            if (current is Dictionary<string, object> cd)
+            {
+                if (!cd.TryGetValue(key, out current))
+                    return null;
+            }
+            else if (current is JObject jo)
+            {
+                if (!jo.TryGetValue(key, out var token))
+                    return null;
+
+                if (token is JObject subJo)
+                    current = subJo;
+                else if (token is JArray subJa)
+                    current = subJa;
+                else if (token is JValue jv)
+                    current = jv.Value;
+                else
+                    current = token;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return current;
     }
 
     string ExpandTokens(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
         string ts   = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
-        string rand = System.Guid.NewGuid().ToString("N").Substring(0, 6);
+        string rand = Guid.NewGuid().ToString("N").Substring(0, 6);
         return s.Replace("$timestamp$", ts).Replace("$rand$", rand);
     }
 }

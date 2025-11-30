@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Newtonsoft.Json; // Unique 직렬화용
+using Newtonsoft.Json;
 
 /// <summary>
 /// 월드 / 플레이어 / 엔티티 저장/로드 전담 시스템
@@ -272,12 +272,44 @@ public static class WorldSaveSystem
                             bw.Write(it.SpriteName ?? string.Empty);
                             bw.Write(it.ItemType   ?? string.Empty);
                             bw.Write(it.MaxStack);
+
+                            // 내구도
+                            bw.Write(it.MaxDurability);
+                            bw.Write(it.Durability);
+
+                            // 수량
                             bw.Write(it.Count);
 
-                            string uniqueJson = it.Unique != null
-                                ? JsonConvert.SerializeObject(it.Unique)
+                            // 태그 / 파라미터 / 액션 4종 직렬화
+                            string tagsJson = it.Tags != null
+                                ? JsonConvert.SerializeObject(it.Tags)
                                 : string.Empty;
-                            bw.Write(uniqueJson ?? string.Empty);
+                            bw.Write(tagsJson ?? string.Empty);
+
+                            string paramJson = it.Parameters != null
+                                ? JsonConvert.SerializeObject(it.Parameters)
+                                : string.Empty;
+                            bw.Write(paramJson ?? string.Empty);
+
+                            string craftJson = it.CraftingActions != null
+                                ? JsonConvert.SerializeObject(it.CraftingActions)
+                                : string.Empty;
+                            bw.Write(craftJson ?? string.Empty);
+
+                            string interJson = it.InterActions != null
+                                ? JsonConvert.SerializeObject(it.InterActions)
+                                : string.Empty;
+                            bw.Write(interJson ?? string.Empty);
+
+                            string toolJson = it.ToolActions != null
+                                ? JsonConvert.SerializeObject(it.ToolActions)
+                                : string.Empty;
+                            bw.Write(toolJson ?? string.Empty);
+
+                            string weaponJson = it.WeaponActions != null
+                                ? JsonConvert.SerializeObject(it.WeaponActions)
+                                : string.Empty;
+                            bw.Write(weaponJson ?? string.Empty);
                         }
                     }
                 }
@@ -332,24 +364,107 @@ public static class WorldSaveSystem
                         string spriteName = br.ReadString();
                         string itemType   = br.ReadString();
                         int    maxStack   = br.ReadInt32();
-                        int    count      = br.ReadInt32();
-                        string uniqueJson = br.ReadString();
 
-                        Dictionary<string, object> uniqueDict = null;
-                        if (!string.IsNullOrEmpty(uniqueJson))
+                        int maxDurability = br.ReadInt32();
+                        int durability    = br.ReadInt32();
+                        int count         = br.ReadInt32();
+
+                        string tagsJson   = br.ReadString();
+                        string paramJson  = br.ReadString();
+                        string craftJson  = br.ReadString();
+                        string interJson  = br.ReadString();
+                        string toolJson   = br.ReadString();
+                        string weaponJson = br.ReadString();
+
+                        List<string> tags = null;
+                        if (!string.IsNullOrEmpty(tagsJson))
                         {
                             try
                             {
-                                uniqueDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(uniqueJson);
+                                tags = JsonConvert.DeserializeObject<List<string>>(tagsJson);
                             }
                             catch (System.Exception ex)
                             {
-                                Debug.LogError($"[LOAD-PLAYER] Unique 파싱 실패: {ex.Message}");
-                                uniqueDict = null;
+                                Debug.LogError($"[LOAD-PLAYER] Tags 파싱 실패: {ex.Message}");
+                                tags = null;
                             }
                         }
-                        if (uniqueDict == null)
-                            uniqueDict = new Dictionary<string, object>();
+                        if (tags == null) tags = new List<string>();
+
+                        Dictionary<string, object> paramDict = null;
+                        if (!string.IsNullOrEmpty(paramJson))
+                        {
+                            try
+                            {
+                                paramDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(paramJson);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError($"[LOAD-PLAYER] Params 파싱 실패: {ex.Message}");
+                                paramDict = null;
+                            }
+                        }
+                        if (paramDict == null) paramDict = new Dictionary<string, object>();
+
+                        List<string> craftingActions = null;
+                        if (!string.IsNullOrEmpty(craftJson))
+                        {
+                            try
+                            {
+                                craftingActions = JsonConvert.DeserializeObject<List<string>>(craftJson);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError($"[LOAD-PLAYER] craftingActions 파싱 실패: {ex.Message}");
+                                craftingActions = null;
+                            }
+                        }
+                        if (craftingActions == null) craftingActions = new List<string>();
+
+                        List<string> interActions = null;
+                        if (!string.IsNullOrEmpty(interJson))
+                        {
+                            try
+                            {
+                                interActions = JsonConvert.DeserializeObject<List<string>>(interJson);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError($"[LOAD-PLAYER] interActions 파싱 실패: {ex.Message}");
+                                interActions = null;
+                            }
+                        }
+                        if (interActions == null) interActions = new List<string>();
+
+                        List<string> toolActions = null;
+                        if (!string.IsNullOrEmpty(toolJson))
+                        {
+                            try
+                            {
+                                toolActions = JsonConvert.DeserializeObject<List<string>>(toolJson);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError($"[LOAD-PLAYER] toolActions 파싱 실패: {ex.Message}");
+                                toolActions = null;
+                            }
+                        }
+                        if (toolActions == null) toolActions = new List<string>();
+
+                        List<string> weaponActions = null;
+                        if (!string.IsNullOrEmpty(weaponJson))
+                        {
+                            try
+                            {
+                                weaponActions = JsonConvert.DeserializeObject<List<string>>(weaponJson);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError($"[LOAD-PLAYER] weaponActions 파싱 실패: {ex.Message}");
+                                weaponActions = null;
+                            }
+                        }
+                        if (weaponActions == null) weaponActions = new List<string>();
 
                         Sprite icon = null;
                         if (itemLibrary != null && !string.IsNullOrEmpty(spriteName))
@@ -358,14 +473,21 @@ public static class WorldSaveSystem
                         }
 
                         var data = new ItemData(
-                            itemId:     itemId,
-                            name:       name,
-                            spriteName: spriteName,
-                            itemType:   itemType,
-                            maxStack:   maxStack,
-                            unique:     uniqueDict,
-                            icon:       icon,
-                            count:      count
+                            itemId:          itemId,
+                            name:            name,
+                            spriteName:      spriteName,
+                            itemType:        itemType,
+                            maxStack:        maxStack,
+                            maxDurability:   maxDurability,
+                            durability:      durability,
+                            craftingActions: craftingActions,
+                            interActions:    interActions,
+                            toolActions:     toolActions,
+                            weaponActions:   weaponActions,
+                            tags:            tags,
+                            parameters:      paramDict,
+                            icon:            icon,
+                            count:           count
                         );
                         inventory.Add(data);
                     }
@@ -426,12 +548,40 @@ public static class WorldSaveSystem
                     bw.Write(data.SpriteName ?? string.Empty);
                     bw.Write(data.ItemType   ?? string.Empty);
                     bw.Write(data.MaxStack);
+
+                    bw.Write(data.MaxDurability);
+                    bw.Write(data.Durability);
                     bw.Write(data.Count);
 
-                    string uniqueJson = data.Unique != null
-                        ? JsonConvert.SerializeObject(data.Unique)
+                    string tagsJson = data.Tags != null
+                        ? JsonConvert.SerializeObject(data.Tags)
                         : string.Empty;
-                    bw.Write(uniqueJson ?? string.Empty);
+                    bw.Write(tagsJson ?? string.Empty);
+
+                    string paramJson = data.Parameters != null
+                        ? JsonConvert.SerializeObject(data.Parameters)
+                        : string.Empty;
+                    bw.Write(paramJson ?? string.Empty);
+
+                    string craftJson = data.CraftingActions != null
+                        ? JsonConvert.SerializeObject(data.CraftingActions)
+                        : string.Empty;
+                    bw.Write(craftJson ?? string.Empty);
+
+                    string interJson = data.InterActions != null
+                        ? JsonConvert.SerializeObject(data.InterActions)
+                        : string.Empty;
+                    bw.Write(interJson ?? string.Empty);
+
+                    string toolJson = data.ToolActions != null
+                        ? JsonConvert.SerializeObject(data.ToolActions)
+                        : string.Empty;
+                    bw.Write(toolJson ?? string.Empty);
+
+                    string weaponJson = data.WeaponActions != null
+                        ? JsonConvert.SerializeObject(data.WeaponActions)
+                        : string.Empty;
+                    bw.Write(weaponJson ?? string.Empty);
                 }
             }
 
@@ -467,7 +617,7 @@ public static class WorldSaveSystem
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var br = new BinaryReader(fs);
 
-            int count = br.ReadInt32();
+            int count   = br.ReadInt32();
             int spawned = 0;
 
             for (int i = 0; i < count; i++)
@@ -480,24 +630,106 @@ public static class WorldSaveSystem
                 string spriteName = br.ReadString();
                 string itemType   = br.ReadString();
                 int    maxStack   = br.ReadInt32();
+                int    maxDur     = br.ReadInt32();
+                int    dur        = br.ReadInt32();
                 int    icount     = br.ReadInt32();
-                string uniqueJson = br.ReadString();
 
-                Dictionary<string, object> uniqueDict = null;
-                if (!string.IsNullOrEmpty(uniqueJson))
+                string tagsJson   = br.ReadString();
+                string paramJson  = br.ReadString();
+                string craftJson  = br.ReadString();
+                string interJson  = br.ReadString();
+                string toolJson   = br.ReadString();
+                string weaponJson = br.ReadString();
+
+                List<string> tags = null;
+                if (!string.IsNullOrEmpty(tagsJson))
                 {
                     try
                     {
-                        uniqueDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(uniqueJson);
+                        tags = JsonConvert.DeserializeObject<List<string>>(tagsJson);
                     }
                     catch (System.Exception ex)
                     {
-                        Debug.LogError($"[LOAD-ENTITY] Unique 파싱 실패: {ex.Message}");
-                        uniqueDict = null;
+                        Debug.LogError($"[LOAD-ENTITY] Tags 파싱 실패: {ex.Message}");
+                        tags = null;
                     }
                 }
-                if (uniqueDict == null)
-                    uniqueDict = new Dictionary<string, object>();
+                if (tags == null) tags = new List<string>();
+
+                Dictionary<string, object> paramDict = null;
+                if (!string.IsNullOrEmpty(paramJson))
+                {
+                    try
+                    {
+                        paramDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(paramJson);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[LOAD-ENTITY] Params 파싱 실패: {ex.Message}");
+                        paramDict = null;
+                    }
+                }
+                if (paramDict == null) paramDict = new Dictionary<string, object>();
+
+                List<string> craftingActions = null;
+                if (!string.IsNullOrEmpty(craftJson))
+                {
+                    try
+                    {
+                        craftingActions = JsonConvert.DeserializeObject<List<string>>(craftJson);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[LOAD-ENTITY] craftingActions 파싱 실패: {ex.Message}");
+                        craftingActions = null;
+                    }
+                }
+                if (craftingActions == null) craftingActions = new List<string>();
+
+                List<string> interActions = null;
+                if (!string.IsNullOrEmpty(interJson))
+                {
+                    try
+                    {
+                        interActions = JsonConvert.DeserializeObject<List<string>>(interJson);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[LOAD-ENTITY] interActions 파싱 실패: {ex.Message}");
+                        interActions = null;
+                    }
+                }
+                if (interActions == null) interActions = new List<string>();
+
+                List<string> toolActions = null;
+                if (!string.IsNullOrEmpty(toolJson))
+                {
+                    try
+                    {
+                        toolActions = JsonConvert.DeserializeObject<List<string>>(toolJson);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[LOAD-ENTITY] toolActions 파싱 실패: {ex.Message}");
+                        toolActions = null;
+                    }
+                }
+                if (toolActions == null) toolActions = new List<string>();
+
+                List<string> weaponActions = null;
+                if (!string.IsNullOrEmpty(weaponJson))
+                {
+                    try
+                    {
+                        weaponActions = JsonConvert.DeserializeObject<List<string>>(weaponJson);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[LOAD-ENTITY] weaponActions 파싱 실패: {ex.Message}");
+                        weaponActions = null;
+                    }
+                }
+                if (weaponActions == null) weaponActions = new List<string>();
 
                 Sprite icon = null;
                 if (itemLibrary != null && !string.IsNullOrEmpty(spriteName))
@@ -506,18 +738,25 @@ public static class WorldSaveSystem
                 }
 
                 var data = new ItemData(
-                    itemId:     itemId,
-                    name:       name,
-                    spriteName: spriteName,
-                    itemType:   itemType,
-                    maxStack:   maxStack,
-                    unique:     uniqueDict,
-                    icon:       icon,
-                    count:      icount
+                    itemId:          itemId,
+                    name:            name,
+                    spriteName:      spriteName,
+                    itemType:        itemType,
+                    maxStack:        maxStack,
+                    maxDurability:   maxDur,
+                    durability:      dur,
+                    craftingActions: craftingActions,
+                    interActions:    interActions,
+                    toolActions:     toolActions,
+                    weaponActions:   weaponActions,
+                    tags:            tags,
+                    parameters:      paramDict,
+                    icon:            icon,
+                    count:           icount
                 );
 
                 Vector3 pos = new Vector3(px, py, 0f);
-                var go = Object.Instantiate(itemDropper.droppedItemPrefab, pos, Quaternion.identity);
+                var go   = Object.Instantiate(itemDropper.droppedItemPrefab, pos, Quaternion.identity);
                 var comp = go.GetComponent<DroppedItem>();
                 if (comp != null) comp.Initialize(data);
                 spawned++;
