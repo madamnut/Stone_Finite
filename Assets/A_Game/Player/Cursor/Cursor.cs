@@ -1,4 +1,5 @@
 // Cursor.cs
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -69,42 +70,55 @@ public class Cursor : MonoBehaviour
         if (hover != null && hover.Item != null && tooltipText != null)
         {
             var it = hover.Item;
-            var sb = new StringBuilder(256);
+            var sb = new StringBuilder(512);
+
+            // 기본 메타
             sb.AppendLine(it.Name);
             sb.Append("ID: ").AppendLine(it.ItemId);
             sb.Append("Type: ").AppendLine(it.ItemType);
             sb.Append("Sprite: ").AppendLine(it.SpriteName);
             sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-
-            // 내구도
             sb.Append("Durability: ")
               .Append(it.Durability)
               .Append(" / ")
               .AppendLine(it.MaxDurability.ToString());
 
             // 태그
+            sb.AppendLine();
             sb.AppendLine("Tags:");
             if (it.Tags != null && it.Tags.Count > 0)
             {
                 for (int i = 0; i < it.Tags.Count; i++)
-                {
                     sb.Append(" - ").AppendLine(it.Tags[i]);
-                }
             }
             else
             {
                 sb.AppendLine(" - (none)");
             }
 
-            // 파라미터(최상위만 간단히 출력)
+            // 액션들
+            sb.AppendLine();
+            sb.AppendLine("CraftingActions:");
+            AppendStringListInline(sb, it.CraftingActions);
+
+            sb.AppendLine("InterActions:");
+            AppendStringListInline(sb, it.InterActions);
+
+            sb.AppendLine("ToolActions:");
+            AppendStringListInline(sb, it.ToolActions);
+
+            sb.AppendLine("WeaponActions:");
+            AppendStringListInline(sb, it.WeaponActions);
+
+            // 파라미터 전체(중첩 포함)
+            sb.AppendLine();
             sb.AppendLine("Params:");
             if (it.Parameters != null && it.Parameters.Count > 0)
             {
                 foreach (var kv in it.Parameters)
-                    sb.Append(" - ")
-                      .Append(kv.Key)
-                      .Append(": ")
-                      .AppendLine(kv.Value == null ? "null" : kv.Value.ToString());
+                {
+                    AppendParamRecursive(sb, " - ", kv.Key, kv.Value);
+                }
             }
             else
             {
@@ -152,6 +166,49 @@ public class Cursor : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0)) HandleClick(PointerEventData.InputButton.Left);
         if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
+    }
+
+    // 문자열 리스트 한 줄 또는 여러 줄로 출력
+    static void AppendStringListInline(StringBuilder sb, IList<string> list)
+    {
+        if (list == null || list.Count == 0)
+        {
+            sb.AppendLine(" - (none)");
+            return;
+        }
+
+        for (int i = 0; i < list.Count; i++)
+            sb.Append(" - ").AppendLine(list[i]);
+    }
+
+    // parameters 값 전체를 중첩 구조 포함해서 출력
+    static void AppendParamRecursive(StringBuilder sb, string indent, string key, object value)
+    {
+        if (value is Dictionary<string, object> dict)
+        {
+            sb.Append(indent).Append(key).AppendLine(":");
+            foreach (var kv in dict)
+                AppendParamRecursive(sb, indent + "  ", kv.Key, kv.Value);
+        }
+        else if (value is IList list && value is not string)
+        {
+            sb.Append(indent).Append(key).AppendLine(": [");
+            int idx = 0;
+            foreach (var v in list)
+            {
+                string k = $"[{idx}]";
+                AppendParamRecursive(sb, indent + "  ", k, v);
+                idx++;
+            }
+            sb.Append(indent).AppendLine("]");
+        }
+        else
+        {
+            sb.Append(indent)
+              .Append(key)
+              .Append(": ")
+              .AppendLine(value == null ? "null" : value.ToString());
+        }
     }
 
     void HandleClick(PointerEventData.InputButton btn)

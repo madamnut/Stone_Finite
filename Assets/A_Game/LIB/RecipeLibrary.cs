@@ -273,7 +273,7 @@ public class RecipeLibrary : MonoBehaviour
         return true;
     }
 
-    // 스펙 매칭(itemId/name/params/hasTag, 배열 부분집합 지원)
+    // 스펙 매칭(itemId/name/params/hasTag/craftingActions, 배열 부분집합 지원)
     bool MatchSpec(ItemData it, JObject spec)
     {
         if (spec == null) return false;
@@ -298,7 +298,7 @@ public class RecipeLibrary : MonoBehaviour
             if (!string.Equals(it.Name, wantNm, StringComparison.Ordinal)) return false;
         }
 
-        // params 매칭
+        // params 매칭 (중첩 구조 지원)
         var paramSpec = spec["params"] as JObject;
         if (paramSpec != null && paramSpec.Properties().Any())
         {
@@ -321,10 +321,27 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
+        // craftingActions 매칭 (tool gating용)
+        var caSpec = spec["craftingActions"] as JArray;
+        if (caSpec != null && caSpec.Count > 0)
+        {
+            constraints++;
+            if (it == null) return false;
+
+            var required = caSpec.Select(x => x.ToString()).ToList();
+            var haveList = it.CraftingActions ?? new List<string>();
+            foreach (var req in required)
+            {
+                if (!haveList.Contains(req))
+                    return false;
+            }
+        }
+
         if (constraints == 0) return false;
         return true;
     }
 
+    // params: 중첩 JObject 기준 부분 일치
     bool MatchParams(Dictionary<string, object> parameters, JObject paramSpec)
     {
         if (paramSpec == null || !paramSpec.Properties().Any())
@@ -333,30 +350,53 @@ public class RecipeLibrary : MonoBehaviour
         if (parameters == null)
             return false;
 
-        foreach (var p in paramSpec.Properties())
-        {
-            string key = p.Name;
-            var wantTok = p.Value;
-            if (!parameters.TryGetValue(key, out var have))
-                return false;
+        // parameters 전체를 JObject로 래핑해서 부분 비교
+        var haveRoot = JObject.FromObject(parameters);
+        return MatchToken(haveRoot, paramSpec);
+    }
 
-            if (wantTok is JArray wantArr)
+    bool MatchToken(JToken have, JToken want)
+    {
+        if (want == null) return have == null;
+
+        if (want.Type == JTokenType.Object)
+        {
+            if (have == null || have.Type != JTokenType.Object) return false;
+            var wObj = (JObject)want;
+            var hObj = (JObject)have;
+
+            foreach (var p in wObj.Properties())
             {
-                var wantList = wantArr.Select(x => x.ToString()).ToList();
-                var haveList = ToStringList(have);
-                if (!wantList.All(w => haveList.Contains(w)))
+                if (!hObj.TryGetValue(p.Name, out var subHave))
                     return false;
+                if (!MatchToken(subHave, p.Value))
+                    return false;
+            }
+            return true;
+        }
+
+        if (want.Type == JTokenType.Array)
+        {
+            var wArr = (JArray)want;
+
+            if (have != null && have.Type == JTokenType.Array)
+            {
+                var hArr = (JArray)have;
+                var haveStrings = hArr.Select(x => x.ToString()).ToList();
+                var wantStrings = wArr.Select(x => x.ToString()).ToList();
+                return wantStrings.All(w => haveStrings.Contains(w));
             }
             else
             {
-                string wantStr = wantTok.ToString();
-                string haveStr = have?.ToString() ?? "";
-                if (!string.Equals(haveStr, wantStr, StringComparison.Ordinal))
-                    return false;
+                // 스펙이 단일값 배열인 경우, 단일 값과의 비교 허용
+                if (wArr.Count != 1) return false;
+                return MatchToken(have, wArr[0]);
             }
         }
 
-        return true;
+        var haveStr = have?.ToString() ?? "";
+        var wantStr = want.ToString();
+        return string.Equals(haveStr, wantStr, StringComparison.Ordinal);
     }
 
     List<string> ToStringList(object v)
@@ -372,18 +412,22 @@ public class RecipeLibrary : MonoBehaviour
         return new List<string> { v.ToString() };
     }
 
-    // 출력액션(루트 name/spriteName/itemId/durability/maxDurability 반영 + 나머지는 Parameters/params)
+    // 출력액션(루트 name/spriteName/itemId/durability/maxDurability/액션 배열 반영 + 나머지는 Parameters/params)
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign)
     {
         if (dst == null) return null;
         if (outActs == null || outActs.Count == 0) return dst;
         if (dst.Parameters == null) return dst;
 
-        string overrideName       = null;
-        string overrideSprite     = null;
-        string overrideItemId     = null;
-        int?   overrideDurability = null;
-        int?   overrideMaxDur     = null;
+        string       overrideName       = null;
+        string       overrideSprite     = null;
+        string       overrideItemId     = null;
+        int?         overrideDurability = null;
+        int?         overrideMaxDur     = null;
+        List<string> overrideCraft      = null;
+        List<string> overrideInter      = null;
+        List<string> overrideTool       = null;
+        List<string> overrideWeapon     = null;
 
         for (int i = 0; i < outActs.Count; i++)
         {
@@ -399,6 +443,20 @@ public class RecipeLibrary : MonoBehaviour
                 {
                     object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
                     if (val is string sv) val = ExpandTokens(sv);
+
+                    // 액션 배열 처리
+                    if (field == "craftingActions" ||
+                        field == "interActions" ||
+                        field == "toolActions" ||
+                        field == "weaponActions")
+                    {
+                        var list = ToStringList(val);
+                        if (field == "craftingActions") overrideCraft = list;
+                        else if (field == "interActions") overrideInter = list;
+                        else if (field == "toolActions") overrideTool = list;
+                        else overrideWeapon = list;
+                        continue;
+                    }
 
                     if (field == "name")        { overrideName   = val?.ToString(); continue; }
                     if (field == "spriteName")  { overrideSprite = val?.ToString(); continue; }
@@ -433,6 +491,20 @@ public class RecipeLibrary : MonoBehaviour
                     string strip = act.Value<string>("stripSuffix");
                     if (!string.IsNullOrEmpty(strip) && val is string svFrom && svFrom.EndsWith(strip))
                         val = svFrom.Substring(0, svFrom.Length - strip.Length);
+
+                    // 액션 배열 처리
+                    if (field == "craftingActions" ||
+                        field == "interActions" ||
+                        field == "toolActions" ||
+                        field == "weaponActions")
+                    {
+                        var list = ToStringList(val);
+                        if (field == "craftingActions") overrideCraft = list;
+                        else if (field == "interActions") overrideInter = list;
+                        else if (field == "toolActions") overrideTool = list;
+                        else overrideWeapon = list;
+                        continue;
+                    }
 
                     string sVal = val?.ToString();
 
@@ -481,7 +553,7 @@ public class RecipeLibrary : MonoBehaviour
                     if (field == "spriteName")  { overrideSprite = joined; continue; }
                     if (field == "itemId")      { overrideItemId = joined; continue; }
 
-                    // join 결과는 문자열이므로 durability/maxDurability에는 쓰지 않음
+                    // join 결과는 문자열이므로 durability/maxDurability/액션에는 쓰지 않음
                     dst.SetParamPath(field, joined);
                     continue;
                 }
@@ -508,6 +580,21 @@ public class RecipeLibrary : MonoBehaviour
                 int si = (assign != null && from >= 0 && from < assign.Length) ? assign[from] : -1;
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                 var val = ReadField(src, inField);
+
+                // 액션 배열 처리
+                if (toField == "craftingActions" ||
+                    toField == "interActions" ||
+                    toField == "toolActions" ||
+                    toField == "weaponActions")
+                {
+                    var list = ToStringList(val);
+                    if (toField == "craftingActions") overrideCraft = list;
+                    else if (toField == "interActions") overrideInter = list;
+                    else if (toField == "toolActions") overrideTool = list;
+                    else overrideWeapon = list;
+                    continue;
+                }
+
                 string sVal = val?.ToString();
 
                 if (toField == "name")        { overrideName   = sVal; continue; }
@@ -614,7 +701,11 @@ public class RecipeLibrary : MonoBehaviour
             overrideSprite     != null ||
             overrideItemId     != null ||
             overrideDurability.HasValue ||
-            overrideMaxDur.HasValue;
+            overrideMaxDur.HasValue ||
+            overrideCraft  != null ||
+            overrideInter  != null ||
+            overrideTool   != null ||
+            overrideWeapon != null;
 
         if (!changed)
             return dst;
@@ -624,6 +715,11 @@ public class RecipeLibrary : MonoBehaviour
         string finalId         = overrideItemId     ?? dst.ItemId;
         int    finalMaxDur     = overrideMaxDur     ?? dst.MaxDurability;
         int    finalDurability = overrideDurability ?? dst.Durability;
+
+        var finalCraft  = overrideCraft  ?? dst.CraftingActions;
+        var finalInter  = overrideInter  ?? dst.InterActions;
+        var finalTool   = overrideTool   ?? dst.ToolActions;
+        var finalWeapon = overrideWeapon ?? dst.WeaponActions;
 
         var finalIcon = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
 
@@ -635,10 +731,10 @@ public class RecipeLibrary : MonoBehaviour
             maxStack:        dst.MaxStack,
             maxDurability:   finalMaxDur,
             durability:      finalDurability,
-            craftingActions: dst.CraftingActions,
-            interActions:    dst.InterActions,
-            toolActions:     dst.ToolActions,
-            weaponActions:   dst.WeaponActions,
+            craftingActions: finalCraft,
+            interActions:    finalInter,
+            toolActions:     finalTool,
+            weaponActions:   finalWeapon,
             tags:            dst.Tags,
             parameters:      dst.Parameters,
             icon:            finalIcon,
@@ -656,11 +752,16 @@ public class RecipeLibrary : MonoBehaviour
 
         switch (field)
         {
-            case "name":          return src.Name;
-            case "spriteName":    return src.SpriteName;
-            case "itemId":        return src.ItemId;
-            case "durability":    return src.Durability;
-            case "maxDurability": return src.MaxDurability;
+            case "name":             return src.Name;
+            case "spriteName":       return src.SpriteName;
+            case "itemId":           return src.ItemId;
+            case "durability":       return src.Durability;
+            case "maxDurability":    return src.MaxDurability;
+            case "craftingActions":  return src.CraftingActions;
+            case "interActions":     return src.InterActions;
+            case "toolActions":      return src.ToolActions;
+            case "weaponActions":    return src.WeaponActions;
+            case "tags":             return src.Tags;
         }
         return null;
     }
@@ -669,31 +770,18 @@ public class RecipeLibrary : MonoBehaviour
     {
         if (dst?.Parameters == null || string.IsNullOrEmpty(field)) return null;
 
+        var root = JObject.FromObject(dst.Parameters);
         var parts = field.Split('.');
-        object current = dst.Parameters;
+        JToken current = root;
 
         for (int i = 0; i < parts.Length; i++)
         {
             string key = parts[i];
 
-            if (current is Dictionary<string, object> cd)
+            if (current is JObject jo)
             {
-                if (!cd.TryGetValue(key, out current))
+                if (!jo.TryGetValue(key, out current))
                     return null;
-            }
-            else if (current is JObject jo)
-            {
-                if (!jo.TryGetValue(key, out var token))
-                    return null;
-
-                if (token is JObject subJo)
-                    current = subJo;
-                else if (token is JArray subJa)
-                    current = subJa;
-                else if (token is JValue jv)
-                    current = jv.Value;
-                else
-                    current = token;
             }
             else
             {
@@ -701,6 +789,7 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
+        if (current is JValue jv) return jv.Value;
         return current;
     }
 

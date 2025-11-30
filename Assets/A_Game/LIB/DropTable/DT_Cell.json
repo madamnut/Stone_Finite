@@ -52,6 +52,7 @@
     { "itemId": "Leaf", "probability": 1, "min": 4, "max": 8 },
     { "itemId": "Plant", "probability": 1, "min": 2, "max": 4 },
     { "itemId": "Twig", "probability": 1, "min": 3, "max": 6 },
+    { "itemId": "Branch", "probability": 1, "min": 2, "max": 4 },
     { "itemId": "Seed", "probability": 1, "min": 2, "max": 4 }
   ],
   "Stone_Pile": [
@@ -68,7 +69,8 @@
   "Leaf": [
     { "itemId": "Leaf", "probability": 1, "min": 10, "max": 15 },
     { "itemId": "Twig", "probability": 1, "min": 6, "max": 10 },
-    { "itemId": "Thick Twig", "probability": 1, "min": 1, "max": 2 }
+    { "itemId": "Branch", "probability": 1, "min": 3, "max": 6 },
+    { "itemId": "Bough", "probability": 1, "min": 2, "max": 4 }
   ],
   "Trunk": [
     { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }

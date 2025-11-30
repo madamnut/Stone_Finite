@@ -2,9 +2,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "params": { "HeadType": "LongGrip" },   "count": 1 },
-      { "params": { "BindingType": "Long" },    "count": 1 },
-      { "params": { "HandleType": "Long" },     "count": 1 }
+      { "params": { "Head.type": "LongGrip" }, "count": 1 },
+      { "params": { "Binding.type": "Long" },  "count": 1 },
+      { "params": { "Handle.type": "Long" },   "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -45,9 +45,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "params": { "HeadType": "ShortGrip" },  "count": 1 },
-      { "params": { "BindingType": "Short" },   "count": 1 },
-      { "params": { "HandleType": "Short" },    "count": 1 }
+      { "params": { "Head.type": "ShortGrip" }, "count": 1 },
+      { "params": { "Binding.type": "Short" },  "count": 1 },
+      { "params": { "Handle.type": "Short" },   "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -88,9 +88,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "params": { "HeadType": "DefaultGrip" }, "count": 1 },
-      { "params": { "BindingType": "Default" },  "count": 1 },
-      { "params": { "HandleType": "Default" },   "count": 1 }
+      { "params": { "Head.type": "DefaultGrip" }, "count": 1 },
+      { "params": { "Binding.type": "Default" },  "count": 1 },
+      { "params": { "Handle.type": "Default" },   "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -132,8 +132,8 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "params": { "HeadType": "BindGrip" },   "count": 1 },
-      { "params": { "BindingType": "Default" }, "count": 1 }
+      { "params": { "Head.type": "BindGrip" },   "count": 1 },
+      { "params": { "Binding.type": "Default" }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },

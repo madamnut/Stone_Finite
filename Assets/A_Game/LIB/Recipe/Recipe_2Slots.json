@@ -3,7 +3,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Plant", "count": 1 },
-      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
+      { "craftingActions": ["Scraping"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -31,7 +31,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 },
-      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
+      { "craftingActions": ["Scraping"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -99,7 +99,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Branch", "count": 1 },
-      { "unique": { "craftingActions": ["Cutting"] }, "count": 1 }
+      { "craftingActions": ["Cutting"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -113,7 +113,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Bough", "count": 1 },
-      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+      { "craftingActions": ["Hewing"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -127,7 +127,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Long Wooden Stick", "count": 1 },
-      { "unique": { "craftingActions": ["Chopping"] }, "count": 1 }
+      { "craftingActions": ["Chopping"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -141,7 +141,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Wooden Stick", "count": 1 },
-      { "unique": { "craftingActions": ["Chopping"] }, "count": 1 }
+      { "craftingActions": ["Chopping"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -152,12 +152,11 @@
     "outputCount": 2
   },
 
-
   {
     "isOrdered": false,
     "inputs": [
       { "itemId": "Log", "count": 1 },
-      { "unique": { "craftingActions": ["Scraping"] }, "count": 1 }
+      { "craftingActions": ["Scraping"], "count": 1 }
     ],
     "inputActions": [
       { "type": "transform", "toItemId": "Stripped Log", "toCount": 1 },
@@ -171,7 +170,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Stripped Log", "count": 1 },
-      { "unique": { "craftingActions": ["Splitting"] }, "count": 1 }
+      { "craftingActions": ["Splitting"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -185,7 +184,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Half Log", "count": 1 },
-      { "unique": { "craftingActions": ["Splitting"] }, "count": 1 }
+      { "craftingActions": ["Splitting"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -199,7 +198,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Quarter Log", "count": 1 },
-      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+      { "craftingActions": ["Hewing"], "count": 1 }
     ],
     "inputActions": [
       { "type": "transform", "toItemId": "Wood Shavings", "toCount": 1 },
@@ -213,7 +212,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Half Log", "count": 1 },
-      { "unique": { "craftingActions": ["Hewing"] }, "count": 1 }
+      { "craftingActions": ["Hewing"], "count": 1 }
     ],
     "inputActions": [
       { "type": "transform", "toItemId": "Wood Shavings", "toCount": 2 },
@@ -255,10 +254,10 @@
   },
 
   {
-    "isOrdered": false,
+    "isOrdered": true,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -269,10 +268,10 @@
     "outputCount": 1
   },
   {
-    "isOrdered": false,
+    "isOrdered": true,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -287,7 +286,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Stone Chopper", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -301,7 +300,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Stone Chopper", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -316,7 +315,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Stone Pounder", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -330,7 +329,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Stone Pounder", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -342,10 +341,10 @@
   },
 
   {
-    "isOrdered": false,
+    "isOrdered": true,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -356,10 +355,10 @@
     "outputCount": 1
   },
   {
-    "isOrdered": false,
+    "isOrdered": true,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -374,7 +373,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Flint Blade", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -388,7 +387,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Flint Blade", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -403,7 +402,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Flint Scraper", "count": 1 },
-      { "unique": { "craftingActions": ["PercussionFlaking"] }, "count": 1 }
+      { "craftingActions": ["PercussionFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -417,7 +416,7 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Flint Scraper", "count": 1 },
-      { "unique": { "craftingActions": ["PressureFlaking"] }, "count": 1 }
+      { "craftingActions": ["PressureFlaking"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
