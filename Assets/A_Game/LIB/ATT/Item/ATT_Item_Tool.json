@@ -24,15 +24,15 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "LongGrip",
         "potentialName": "Stone Chopper"
       }
     }
   },
 
-  "Stone Handaxe": {
-    "name": "Stone Handaxe",
-    "spriteName": "Stone Handaxe",
+  "Stone Adze": {
+    "name": "Stone Adze",
+    "spriteName": "Stone Adze",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
@@ -60,7 +60,7 @@
 
     "params": {
       "Head": {
-        "type": "LongGrip",
+        "type": "DefaultGrip",
         "potentialName": "Stone Cleaver"
       }
     }
@@ -78,7 +78,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Stone Pounder"
       }
     }
@@ -145,7 +145,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Knife"
       }
     }
@@ -163,7 +163,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Awl"
       }
     }
@@ -181,7 +181,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Burin"
       }
     }
@@ -199,7 +199,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Scraper"
       }
     }
@@ -217,7 +217,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Graver"
       }
     }
@@ -235,7 +235,7 @@
 
     "params": {
       "Head": {
-        "type": "BindGrip",
+        "type": "ShortGrip",
         "potentialName": "Flint Denticulate"
       }
     }

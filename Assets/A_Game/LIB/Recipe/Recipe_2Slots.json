@@ -292,7 +292,7 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Handaxe",
+    "output": "Stone Adze",
     "outputActions": [],
     "outputCount": 1
   },

@@ -130,45 +130,6 @@
   },
 
   {
-    "isOrdered": false,
-    "inputs": [
-      { "params": { "Head.type": "BindGrip" },   "count": 1 },
-      { "params": { "Binding.type": "Default" }, "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
-    ],
-    "output": "Head_Binding",
-    "outputCount": 1,
-    "outputActions": [
-      { "type": "paramSet", "field": "Parts.head",    "fromInput": 0, "inputField": "name" },
-      { "type": "paramSet", "field": "Parts.binding", "fromInput": 1, "inputField": "name" },
-
-      { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
-      { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "Binding.potentialDurability" },
-
-      { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-      { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "Binding.potentialDurability" },
-
-      { "type": "copyField", "fromInput": 0, "inputField": "craftingActions", "toField": "craftingActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "interActions",    "toField": "interActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "toolActions",     "toField": "toolActions" },
-      { "type": "copyField", "fromInput": 0, "inputField": "weaponActions",   "toField": "weaponActions" },
-
-      { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "Head.potentialName" },
-      {
-        "type": "setValue",
-        "field": "spriteName",
-        "valueFromFields": ["Parts.binding", "Parts.head"],
-        "separator": " + ",
-        "prefixEach": "Module_"
-      },
-      { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
-    ]
-  },
-
-  {
     "isOrdered": true,
     "inputs": [
       { "itemId": "Dirt Pile", "count": 1 },
