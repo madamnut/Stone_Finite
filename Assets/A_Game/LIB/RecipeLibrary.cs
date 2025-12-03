@@ -98,7 +98,21 @@ public class RecipeLibrary : MonoBehaviour
             var outActs    = r["outputActions"] as JArray;
 
             if (string.IsNullOrEmpty(outId) || outCount <= 0) continue;
-            if (presentIdx.Count < inputs.Count) continue;
+
+            // ★ 빈 슬롯 처리:
+            // - 2슬롯 컨텍스트(일반, fourContext=false): 실제 채워진 슬롯 수 == inputs.Count 인 레시피만 허용
+            // - 4슬롯 컨텍스트(fourContext=true): 기존처럼 "최소 개수"만 맞추고, 윈도우/allowed 로 세부 처리
+            int filledCount = presentIdx.Count;
+            if (!fourContext)
+            {
+                if (filledCount != inputs.Count)
+                    continue;
+            }
+            else
+            {
+                if (filledCount < inputs.Count)
+                    continue;
+            }
 
             int[] assign = null;
 
