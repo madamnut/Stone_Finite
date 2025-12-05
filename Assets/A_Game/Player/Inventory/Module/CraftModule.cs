@@ -1,16 +1,29 @@
-// CraftModule.cs
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 
 public class CraftModule : MonoBehaviour
 {
-    [Header("Inputs/Output")]
-    public List<ItemSlot> inputs = new List<ItemSlot>(4); // 2~4 사용
-    public ItemSlot output;
+    public enum TableType
+    {
+        Hand,   // 2-slot handcraft
+        Primal  // 4-slot primal workbench
+    }
+
+    [Header("Table")]
+    public TableType tableType = TableType.Hand;
+
+    [Header("Inputs / Preview")]
+    public List<ItemSlot> inputs  = new List<ItemSlot>(4); // 인풋 슬롯(최대 4)
+    public List<ItemSlot> outputs = new List<ItemSlot>(2); // 결과 프리뷰 슬롯(2슬롯)
+
+    [Header("UI")]
+    public Button craftButton; // 크래프팅 실행 버튼
 
     [Header("Refs")]
-    public RecipeLibrary recipeLibrary; // TryCraft(List<ItemData>, out ItemData, out JArray, out JObject)
+    // TryCraft(List<ItemData>, out List<ItemData> resultItems, out JArray inputActions, out JObject matchedRecipe)
+    public RecipeLibrary recipeLibrary;
     public Player        player;
 
     // 상태
@@ -22,27 +35,75 @@ public class CraftModule : MonoBehaviour
     int[]      _prevCounts;
     int[]      _prevDurs;
 
+    int ActiveInputCount
+    {
+        get
+        {
+            int max = inputs?.Count ?? 0;
+            switch (tableType)
+            {
+                case TableType.Hand:   return Mathf.Min(2, max);
+                case TableType.Primal: return Mathf.Min(4, max);
+                default:               return max;
+            }
+        }
+    }
+
     void Awake()
     {
+        // 인풋 슬롯 초기화
         if (inputs == null) inputs = new List<ItemSlot>(4);
+        int active = ActiveInputCount;
         for (int i = 0; i < inputs.Count; i++)
         {
             var s = inputs[i];
             if (s == null) continue;
+
             s.useLocalStorage = true;
             s.denyUserPut     = false;
             s.Set(null);
+
+            // 테이블 타입 기준으로 사용하지 않는 슬롯은 비활성화
+            if (i >= active)
+                s.gameObject.SetActive(false);
         }
-        if (output != null)
+
+        // 출력(프리뷰) 슬롯 초기화
+        if (outputs == null) outputs = new List<ItemSlot>(2);
+        for (int i = 0; i < outputs.Count; i++)
         {
-            output.useLocalStorage = true;
-            output.denyUserPut     = true;
-            output.Set(null);
+            var s = outputs[i];
+            if (s == null) continue;
+            s.useLocalStorage = true;
+            s.denyUserPut     = true; // 프리뷰 전용, 유저 투입/수정 불가
+            s.Set(null);
         }
+
+        if (craftButton != null)
+            craftButton.onClick.AddListener(OnClickCraft);
 
         AllocSnapshot();
         Snapshot();
         ScanAndPreview();
+    }
+
+    void OnDestroy()
+    {
+        if (craftButton != null)
+            craftButton.onClick.RemoveListener(OnClickCraft);
+
+        // 모듈 파괴 시, 인풋에 남아있는 아이템은 플레이어 인벤토리로 반환
+        if (player == null || player.Inventory == null) return;
+
+        int active = ActiveInputCount;
+        for (int i = 0; i < active; i++)
+        {
+            var s = inputs[i];
+            if (s == null || s.Item == null) continue;
+            int left = player.Inventory.AddItem(s.Item);
+            if (left == 0) s.Set(null);
+            else { s.Item.Count = left; s.Refresh(); }
+        }
     }
 
     void Update()
@@ -54,22 +115,9 @@ public class CraftModule : MonoBehaviour
         }
     }
 
-    void OnDestroy()
-    {
-        if (player == null || player.Inventory == null) return;
-        for (int i = 0; i < inputs.Count; i++)
-        {
-            var s = inputs[i];
-            if (s == null || s.Item == null) continue;
-            int left = player.Inventory.AddItem(s.Item);
-            if (left == 0) s.Set(null);
-            else { s.Item.Count = left; s.Refresh(); }
-        }
-    }
-
     void AllocSnapshot()
     {
-        int n = Mathf.Max(0, inputs?.Count ?? 0);
+        int n = Mathf.Max(0, ActiveInputCount);
         _prevItems  = new ItemData[n];
         _prevCounts = new int[n];
         _prevDurs   = new int[n];
@@ -78,15 +126,23 @@ public class CraftModule : MonoBehaviour
     bool Changed()
     {
         if (inputs == null) return false;
-        if (_prevItems == null || _prevItems.Length != inputs.Count) { AllocSnapshot(); return true; }
 
-        for (int i = 0; i < inputs.Count; i++)
+        int active = ActiveInputCount;
+
+        if (_prevItems == null || _prevItems.Length != active)
+        {
+            AllocSnapshot();
+            return true;
+        }
+
+        for (int i = 0; i < active; i++)
         {
             var it = inputs[i]?.Item;
             int c  = it?.Count ?? 0;
             int d  = it?.Durability ?? 0;
 
-            if (it != _prevItems[i] || c != _prevCounts[i] || d != _prevDurs[i]) return true;
+            if (it != _prevItems[i] || c != _prevCounts[i] || d != _prevDurs[i])
+                return true;
         }
         return false;
     }
@@ -94,9 +150,12 @@ public class CraftModule : MonoBehaviour
     void Snapshot()
     {
         if (inputs == null) return;
-        if (_prevItems == null || _prevItems.Length != inputs.Count) AllocSnapshot();
 
-        for (int i = 0; i < inputs.Count; i++)
+        int active = ActiveInputCount;
+        if (_prevItems == null || _prevItems.Length != active)
+            AllocSnapshot();
+
+        for (int i = 0; i < active; i++)
         {
             var it = inputs[i]?.Item;
             _prevItems[i]  = it;
@@ -105,58 +164,103 @@ public class CraftModule : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 인풋 슬롯 스냅샷으로 레시피 매칭 후, 결과 프리뷰만 갱신.
+    /// 이 단계에서는 인풋액션·아이템 소모 없음.
+    /// </summary>
     void ScanAndPreview()
     {
-        _matched = null; _inActions = null;
-        if (output) output.Set(null);
+        _matched   = null;
+        _inActions = null;
+
+        // 프리뷰 슬롯 모두 초기화
+        if (outputs != null)
+        {
+            for (int i = 0; i < outputs.Count; i++)
+                if (outputs[i] != null) outputs[i].Set(null);
+        }
+
         if (recipeLibrary == null) return;
 
-        var snap = new List<ItemData>(inputs.Count);
-        for (int i = 0; i < inputs.Count; i++) snap.Add(inputs[i]?.Item);
+        int active = ActiveInputCount;
+        var snap = new List<ItemData>(active);
+        for (int i = 0; i < active; i++)
+            snap.Add(inputs[i]?.Item);
 
-        if (recipeLibrary.TryCraft(snap, out ItemData resultItem, out JArray inputActions, out JObject matched))
+        if (recipeLibrary.TryCraft(snap, out List<ItemData> resultItems, out JArray inputActions, out JObject matched))
         {
             _matched   = matched;
             _inActions = inputActions;
-            output.Set(resultItem);
+
+            // 멀티 아웃풋 프리뷰 채우기 (최대 outputs.Count 개)
+            if (outputs != null)
+            {
+                for (int i = 0; i < outputs.Count; i++)
+                {
+                    var slot = outputs[i];
+                    if (slot == null) continue;
+
+                    if (resultItems != null && i < resultItems.Count)
+                        slot.Set(resultItems[i]);
+                    else
+                        slot.Set(null);
+                }
+            }
             return;
         }
-        output.Set(null);
+
+        // 매칭 실패 시 이미 위에서 출력 슬롯 모두 null 처리함
     }
 
-    public void TryTakeOutput(ItemSlot cursorSlot)
+    /// <summary>
+    /// 버튼 온클릭 → 크래프팅 실행.
+    /// </summary>
+    public void OnClickCraft()
     {
-        if (recipeLibrary == null || output == null || cursorSlot == null) return;
-        if (_matched == null || output.IsEmpty) return;
+        ExecuteCraft();
+    }
 
-        var cur  = cursorSlot.Item;
-        var prod = output.Item;
-        if (prod == null) return;
+    /// <summary>
+    /// 크래프팅 실행:
+    /// - 현재 인풋으로 다시 레시피 매칭
+    /// - 성공 시 모든 결과 아이템을 플레이어 인벤토리에 지급
+    /// - inputActions 적용(소모/내구도 감소 등)
+    /// - 이후 다시 프리뷰 갱신
+    /// </summary>
+    public void ExecuteCraft()
+    {
+        if (recipeLibrary == null) return;
+        if (player == null || player.Inventory == null) return;
+        if (_matched == null) return; // 현재 유효한 매칭 없음
 
-        // 커서에 이미 다른 아이템이 있을 때 스택 가능 여부 검사
-        if (cur != null)
+        int active = ActiveInputCount;
+
+        // 현재 슬롯 상태로 다시 매칭 (인풋 변경 가능성 대비)
+        var snap = new List<ItemData>(active);
+        for (int i = 0; i < active; i++)
+            snap.Add(inputs[i]?.Item);
+
+        if (!recipeLibrary.TryCraft(snap, out List<ItemData> freshList, out JArray inActs, out JObject matched))
         {
-            if (cur.ItemId != prod.ItemId) return;
-            if (cur.Count >= cur.MaxStack) return;
-            int room = cur.MaxStack - cur.Count;
-            if (prod.Count > room) return;
-        }
-
-        // 현재 슬롯 스냅샷으로 다시 시도 (중간에 인풋이 변했을 수 있으므로)
-        var snap = new List<ItemData>(inputs.Count);
-        for (int i = 0; i < inputs.Count; i++) snap.Add(inputs[i]?.Item);
-        if (!recipeLibrary.TryCraft(snap, out ItemData fresh, out JArray inActs, out JObject matched))
-        {
+            // 더 이상 유효한 레시피가 아니면 프리뷰만 갱신
             ScanAndPreview();
             return;
         }
-        _inActions = inActs; _matched = matched;
 
-        // 결과 아이템 커서로 이동/합치기
-        if (cur == null) cursorSlot.Set(fresh);
-        else { cur.Count += fresh.Count; cursorSlot.Refresh(); }
+        _inActions = inActs;
+        _matched   = matched;
 
-        // 인풋 액션 적용
+        if (freshList == null || freshList.Count == 0) return;
+
+        // 결과 아이템들을 플레이어 인벤토리에 지급
+        for (int i = 0; i < freshList.Count; i++)
+        {
+            var item = freshList[i];
+            if (item == null) continue;
+            player.Inventory.AddItem(item);
+        }
+
+        // 인풋 액션 적용 (소모/내구도 등)
         ApplyInputActions(_inActions);
 
         Snapshot();
@@ -166,7 +270,9 @@ public class CraftModule : MonoBehaviour
     void ApplyInputActions(JArray actions)
     {
         if (actions == null) return;
-        int n = Mathf.Min(actions.Count, inputs.Count);
+
+        int active = ActiveInputCount;
+        int n = Mathf.Min(actions.Count, active);
 
         for (int i = 0; i < n; i++)
         {
@@ -182,8 +288,10 @@ public class CraftModule : MonoBehaviour
             if (type == "consume")
             {
                 slot.Item.Count -= amount;
-                if (slot.Item.Count <= 0) slot.Set(null);
-                else slot.Refresh();
+                if (slot.Item.Count <= 0)
+                    slot.Set(null);
+                else
+                    slot.Refresh();
             }
             else if (type == "durability")
             {

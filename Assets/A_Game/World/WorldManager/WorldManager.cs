@@ -273,7 +273,7 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    // ───────── 설치 ─────────
+    // ───────── 설치 (FG) ─────────
     public bool PlaceCell(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
@@ -306,6 +306,22 @@ public class WorldManager : MonoBehaviour
         OnCellEditedFG(x, y);
 
         HandleArtificialChange(x, y, oldId, id);
+        return true;
+    }
+
+    // ───────── 설치 (BG) ─────────
+    public bool PlaceBgCell(int x, int y, ushort id)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+        if (id == 0) return false;
+
+        ushort oldId = worldMap.bg[x, y];
+        if (oldId == id) return false; // 이미 동일 셀인 경우 생략 (원하면 제거해도 됨)
+
+        worldMap.bg[x, y] = id;
+
+        MarkChunkDirty(x, y, markFG: false, markBG: true);
+        RecalculateLightAt(x, y);
         return true;
     }
 
@@ -1048,7 +1064,4 @@ public class WorldManager : MonoBehaviour
 
         return inst;
     }
-
-
-
 }

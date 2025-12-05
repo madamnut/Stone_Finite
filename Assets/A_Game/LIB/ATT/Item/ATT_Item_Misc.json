@@ -186,18 +186,18 @@
     "params": {}
   },
 
-  "Half Log": {
-    "name": "Half Log",
-    "spriteName": "Half Log",
+  "Half Stripped Log": {
+    "name": "Half Stripped Log",
+    "spriteName": "Half Stripped Log",
     "maxStack": 32,
     "tags": [],
 
     "params": {}
   },
 
-  "Quarter Log": {
-    "name": "Quarter Log",
-    "spriteName": "Quarter Log",
+  "Quarter Stripped Log": {
+    "name": "Quarter Stripped Log",
+    "spriteName": "Quarter Stripped Log",
     "maxStack": 32,
     "tags": [],
 
@@ -213,9 +213,9 @@
     "params": {}
   },
 
-  "Wooden Crude Plank": {
-    "name": "Wooden Crude Plank",
-    "spriteName": "Wooden Crude Plank",
+  "Crude Wooden Plank": {
+    "name": "Crude Wooden Plank",
+    "spriteName": "Crude Wooden Plank",
     "maxStack": 32,
     "tags": [],
 

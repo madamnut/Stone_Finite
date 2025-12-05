@@ -9,9 +9,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Plant Fiber",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Plant Fiber", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -23,9 +24,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Plant Twine",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -37,9 +39,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Plant Fiber",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Plant Fiber", "count": 2 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -49,9 +52,10 @@
     "inputActions": [
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Short Plant Twine",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Short Plant Twine", "count": 2 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -63,9 +67,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Plant Twine",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -78,9 +83,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Long Plant Twine",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Long Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -90,9 +96,10 @@
     "inputActions": [
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Plant Twine",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 2 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -105,9 +112,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Short Wooden Stick",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Short Wooden Stick", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -119,9 +127,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Long Wooden Stick",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Long Wooden Stick", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -133,9 +142,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Wooden Stick",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Wooden Stick", "count": 2 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -147,9 +157,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Short Wooden Stick",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Short Wooden Stick", "count": 2 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -159,12 +170,14 @@
       { "craftingActions": ["Scraping"], "count": 1 }
     ],
     "inputActions": [
-      { "type": "transform", "toItemId": "Stripped Log", "toCount": 1 },
+      { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Bark Strip",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "itemId": "Bark Strip", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -176,66 +189,73 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Half Log",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Half Stripped Log", "count": 2 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "itemId": "Half Log", "count": 1 },
+      { "itemId": "Half Stripped Log", "count": 1 },
       { "craftingActions": ["Splitting"], "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Quarter Log",
-    "outputActions": [],
-    "outputCount": 4
+    "outputs": [
+      { "itemId": "Quarter Stripped Log", "count": 4 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "itemId": "Quarter Log", "count": 1 },
+      { "itemId": "Quarter Stripped Log", "count": 1 },
       { "craftingActions": ["Hewing"], "count": 1 }
     ],
     "inputActions": [
-      { "type": "transform", "toItemId": "Wood Shavings", "toCount": 1 },
+      { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Wooden Stick",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Wooden Stick", "count": 2 },
+      { "itemId": "Wood Shavings", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
     "inputs": [
-      { "itemId": "Half Log", "count": 1 },
+      { "itemId": "Half Stripped Log", "count": 1 },
       { "craftingActions": ["Hewing"], "count": 1 }
     ],
     "inputActions": [
-      { "type": "transform", "toItemId": "Wood Shavings", "toCount": 2 },
+      { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Wooden Crude Plank",
-    "outputActions": [],
-    "outputCount": 2
+    "outputs": [
+      { "itemId": "Crude Wooden Plank", "count": 2 },
+      { "itemId": "Wood Shavings", "count": 2 }
+    ],
+    "outputActions": []
   },
 
   {
     "isOrdered": true,
     "inputs": [
-      { "itemId": "Wooden Crude Plank", "count": 1 },
-      { "itemId": "Wooden Crude Plank", "count": 1 }
+      { "itemId": "Crude Wooden Plank", "count": 1 },
+      { "itemId": "Crude Wooden Plank", "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Primal Workbench",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Primal Workbench", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -248,9 +268,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
-    "output": "Torch",
-    "outputActions": [],
-    "outputCount": 10
+    "outputs": [
+      { "itemId": "Torch", "count": 10 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -263,9 +284,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Chopper",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Chopper", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": true,
@@ -277,9 +299,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Pounder",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Pounder", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -292,9 +315,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Adze",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Adze", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -306,9 +330,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Cleaver",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Cleaver", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -321,9 +346,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Maul",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Maul", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -335,9 +361,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Stone Percussor",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Stone Percussor", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -350,9 +377,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Blade",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Blade", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": true,
@@ -364,9 +392,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Scraper",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Scraper", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -379,9 +408,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Awl",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Awl", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -393,9 +423,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Burin",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Burin", "count": 1 }
+    ],
+    "outputActions": []
   },
 
   {
@@ -408,9 +439,10 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Graver",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Graver", "count": 1 }
+    ],
+    "outputActions": []
   },
   {
     "isOrdered": false,
@@ -422,8 +454,9 @@
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
     ],
-    "output": "Flint Denticulate",
-    "outputActions": [],
-    "outputCount": 1
+    "outputs": [
+      { "itemId": "Flint Denticulate", "count": 1 }
+    ],
+    "outputActions": []
   }
 ]

@@ -41,7 +41,7 @@
 
     "params": {
       "Place": {
-        "layer": "Deco",
+        "layer": "Default",
         "cell": "Primal Workbench"
       }
     }
@@ -57,7 +57,7 @@
 
     "params": {
       "Place": {
-        "layer": "Deco",
+        "layer": "Default",
         "cell": "Torch"
       }
     }

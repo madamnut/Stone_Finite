@@ -25,40 +25,88 @@ public class RecipeLibrary : MonoBehaviour
             _r4 = JArray.Parse(recipe4Json.text);
     }
 
-    /// 슬롯 스냅샷 그대로 입력. 결과아이템(출력액션 적용완료) + 슬롯별 인풋액션 반환.
+    /// <summary>
+    /// 슬롯 스냅샷 그대로 입력.
+    /// - resultItems: 출력액션까지 적용된 결과 아이템 배열(멀티 아웃풋).
+    /// - remappedInputActions: 슬롯 인덱스별 인풋액션(JArray, null 허용).
+    ///
+    /// JSON 스키마:
+    /// {
+    ///   "isOrdered": false,
+    ///   "inputs": [...],
+    ///   "inputActions": [ {..}, {..}, ... ],
+    ///   "outputs": [
+    ///     { "itemId": "X", "count": 1 },
+    ///     { "itemId": "Y", "count": 2 }
+    ///   ],
+    ///   "outputActions": [
+    ///     [ {..}, {..} ],   // outputs[0] 에 대한 액션
+    ///     [ {..} ]          // outputs[1] 에 대한 액션
+    ///   ]
+    /// }
+    /// </summary>
     public bool TryCraft(
         List<ItemData> slots,
-        out ItemData resultItem,
+        out List<ItemData> resultItems,
         out JArray remappedInputActions,
         out JObject matchedRecipe)
     {
-        resultItem = null;
+        resultItems = null;
         remappedInputActions = null;
         matchedRecipe = null;
         if (itemLibrary == null || slots == null) return false;
 
         int n = slots.Count;
 
+        // ───────── 4슬롯 테이블 (Primal 등) ─────────
         if (n == 4)
         {
-            if (_r4 != null && TryMatchSet(_r4, slots, fourContext: true, out resultItem, out remappedInputActions, out matchedRecipe))
-                return true;
+            // 1) 4슬롯 레시피 중 inputs.Count == 4
+            if (_r4 != null)
+            {
+                var r4_4 = FilterByInputCount(_r4, 4);
+                if (r4_4.Count > 0 &&
+                    TryMatchSet(r4_4, slots, fourContext: true,
+                                out resultItems, out remappedInputActions, out matchedRecipe))
+                    return true;
 
-            if (_r2 != null && TryMatch2InFourContext(_r2, slots, out resultItem, out remappedInputActions, out matchedRecipe))
-                return true;
+                // 2) 4슬롯 레시피 중 inputs.Count == 3
+                var r4_3 = FilterByInputCount(_r4, 3);
+                if (r4_3.Count > 0 &&
+                    TryMatchSet(r4_3, slots, fourContext: true,
+                                out resultItems, out remappedInputActions, out matchedRecipe))
+                    return true;
 
-            if (_r4 != null && TryMatch2InFourContext(FilterByInputCount(_r4, 2), slots, out resultItem, out remappedInputActions, out matchedRecipe))
+                // 3) 4슬롯 레시피 중 inputs.Count == 2 → 2x2 윈도우 매칭
+                var r4_2 = FilterByInputCount(_r4, 2);
+                if (r4_2.Count > 0 &&
+                    TryMatch2InFourContext(r4_2, slots,
+                                            out resultItems, out remappedInputActions, out matchedRecipe))
+                    return true;
+            }
+
+            // 4) 2슬롯 레시피 세트를 4슬롯 테이블에서 사용
+            if (_r2 != null &&
+                TryMatch2InFourContext(_r2, slots,
+                                       out resultItems, out remappedInputActions, out matchedRecipe))
                 return true;
 
             return false;
         }
 
+        // ───────── 2슬롯 테이블 (Hand 등) ─────────
         if (n == 2)
         {
-            if (_r2 != null && TryMatchSet(_r2, slots, fourContext: false, out resultItem, out remappedInputActions, out matchedRecipe))
+            // 1) 2슬롯 레시피(Hand 기본)
+            if (_r2 != null &&
+                TryMatchSet(_r2, slots, fourContext: false,
+                            out resultItems, out remappedInputActions, out matchedRecipe))
                 return true;
 
-            if (_r4 != null && TryMatchSet(FilterByInputCount(_r4, 2), slots, fourContext: false, out resultItem, out remappedInputActions, out matchedRecipe))
+            // 2) 4슬롯 레시피 중 inputs.Count == 2 를 2슬롯 테이블에서 재사용
+            if (_r4 != null &&
+                TryMatchSet(FilterByInputCount(_r4, 2), slots, fourContext: false,
+                            out resultItems, out remappedInputActions, out matchedRecipe))
                 return true;
 
             return false;
@@ -67,16 +115,16 @@ public class RecipeLibrary : MonoBehaviour
         return false;
     }
 
-    // 세트 매칭(슬롯 수/인덱스 그대로, null 슬롯 유지)
+    // 세트 매칭(슬롯 수/인덱스 그대로, null 슬롯 유지) + 멀티 아웃풋
     bool TryMatchSet(
         JArray recipeSet,
         List<ItemData> slots,
         bool fourContext,
-        out ItemData resultItem,
+        out List<ItemData> resultItems,
         out JArray remappedInputActions,
         out JObject matchedRecipe)
     {
-        resultItem = null;
+        resultItems = null;
         remappedInputActions = null;
         matchedRecipe = null;
 
@@ -92,16 +140,15 @@ public class RecipeLibrary : MonoBehaviour
             if (inputs == null || inputs.Count == 0) continue;
 
             bool isOrdered = r.Value<bool?>("isOrdered") ?? false;
-            string outId   = r.Value<string>("output");
-            int outCount   = r.Value<int?>("outputCount") ?? 1;
-            var inActs     = r["inputActions"] as JArray;
-            var outActs    = r["outputActions"] as JArray;
 
-            if (string.IsNullOrEmpty(outId) || outCount <= 0) continue;
+            // 새 스키마: outputs 필수
+            var outputsArray = r["outputs"] as JArray;
+            if (outputsArray == null || outputsArray.Count == 0) continue;
 
-            // ★ 빈 슬롯 처리:
-            // - 2슬롯 컨텍스트(일반, fourContext=false): 실제 채워진 슬롯 수 == inputs.Count 인 레시피만 허용
-            // - 4슬롯 컨텍스트(fourContext=true): 기존처럼 "최소 개수"만 맞추고, 윈도우/allowed 로 세부 처리
+            var inActs = r["inputActions"] as JArray;
+            var oaRoot = r["outputActions"] as JArray; // null 가능
+
+            // 빈 슬롯 처리
             int filledCount = presentIdx.Count;
             if (!fourContext)
             {
@@ -169,35 +216,82 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
-            // 결과 생성 + 출력액션 적용
-            var baseItem = itemLibrary.Create(outId, outCount);
-            resultItem = ApplyOutputActions(baseItem, outActs, slots, assign);
+            // 멀티 아웃풋 생성
+            var results = new List<ItemData>();
 
-            if (resultItem != null) { matchedRecipe = r; return true; }
+            for (int oi = 0; oi < outputsArray.Count; oi++)
+            {
+                var outSpec = outputsArray[oi] as JObject;
+                if (outSpec == null) continue;
+
+                string outId  = outSpec.Value<string>("itemId");
+                int    outCnt = outSpec.Value<int?>("count") ?? 1;
+                if (string.IsNullOrEmpty(outId) || outCnt <= 0) continue;
+
+                var baseItem = itemLibrary.Create(outId, outCnt);
+                if (baseItem == null) continue;
+
+                // outputActions[oi] 는 JArray(액션 리스트) 라고 가정
+                JArray perActs = null;
+                if (oaRoot != null && oi < oaRoot.Count && oaRoot[oi] is JArray ja)
+                    perActs = ja;
+
+                var finalItem = ApplyOutputActions(baseItem, perActs, slots, assign);
+                if (finalItem != null)
+                    results.Add(finalItem);
+            }
+
+            if (results.Count == 0)
+            {
+                remappedInputActions = null;
+                continue;
+            }
+
+            resultItems   = results;
+            matchedRecipe = r;
+            return true;
         }
 
         return false;
     }
 
-    // 4슬롯 컨텍스트에서 2슬롯 레시피를 규칙대로 시도
+    // 4슬롯 컨텍스트에서 2슬롯/1슬롯 레시피를 우선순위대로 시도
     bool TryMatch2InFourContext(
         JArray recipeSet2,
         List<ItemData> slots,
-        out ItemData resultItem,
+        out List<ItemData> resultItems,
         out JArray remappedInputActions,
         out JObject matchedRecipe)
     {
-        resultItem = null; remappedInputActions = null; matchedRecipe = null;
+        resultItems = null;
+        remappedInputActions = null;
+        matchedRecipe = null;
+
         if (recipeSet2 == null || slots.Count != 4) return false;
 
-        var only2 = FilterByInputCount(recipeSet2, 2);
-        return TryMatchSet(only2, slots, fourContext: true, out resultItem, out remappedInputActions, out matchedRecipe);
+        // 1) inputs.Count == 2 레시피 먼저 (예: Plant Twine + Plant Twine → Long Plant Twine)
+        var cnt2 = FilterByInputCount(recipeSet2, 2);
+        if (cnt2.Count > 0 &&
+            TryMatchSet(cnt2, slots, fourContext: true,
+                        out resultItems, out remappedInputActions, out matchedRecipe))
+            return true;
+
+        // 2) 그 다음 inputs.Count == 1 레시피 (예: Plant Twine → Short Plant Twine)
+        var cnt1 = FilterByInputCount(recipeSet2, 1);
+        if (cnt1.Count > 0 &&
+            TryMatchSet(cnt1, slots, fourContext: true,
+                        out resultItems, out remappedInputActions, out matchedRecipe))
+            return true;
+
+        return false;
     }
 
-    // inputs.Count==cnt 필터
+    // inputs.Count == cnt 필터
     JArray FilterByInputCount(JArray src, int cnt)
     {
         var arr = new JArray();
+        if (src == null) return arr;
+
         for (int i = 0; i < src.Count; i++)
         {
             var r = src[i] as JObject;
@@ -312,7 +406,7 @@ public class RecipeLibrary : MonoBehaviour
             if (!string.Equals(it.Name, wantNm, StringComparison.Ordinal)) return false;
         }
 
-        // params 매칭 (중첩 구조 지원)
+        // params 매칭 (점 표기법/중첩 구조 지원)
         var paramSpec = spec["params"] as JObject;
         if (paramSpec != null && paramSpec.Properties().Any())
         {
@@ -355,7 +449,7 @@ public class RecipeLibrary : MonoBehaviour
         return true;
     }
 
-    // params: 중첩 JObject 기준 부분 일치
+    // params: 점 표기법(Head.type) + 중첩 JObject 모두 지원
     bool MatchParams(Dictionary<string, object> parameters, JObject paramSpec)
     {
         if (paramSpec == null || !paramSpec.Properties().Any())
@@ -364,9 +458,40 @@ public class RecipeLibrary : MonoBehaviour
         if (parameters == null)
             return false;
 
-        // parameters 전체를 JObject로 래핑해서 부분 비교
+        // 실제 아이템 파라미터 전체를 JObject로 래핑
         var haveRoot = JObject.FromObject(parameters);
-        return MatchToken(haveRoot, paramSpec);
+
+        // paramSpec 의 각 프로퍼티를 경로 기반으로 비교
+        foreach (var p in paramSpec.Properties())
+        {
+            string path = p.Name;          // 예: "Head.type"
+            JToken want = p.Value;
+
+            // 경로 분해 (점 표기법)
+            var parts = path.Split('.');
+            JToken current = haveRoot;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string key = parts[i];
+
+                if (current is JObject jo)
+                {
+                    if (!jo.TryGetValue(key, out var next))
+                        return false;      // 경로에 해당하는 키 없음 → 불일치
+                    current = next;
+                }
+                else
+                {
+                    return false;          // 중간에 객체가 아닌 타입이 나옴 → 불일치
+                }
+            }
+
+            // 최종 토큰 current 와 원하는 want 비교
+            if (!MatchToken(current, want))
+                return false;
+        }
+
+        return true;
     }
 
     bool MatchToken(JToken have, JToken want)
@@ -402,7 +527,6 @@ public class RecipeLibrary : MonoBehaviour
             }
             else
             {
-                // 스펙이 단일값 배열인 경우, 단일 값과의 비교 허용
                 if (wArr.Count != 1) return false;
                 return MatchToken(have, wArr[0]);
             }
@@ -458,23 +582,22 @@ public class RecipeLibrary : MonoBehaviour
                     object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
                     if (val is string sv) val = ExpandTokens(sv);
 
-                    // 액션 배열 처리
                     if (field == "craftingActions" ||
                         field == "interActions" ||
                         field == "toolActions" ||
                         field == "weaponActions")
                     {
                         var list = ToStringList(val);
-                        if (field == "craftingActions") overrideCraft = list;
-                        else if (field == "interActions") overrideInter = list;
-                        else if (field == "toolActions") overrideTool = list;
-                        else overrideWeapon = list;
+                        if (field == "craftingActions")      overrideCraft  = list;
+                        else if (field == "interActions")    overrideInter  = list;
+                        else if (field == "toolActions")     overrideTool   = list;
+                        else                                 overrideWeapon = list;
                         continue;
                     }
 
-                    if (field == "name")        { overrideName   = val?.ToString(); continue; }
-                    if (field == "spriteName")  { overrideSprite = val?.ToString(); continue; }
-                    if (field == "itemId")      { overrideItemId = val?.ToString(); continue; }
+                    if (field == "name")       { overrideName   = val?.ToString(); continue; }
+                    if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
+                    if (field == "itemId")     { overrideItemId = val?.ToString(); continue; }
 
                     if (field == "durability")
                     {
@@ -506,25 +629,24 @@ public class RecipeLibrary : MonoBehaviour
                     if (!string.IsNullOrEmpty(strip) && val is string svFrom && svFrom.EndsWith(strip))
                         val = svFrom.Substring(0, svFrom.Length - strip.Length);
 
-                    // 액션 배열 처리
                     if (field == "craftingActions" ||
                         field == "interActions" ||
                         field == "toolActions" ||
                         field == "weaponActions")
                     {
                         var list = ToStringList(val);
-                        if (field == "craftingActions") overrideCraft = list;
-                        else if (field == "interActions") overrideInter = list;
-                        else if (field == "toolActions") overrideTool = list;
-                        else overrideWeapon = list;
+                        if (field == "craftingActions")      overrideCraft  = list;
+                        else if (field == "interActions")    overrideInter  = list;
+                        else if (field == "toolActions")     overrideTool   = list;
+                        else                                 overrideWeapon = list;
                         continue;
                     }
 
                     string sVal = val?.ToString();
 
-                    if (field == "name")        { overrideName   = sVal; continue; }
-                    if (field == "spriteName")  { overrideSprite = sVal; continue; }
-                    if (field == "itemId")      { overrideItemId = sVal; continue; }
+                    if (field == "name")       { overrideName   = sVal; continue; }
+                    if (field == "spriteName") { overrideSprite = sVal; continue; }
+                    if (field == "itemId")     { overrideItemId = sVal; continue; }
 
                     if (field == "durability")
                     {
@@ -563,11 +685,10 @@ public class RecipeLibrary : MonoBehaviour
                     }
                     string joined = string.Join(sep, vals);
 
-                    if (field == "name")        { overrideName   = joined; continue; }
-                    if (field == "spriteName")  { overrideSprite = joined; continue; }
-                    if (field == "itemId")      { overrideItemId = joined; continue; }
+                    if (field == "name")       { overrideName   = joined; continue; }
+                    if (field == "spriteName") { overrideSprite = joined; continue; }
+                    if (field == "itemId")     { overrideItemId = joined; continue; }
 
-                    // join 결과는 문자열이므로 durability/maxDurability/액션에는 쓰지 않음
                     dst.SetParamPath(field, joined);
                     continue;
                 }
@@ -580,9 +701,9 @@ public class RecipeLibrary : MonoBehaviour
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                 var val = src?.ItemId;
 
-                if (toField == "name")        { overrideName   = val; continue; }
-                if (toField == "spriteName")  { overrideSprite = val; continue; }
-                if (toField == "itemId")      { overrideItemId = val; continue; }
+                if (toField == "name")       { overrideName   = val; continue; }
+                if (toField == "spriteName") { overrideSprite = val; continue; }
+                if (toField == "itemId")     { overrideItemId = val; continue; }
 
                 dst.SetParamPath(toField, val);
             }
@@ -595,25 +716,24 @@ public class RecipeLibrary : MonoBehaviour
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                 var val = ReadField(src, inField);
 
-                // 액션 배열 처리
                 if (toField == "craftingActions" ||
                     toField == "interActions" ||
                     toField == "toolActions" ||
                     toField == "weaponActions")
                 {
                     var list = ToStringList(val);
-                    if (toField == "craftingActions") overrideCraft = list;
-                    else if (toField == "interActions") overrideInter = list;
-                    else if (toField == "toolActions") overrideTool = list;
-                    else overrideWeapon = list;
+                    if (toField == "craftingActions")      overrideCraft  = list;
+                    else if (toField == "interActions")    overrideInter  = list;
+                    else if (toField == "toolActions")     overrideTool   = list;
+                    else                                   overrideWeapon = list;
                     continue;
                 }
 
                 string sVal = val?.ToString();
 
-                if (toField == "name")        { overrideName   = sVal; continue; }
-                if (toField == "spriteName")  { overrideSprite = sVal; continue; }
-                if (toField == "itemId")      { overrideItemId = sVal; continue; }
+                if (toField == "name")       { overrideName   = sVal; continue; }
+                if (toField == "spriteName") { overrideSprite = sVal; continue; }
+                if (toField == "itemId")     { overrideItemId = sVal; continue; }
 
                 if (toField == "durability")
                 {
@@ -648,9 +768,9 @@ public class RecipeLibrary : MonoBehaviour
                     }
                 }
 
-                if (outField == "name")        { overrideName   = sum.ToString(); continue; }
-                if (outField == "spriteName")  { overrideSprite = sum.ToString(); continue; }
-                if (outField == "itemId")      { overrideItemId = sum.ToString(); continue; }
+                if (outField == "name")       { overrideName   = sum.ToString(); continue; }
+                if (outField == "spriteName") { overrideSprite = sum.ToString(); continue; }
+                if (outField == "itemId")     { overrideItemId = sum.ToString(); continue; }
 
                 if (outField == "durability")
                 {
@@ -669,7 +789,6 @@ public class RecipeLibrary : MonoBehaviour
             {
                 string field = act.Value<string>("field");
 
-                // value 우선
                 if (act.TryGetValue("value", out var jv))
                 {
                     object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
@@ -677,7 +796,6 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                // fromInput + inputField
                 int? from = act.Value<int?>("fromInput");
                 string inputField = act.Value<string>("inputField");
                 if (from.HasValue && !string.IsNullOrEmpty(inputField))
@@ -691,7 +809,7 @@ public class RecipeLibrary : MonoBehaviour
             }
             else if (type == "paramSum")
             {
-                string field = act.Value<string>("field");
+                string field    = act.Value<string>("field");
                 string inField  = act.Value<string>("inputField");
                 var fromInputs  = act["fromInputs"] as JArray;
                 int sum = 0;
@@ -760,22 +878,21 @@ public class RecipeLibrary : MonoBehaviour
     {
         if (src == null) return null;
 
-        // params 우선 (dot-path 지원)
         var val = ReadFromParameters(src, field);
         if (val != null) return val;
 
         switch (field)
         {
-            case "name":             return src.Name;
-            case "spriteName":       return src.SpriteName;
-            case "itemId":           return src.ItemId;
-            case "durability":       return src.Durability;
-            case "maxDurability":    return src.MaxDurability;
-            case "craftingActions":  return src.CraftingActions;
-            case "interActions":     return src.InterActions;
-            case "toolActions":      return src.ToolActions;
-            case "weaponActions":    return src.WeaponActions;
-            case "tags":             return src.Tags;
+            case "name":            return src.Name;
+            case "spriteName":      return src.SpriteName;
+            case "itemId":          return src.ItemId;
+            case "durability":      return src.Durability;
+            case "maxDurability":   return src.MaxDurability;
+            case "craftingActions": return src.CraftingActions;
+            case "interActions":    return src.InterActions;
+            case "toolActions":     return src.ToolActions;
+            case "weaponActions":   return src.WeaponActions;
+            case "tags":            return src.Tags;
         }
         return null;
     }

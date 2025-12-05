@@ -334,111 +334,91 @@ public class InteractionController : MonoBehaviour
 
     bool TryItemInteraction()
     {
-        Debug.Log($"{LOG_MB} TryItemInteraction 진입");
-
-        if (_state != GameState.Ingame)
-        {
-            Debug.Log($"{LOG_MB} 상태 Ingame 아님 → return false");
-            return false;
-        }
+        if (_state != GameState.Ingame) return false;
 
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-        {
-            Debug.Log($"{LOG_MB} UI 위 클릭 → return false");
             return false;
-        }
 
         if (!GetMouseCell(out int cx, out int cy))
-        {
-            Debug.Log($"{LOG_MB} GetMouseCell 실패 → return false");
             return false;
-        }
 
         var items = player.Inventory.items;
-        Debug.Log($"{LOG_MB} hotbarScope={_hotbarScope}, items.Count={items.Count}");
-
         if (_hotbarScope < 0 || _hotbarScope >= items.Count)
-        {
-            Debug.Log($"{LOG_MB} 핫바 인덱스 범위 밖 → return false");
             return false;
-        }
 
         var held = items[_hotbarScope];
-        if (held == null)
-        {
-            Debug.Log($"{LOG_MB} held == null → return false");
+        if (held == null || held.Count <= 0)
             return false;
-        }
-        if (held.Count <= 0)
-        {
-            Debug.Log($"{LOG_MB} held.Count <= 0 → return false");
+
+        // 새로운 양식만 사용: interActions + params[actionName]
+        if (held.InterActions == null || held.InterActions.Count == 0)
             return false;
-        }
-
-        if (held.Parameters == null || !held.Parameters.TryGetValue("interaction", out var interObj))
-        {
-            Debug.Log($"{LOG_MB} Parameters에 'interaction' 없음 → return false");
+        if (held.Parameters == null)
             return false;
+
+        foreach (var actionName in held.InterActions)
+        {
+            if (!held.Parameters.TryGetValue(actionName, out var paramObj))
+                continue;
+
+            var param =
+                paramObj as Dictionary<string, object> ??
+                (paramObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
+            if (param == null) continue;
+
+            bool ok = false;
+
+            if (actionName == "Place")
+                ok = HandlePlace(held, cx, cy, param);
+            else if (actionName == "UseOnLiquid")
+                ok = HandleUseOnLiquid(held, cx, cy, param);
+            else if (actionName == "BuildMultiblock")
+                ok = HandleBuildMultiblock(held, cx, cy, param);
+
+            if (ok) return true;
         }
 
-        Dictionary<string, object> inter =
-            interObj as Dictionary<string, object> ??
-            (interObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
-        if (inter == null)
-        {
-            Debug.Log($"{LOG_MB} interaction 캐스팅 실패 → return false");
-            return false;
-        }
-
-        if (!inter.TryGetValue("type", out var typeObj))
-        {
-            Debug.Log($"{LOG_MB} interaction에 'type' 없음 → return false");
-            return false;
-        }
-
-        string typeStr = typeObj?.ToString();
-        Debug.Log($"{LOG_MB} interaction.type='{typeStr}' at ({cx},{cy})");
-
-        if (typeStr == "Place")
-        {
-            bool ok = HandlePlace(held, cx, cy, inter);
-            Debug.Log($"{LOG_MB} HandlePlace 결과={ok}");
-            return ok;
-        }
-        else if (typeStr == "UseOnLiquid")
-        {
-            bool ok = HandleUseOnLiquid(held, cx, cy, inter);
-            Debug.Log($"{LOG_MB} HandleUseOnLiquid 결과={ok}");
-            return ok;
-        }
-        else if (typeStr == "BuildMultiblock")
-        {
-            Debug.Log($"{LOG_MB} BuildMultiblock 분기 진입");
-            bool ok = HandleBuildMultiblock(held, cx, cy, inter);
-            Debug.Log($"{LOG_MB} HandleBuildMultiblock 결과={ok}");
-            return ok;
-        }
-
-        Debug.Log($"{LOG_MB} 알 수 없는 interaction.type → return false");
         return false;
     }
 
-    bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    // params["Place"]용
+    bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
-        if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param =
-            paramObj as Dictionary<string, object> ??
-            (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
-        if (param == null) return false;
+        if (placeParam == null) return false;
 
-        string layerStr = param.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
-        string cellName = param.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
-        if (string.IsNullOrEmpty(layerStr) || string.IsNullOrEmpty(cellName)) return false;
+        string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
+        string cellName = placeParam.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
+        if (string.IsNullOrEmpty(cellName)) return false;
 
-        // FG 본체가 이미 있으면 배치 불가 (유체만 있는 경우는 허용)
-        var fgCell = worldManager.worldMap.fg[cx, cy];
-        if (fgCell.id != 0) return false;
+        var fgCell  = worldManager.worldMap.fg[cx, cy];
+        bool hasBody = fgCell.id != 0;
+        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
 
+        WorldManager.CellLayer targetLayer;
+        if (layerStr == "Dynamic")
+        {
+            targetLayer = (_layerMode == LayerMode.BG)
+                ? WorldManager.CellLayer.BG
+                : WorldManager.CellLayer.FG;
+        }
+        else
+        {
+            // Default 등 → FG 고정
+            targetLayer = WorldManager.CellLayer.FG;
+        }
+
+        // 충돌 조건
+        if (targetLayer == WorldManager.CellLayer.FG)
+        {
+            if (hasBody) return false;
+        }
+        else // BG
+        {
+            if (hasBody) return false;
+            if (hasBg)   return false;
+        }
+
+        // cellName → 셀 ID 변환
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
@@ -451,7 +431,19 @@ public class InteractionController : MonoBehaviour
         }
         if (placeId == 0) return false;
 
-        if (!worldManager.PlaceCell(cx, cy, placeId)) return false;
+        bool placed = false;
+
+        if (targetLayer == WorldManager.CellLayer.FG)
+        {
+            placed = worldManager.PlaceCell(cx, cy, placeId);
+        }
+        else
+        {
+            placed = worldManager.PlaceBgCell(cx, cy, placeId);
+        }
+
+        if (!placed) return false;
+
         if (sound != null) sound.PlayPlace();
 
         held.Count -= 1;
@@ -461,12 +453,9 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    // params["UseOnLiquid"]용
+    bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
-        if (!inter.TryGetValue("params", out var paramObj)) return false;
-        var param =
-            paramObj as Dictionary<string, object> ??
-            (paramObj is JObject jp ? jp.ToObject<Dictionary<string, object>>() : null);
         if (param == null) return false;
 
         string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
@@ -510,8 +499,8 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // 멀티블럭 패턴 매칭 + 인스턴스 생성
-    bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> inter)
+    // params["BuildMultiblock"]는 아직 별도 파라미터 사용 X. 필요하면 확장.
+    bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
 

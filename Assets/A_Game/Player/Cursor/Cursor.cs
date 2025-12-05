@@ -229,13 +229,9 @@ public class Cursor : MonoBehaviour
         }
         if (slotView == null) return;
 
-        // ===== 결과 슬롯 픽업 우선 분기 =====
+        // denyUserPut 슬롯은 프리뷰/출력 전용: 클릭으로는 아무 조작도 하지 않음
         if (slotView.denyUserPut)
-        {
-            var cm = slotView.GetComponentInParent<CraftModule>();
-            if (cm != null) { cm.TryTakeOutput(cursorSlot); return; }
             return;
-        }
 
         var cur = cursorSlot.Item;
 
@@ -424,7 +420,7 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
-            // 커서 → 인벤토리 빈 슬롯 (1개 내려놓기)
+            // 커서 → 인벤토리 빈 슬롯(1개 내려놓기)
             if (cur != null && slotInv == null)
             {
                 items[idx] = new ItemData(
