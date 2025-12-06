@@ -9,9 +9,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
 
     [Header("SFX Clips")]
-    [SerializeField] private AudioClip digClip;               // Dig.wav
-    [SerializeField] private AudioClip placeClip;             // Place.wav
-    [SerializeField] private AudioClip multiblockCompleteClip; // Multiblock_Complete.wav 등
+    [SerializeField] private AudioClip digClip;                 // Dig.wav
+    [SerializeField] private AudioClip placeClip;               // Place.wav
+    [SerializeField] private AudioClip multiblockCompleteClip;  // Multiblock_Complete.wav 등
+    [SerializeField] private AudioClip playerTookDamageClip;    // NEW: Player Damage.wav 등
 
     /*────────────── BGM ──────────────*/
     [Header("BGM Source")]
@@ -63,6 +64,12 @@ public class AudioManager : MonoBehaviour
     public void PlayMultiblockComplete()
     {
         if (multiblockCompleteClip != null) sfxSource.PlayOneShot(multiblockCompleteClip);
+    }
+
+    public void PlayPlayerTookDamage()   // ← 추가된 함수
+    {
+        if (playerTookDamageClip != null)
+            sfxSource.PlayOneShot(playerTookDamageClip);
     }
 
     /*────────────── 내부(BGM) ──────────────*/
