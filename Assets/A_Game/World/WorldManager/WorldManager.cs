@@ -47,7 +47,6 @@ public class WorldManager : MonoBehaviour
     private const byte NAT_MAX = 15;
     private const byte ART_MAX = 15;
 
-    // 유체 ID (ATT_Cell.json과 일치)
     private const ushort ID_WATER = 60000;
 
     [Header("Global Brightness Offset (auto by time) 0=밝음, 15=어두움")]
@@ -61,36 +60,32 @@ public class WorldManager : MonoBehaviour
     private int W, H;
     public WorldData worldMap;
 
-    // ───────── 멀티블럭 인스턴스 관리 ─────────
-    // 설치된 멀티블럭 인스턴스들
+    [Header("엔티티 시스템")]
+    public EntityManager entityManager;
+
     public List<MultiblockInstanceBase> multiblocks = new();
-    // 좌표 → 멀티블럭 인스턴스 매핑
     public Dictionary<Vector2Int, MultiblockInstanceBase> multiblockByCell = new();
 
-    // 청크 시스템
     private WorldChunkSystem chunkSystem;
 
-    // 월드 시간
     public long worldTick;
     public int  worldMinute;
     public int  worldHour;
     public int  worldDay;
     private long _lastLoggedSecondTick = -1;
 
-    // 글로벌 틱(물/중력)
     private HashSet<Vector2Int> tickCurr = new();
     private HashSet<Vector2Int> tickNext = new();
 
     [Header("아이템 라이브러리(인벤 복원용)")]
     public ItemLibrary itemLibrary;
 
-    // 종료 저장 가드
     private bool _didQuitSave = false;
 
-    // 로드시 임시 보관(플레이어/인벤)
     private bool    _hasLoadedPlayerData = false;
     private Vector2 _loadedPlayerPos;
     private List<ItemData> _loadedInventory;
+
 
     public void EnqTick(int x, int y)
     {
@@ -241,7 +236,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markFG: true);
     }
 
-    // ───────── 중력 블록 ─────────
+    //──────────────── Gravity FallingBlock 스폰 경로 수정됨
     void StepGravityAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
@@ -268,10 +263,17 @@ public class WorldManager : MonoBehaviour
         {
             var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
             var spr = CellLibrary.GetSprite(id);
-            var fb  = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
+
+            // FallingBlock 인스턴스 생성
+            var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
             fb.Init(id, this, spr);
+
+            // 엔티티 등록
+            if (entityManager != null)
+                entityManager.Register(fb);
         }
     }
+
 
     // ───────── 설치 (FG) ─────────
     public bool PlaceCell(int x, int y, ushort id)
@@ -316,7 +318,7 @@ public class WorldManager : MonoBehaviour
         if (id == 0) return false;
 
         ushort oldId = worldMap.bg[x, y];
-        if (oldId == id) return false; // 이미 동일 셀인 경우 생략 (원하면 제거해도 됨)
+        if (oldId == id) return false; // 이미 동일 셀인 경우 생략
 
         worldMap.bg[x, y] = id;
 
@@ -339,7 +341,7 @@ public class WorldManager : MonoBehaviour
                 // ───────── 멀티블럭 여부 먼저 확인 ─────────
                 if (multiblockByCell.TryGetValue(pos, out MultiblockInstanceBase inst))
                 {
-                    // 1) 클릭한 파츠는 기존 BreakCell처럼 "완전히 제거" + 드랍/이펙트
+                    // 1) 클릭한 파츠 제거 + 드랍/이펙트
                     ushort removed = worldMap.RemoveFG(x, y);
                     if (removed != 0)
                     {
@@ -358,8 +360,7 @@ public class WorldManager : MonoBehaviour
                         }
                     }
 
-                    // 2) 되돌릴 기본 블럭(Mud) ID 찾기
-                    //    (현재 단계: MudFurnace 전용이므로 "Mud" 하드코딩)
+                    // 2) 기본 블럭(Mud) ID 찾기
                     ushort baseId = 0;
                     for (ushort id = 1; id < ushort.MaxValue; id++)
                     {
@@ -377,11 +378,9 @@ public class WorldManager : MonoBehaviour
                     }
                     else
                     {
-                        // 3) 멀티블럭이 차지하던 모든 셀 중
-                        //    "클릭한 칸을 제외한 나머지"를 기본 블럭으로 롤백
+                        // 3) 멀티블럭이 차지하던 셀 중 클릭한 칸 제외하고 Mud로 롤백
                         foreach (var cellPos in inst.occupiedCells)
                         {
-                            // 클릭한 부분은 공기(빈칸) 상태로 남겨둔다
                             if (cellPos == pos) continue;
 
                             int wx = cellPos.x;
@@ -405,13 +404,13 @@ public class WorldManager : MonoBehaviour
 
                     multiblocks.Remove(inst);
 
-                    // 5) 인스턴스 훅 (나중에 내부 인벤 드롭 붙일 자리)
+                    // 5) 훅
                     inst.OnPartBroken(this, pos);
 
                     return removed;
                 }
 
-                // ───────── 일반 단일 FG 블럭 파괴 (기존 로직) ─────────
+                // ───────── 일반 단일 FG 블럭 파괴 ─────────
                 {
                     ushort removed = worldMap.RemoveFG(x, y);
                     if (removed == 0) return 0;
@@ -472,6 +471,26 @@ public class WorldManager : MonoBehaviour
         // 틱 큐 초기화
         tickCurr.Clear();
         tickNext.Clear();
+
+        // 엔티티 시스템 초기 설정 (플레이어/청크 정보 주입)
+        if (entityManager != null)
+        {
+            if (entityManager.player == null && player != null)
+                entityManager.player = player;
+
+            // 시뮬레이션 청크 크기/반경을 월드 설정과 동기화
+            entityManager.chunkSize       = ChunkSize;
+            entityManager.loadChunkRadius = ChunkRadius;
+        }
+
+        // ItemDropper에 EntityManager/Library 자동 주입(있을 때)
+        if (itemDropper != null)
+        {
+            if (itemDropper.entityManager == null)
+                itemDropper.entityManager = entityManager;
+            if (itemDropper.itemLibrary == null)
+                itemDropper.itemLibrary = itemLibrary;
+        }
 
         // BOOT 로그
         string dirBoot = WorldLoadContext.GetSavePath();
@@ -607,18 +626,14 @@ public class WorldManager : MonoBehaviour
         {
             if (ticksPerDay > 0 && minutesPerDay > 0)
             {
-                // worldTick = 0 을 "12:00" 으로 간주하는 새로운 기준
-
+                // worldTick = 0 을 "12:00" 으로 간주
                 long day       = worldTick / ticksPerDay;
                 long tickOfDay = worldTick % ticksPerDay;
                 int ticksPerMin = ticksPerDay / minutesPerDay;
 
-                // base = 12:00 (720분)
                 int baseMinutes = 12 * 60;
-
                 int minuteOfDay = baseMinutes + (ticksPerMin > 0 ? (int)(tickOfDay / ticksPerMin) : 0);
 
-                // 하루 범위 보정
                 minuteOfDay %= minutesPerDay;
 
                 worldDay    = (int)day;
@@ -785,7 +800,6 @@ public class WorldManager : MonoBehaviour
                 }
 
                 // 이 주변 라이트 메쉬가 영향을 받는 청크들을 라이트 더티로 표시
-                // (3x3 영역 기준으로 겹치는 청크에 대해 lightDirty + HashSet 등록)
                 if (chunkSystem != null)
                     MarkLightDirtyRect(x - 1, y - 1, 3, 3);
             }
@@ -900,7 +914,7 @@ public class WorldManager : MonoBehaviour
             tickNext,
             pCompLog,
             player,
-            itemDropper
+            entityManager
         );
     }
 
@@ -938,7 +952,22 @@ public class WorldManager : MonoBehaviour
 
     private void LoadEntities()
     {
-        WorldSaveSystem.LoadEntities(itemDropper, itemLibrary);
+        if (entityManager == null)
+        {
+            Debug.LogWarning("[WorldManager] EntityManager 가 없어 엔티티 로드를 건너뜁니다.");
+            return;
+        }
+
+        GameObject dropPrefab = null;
+        if (itemDropper != null)
+            dropPrefab = itemDropper.droppedItemPrefab;
+
+        WorldSaveSystem.LoadEntities(
+            entityManager,
+            itemLibrary,
+            fallingBlockPrefab,
+            dropPrefab
+        );
     }
 
     private void ApplyLoadedPlayerAndInventory()
@@ -1032,7 +1061,7 @@ public class WorldManager : MonoBehaviour
                 int wy = originY + py;
                 if (!worldMap.InBounds(wx, wy)) continue;
 
-                // 셀 이름 → ID 역검색 (기존 Place/UseOnLiquid와 동일 패턴)
+                // 셀 이름 → ID 역검색
                 ushort placeId = 0;
                 for (ushort id = 1; id < ushort.MaxValue; id++)
                 {

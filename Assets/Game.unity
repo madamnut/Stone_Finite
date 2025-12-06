@@ -537,6 +537,18 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 3619158284429027783, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 3619158284429027783, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 3619158284429027783, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 3619158284429027783, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -2220,6 +2232,37 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3895825965514855727, guid: a7370e5b37a174b4c9b6e833772de376, type: 3}
   m_PrefabInstance: {fileID: 346545691}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &351762140
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 351762141}
+  m_Layer: 0
+  m_Name: FallingBlocks
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &351762141
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 351762140}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487560855}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &368206739
 GameObject:
   m_ObjectHideFlags: 0
@@ -3216,6 +3259,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1886744529}
+  - {fileID: 351762141}
   - {fileID: 1361427409}
   m_Father: {fileID: 105343928}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3718,6 +3762,7 @@ MonoBehaviour:
   minutesPerDay: 1440
   ticksPerDay: 28800
   globalBrightnessOffset: 0
+  entityManager: {fileID: 1036664766}
   worldTick: 0
   worldMinute: 0
   worldHour: 0
@@ -6299,6 +6344,57 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &1036664765
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1036664767}
+  - component: {fileID: 1036664766}
+  m_Layer: 0
+  m_Name: EntityManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1036664766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1036664765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ccf4e830e7a25849a71d922639d3692, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 1746062756}
+  chunkSize: 16
+  loadChunkRadius: 16
+  simChunkMargin: 4
+  enableChunkCulling: 1
+  checkInterval: 0.25
+  minY: -10
+--- !u!4 &1036664767
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1036664765}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1039419536
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6770,6 +6866,8 @@ MonoBehaviour:
   itemLibrary: {fileID: 236639235}
   dropTableJson: {fileID: 4900000, guid: d979972a23b54ee4ebd67eb53f8f1278, type: 3}
   droppedItemPrefab: {fileID: 3070165475067672412, guid: b1c53d349b80504439afd305ccaef35f, type: 3}
+  entityManager: {fileID: 1036664766}
+  dropRoot: {fileID: 427397956}
   spawnRadius: 0.5
 --- !u!4 &1159117177
 Transform:
@@ -10144,7 +10242,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.7, y: 1.96}
+  m_Size: {x: 0.8, y: 2.1}
   m_EdgeRadius: 0
 --- !u!61 &1746062764
 BoxCollider2D:
@@ -10178,7 +10276,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.02}
+  m_Offset: {x: 0, y: 0.01}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -10189,7 +10287,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.7, y: 1.96}
+  m_Size: {x: 0.65, y: 1.78}
   m_EdgeRadius: 0
 --- !u!1001 &1778288224
 PrefabInstance:
@@ -12713,6 +12811,7 @@ SceneRoots:
   - {fileID: 2008242131}
   - {fileID: 672136423}
   - {fileID: 1159117177}
+  - {fileID: 1036664767}
   - {fileID: 557152422}
   - {fileID: 1824379077}
   - {fileID: 1019568695}
