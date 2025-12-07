@@ -2852,7 +2852,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.00012207031, y: -1.0295105}
+  m_Offset: {x: 0, y: -0.9}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -3758,11 +3758,12 @@ MonoBehaviour:
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
   itemDropper: {fileID: 1159117176}
   vfx: {fileID: 672136422}
+  entityManager: {fileID: 1036664766}
+  mobLibrary: {fileID: 708102119}
   ticksPerSecond: 20
   minutesPerDay: 1440
   ticksPerDay: 28800
   globalBrightnessOffset: 0
-  entityManager: {fileID: 1036664766}
   worldTick: 0
   worldMinute: 0
   worldHour: 0
@@ -4207,6 +4208,53 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &708102118
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 708102120}
+  - component: {fileID: 708102119}
+  m_Layer: 0
+  m_Name: MobLib
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &708102119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708102118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18ec6134c3ca0f0408bdf8fe2fc80b92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mobs:
+  - mobId: Cow
+    prefab: {fileID: 6460545956538734368, guid: 9ece9e7ad8b9b994fa90544c0dde4aeb, type: 3}
+--- !u!4 &708102120
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708102118}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &751118036
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6599,37 +6647,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3895825965514855727, guid: a7370e5b37a174b4c9b6e833772de376, type: 3}
   m_PrefabInstance: {fileID: 1075807475}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1083357871
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1083357872}
-  m_Layer: 0
-  m_Name: MobLib
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1083357872
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1083357871}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.6336788, y: 1.3577068, z: 0.036450047}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1133267886
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12801,11 +12818,11 @@ SceneRoots:
   - {fileID: 1552801293}
   - {fileID: 1746062756}
   - {fileID: 1639529666}
+  - {fileID: 708102120}
   - {fileID: 1177056458}
   - {fileID: 236639234}
   - {fileID: 2047849823}
   - {fileID: 172945021}
-  - {fileID: 1083357872}
   - {fileID: 2030845223}
   - {fileID: 1488834036}
   - {fileID: 2008242131}

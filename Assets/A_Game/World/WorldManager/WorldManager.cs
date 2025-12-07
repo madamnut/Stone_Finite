@@ -33,6 +33,12 @@ public class WorldManager : MonoBehaviour
     public ItemDropper itemDropper;
     public VfxManager  vfx;
 
+    [Header("엔티티 시스템")]
+    public EntityManager entityManager;
+
+    [Header("Mob")]
+    public MobLibrary mobLibrary;
+
     [Header("Time Settings")]
     public int ticksPerSecond = 20;
     public int minutesPerDay  = 24 * 60;
@@ -59,9 +65,6 @@ public class WorldManager : MonoBehaviour
 
     private int W, H;
     public WorldData worldMap;
-
-    [Header("엔티티 시스템")]
-    public EntityManager entityManager;
 
     public List<MultiblockInstanceBase> multiblocks = new();
     public Dictionary<Vector2Int, MultiblockInstanceBase> multiblockByCell = new();
@@ -478,7 +481,6 @@ public class WorldManager : MonoBehaviour
             if (entityManager.player == null && player != null)
                 entityManager.player = player;
 
-            // 시뮬레이션 청크 크기/반경을 월드 설정과 동기화
             entityManager.chunkSize       = ChunkSize;
             entityManager.loadChunkRadius = ChunkRadius;
         }
@@ -616,20 +618,18 @@ public class WorldManager : MonoBehaviour
         // 월드 시간 초기화/복원
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
-            // worldTick = 0을 12:00 기준으로 사용
-            worldTick = 0L;
+            worldTick   = 0L;
             worldMinute = 12 * 60; // 720 = 12:00
-            worldHour = 12;
-            worldDay = 0;
+            worldHour   = 12;
+            worldDay    = 0;
         }
         else
         {
             if (ticksPerDay > 0 && minutesPerDay > 0)
             {
-                // worldTick = 0 을 "12:00" 으로 간주
                 long day       = worldTick / ticksPerDay;
                 long tickOfDay = worldTick % ticksPerDay;
-                int ticksPerMin = ticksPerDay / minutesPerDay;
+                int  ticksPerMin = ticksPerDay / minutesPerDay;
 
                 int baseMinutes = 12 * 60;
                 int minuteOfDay = baseMinutes + (ticksPerMin > 0 ? (int)(tickOfDay / ticksPerMin) : 0);
@@ -649,10 +649,8 @@ public class WorldManager : MonoBehaviour
         }
         _lastLoggedSecondTick = worldTick;
 
-        // 인벤 복원은 Start에서 호출
         ApplyTimeSyncedBrightness(forceDirty:true);
 
-        // 플레이어 위치 기준 청크 기준점 초기화
         if (player != null && chunkSystem != null)
             chunkSystem.ResetLastPlayerChunk(player.position);
     }
@@ -679,6 +677,10 @@ public class WorldManager : MonoBehaviour
     {
         if (player != null && chunkSystem != null)
             chunkSystem.UpdateVisibleChunks(player.position, this);
+
+        // 디버그: P 키로 Cow 스폰
+        if (Input.GetKeyDown(KeyCode.P))
+            SpawnCowNearPlayer();
     }
 
     void FixedUpdate()
@@ -705,7 +707,7 @@ public class WorldManager : MonoBehaviour
             var band = GetTimeBand();
         }
 
-        // 청크/라이트 더티 처리: FixedUpdate(초당 20회)에서만 수행
+        // 청크/라이트 더티 처리
         if (chunkSystem != null)
             chunkSystem.ProcessDirtyChunks();
     }
@@ -799,7 +801,6 @@ public class WorldManager : MonoBehaviour
                     q.Enqueue((mx, my));
                 }
 
-                // 이 주변 라이트 메쉬가 영향을 받는 청크들을 라이트 더티로 표시
                 if (chunkSystem != null)
                     MarkLightDirtyRect(x - 1, y - 1, 3, 3);
             }
@@ -832,7 +833,6 @@ public class WorldManager : MonoBehaviour
         int x1 = Mathf.Min(W - 1, x + r);
         int y1 = Mathf.Min(H - 1, y + r);
 
-        // 인공광 초기화
         for (int yy = y0; yy <= y1; yy++)
         for (int xx = x0; xx <= x1; xx++)
         {
@@ -841,7 +841,6 @@ public class WorldManager : MonoBehaviour
             worldMap.light[xx, yy] = lc;
         }
 
-        // 현재 FG 셀 기준으로 다시 인공광 추가
         for (int yy = y0; yy <= y1; yy++)
         for (int xx = x0; xx <= x1; xx++)
         {
@@ -974,11 +973,9 @@ public class WorldManager : MonoBehaviour
     {
         if (!_hasLoadedPlayerData || player == null) return;
 
-        // 플레이어 위치 적용
         var pos = player.position;
         player.position = new Vector3(_loadedPlayerPos.x, _loadedPlayerPos.y, pos.z);
 
-        // 인벤토리 적용
         if (_loadedInventory == null) return;
 
         Player pComp = playerComp;
@@ -999,7 +996,6 @@ public class WorldManager : MonoBehaviour
             slots[i] = (data != null && data.Count > 0) ? data : null;
         }
 
-        // 남은 슬롯은 비우기
         for (int i = n; i < slots.Count; i++)
             slots[i] = null;
 
@@ -1023,7 +1019,6 @@ public class WorldManager : MonoBehaviour
 
         inst.occupiedCells.Clear();
 
-        // 1) 패턴 기준으로 실제 월드 좌표 계산해서 occupiedCells 채우기
         for (int px = 0; px < def.width; px++)
         {
             for (int py = 0; py < def.height; py++)
@@ -1049,7 +1044,6 @@ public class WorldManager : MonoBehaviour
             $"id={inst.instanceId}, cells={inst.occupiedCells.Count}"
         );
 
-        // 2) result 패턴을 실제 셀로 반영 (Mud → MudFurnace_* 교체)
         for (int px = 0; px < def.width; px++)
         {
             for (int py = 0; py < def.height; py++)
@@ -1061,7 +1055,6 @@ public class WorldManager : MonoBehaviour
                 int wy = originY + py;
                 if (!worldMap.InBounds(wx, wy)) continue;
 
-                // 셀 이름 → ID 역검색
                 ushort placeId = 0;
                 for (ushort id = 1; id < ushort.MaxValue; id++)
                 {
@@ -1078,10 +1071,8 @@ public class WorldManager : MonoBehaviour
                     continue;
                 }
 
-                // 기존 FG id 기억 (인공광 갱신용)
                 ushort oldId = worldMap.GetFGId(wx, wy);
 
-                // 셀라이브러리에서 FgCell 생성 후 WorldData에 강제 배치
                 var src = CellLibrary.MakeFgCell(placeId);
                 worldMap.ForceFG(wx, wy, in src);
 
@@ -1092,5 +1083,20 @@ public class WorldManager : MonoBehaviour
         }
 
         return inst;
+    }
+
+    // ───────── Mob 디버그 스폰 ─────────
+    private void SpawnCowNearPlayer()
+    {
+        if (mobLibrary == null || entityManager == null || player == null)
+        {
+            Debug.LogWarning("[WorldManager] Cow 스폰 실패: mobLibrary / entityManager / player 참조가 없습니다.");
+            return;
+        }
+
+        Vector3 spawnPos = player.position + new Vector3(1f, 0f, 0f);
+        var mob = mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
+        if (mob == null)
+            Debug.LogWarning("[WorldManager] Cow 스폰 실패: MobLibrary에서 'Cow' 프리팹을 찾지 못했거나 생성 실패.");
     }
 }
