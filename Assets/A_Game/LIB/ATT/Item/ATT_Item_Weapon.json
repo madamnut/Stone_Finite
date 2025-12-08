@@ -1,0 +1,49 @@
+{
+  "Wooden Club": {
+    "name": "Wooden Club",
+    "spriteName": "Wooden Club",
+    "maxStack": 1,
+    "tags": ["Weapon"],
+
+    "maxDurability": 32,
+
+    "craftingActions": [],
+    "interActions": [],
+    "toolActions": [],
+    "weaponActions": ["Swing"],
+
+    "params": {
+      "Swing": {
+        "damage": 4,
+        "knockback": 1.0,
+        "staminaCost": 5,
+        "cooldown": 0.6,
+        "reach": 1.0
+      }
+    }
+  },
+
+  "Wooden Spear": {
+    "name": "Wooden Spear",
+    "spriteName": "Wooden Spear",
+    "maxStack": 1,
+    "tags": ["Weapon"],
+
+    "maxDurability": 32,
+
+    "craftingActions": [],
+    "interActions": [],
+    "toolActions": [],
+    "weaponActions": ["Thrust"],
+
+    "params": {
+      "Thrust": {
+        "damage": 6,
+        "knockback": 0.6,
+        "staminaCost": 7,
+        "cooldown": 0.55,
+        "reach": 1.5
+      }
+    }
+  }
+}

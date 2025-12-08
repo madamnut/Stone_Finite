@@ -86,6 +86,7 @@ public class InteractionController : MonoBehaviour
         _hlGO.SetActive(false);
 
         hotbar.SetScope(_hotbarScope);
+        // 오른손 스프라이트는 여기서 접근하지 않음 (Player.Inventory 초기화 순서 문제 방지)
 
         recipeLibrary.itemLibrary = itemLibrary;
 
@@ -95,11 +96,80 @@ public class InteractionController : MonoBehaviour
 
     void Update()
     {
+        // ───────── 핫바 스코프: 마우스 스크롤 ─────────
         float scroll = Input.mouseScrollDelta.y;
         if (scroll > 0.01f || scroll < -0.01f)
         {
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
             hotbar.SetScope(_hotbarScope);
+
+            // 스크롤로 스코프 바뀔 때 오른손 스프라이트 갱신
+            if (player != null &&
+                player.Inventory != null &&
+                player.Inventory.items != null &&
+                player.rightHandItemRenderer != null)
+            {
+                var items = player.Inventory.items;
+                ItemData held = null;
+                if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                    held = items[_hotbarScope];
+
+                if (held != null && held.Count > 0 && held.Icon != null)
+                {
+                    player.rightHandItemRenderer.enabled = true;
+                    player.rightHandItemRenderer.sprite  = held.Icon;
+                }
+                else
+                {
+                    player.rightHandItemRenderer.enabled = false;
+                    player.rightHandItemRenderer.sprite  = null;
+                }
+            }
+        }
+
+        // ───────── 핫바 스코프: 숫자키 1~0 (인게임 상태에서만) ─────────
+        if (_state == GameState.Ingame)
+        {
+            int prevScope = _hotbarScope;
+
+            if      (Input.GetKeyDown(KeyCode.Alpha1)) _hotbarScope = 0;
+            else if (Input.GetKeyDown(KeyCode.Alpha2)) _hotbarScope = 1;
+            else if (Input.GetKeyDown(KeyCode.Alpha3)) _hotbarScope = 2;
+            else if (Input.GetKeyDown(KeyCode.Alpha4)) _hotbarScope = 3;
+            else if (Input.GetKeyDown(KeyCode.Alpha5)) _hotbarScope = 4;
+            else if (Input.GetKeyDown(KeyCode.Alpha6)) _hotbarScope = 5;
+            else if (Input.GetKeyDown(KeyCode.Alpha7)) _hotbarScope = 6;
+            else if (Input.GetKeyDown(KeyCode.Alpha8)) _hotbarScope = 7;
+            else if (Input.GetKeyDown(KeyCode.Alpha9)) _hotbarScope = 8;
+            else if (Input.GetKeyDown(KeyCode.Alpha0)) _hotbarScope = 9;
+
+            if (_hotbarScope != prevScope)
+            {
+                hotbar.SetScope(_hotbarScope);
+
+                // 숫자키로 스코프 바뀔 때 오른손 스프라이트 갱신
+                if (player != null &&
+                    player.Inventory != null &&
+                    player.Inventory.items != null &&
+                    player.rightHandItemRenderer != null)
+                {
+                    var items = player.Inventory.items;
+                    ItemData held = null;
+                    if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                        held = items[_hotbarScope];
+
+                    if (held != null && held.Count > 0 && held.Icon != null)
+                    {
+                        player.rightHandItemRenderer.enabled = true;
+                        player.rightHandItemRenderer.sprite  = held.Icon;
+                    }
+                    else
+                    {
+                        player.rightHandItemRenderer.enabled = false;
+                        player.rightHandItemRenderer.sprite  = null;
+                    }
+                }
+            }
         }
 
         bool invDown = Input.GetKeyDown(toggleInventoryKey);
@@ -450,6 +520,29 @@ public class InteractionController : MonoBehaviour
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
+        // 아이템 소모 후 오른손 스프라이트 갱신
+        if (player != null &&
+            player.Inventory != null &&
+            player.Inventory.items != null &&
+            player.rightHandItemRenderer != null)
+        {
+            var items = player.Inventory.items;
+            ItemData newHeld = null;
+            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                newHeld = items[_hotbarScope];
+
+            if (newHeld != null && newHeld.Count > 0 && newHeld.Icon != null)
+            {
+                player.rightHandItemRenderer.enabled = true;
+                player.rightHandItemRenderer.sprite  = newHeld.Icon;
+            }
+            else
+            {
+                player.rightHandItemRenderer.enabled = false;
+                player.rightHandItemRenderer.sprite  = null;
+            }
+        }
+
         return true;
     }
 
@@ -495,6 +588,29 @@ public class InteractionController : MonoBehaviour
 
         var outItem = itemLibrary.Create(outputName, 1);
         if (outItem != null) player.Inventory.AddItem(outItem);
+
+        // 아이템 소모 후 오른손 스프라이트 갱신
+        if (player != null &&
+            player.Inventory != null &&
+            player.Inventory.items != null &&
+            player.rightHandItemRenderer != null)
+        {
+            var items = player.Inventory.items;
+            ItemData newHeld = null;
+            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                newHeld = items[_hotbarScope];
+
+            if (newHeld != null && newHeld.Count > 0 && newHeld.Icon != null)
+            {
+                player.rightHandItemRenderer.enabled = true;
+                player.rightHandItemRenderer.sprite  = newHeld.Icon;
+            }
+            else
+            {
+                player.rightHandItemRenderer.enabled = false;
+                player.rightHandItemRenderer.sprite  = null;
+            }
+        }
 
         return true;
     }

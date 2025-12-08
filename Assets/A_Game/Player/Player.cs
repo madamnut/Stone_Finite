@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.U2D;
@@ -14,8 +15,26 @@ public class Player : MonoBehaviour
     [SerializeField] private Collider2D groundCheckCollider; // 발밑 그라운드 체크(Trigger)
     [SerializeField] private LayerMask groundLayerMask;      // Ground 레이어
 
-    [Header("Visual (Skin Renderers)")]
-    [SerializeField] private SpriteRenderer[] skinRenderers; // 몸, 머리, 양팔, 양다리 6개 (필요시 자동 수집)
+    [Header("Visual (Skin Root)")]
+    [SerializeField] private Transform skinRoot;             // 카메라 제외 스킨 루트
+
+    [Header("Visual (Body + Limbs)")]
+    [SerializeField] private SpriteRenderer bodyRenderer;    // 머리 포함 몸 스프라이트
+    [SerializeField] private SpriteRenderer leftArmRenderer;
+    [SerializeField] private SpriteRenderer rightArmRenderer;
+    [SerializeField] private SpriteRenderer leftLegRenderer;
+    [SerializeField] private SpriteRenderer rightLegRenderer;
+
+    [Header("Visual (Right Hand Item)")]
+    public SpriteRenderer rightHandItemRenderer; // 오른손에 붙은 아이템 스프라이트
+
+    [Header("Walk Animation")]
+    [SerializeField] private float walkSwingSpeed = 10f;     // 휘두르는 속도
+    [SerializeField] private float walkArmAmplitude = 20f;   // 팔 회전 각도(도)
+    [SerializeField] private float walkLegAmplitude = 25f;   // 다리 회전 각도(도)
+    [SerializeField] private float walkReturnSpeed = 10f;    // 멈췄을 때 기본 자세로 복귀 속도
+
+    [Header("Damage Flash")]
     [SerializeField] private float damageFlashDuration = 0.1f;
 
     [Header("Audio")]
@@ -53,9 +72,30 @@ public class Player : MonoBehaviour
     private const int InventoryCapacity = 50;
     public InventoryData Inventory { get; private set; }
 
-    // 내부용
-    Color[]  _originalColors;
-    Coroutine _flashCo;
+    // 내부용 (데미지 플래시용)
+    SpriteRenderer[] _allRenderers;
+    Color[]          _originalColors;
+    Coroutine        _flashCo;
+
+    // 좌우 방향 (-1: 왼쪽, 1: 오른쪽)
+    int   _facing = -1;
+    float _baseSkinScaleX = 1f;
+    float _baseSkinScaleY = 1f;
+    float _baseSkinScaleZ = 1f;
+
+    // 기본 소팅 순서 (왼쪽을 보고 있는 상태 기준)
+    int _leftArmOrder;
+    int _rightArmOrder;
+    int _leftLegOrder;
+    int _rightLegOrder;
+    int _rightHandItemOrder; // 오른손 아이템 기본 소팅오더 (왼쪽 바라볼 때 기준)
+
+    // 보행 애니메이션용
+    float _walkAnimPhase = 0f;
+    Quaternion _leftArmBaseRot;
+    Quaternion _rightArmBaseRot;
+    Quaternion _leftLegBaseRot;
+    Quaternion _rightLegBaseRot;
 
     void Awake()
     {
@@ -64,16 +104,47 @@ public class Player : MonoBehaviour
         if (rb == null)
             rb = GetComponent<Rigidbody2D>();
 
-        // 스킨 렌더러 자동 수집 (비어 있으면)
-        if (skinRenderers == null || skinRenderers.Length == 0)
-            skinRenderers = GetComponentsInChildren<SpriteRenderer>();
-
-        if (skinRenderers != null && skinRenderers.Length > 0)
+        // 스킨 루트 기본 스케일 기록
+        if (skinRoot != null)
         {
-            _originalColors = new Color[skinRenderers.Length];
-            for (int i = 0; i < skinRenderers.Length; i++)
-                _originalColors[i] = skinRenderers[i].color;
+            var s = skinRoot.localScale;
+            _baseSkinScaleX = Mathf.Abs(s.x);
+            _baseSkinScaleY = s.y;
+            _baseSkinScaleZ = s.z;
         }
+
+        // 현재(왼쪽 바라보는 상태) 기준 소팅 순서 기록
+        if (leftArmRenderer  != null) _leftArmOrder  = leftArmRenderer.sortingOrder;
+        if (rightArmRenderer != null) _rightArmOrder = rightArmRenderer.sortingOrder;
+        if (leftLegRenderer  != null) _leftLegOrder  = leftLegRenderer.sortingOrder;
+        if (rightLegRenderer != null) _rightLegOrder = rightLegRenderer.sortingOrder;
+        if (rightHandItemRenderer != null) _rightHandItemOrder = rightHandItemRenderer.sortingOrder;
+
+        // 데미지 플래시용 렌더러 수집
+        var list = new List<SpriteRenderer>();
+        if (bodyRenderer      != null) list.Add(bodyRenderer);
+        if (leftArmRenderer   != null) list.Add(leftArmRenderer);
+        if (rightArmRenderer  != null) list.Add(rightArmRenderer);
+        if (leftLegRenderer   != null) list.Add(leftLegRenderer);
+        if (rightLegRenderer  != null) list.Add(rightLegRenderer);
+        // 손 아이템까지 빨갛게 하고 싶으면 여기서 rightHandItemRenderer 도 추가하면 됨.
+
+        _allRenderers = list.ToArray();
+        if (_allRenderers.Length > 0)
+        {
+            _originalColors = new Color[_allRenderers.Length];
+            for (int i = 0; i < _allRenderers.Length; i++)
+                _originalColors[i] = _allRenderers[i].color;
+        }
+
+        // 보행 애니메이션용 기본 회전값 기록
+        if (leftArmRenderer  != null) _leftArmBaseRot  = leftArmRenderer.transform.localRotation;
+        if (rightArmRenderer != null) _rightArmBaseRot = rightArmRenderer.transform.localRotation;
+        if (leftLegRenderer  != null) _leftLegBaseRot  = leftLegRenderer.transform.localRotation;
+        if (rightLegRenderer != null) _rightLegBaseRot = rightLegRenderer.transform.localRotation;
+
+        // 시작 시 방향/소팅 적용
+        ApplyFacingAndSorting();
 
         InitHeartsUI();
     }
@@ -82,6 +153,12 @@ public class Player : MonoBehaviour
     {
         /*────────────── 이동 입력 ──────────────*/
         _moveInput = Input.GetAxisRaw("Horizontal");
+
+        // 좌우 방향 전환
+        if (_moveInput > 0.01f)
+            SetFacing(1);   // 오른쪽
+        else if (_moveInput < -0.01f)
+            SetFacing(-1);  // 왼쪽
 
         /*────────────── 그라운드 체크 ──────────────*/
         if (groundCheckCollider != null)
@@ -143,6 +220,9 @@ public class Player : MonoBehaviour
 
         _wasGrounded = _isGrounded;
 
+        /*────────────── 걷기 애니메이션 ──────────────*/
+        UpdateWalkAnimation();
+
         /*────────────── UI 갱신 ──────────────*/
         UpdateSurvivalUI();
         UpdateHeartsUI();
@@ -179,6 +259,136 @@ public class Player : MonoBehaviour
             drop.ItemData.Count = left;
     }
 
+    /*──────────────────── 방향/플립/소팅 ────────────────────*/
+    void SetFacing(int dir)
+    {
+        if (dir != -1 && dir != 1) return;
+        if (_facing == dir) return;
+
+        _facing = dir;
+        ApplyFacingAndSorting();
+    }
+
+    void ApplyFacingAndSorting()
+    {
+        // 좌우 플립 (스킨 루트만 뒤집음)
+        if (skinRoot != null)
+        {
+            // _facing == -1 → 왼쪽(기본 스프라이트 방향), +1 → 오른쪽
+            float sign = (_facing == -1) ? 1f : -1f;
+            skinRoot.localScale = new Vector3(_baseSkinScaleX * sign, _baseSkinScaleY, _baseSkinScaleZ);
+        }
+
+        // 팔/다리 소팅 교환
+        if (leftArmRenderer != null && rightArmRenderer != null)
+        {
+            if (_facing == -1)
+            {
+                leftArmRenderer.sortingOrder  = _leftArmOrder;
+                rightArmRenderer.sortingOrder = _rightArmOrder;
+            }
+            else
+            {
+                leftArmRenderer.sortingOrder  = _rightArmOrder;
+                rightArmRenderer.sortingOrder = _leftArmOrder;
+            }
+        }
+        else
+        {
+            if (leftArmRenderer  != null) leftArmRenderer.sortingOrder  = _leftArmOrder;
+            if (rightArmRenderer != null) rightArmRenderer.sortingOrder = _rightArmOrder;
+        }
+
+        if (leftLegRenderer != null && rightLegRenderer != null)
+        {
+            if (_facing == -1)
+            {
+                leftLegRenderer.sortingOrder  = _leftLegOrder;
+                rightLegRenderer.sortingOrder = _rightLegOrder;
+            }
+            else
+            {
+                leftLegRenderer.sortingOrder  = _rightLegOrder;
+                rightLegRenderer.sortingOrder = _leftLegOrder;
+            }
+        }
+        else
+        {
+            if (leftLegRenderer  != null) leftLegRenderer.sortingOrder  = _leftLegOrder;
+            if (rightLegRenderer != null) rightLegRenderer.sortingOrder = _rightLegOrder;
+        }
+
+        // 오른손 아이템 소팅 반전 (몸 기준 앞/뒤 뒤집기)
+        if (rightHandItemRenderer != null)
+        {
+            // _rightHandItemOrder 는 "왼쪽 보고 있을 때" 기준 값
+            if (_facing == -1)
+                rightHandItemRenderer.sortingOrder = _rightHandItemOrder;
+            else
+                rightHandItemRenderer.sortingOrder = -_rightHandItemOrder;
+        }
+    }
+
+    /*──────────────────── 걷기 애니메이션 ────────────────────*/
+    void UpdateWalkAnimation()
+    {
+        bool isMovingHoriz = Mathf.Abs(_moveInput) > 0.01f;
+
+        // 땅 위에서만 휘적임
+        if (isMovingHoriz && _isGrounded)
+        {
+            // 속도에 비례해서 위상 증가 (절대값으로 뒤로 걷기에도 자연스럽게)
+            _walkAnimPhase += Time.deltaTime * walkSwingSpeed * Mathf.Abs(_moveInput);
+            float sin = Mathf.Sin(_walkAnimPhase);
+
+            float armAngle = sin * walkArmAmplitude;
+            float legAngle = sin * walkLegAmplitude;
+
+            // 걸을 때:
+            //  - 오른팔 ↔ 왼다리 같은 방향
+            //  - 왼팔 ↔ 오른다리 같은 방향
+            // 왼쪽/오른쪽을 보더라도 root를 뒤집어서 표현하므로,
+            // 여기서는 단순히 쌍만 맞춰주면 됨.
+
+            if (leftLegRenderer != null)
+                leftLegRenderer.transform.localRotation =
+                    _leftLegBaseRot * Quaternion.Euler(0f, 0f, +legAngle);
+
+            if (rightLegRenderer != null)
+                rightLegRenderer.transform.localRotation =
+                    _rightLegBaseRot * Quaternion.Euler(0f, 0f, -legAngle);
+
+            if (rightArmRenderer != null)
+                rightArmRenderer.transform.localRotation =
+                    _rightArmBaseRot * Quaternion.Euler(0f, 0f, +armAngle); // 오른팔 ↔ 왼다리
+
+            if (leftArmRenderer != null)
+                leftArmRenderer.transform.localRotation =
+                    _leftArmBaseRot * Quaternion.Euler(0f, 0f, -armAngle);  // 왼팔 ↔ 오른다리
+        }
+        else
+        {
+            // 멈추면 기본 포즈로 서서히 복귀
+            float t = Time.deltaTime * walkReturnSpeed;
+
+            if (leftLegRenderer != null)
+                leftLegRenderer.transform.localRotation =
+                    Quaternion.Lerp(leftLegRenderer.transform.localRotation, _leftLegBaseRot, t);
+
+            if (rightLegRenderer != null)
+                rightLegRenderer.transform.localRotation =
+                    Quaternion.Lerp(rightLegRenderer.transform.localRotation, _rightLegBaseRot, t);
+
+            if (rightArmRenderer != null)
+                rightArmRenderer.transform.localRotation =
+                    Quaternion.Lerp(rightArmRenderer.transform.localRotation, _rightArmBaseRot, t);
+
+            if (leftArmRenderer != null)
+                leftArmRenderer.transform.localRotation =
+                    Quaternion.Lerp(leftArmRenderer.transform.localRotation, _leftArmBaseRot, t);
+        }
+    }
+
     /*──────────────────── 플레이어 데미지 ────────────────────*/
     public void TakeDamage(int damage)
     {
@@ -196,8 +406,8 @@ public class Player : MonoBehaviour
         if (audioManager != null)
             audioManager.PlayPlayerTookDamage();
 
-        // 순간 빨갛게 빤짝 (몸, 머리, 팔, 다리 전부)
-        if (skinRenderers != null && skinRenderers.Length > 0)
+        // 순간 빨갛게 빤짝 (몸+팔다리)
+        if (_allRenderers != null && _allRenderers.Length > 0)
         {
             if (_flashCo != null)
                 StopCoroutine(_flashCo);
@@ -207,28 +417,28 @@ public class Player : MonoBehaviour
 
     IEnumerator CoFlashRed()
     {
-        if (skinRenderers == null || skinRenderers.Length == 0)
+        if (_allRenderers == null || _allRenderers.Length == 0)
         {
             _flashCo = null;
             yield break;
         }
 
         // 빨갛게
-        for (int i = 0; i < skinRenderers.Length; i++)
+        for (int i = 0; i < _allRenderers.Length; i++)
         {
-            if (skinRenderers[i] != null)
-                skinRenderers[i].color = Color.red;
+            if (_allRenderers[i] != null)
+                _allRenderers[i].color = Color.red;
         }
 
         yield return new WaitForSeconds(damageFlashDuration);
 
         // 원래 색으로 복귀
-        if (_originalColors != null && _originalColors.Length == skinRenderers.Length)
+        if (_originalColors != null && _originalColors.Length == _allRenderers.Length)
         {
-            for (int i = 0; i < skinRenderers.Length; i++)
+            for (int i = 0; i < _allRenderers.Length; i++)
             {
-                if (skinRenderers[i] != null)
-                    skinRenderers[i].color = _originalColors[i];
+                if (_allRenderers[i] != null)
+                    _allRenderers[i].color = _originalColors[i];
             }
         }
 
