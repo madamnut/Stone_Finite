@@ -2,7 +2,7 @@ using UnityEngine;
 
 //
 // 엔티티 공통 베이스 클래스
-// - DroppedItem, FallingBlock, Mob 등이 이것을 상속
+// - DroppedItem, FallingBlock, Mob, Corpse 등이 이것을 상속
 // - 모든 엔티티는 동일한 방식으로 활성/비활성(SetSimActive) 처리
 // - 세이브/로드는 파생 타입이 구현
 //
@@ -37,7 +37,6 @@ public abstract class Entity : MonoBehaviour
     public abstract void FromSaveData(EntitySaveData data);
 }
 
-
 /// <summary>
 /// 세이브용 전용 데이터 구조
 /// </summary>
@@ -54,7 +53,8 @@ public class EntitySaveData
 /// </summary>
 public enum EntityKind : byte
 {
-    DroppedItem = 0,
+    DroppedItem  = 0,
     FallingBlock = 1,
-    Mob = 2,
+    Mob          = 2,
+    Corpse       = 3,
 }

@@ -21,6 +21,13 @@ public static class WorldSaveSystem
         public int    durability;
     }
 
+    // 몹 스폰용 최소 페이로드 (Prefab 선택에만 사용)
+    [System.Serializable]
+    private class MobSavePayload
+    {
+        public string mobId;
+    }
+
     // ────────────────────────────────────────────────
     //   월드 저장
     // ────────────────────────────────────────────────
@@ -423,7 +430,8 @@ public static class WorldSaveSystem
         EntityManager em,
         ItemLibrary itemLibrary,
         FallingBlock fallingPrefab,
-        GameObject droppedItemPrefab
+        GameObject droppedItemPrefab,
+        MobLibrary mobLibrary
     )
     {
         string path = Path.Combine(WorldLoadContext.GetSavePath(), ENTITY_SAVE_FILE);
@@ -498,7 +506,48 @@ public static class WorldSaveSystem
                     continue;
                 }
 
-                // 나머지 엔티티는 기존 ToSaveData/FromSaveData 경로
+                // Mob 로드
+                if (kind == EntityKind.Mob)
+                {
+                    if (mobLibrary == null)
+                        continue;
+
+                    // prefab 선택용으로 mobId만 가볍게 파싱
+                    MobSavePayload mp = null;
+                    if (!string.IsNullOrEmpty(payload))
+                    {
+                        try
+                        {
+                            mp = JsonConvert.DeserializeObject<MobSavePayload>(payload);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Debug.LogError($"[LOAD-ENTITY] Mob payload 파싱 실패: {ex.Message}");
+                        }
+                    }
+
+                    if (mp == null || string.IsNullOrEmpty(mp.mobId))
+                        continue;
+
+                    // 프리팹 스폰 (EntityManager 등록까지 내부에서 처리한다고 가정)
+                    var mob = mobLibrary.SpawnMob(mp.mobId, pos, em);
+                    if (mob == null)
+                        continue;
+
+                    // HP 등 상세 상태는 Mob.FromSaveData 에서 payload 전체 다시 파싱
+                    var data = new EntitySaveData
+                    {
+                        Kind        = kind,
+                        Position    = pos,
+                        PayloadJson = payload
+                    };
+                    mob.FromSaveData(data);
+
+                    spawned++;
+                    continue;
+                }
+
+                // FallingBlock
                 if (kind == EntityKind.FallingBlock)
                 {
                     if (fallingPrefab == null)
@@ -525,7 +574,7 @@ public static class WorldSaveSystem
                     continue;
                 }
 
-                // 아직 처리 안 하는 Kind (Mob 등)는 스킵
+                // 아직 처리 안 하는 Kind (Corpse 등)는 스킵
             }
 
             Debug.Log($"[LOAD-ENTITY] spawned={spawned}");

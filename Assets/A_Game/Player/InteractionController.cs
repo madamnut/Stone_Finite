@@ -81,6 +81,12 @@ public class InteractionController : MonoBehaviour
     [Tooltip("공격 무기 스프라이트를 표시하는 SpriteRenderer (Sprite)")]
     public SpriteRenderer meleeSprite;
 
+    // ───────── 근접 공격 판정 상태 ─────────
+    // 한 번의 공격(스윙/찌르기) 동안 데미지를 한 번만 주기 위한 상태
+    bool _attackActive = false;
+    HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
+    int _currentAttackDamage = 1;
+
     GameState  _state     = GameState.Ingame;
     LayerMode  _layerMode = LayerMode.FG;
     GameObject _hlGO;
@@ -480,6 +486,7 @@ public class InteractionController : MonoBehaviour
 
         float staminaCost = 0f;
         float cooldown    = 0f;
+        float damage      = 1f;
 
         if (paramDict.TryGetValue("staminaCost", out var scObj) && scObj != null)
         {
@@ -506,6 +513,21 @@ public class InteractionController : MonoBehaviour
                 float tmp;
                 if (float.TryParse(cdObj.ToString(), out tmp))
                     cooldown = tmp;
+            }
+        }
+
+        // 데미지(없으면 1)
+        if (paramDict.TryGetValue("damage", out var dmgObj) && dmgObj != null)
+        {
+            if      (dmgObj is float f)   damage = f;
+            else if (dmgObj is double d)  damage = (float)d;
+            else if (dmgObj is int i)     damage = i;
+            else if (dmgObj is long l)    damage = l;
+            else
+            {
+                float tmp;
+                if (float.TryParse(dmgObj.ToString(), out tmp))
+                    damage = tmp;
             }
         }
 
@@ -548,13 +570,18 @@ public class InteractionController : MonoBehaviour
         // 각도 기본 세팅
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, angleFromUp);
 
+        // 이 공격 동안 사용할 데미지/히트 정보 초기화
+        _currentAttackDamage = Mathf.Max(1, Mathf.RoundToInt(damage));
+        _attackActive = true;
+        _hitMobsThisAttack.Clear();
+
         // 공격 음 재생
         if (sound != null)
         {
             if (actionName == "Swing")
                 sound.PlayWeaponSwing();   // 휘두르기 3종 중 랜덤
             else if (actionName == "Thrust")
-                sound.PlayWeaponThrust();        // 찌르기 1종
+                sound.PlayWeaponThrust();  // 찌르기 1종
         }
 
         // 액션 타입별 모션 시작
@@ -573,7 +600,11 @@ public class InteractionController : MonoBehaviour
     IEnumerator CoSwing(float centerAngle, bool isLeftSide)
     {
         if (meleeAngle == null)
+        {
+            _attackActive = false;
+            _hitMobsThisAttack.Clear();
             yield break;
+        }
 
         float duration   = 0.25f;   // 기존 0.5 → 2배 속도
         float halfRange  = 60f;     // 기존 ±30 → ±60
@@ -611,6 +642,10 @@ public class InteractionController : MonoBehaviour
         if (meleeRoot != null)
             meleeRoot.gameObject.SetActive(false);
 
+        // 한 번의 공격 종료 → 히트 상태 리셋
+        _attackActive = false;
+        _hitMobsThisAttack.Clear();
+
         _attackCo = null;
     }
 
@@ -618,7 +653,11 @@ public class InteractionController : MonoBehaviour
     IEnumerator CoThrust(float centerAngle)
     {
         if (meleeAngle == null || meleeOffset == null)
+        {
+            _attackActive = false;
+            _hitMobsThisAttack.Clear();
             yield break;
+        }
 
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
@@ -660,6 +699,10 @@ public class InteractionController : MonoBehaviour
         // 공격 모션 종료 → 공격 객체 끔
         if (meleeRoot != null)
             meleeRoot.gameObject.SetActive(false);
+
+        // 한 번의 공격 종료 → 히트 상태 리셋
+        _attackActive = false;
+        _hitMobsThisAttack.Clear();
 
         _attackCo = null;
     }
@@ -1067,6 +1110,29 @@ public class InteractionController : MonoBehaviour
             return false;
         }
         return true;
+    }
+
+    // ───────── 무기 콜라이더 트리거 → 몹에게 데미지 ─────────
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        // 공격 중이 아닐 때는 무시
+        if (!_attackActive)
+            return;
+
+        // 몹 찾기 (콜라이더가 자식에 있어도 상위에서 Mob 찾기)
+        var mob = other.GetComponentInParent<Mob>();
+        if (mob == null)
+            return;
+
+        // 이번 공격 동안 이미 맞은 몹이면 스킵
+        if (_hitMobsThisAttack.Contains(mob))
+            return;
+
+        // 데미지 적용
+        mob.TakeDamage(_currentAttackDamage);
+
+        // 기록
+        _hitMobsThisAttack.Add(mob);
     }
 
     // ───────── 일시정지 메뉴 버튼 ─────────

@@ -374,6 +374,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mobId: Cow
   mobPosition: {x: 0, y: 0}
+  maxHp: 10
+  currentHp: 0
   body: {fileID: 6662829800359414979}
   head: {fileID: 7924315219159474262}
   legFL: {fileID: 4332129178079657617}
@@ -387,10 +389,18 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 33554432
+  audioManager: {fileID: 0}
+  mooIntervalMin: 5
+  mooIntervalMax: 15
+  breathIntervalMin: 5
+  breathIntervalMax: 15
   idleTimeMin: 1.5
   idleTimeMax: 3
   walkTimeMin: 2
   walkTimeMax: 4
+  hitFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  hitFlashTime: 0.08
+  corpsePrefab: {fileID: 4678235024137345234, guid: 40b26cac77dcdf3449cf7fe375ff3da4, type: 3}
 --- !u!61 &7979285605324576840
 BoxCollider2D:
   m_ObjectHideFlags: 0

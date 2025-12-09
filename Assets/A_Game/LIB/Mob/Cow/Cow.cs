@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Cow : Mob
@@ -49,9 +50,27 @@ public class Cow : Mob
 
     Rigidbody2D rb;
 
+    // ===== 피격 연출 =====
+    [Header("Hit Flash")]
+    [Tooltip("맞았을 때 적용할 색")]
+    public Color hitFlashColor = Color.red;
+    [Tooltip("맞았을 때 색 유지 시간(초)")]
+    public float hitFlashTime = 0.08f;
 
-    void Awake()
+    SpriteRenderer[] _hitRenderers;
+    Coroutine        _hitFlashRoutine;
+
+    // ===== 시체 프리팹 =====
+    [Header("Corpse")]
+    [Tooltip("소가 죽었을 때 생성할 시체 프리팹 (Cow_Corpse)")]
+    public Corpse corpsePrefab;
+
+
+    protected override void Awake()
     {
+        // Mob 쪽 HP 초기화 등 먼저 처리
+        base.Awake();
+
         rb = GetComponent<Rigidbody2D>();
         if (rb == null)
             Debug.LogWarning("[Cow] Rigidbody2D가 없습니다.");
@@ -60,6 +79,17 @@ public class Cow : Mob
 
         if (audioManager == null)
             audioManager = FindObjectOfType<AudioManager>();
+
+        // 피격 시 색 바꿀 스프라이트 캐싱 (한 번만)
+        _hitRenderers = new SpriteRenderer[]
+        {
+            body  != null ? body.GetComponent<SpriteRenderer>()  : null,
+            head  != null ? head.GetComponent<SpriteRenderer>()  : null,
+            legFL != null ? legFL.GetComponent<SpriteRenderer>() : null,
+            legFR != null ? legFR.GetComponent<SpriteRenderer>() : null,
+            legBL != null ? legBL.GetComponent<SpriteRenderer>() : null,
+            legBR != null ? legBR.GetComponent<SpriteRenderer>() : null,
+        };
     }
 
     void OnEnable()
@@ -149,7 +179,6 @@ public class Cow : Mob
         }
     }
 
-
     // ========== AI 상태 전환 ==========
     void SetNextState()
     {
@@ -208,4 +237,82 @@ public class Cow : Mob
         }
     }
 #endif
+
+    // ========== 데미지 연출 ==========
+    protected override void OnDamaged(int amount)
+    {
+        base.OnDamaged(amount); // 현재는 아무것도 안하지만, 혹시 모를 확장 대비
+
+        if (_hitRenderers == null || _hitRenderers.Length == 0)
+            return;
+
+        if (_hitFlashRoutine != null)
+            StopCoroutine(_hitFlashRoutine);
+
+        _hitFlashRoutine = StartCoroutine(HitFlash());
+    }
+
+    IEnumerator HitFlash()
+    {
+        int len = _hitRenderers.Length;
+        if (len == 0)
+        {
+            _hitFlashRoutine = null;
+            yield break;
+        }
+
+        // 원래 색 저장
+        Color[] originals = new Color[len];
+        for (int i = 0; i < len; i++)
+        {
+            var sr = _hitRenderers[i];
+            if (sr != null)
+                originals[i] = sr.color;
+        }
+
+        // 히트 색으로 변경
+        for (int i = 0; i < len; i++)
+        {
+            var sr = _hitRenderers[i];
+            if (sr != null)
+                sr.color = hitFlashColor;
+        }
+
+        yield return new WaitForSeconds(hitFlashTime);
+
+        // 원래 색 복원
+        for (int i = 0; i < len; i++)
+        {
+            var sr = _hitRenderers[i];
+            if (sr != null)
+                sr.color = originals[i];
+        }
+
+        _hitFlashRoutine = null;
+    }
+
+    // ========== 죽음 처리 ==========
+    protected override void OnDeath()
+    {
+        if (audioManager != null)
+            audioManager.PlayCowDeath();
+
+        // 시체 생성
+        if (corpsePrefab != null)
+        {
+            Vector3 pos = transform.position;
+            var corpse = Instantiate(corpsePrefab, pos, Quaternion.identity);
+
+            // 시체 엔티티 매니저 등록
+            if (corpse != null)
+            {
+                var em = FindObjectOfType<EntityManager>();
+                if (em != null)
+                    em.Register(corpse);
+            }
+        }
+
+        // 원래 Mob 사망 처리 (게임오브젝트 파괴 등)
+        base.OnDeath();
+    }
 }

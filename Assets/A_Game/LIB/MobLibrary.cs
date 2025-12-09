@@ -17,6 +17,9 @@ public class MobLibrary : MonoBehaviour
 
         [Tooltip("실제 Mob 프리팹 (Mob : Entity 상속)")]
         public Mob prefab;
+
+        [Tooltip("해당 몹이 죽었을 때 생성할 시체 프리팹 (옵션)")]
+        public Corpse corpsePrefab;
     }
 
     [Header("Mob List")]
@@ -25,7 +28,6 @@ public class MobLibrary : MonoBehaviour
 
     // 런타임용 빠른 조회용 딕셔너리
     Dictionary<string, MobEntry> _byId;
-
 
     void Awake()
     {
@@ -54,7 +56,6 @@ public class MobLibrary : MonoBehaviour
         }
     }
 
-
     /// <summary>
     /// mobId로 프리팹 반환 (읽기 전용).
     /// </summary>
@@ -65,7 +66,6 @@ public class MobLibrary : MonoBehaviour
 
         return _byId.TryGetValue(mobId, out var entry) ? entry.prefab : null;
     }
-
 
     /// <summary>
     /// mobId 기준 스폰 헬퍼.
@@ -78,6 +78,9 @@ public class MobLibrary : MonoBehaviour
     /// <param name="parentOverride">부모 Transform. null이면 MobLibrary 아래에 생성</param>
     public Mob SpawnMob(string mobId, Vector3 position, EntityManager entityManager, Transform parentOverride = null)
     {
+        if (_byId == null)
+            BuildDictionary();
+
         if (_byId == null || !_byId.TryGetValue(mobId, out var entry) || entry.prefab == null)
         {
             Debug.LogWarning($"[MobLibrary] mobId='{mobId}' 에 해당하는 프리팹을 찾지 못했습니다.");
@@ -89,13 +92,19 @@ public class MobLibrary : MonoBehaviour
         // 프리팹 인스턴스 생성
         Mob inst = Instantiate(entry.prefab, position, Quaternion.identity, parent);
 
-        // MobId 보정 (프리팹에서 이미 세팅해뒀으면 그대로 쓰고, 비어있으면 라이브러리 기준으로 채움)
-        if (inst != null && string.IsNullOrEmpty(inst.MobId))
-            inst.MobId = mobId;
+        if (inst != null)
+        {
+            // MobId 보정 (프리팹에서 이미 세팅해뒀으면 그대로 쓰고, 비어있으면 라이브러리 기준으로 채움)
+            if (string.IsNullOrEmpty(inst.MobId))
+                inst.MobId = mobId;
 
-        // 엔티티 시스템에 등록
-        if (inst != null && entityManager != null)
-            entityManager.Register(inst);
+            // TODO: 이후 Mob.cs 에 시체 프리팹 필드/세터 추가되면 여기서 entry.corpsePrefab 연결 예정
+            // 예) inst.corpsePrefab = entry.corpsePrefab; 또는 inst.SetCorpsePrefab(entry.corpsePrefab);
+
+            // 엔티티 시스템에 등록
+            if (entityManager != null)
+                entityManager.Register(inst);
+        }
 
         return inst;
     }

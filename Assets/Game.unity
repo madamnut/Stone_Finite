@@ -4416,6 +4416,7 @@ MonoBehaviour:
   mobs:
   - mobId: Cow
     prefab: {fileID: 6460545956538734368, guid: 9ece9e7ad8b9b994fa90544c0dde4aeb, type: 3}
+    corpsePrefab: {fileID: 4678235024137345234, guid: 40b26cac77dcdf3449cf7fe375ff3da4, type: 3}
 --- !u!4 &708102120
 Transform:
   m_ObjectHideFlags: 0
@@ -10487,7 +10488,7 @@ BoxCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -13220,7 +13221,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0.4}
+  m_Offset: {x: 0, y: 0.5}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -13231,7 +13232,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.2, y: 0.7}
+  m_Size: {x: 0.2, y: 0.4}
   m_EdgeRadius: 0
 --- !u!4 &7820955644431674025
 Transform:

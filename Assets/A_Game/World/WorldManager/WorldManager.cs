@@ -965,7 +965,8 @@ public class WorldManager : MonoBehaviour
             entityManager,
             itemLibrary,
             fallingBlockPrefab,
-            dropPrefab
+            dropPrefab,
+            mobLibrary
         );
     }
 
