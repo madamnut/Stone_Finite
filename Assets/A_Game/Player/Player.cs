@@ -41,8 +41,9 @@ public class Player : MonoBehaviour
     [SerializeField] private AudioManager audioManager;
 
     [Header("UI (Survival Bars)")]
-    [SerializeField] private Image hungerFillImage;  // Filled 타입
-    [SerializeField] private Image thirstFillImage;  // Filled 타입
+    [SerializeField] private Image hungerFillImage;   // Filled 타입
+    [SerializeField] private Image thirstFillImage;   // Filled 타입
+    [SerializeField] private Image staminaFillImage;  // Filled 타입 (스태미너)
 
     [Header("Hearts UI")]
     [SerializeField] private Transform heartRoot;     // 하트 부모 Transform
@@ -64,9 +65,19 @@ public class Player : MonoBehaviour
 
     // 생존 스탯
     [Header("Survival Stats")]
-    [Range(0, 40)] public int health = 40;   // 최대 체력 40
-    [Range(0,100)] public int hunger = 100;
-    [Range(0,100)] public int thirst = 100;
+    [Range(0, 40)]  public int   health  = 40;   // 최대 체력 40
+    [Range(0,100)]  public int   hunger  = 100;
+    [Range(0,100)]  public int   thirst  = 100;
+    [Range(0,100)]  public float stamina = 100f; // 스태미너 (0~100, 시간 기반 회복/소모)
+
+    [Header("Stamina Settings")]
+    [SerializeField] private float staminaRegenPerSecond      = 2f;  // 초당 2 회복
+    [SerializeField] private float staminaMoveCostPerSecond   = 4f;  // 이동 중 초당 4 소모
+    [SerializeField] private float staminaJumpCost            = 5f;  // 점프 시 5 소모
+
+    // 공격 쿨다운
+    float _attackCooldownTimer = 0f;  // 0 이하일 때 공격 가능
+    bool  _isAttacking         = false; // 모션 단계에서 사용 예정
 
     // 인벤토리
     private const int InventoryCapacity = 50;
@@ -170,13 +181,19 @@ public class Player : MonoBehaviour
         bool jumpDown = Input.GetButtonDown("Jump");
         bool jumpHeld = Input.GetButton("Jump");
 
-        // 기본: 땅 위에서 스페이스 처음 누르면 점프
-        if (jumpDown && _isGrounded)
+        // 기본: 땅 위에서 스페이스 처음 누르면 점프 (스태미너 5 이상일 때만)
+        if (jumpDown && _isGrounded && stamina >= staminaJumpCost)
+        {
             _jumpRequested = true;
+            stamina -= staminaJumpCost;
+        }
 
-        // 연속 점프: 공중 → 착지 프레임에서 스페이스가 계속 눌린 상태면 자동 점프
-        if (jumpHeld && _isGrounded && !_wasGrounded)
+        // 연속 점프: 공중 → 착지 프레임에서 스페이스가 계속 눌린 상태면 자동 점프 (스태미너 5 이상일 때만)
+        if (jumpHeld && _isGrounded && !_wasGrounded && stamina >= staminaJumpCost)
+        {
             _jumpRequested = true;
+            stamina -= staminaJumpCost;
+        }
 
         /*────────────── 낙하 거리 측정 ──────────────*/
         // 땅에서 발이 떨어지는 순간
@@ -223,6 +240,26 @@ public class Player : MonoBehaviour
         /*────────────── 걷기 애니메이션 ──────────────*/
         UpdateWalkAnimation();
 
+        /*────────────── 스태미너 회복/소모 ──────────────*/
+        float dt = Time.deltaTime;
+
+        // 기본 회복
+        stamina += staminaRegenPerSecond * dt;
+
+        // 이동 중 소모 (수평 입력이 있을 때)
+        bool isMovingHoriz = Mathf.Abs(_moveInput) > 0.01f;
+        if (isMovingHoriz)
+        {
+            stamina -= staminaMoveCostPerSecond * dt;
+        }
+
+        // 범위 클램프
+        stamina = Mathf.Clamp(stamina, 0f, 100f);
+
+        /*────────────── 공격 쿨다운 감소 ──────────────*/
+        if (_attackCooldownTimer > 0f)
+            _attackCooldownTimer -= dt;
+
         /*────────────── UI 갱신 ──────────────*/
         UpdateSurvivalUI();
         UpdateHeartsUI();
@@ -257,6 +294,27 @@ public class Player : MonoBehaviour
             Destroy(other.gameObject);
         else
             drop.ItemData.Count = left;
+    }
+
+    /*──────────────────── 공격 스태미나/쿨다운 API ────────────────────*/
+    // 무기 공격 시 스태미나 소모 + 쿨다운 중이면 공격 불가
+    public bool TryConsumeStaminaForAttack(float staminaCost)
+    {
+        if (_attackCooldownTimer > 0f)
+            return false;
+
+        if (stamina < staminaCost)
+            return false;
+
+        stamina -= staminaCost;
+        if (stamina < 0f) stamina = 0f;
+
+        return true;
+    }
+
+    public void StartAttackCooldown(float cooldown)
+    {
+        _attackCooldownTimer = cooldown;
     }
 
     /*──────────────────── 방향/플립/소팅 ────────────────────*/
@@ -445,7 +503,7 @@ public class Player : MonoBehaviour
         _flashCo = null;
     }
 
-    /*──────────────────── 배고픔/갈증 UI ────────────────────*/
+    /*──────────────────── 배고픔/갈증/스태미너 UI ────────────────────*/
     void UpdateSurvivalUI()
     {
         if (hungerFillImage != null)
@@ -453,6 +511,9 @@ public class Player : MonoBehaviour
 
         if (thirstFillImage != null)
             thirstFillImage.fillAmount = Mathf.Clamp01(thirst / 100f);
+
+        if (staminaFillImage != null)
+            staminaFillImage.fillAmount = Mathf.Clamp01(stamina / 100f);
     }
 
     /*──────────────────── 하트 UI 생성 ────────────────────*/

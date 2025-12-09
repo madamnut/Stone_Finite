@@ -14,10 +14,10 @@
 
     "params": {
       "Swing": {
-        "damage": 4,
+        "damage": 1,
         "knockback": 1.0,
         "staminaCost": 5,
-        "cooldown": 0.6,
+        "cooldown": 0.7,
         "reach": 1.0
       }
     }
@@ -38,11 +38,11 @@
 
     "params": {
       "Thrust": {
-        "damage": 6,
+        "damage": 2,
         "knockback": 0.6,
         "staminaCost": 7,
-        "cooldown": 0.55,
-        "reach": 1.5
+        "cooldown": 0.7,
+        "reach": 1.0
       }
     }
   }

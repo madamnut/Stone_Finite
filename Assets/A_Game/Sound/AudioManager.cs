@@ -12,7 +12,22 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip digClip;                 // Dig.wav
     [SerializeField] private AudioClip placeClip;               // Place.wav
     [SerializeField] private AudioClip multiblockCompleteClip;  // Multiblock_Complete.wav 등
-    [SerializeField] private AudioClip playerTookDamageClip;    // NEW: Player Damage.wav 등
+    [SerializeField] private AudioClip playerTookDamageClip;    // Player Damage.wav 등
+
+    [Header("Cow SFX Clips")]
+    [SerializeField] private List<AudioClip> cowMooClips = new List<AudioClip>(); // 소 울음 3종
+    [SerializeField] private AudioClip cowDeathClip;                                  // 소 사망
+    [SerializeField] private AudioClip cowBreathClip;                                 // 소 숨소리
+    [Range(0f, 1f)] public float cowMooVolume = 0.5f;                                 // 소 울음 볼륨 (기본 50%)
+
+    [Header("Pig SFX Clips")]
+    [SerializeField] private List<AudioClip> pigOinkClips = new List<AudioClip>();    // 돼지 울음 n종
+    [SerializeField] private AudioClip pigDeathClip;                                  // 돼지 사망
+
+    [Header("Combat SFX Clips")]
+    [SerializeField] private List<AudioClip> swingClips = new List<AudioClip>();      // 휘두르기 3종
+    [SerializeField] private AudioClip thrustClip;                                    // 찌르기 1종
+    [SerializeField] private AudioClip hitClip;                                       // 데미지 입힐 때 1종
 
     /*────────────── BGM ──────────────*/
     [Header("BGM Source")]
@@ -66,10 +81,73 @@ public class AudioManager : MonoBehaviour
         if (multiblockCompleteClip != null) sfxSource.PlayOneShot(multiblockCompleteClip);
     }
 
-    public void PlayPlayerTookDamage()   // ← 추가된 함수
+    public void PlayPlayerTookDamage()
     {
         if (playerTookDamageClip != null)
             sfxSource.PlayOneShot(playerTookDamageClip);
+    }
+
+    /*────────────── Cow SFX ──────────────*/
+    public void PlayCowMoo()
+    {
+        if (cowMooClips == null || cowMooClips.Count == 0) return;
+
+        int idx = Random.Range(0, cowMooClips.Count);
+        var clip = cowMooClips[idx];
+        if (clip != null)
+            sfxSource.PlayOneShot(clip, cowMooVolume); // 볼륨 50% 기본
+    }
+
+    public void PlayCowDeath()
+    {
+        if (cowDeathClip != null)
+            sfxSource.PlayOneShot(cowDeathClip);
+    }
+
+    public void PlayCowBreath()
+    {
+        if (cowBreathClip != null)
+            sfxSource.PlayOneShot(cowBreathClip);
+    }
+
+    /*────────────── Pig SFX ──────────────*/
+    public void PlayPigOink()
+    {
+        if (pigOinkClips == null || pigOinkClips.Count == 0) return;
+
+        int idx = Random.Range(0, pigOinkClips.Count);
+        var clip = pigOinkClips[idx];
+        if (clip != null)
+            sfxSource.PlayOneShot(clip);
+    }
+
+    public void PlayPigDeath()
+    {
+        if (pigDeathClip != null)
+            sfxSource.PlayOneShot(pigDeathClip);
+    }
+
+    /*────────────── Combat SFX ──────────────*/
+    public void PlayWeaponSwing()
+    {
+        if (swingClips == null || swingClips.Count == 0) return;
+
+        int idx = Random.Range(0, swingClips.Count);
+        var clip = swingClips[idx];
+        if (clip != null)
+            sfxSource.PlayOneShot(clip);
+    }
+
+    public void PlayWeaponThrust()
+    {
+        if (thrustClip != null)
+            sfxSource.PlayOneShot(thrustClip);
+    }
+
+    public void PlayWeaponHit()
+    {
+        if (hitClip != null)
+            sfxSource.PlayOneShot(hitClip);
     }
 
     /*────────────── 내부(BGM) ──────────────*/

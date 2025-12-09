@@ -1,4 +1,6 @@
 // InteractionController.cs
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -32,6 +34,10 @@ public class InteractionController : MonoBehaviour
     public Player   player;
     public Hotbar   hotbar;
     public ItemSlot cursorSlot;
+    [Tooltip("파괴 모드 기본 커서 텍스처")]
+    public Texture2D breakCursorTex;
+    [Tooltip("전투 모드 커서 텍스처 (Weapon 태그 아이템 손에 들었을 때)")]
+    public Texture2D combatCursorTex;
 
     [Header("World References")]
     public WorldManager worldManager;
@@ -65,12 +71,30 @@ public class InteractionController : MonoBehaviour
     [Header("Audio")]
     public AudioManager sound;
 
+    [Header("Melee Attack Parts")]
+    [Tooltip("Melee 전체 루트 (공격 중에만 활성화)")]
+    public Transform meleeRoot;
+    [Tooltip("공격 각도를 담당하는 Transform (Angle)")]
+    public Transform meleeAngle;
+    [Tooltip("찌르기 오프셋을 담당하는 Transform (Offset, BoxCollider2D 붙어있음)")]
+    public Transform meleeOffset;
+    [Tooltip("공격 무기 스프라이트를 표시하는 SpriteRenderer (Sprite)")]
+    public SpriteRenderer meleeSprite;
+
     GameState  _state     = GameState.Ingame;
     LayerMode  _layerMode = LayerMode.FG;
     GameObject _hlGO;
     SpriteRenderer _hlSR;
     float _timer;
     int   _hotbarScope = 0;
+
+    // 전투/파괴 모드 및 커서 관련
+    bool    _combatMode     = false;              // false = 파괴모드, true = 전투모드
+    Vector2 _breakHotspot   = new Vector2(7, 6);  // 파괴 모드 클릭 지점 (텍스처 좌표)
+    Vector2 _combatHotspot  = new Vector2(5, 4);  // 전투 모드 클릭 지점 (텍스처 좌표)
+
+    // 근접 공격 코루틴
+    Coroutine _attackCo;
 
     void Awake()
     {
@@ -92,6 +116,14 @@ public class InteractionController : MonoBehaviour
 
         resumeButton.onClick.AddListener(OnClickResume);
         exitButton.onClick.AddListener(OnClickQuitToLobby);
+
+        // 시작 시 기본은 파괴 모드 커서
+        if (breakCursorTex != null)
+            UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
+
+        // 공격 모션 없을 때는 공격 객체 비활성화
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
     }
 
     void Update()
@@ -170,6 +202,34 @@ public class InteractionController : MonoBehaviour
                     }
                 }
             }
+        }
+
+        // ───────── 현재 들고 있는 아이템 기준 전투/파괴 모드 및 커서 전환 ─────────
+        ItemData scopeHeld = null;
+        if (player != null &&
+            player.Inventory != null &&
+            player.Inventory.items != null)
+        {
+            var items = player.Inventory.items;
+            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                scopeHeld = items[_hotbarScope];
+        }
+
+        bool hasWeapon = (scopeHeld != null && scopeHeld.HasTag("Weapon"));
+
+        if (hasWeapon && !_combatMode)
+        {
+            // Weapon 태그 아이템을 손에 든 경우 → 전투모드 진입
+            _combatMode = true;
+            if (combatCursorTex != null)
+                UnityEngine.Cursor.SetCursor(combatCursorTex, _combatHotspot, CursorMode.Auto);
+        }
+        else if (!hasWeapon && _combatMode)
+        {
+            // Weapon 태그가 사라진 경우 → 파괴모드로 복귀
+            _combatMode = false;
+            if (breakCursorTex != null)
+                UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
         }
 
         bool invDown = Input.GetKeyDown(toggleInventoryKey);
@@ -274,7 +334,15 @@ public class InteractionController : MonoBehaviour
             return;
         }
 
-        UpdateHighlight();
+        // 전투 모드일 때는 셀 하이라이트 비활성화
+        if (_combatMode)
+        {
+            _hlGO.SetActive(false);
+        }
+        else
+        {
+            UpdateHighlight();
+        }
 
         if (Input.GetMouseButtonDown(0)) HandleLeftClick();
         if (Input.GetMouseButtonDown(1)) HandleRightClick();
@@ -318,6 +386,12 @@ public class InteractionController : MonoBehaviour
 
     void HandleLeftClick()
     {
+        if (_combatMode)
+        {
+            TryWeaponAttack();
+            return;
+        }
+
         BreakAtCursor();
     }
 
@@ -345,9 +419,11 @@ public class InteractionController : MonoBehaviour
     {
         if (!GetMouseCell(out int cx, out int cy)) return;
 
-        var layer = (_layerMode == LayerMode.FG)
-            ? WorldManager.CellLayer.FG
-            : WorldManager.CellLayer.BG;
+        // LayerMode(FG/BG) → WorldManager.CellLayer 로 변환
+        WorldManager.CellLayer layer =
+            (_layerMode == LayerMode.FG)
+                ? WorldManager.CellLayer.FG
+                : WorldManager.CellLayer.BG;
 
         var fgCell  = worldManager.worldMap.fg[cx, cy];
         bool hasBody = fgCell.id != 0;
@@ -361,6 +437,231 @@ public class InteractionController : MonoBehaviour
 
         worldManager.BreakCell(cx, cy, layer);
         if (sound != null) sound.PlayDig();
+    }
+
+    void TryWeaponAttack()
+    {
+        if (player == null || player.Inventory == null || player.Inventory.items == null)
+            return;
+
+        // 이미 공격 모션 중이면 새로 시작하지 않음
+        if (_attackCo != null)
+            return;
+
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+            return;
+
+        var held = items[_hotbarScope];
+        if (held == null || held.Count <= 0)
+            return;
+
+        // WeaponActions 없으면 무기 아님
+        if (held.WeaponActions == null || held.WeaponActions.Count == 0)
+            return;
+
+        if (held.Parameters == null)
+            return;
+
+        // 지금은 첫 번째 weaponAction만 사용: "Swing" 또는 "Thrust"
+        string actionName = held.WeaponActions[0];
+        if (string.IsNullOrEmpty(actionName))
+            return;
+
+        if (!held.Parameters.TryGetValue(actionName, out var paramObj))
+            return;
+
+        var paramDict =
+            paramObj as Dictionary<string, object> ??
+            (paramObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
+
+        if (paramDict == null)
+            return;
+
+        float staminaCost = 0f;
+        float cooldown    = 0f;
+
+        if (paramDict.TryGetValue("staminaCost", out var scObj) && scObj != null)
+        {
+            if      (scObj is float f)   staminaCost = f;
+            else if (scObj is double d)  staminaCost = (float)d;
+            else if (scObj is int i)     staminaCost = i;
+            else if (scObj is long l)    staminaCost = l;
+            else
+            {
+                float tmp;
+                if (float.TryParse(scObj.ToString(), out tmp))
+                    staminaCost = tmp;
+            }
+        }
+
+        if (paramDict.TryGetValue("cooldown", out var cdObj) && cdObj != null)
+        {
+            if      (cdObj is float f)   cooldown = f;
+            else if (cdObj is double d)  cooldown = (float)d;
+            else if (cdObj is int i)     cooldown = i;
+            else if (cdObj is long l)    cooldown = l;
+            else
+            {
+                float tmp;
+                if (float.TryParse(cdObj.ToString(), out tmp))
+                    cooldown = tmp;
+            }
+        }
+
+        // 쿨다운/스태미나 체크 + 소모
+        if (!player.TryConsumeStaminaForAttack(staminaCost))
+            return;
+
+        player.StartAttackCooldown(cooldown);
+
+        if (meleeAngle == null)
+            return;
+
+        // 공격 방향 계산: 머리 수직 위를 클릭하면 0도,
+        // 거기서 반시계(+) / 시계(-) 방향으로 회전
+        Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 mouseWorld  = new Vector2(mouseWorld3.x, mouseWorld3.y);
+        Vector2 origin      = meleeAngle.position;
+
+        Vector2 dir = mouseWorld - origin;
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = Vector2.up;
+
+        // 우측 기준 atan2(y,x)에서, "위쪽이 0도"가 되도록 -90도 오프셋
+        float angleFromUp = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
+
+        // 마우스가 플레이어 기준 왼쪽/오른쪽인지
+        bool isLeftSide = (mouseWorld.x < origin.x);
+
+        // 공격 시작 시 루트 활성화 → 스프라이트 넣기 → 모션 진행
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(true);
+
+        if (meleeSprite != null)
+        {
+            meleeSprite.enabled = true;
+            if (held.Icon != null)
+                meleeSprite.sprite = held.Icon;
+        }
+
+        // 각도 기본 세팅
+        meleeAngle.rotation = Quaternion.Euler(0f, 0f, angleFromUp);
+
+        // 공격 음 재생
+        if (sound != null)
+        {
+            if (actionName == "Swing")
+                sound.PlayWeaponSwing();   // 휘두르기 3종 중 랜덤
+            else if (actionName == "Thrust")
+                sound.PlayWeaponThrust();        // 찌르기 1종
+        }
+
+        // 액션 타입별 모션 시작
+        if (actionName == "Swing")
+        {
+            _attackCo = StartCoroutine(CoSwing(angleFromUp, isLeftSide));
+        }
+        else if (actionName == "Thrust")
+        {
+            _attackCo = StartCoroutine(CoThrust(angleFromUp));
+        }
+    }
+
+    // 휘두르기: 각도 2배(±60도), 속도 2배(0.25초)
+    // 마우스가 왼쪽이면 반시계(CCW), 오른쪽이면 시계(CW) 방향으로 "위 → 아래" 느낌으로 회전
+    IEnumerator CoSwing(float centerAngle, bool isLeftSide)
+    {
+        if (meleeAngle == null)
+            yield break;
+
+        float duration   = 0.25f;   // 기존 0.5 → 2배 속도
+        float halfRange  = 60f;     // 기존 ±30 → ±60
+
+        float startAngle;
+        float endAngle;
+
+        if (isLeftSide)
+        {
+            // 왼쪽: 반시계 방향 (각도 증가)
+            startAngle = centerAngle - halfRange;
+            endAngle   = centerAngle + halfRange;
+        }
+        else
+        {
+            // 오른쪽: 시계 방향 (각도 감소)
+            startAngle = centerAngle + halfRange;
+            endAngle   = centerAngle - halfRange;
+        }
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float u   = Mathf.Clamp01(t / duration);
+            float ang = Mathf.Lerp(startAngle, endAngle, u);
+            meleeAngle.rotation = Quaternion.Euler(0f, 0f, ang);
+            yield return null;
+        }
+
+        // 종료 시 중앙 각도로 정리
+        meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
+
+        // 공격 모션 종료 → 공격 객체 끔
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
+
+        _attackCo = null;
+    }
+
+    // 찌르기: y -0.5 → +0.5 왕복 (0.5초)
+    IEnumerator CoThrust(float centerAngle)
+    {
+        if (meleeAngle == null || meleeOffset == null)
+            yield break;
+
+        meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
+
+        float duration = 0.5f;
+        float startY   = -0.5f;
+        float endY     =  0.5f;
+
+        Vector3 basePos = meleeOffset.localPosition;
+        float baseX = basePos.x;
+        float baseZ = basePos.z;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / duration);
+
+            float y;
+            if (u < 0.5f)
+            {
+                // 전진 구간
+                float k = u * 2f;
+                y = Mathf.Lerp(startY, endY, k);
+            }
+            else
+            {
+                // 복귀 구간
+                float k = (u - 0.5f) * 2f;
+                y = Mathf.Lerp(endY, startY, k);
+            }
+
+            meleeOffset.localPosition = new Vector3(baseX, y, baseZ);
+            yield return null;
+        }
+
+        // 기본 위치로 복귀 (y=0 기준)
+        meleeOffset.localPosition = new Vector3(baseX, 0f, baseZ);
+
+        // 공격 모션 종료 → 공격 객체 끔
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
+
+        _attackCo = null;
     }
 
     bool TryCellInteraction()

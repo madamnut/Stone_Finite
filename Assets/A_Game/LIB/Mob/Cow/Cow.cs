@@ -21,6 +21,19 @@ public class Cow : Mob
     [Tooltip("땅으로 인식할 레이어 마스크")]
     public LayerMask groundLayerMask;
 
+    // ===== 오디오 =====
+    [Header("Audio")]
+    public AudioManager audioManager;
+
+    [Header("Cow SFX Timing")]
+    public float mooIntervalMin    = 5f;
+    public float mooIntervalMax    = 15f;
+    public float breathIntervalMin = 5f;
+    public float breathIntervalMax = 15f;
+
+    float _mooTimer    = 0f;
+    float _breathTimer = 0f;
+
     // ===== AI =====
     [Header("AI")]
     public float idleTimeMin = 1.5f, idleTimeMax = 3.0f;
@@ -44,17 +57,22 @@ public class Cow : Mob
             Debug.LogWarning("[Cow] Rigidbody2D가 없습니다.");
 
         SetSpriteOrder();
+
+        if (audioManager == null)
+            audioManager = FindObjectOfType<AudioManager>();
     }
 
     void OnEnable()
     {
         SetNextState();
+
+        // 울음 / 숨소리 타이머 초기화 (5~15초 랜덤)
+        _mooTimer    = Random.Range(mooIntervalMin,    mooIntervalMax);
+        _breathTimer = Random.Range(breathIntervalMin, breathIntervalMax);
     }
 
     void Update()
     {
-        // 현재는 grounded를 별도로 사용하진 않지만,
-        // 나중에 점프/낙하 처리 등에 쓰일 수 있음
         bool grounded = IsGrounded();
 
         // 상태 타이머
@@ -102,6 +120,32 @@ public class Cow : Mob
             legFR.localRotation = Quaternion.identity;
             legBL.localRotation = Quaternion.identity;
             legBR.localRotation = Quaternion.identity;
+        }
+
+        // ===== 소 SFX 타이밍 =====
+        if (audioManager != null)
+        {
+            float dt = Time.deltaTime;
+            _mooTimer    -= dt;
+            _breathTimer -= dt;
+
+            bool playedThisFrame = false;
+
+            // 울음소리: 5~15초마다, 이 프레임에 다른 소리 안 나왔을 때만
+            if (_mooTimer <= 0f && !playedThisFrame)
+            {
+                audioManager.PlayCowMoo();
+                playedThisFrame = true;
+                _mooTimer = Random.Range(mooIntervalMin, mooIntervalMax);
+            }
+
+            // 숨소리: 5~15초마다, 이 프레임에 울음소리가 안 나왔을 때만
+            if (_breathTimer <= 0f && !playedThisFrame)
+            {
+                audioManager.PlayCowBreath();
+                playedThisFrame = true;
+                _breathTimer = Random.Range(breathIntervalMin, breathIntervalMax);
+            }
         }
     }
 

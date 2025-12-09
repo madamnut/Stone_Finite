@@ -458,5 +458,38 @@
       { "itemId": "Flint Denticulate", "count": 1 }
     ],
     "outputActions": []
+  },
+
+
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Bough", "count": 1 },
+      { "craftingActions": ["Carving"], "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Club", "count": 1 }
+    ],
+    "outputActions": []
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Wooden Club", "count": 1 },
+      { "craftingActions": ["Carving"], "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Spear", "count": 1 }
+    ],
+    "outputActions": []
   }
 ]
