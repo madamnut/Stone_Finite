@@ -89,6 +89,16 @@ public class WorldManager : MonoBehaviour
     private Vector2 _loadedPlayerPos;
     private List<ItemData> _loadedInventory;
 
+    [Header("Random Tick")]
+    public int randomTicksPerWorldTick = 64;
+
+    struct RandomTickDebug
+    {
+        public Vector3 pos;
+        public float   expireTime;
+    }
+
+    List<RandomTickDebug> _randomTickDebug = new List<RandomTickDebug>();
 
     public void EnqTick(int x, int y)
     {
@@ -115,6 +125,88 @@ public class WorldManager : MonoBehaviour
             StepWaterAt(p.x, p.y);
         }
         tickCurr.Clear();
+    }
+
+    void DoRandomTicks()
+    {
+        if (!Application.isPlaying) return;
+        if (player == null) return;
+        if (randomTicksPerWorldTick <= 0) return;
+
+        Vector3 p = player.position;
+        int pcx = Mathf.FloorToInt(p.x / ChunkSize);
+        int pcy = Mathf.FloorToInt(p.y / ChunkSize);
+
+        int r = ChunkRadius;
+
+        int cxMin = pcx - r;
+        int cxMax = pcx + r;
+        int cyMin = pcy - r;
+        int cyMax = pcy + r;
+
+        int xMin = cxMin * ChunkSize;
+        int xMax = (cxMax + 1) * ChunkSize;
+        int yMin = cyMin * ChunkSize;
+        int yMax = (cyMax + 1) * ChunkSize;
+
+        if (xMin < 0) xMin = 0;
+        if (yMin < 0) yMin = 0;
+        if (xMax > W) xMax = W;
+        if (yMax > H) yMax = H;
+
+        if (xMin >= xMax || yMin >= yMax) return;
+
+        for (int i = 0; i < randomTicksPerWorldTick; i++)
+        {
+            int gx = Random.Range(xMin, xMax);
+            int gy = Random.Range(yMin, yMax);
+
+            // ───────── 랜덤틱: Grass_ 타일이면 5% 확률로 Cow 스폰 ─────────
+            ushort fgId = worldMap.GetFGId(gx, gy);
+            if (fgId != 0)
+            {
+                string nm = CellLibrary.GetName(fgId);
+                if (!string.IsNullOrEmpty(nm) && nm.StartsWith("Grass_"))
+                {
+                    if (Random.value < 0.05f)
+                    {
+                        if (mobLibrary != null && entityManager != null)
+                        {
+                            Vector3 spawnPos = new Vector3(gx + 0.5f, gy + 1.5f, 0f);
+                            mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
+                        }
+                    }
+                }
+            }
+
+            // 디버그 기즈모
+            var pos = new Vector3(gx + 0.5f, gy + 0.5f, 0f);
+            _randomTickDebug.Add(new RandomTickDebug
+            {
+                pos        = pos,
+                expireTime = Time.time + 0.2f
+            });
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+        if (_randomTickDebug == null || _randomTickDebug.Count == 0) return;
+
+        float now = Application.isPlaying ? Time.time : 0f;
+
+        for (int i = _randomTickDebug.Count - 1; i >= 0; i--)
+        {
+            var e = _randomTickDebug[i];
+            if (Application.isPlaying && e.expireTime < now)
+            {
+                _randomTickDebug.RemoveAt(i);
+                continue;
+            }
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(e.pos, Vector3.one * 0.9f);
+        }
     }
 
     // ───────── 물 ─────────
@@ -687,6 +779,9 @@ public class WorldManager : MonoBehaviour
     {
         // 월드 시뮬레이션 (물/중력)
         StepTick();
+
+        // 랜덤틱
+        DoRandomTicks();
 
         // 월드 시간 진행
         worldTick++;
