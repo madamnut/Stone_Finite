@@ -1,7 +1,24 @@
 {
-  "Cow": [
-    { "objectId": "Cow_Corpse", "probability": 1, "min": 1, "max": 1 }
+  "Cow_Corpse": [
+    { "itemId": "Large Raw Hide", "probability": 1.0, "min": 2, "max": 3 },
+    { "itemId": "Animal Fat",     "probability": 1.0, "min": 4, "max": 6 }
   ],
-  "Slime": [
+
+  "Cow_Corpse_Skinned": [
+    { "itemId": "Raw Beef",       "probability": 1.0, "min": 6, "max": 10 },
+    { "itemId": "Beef Stomach",   "probability": 1.0, "min": 2, "max": 2 },
+    { "itemId": "Beef Liver",     "probability": 1.0, "min": 1, "max": 1 },
+    { "itemId": "Beef Intestine", "probability": 1.0, "min": 1, "max": 1 },
+    { "itemId": "Animal Fat",     "probability": 1.0, "min": 6, "max": 10 }
+  ],
+
+  "Cow_Corpse_Bone": [
+    { "itemId": "Large Bone",   "probability": 1.0, "min": 5, "max": 10 },
+    { "itemId": "Medium Bone",  "probability": 1.0, "min": 4, "max": 8 },
+    { "itemId": "Small Bone",   "probability": 1.0, "min": 3, "max": 6 },
+
+    { "itemId": "Large Rib",    "probability": 1.0, "min": 4, "max": 8 },
+
+    { "itemId": "Horn",         "probability": 1.0, "min": 2, "max": 2 }
   ]
 }

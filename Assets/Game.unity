@@ -3945,6 +3945,7 @@ MonoBehaviour:
   worldHour: 0
   worldDay: 0
   itemLibrary: {fileID: 236639235}
+  randomTicksPerWorldTick: 64
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0
@@ -4416,7 +4417,6 @@ MonoBehaviour:
   mobs:
   - mobId: Cow
     prefab: {fileID: 6460545956538734368, guid: 9ece9e7ad8b9b994fa90544c0dde4aeb, type: 3}
-    corpsePrefab: {fileID: 4678235024137345234, guid: 40b26cac77dcdf3449cf7fe375ff3da4, type: 3}
 --- !u!4 &708102120
 Transform:
   m_ObjectHideFlags: 0
@@ -5838,6 +5838,67 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &867055869
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 867055870}
+  - component: {fileID: 867055871}
+  m_Layer: 0
+  m_Name: CorpseLib
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &867055870
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 867055869}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &867055871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 867055869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0902ea0085e1f140a68937fb36d3fe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  corpsePrefabs:
+  - corpseId: Cow_Corpse
+    prefab: {fileID: 2914151139949031065, guid: 40b26cac77dcdf3449cf7fe375ff3da4, type: 3}
+  - corpseId: Cow_Corpse_Skinned
+    prefab: {fileID: 2914151139949031065, guid: 125f7984750812245ae160f5654bb016, type: 3}
+  - corpseId: Cow_Corpse_Bone
+    prefab: {fileID: 2914151139949031065, guid: f43161fe3e8dbf84d8b2588ba411c014, type: 3}
+  processDefs:
+  - corpseId: Cow_Corpse
+    toolAction: Scrapping
+    nextCorpseId: Cow_Corpse_Skinned
+  - corpseId: Cow_Corpse_Skinned
+    toolAction: Cutting
+    nextCorpseId: Cow_Corpse_Bone
+  - corpseId: Cow_Corpse_Bone
+    toolAction: Chopping
+    nextCorpseId: null
 --- !u!1001 &867350693
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10395,10 +10456,13 @@ MonoBehaviour:
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
   primalcraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   sound: {fileID: 2008242133}
+  corpseLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
   meleeRoot: {fileID: 2028487067}
   meleeAngle: {fileID: 850270879}
   meleeOffset: {fileID: 7867981903111705926}
-  meleeSprite: {fileID: 0}
+  meleeSprite: {fileID: 8289067240059878660}
 --- !u!114 &1746062761
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13326,6 +13390,7 @@ SceneRoots:
   - {fileID: 1552801293}
   - {fileID: 1746062756}
   - {fileID: 1639529666}
+  - {fileID: 867055870}
   - {fileID: 708102120}
   - {fileID: 1177056458}
   - {fileID: 236639234}

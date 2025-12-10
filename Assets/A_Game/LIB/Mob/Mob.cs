@@ -17,8 +17,15 @@ public class Mob : Entity
     [SerializeField] private Vector2 mobPosition;
 
     [Header("HP")]
-    public int maxHp = 10;                 // 프리팹마다 개별 설정
+    public int maxHp = 10;                  // 프리팹마다 개별 설정
     [SerializeField] private int currentHp; // 런타임/세이브용
+
+    [Header("Corpse")]
+    [Tooltip("이 몹이 죽었을 때 생성할 시체 corpseId (MobLibrary에서 mobId + \"_Corpse\" 규칙으로 세팅)")]
+    [SerializeField] private string corpseIdOnDeath;
+
+    [Tooltip("시체 스폰에 사용할 CorpseLibrary (비어 있으면 FindObjectOfType로 한 번 찾음)")]
+    [SerializeField] private CorpseLibrary corpseLibrary;
 
     /// <summary>몹 종류 식별용 ID (예: "Cow", "Wolf")</summary>
     public string MobId
@@ -39,6 +46,15 @@ public class Mob : Entity
             mobPosition = value;
             transform.position = new Vector3(value.x, value.y, transform.position.z);
         }
+    }
+
+    /// <summary>이 몹이 죽었을 때 생성할 시체 corpseId (예: "Cow_Corpse")</summary>
+    public string CorpseIdOnDeath => corpseIdOnDeath;
+
+    /// <summary>MobLibrary 등에서 corpseId 세팅용 세터</summary>
+    public void SetCorpseId(string id)
+    {
+        corpseIdOnDeath = id;
     }
 
     /// <summary>최대 HP (읽기 전용 접근용)</summary>
@@ -121,11 +137,25 @@ public class Mob : Entity
 
     /// <summary>
     /// 사망 시 처리.
-    /// - 기본 구현: 게임오브젝트 Destroy
-    /// - 나중에 Corpse 엔티티 스폰/드랍 처리 등은 파생 클래스에서 오버라이드
+    /// - 기본 구현:
+    ///   1) corpseIdOnDeath 가 설정되어 있으면 CorpseLibrary 통해 시체 스폰
+    ///   2) 자기 자신 Destroy
     /// </summary>
     protected virtual void OnDeath()
     {
+        if (!string.IsNullOrEmpty(corpseIdOnDeath))
+        {
+            var lib = corpseLibrary;
+            if (lib == null)
+                lib = FindObjectOfType<CorpseLibrary>();
+
+            if (lib != null)
+            {
+                // 시체 스폰 위치는 현재 논리 위치 기준
+                lib.SpawnCorpse(corpseIdOnDeath, MobPosition);
+            }
+        }
+
         Destroy(gameObject);
     }
 
@@ -148,9 +178,9 @@ public class Mob : Entity
 
         var payload = new MobPayload
         {
-            mobId      = this.mobId,
-            maxHp      = this.maxHp,
-            currentHp  = this.currentHp
+            mobId     = this.mobId,
+            maxHp     = this.maxHp,
+            currentHp = this.currentHp
         };
 
         return new EntitySaveData
@@ -189,5 +219,8 @@ public class Mob : Entity
                 Debug.LogError($"[Mob] payload 파싱 실패: {ex.Message}");
             }
         }
+
+        // corpseIdOnDeath 는 타입(=mobId)에서 항상 다시 유도할 수 있으므로
+        // 별도 세이브/로드는 하지 않고, MobLibrary 쪽에서 스폰 시 세팅하는 규칙을 사용.
     }
 }

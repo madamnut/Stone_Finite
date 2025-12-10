@@ -71,6 +71,10 @@ public class InteractionController : MonoBehaviour
     [Header("Audio")]
     public AudioManager sound;
 
+    [Header("Corpse Hover")]
+    [Tooltip("시체(Corpse)들이 설정된 레이어 마스크")]
+    public LayerMask corpseLayerMask;
+
     [Header("Melee Attack Parts")]
     [Tooltip("Melee 전체 루트 (공격 중에만 활성화)")]
     public Transform meleeRoot;
@@ -101,6 +105,9 @@ public class InteractionController : MonoBehaviour
 
     // 근접 공격 코루틴
     Coroutine _attackCo;
+
+    // 시체 호버 대상
+    Corpse _hoverCorpse;
 
     void Awake()
     {
@@ -318,6 +325,13 @@ public class InteractionController : MonoBehaviour
                 pauseMenuRoot.SetActive(true);
                 Time.timeScale = 0f;
                 _hlGO.SetActive(false);
+
+                // 일시정지 진입 시 시체 호버도 해제
+                if (_hoverCorpse != null)
+                {
+                    _hoverCorpse.SetHovered(false);
+                    _hoverCorpse = null;
+                }
             }
         }
 
@@ -330,23 +344,71 @@ public class InteractionController : MonoBehaviour
         if (_state != GameState.Ingame)
         {
             _hlGO.SetActive(false);
+
+            // 인게임이 아니면 시체 호버도 모두 해제
+            if (_hoverCorpse != null)
+            {
+                _hoverCorpse.SetHovered(false);
+                _hoverCorpse = null;
+            }
             return;
         }
 
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             _hlGO.SetActive(false);
+
+            // UI 위에서는 시체 호버도 해제
+            if (_hoverCorpse != null)
+            {
+                _hoverCorpse.SetHovered(false);
+                _hoverCorpse = null;
+            }
             return;
         }
 
-        // 전투 모드일 때는 셀 하이라이트 비활성화
-        if (_combatMode)
+        // ───────── 셀 하이라이트: 전투/비전투 상관없이 항상 표시 ─────────
+        UpdateHighlight();
+
+        // ───────── 시체 호버 처리: 마우스 아래 Corpse 중 최전면만 ─────────
+        Corpse newHoverCorpse = null;
+        if (corpseLayerMask.value != 0)
         {
-            _hlGO.SetActive(false);
+            Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 mousePos2   = new Vector2(mouseWorld3.x, mouseWorld3.y);
+
+            var hits = Physics2D.OverlapPointAll(mousePos2, corpseLayerMask);
+            int bestOrder = int.MinValue;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                var col = hits[i];
+                if (col == null) continue;
+
+                var corpse = col.GetComponentInParent<Corpse>();
+                if (corpse == null) continue;
+
+                int order = 0;
+                if (corpse.mainRenderer != null)
+                    order = corpse.mainRenderer.sortingOrder;
+
+                if (newHoverCorpse == null || order > bestOrder)
+                {
+                    newHoverCorpse = corpse;
+                    bestOrder      = order;
+                }
+            }
         }
-        else
+
+        if (newHoverCorpse != _hoverCorpse)
         {
-            UpdateHighlight();
+            if (_hoverCorpse != null)
+                _hoverCorpse.SetHovered(false);
+
+            _hoverCorpse = newHoverCorpse;
+
+            if (_hoverCorpse != null)
+                _hoverCorpse.SetHovered(true);
         }
 
         if (Input.GetMouseButtonDown(0)) HandleLeftClick();
@@ -739,6 +801,14 @@ public class InteractionController : MonoBehaviour
                 }
             }
             _hlGO.SetActive(false);
+
+            // 패널 열릴 때 시체 호버도 해제
+            if (_hoverCorpse != null)
+            {
+                _hoverCorpse.SetHovered(false);
+                _hoverCorpse = null;
+            }
+
             return true;
         }
         return false;

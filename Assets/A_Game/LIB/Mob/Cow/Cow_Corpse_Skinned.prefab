@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7981329880528778851}
   - component: {fileID: 7879236592185197115}
   - component: {fileID: 3984007549133415077}
-  - component: {fileID: 4678235024137345234}
+  - component: {fileID: 3926754002302211834}
   m_Layer: 10
   m_Name: Cow_Corpse_Skinned
   m_TagString: Untagged
@@ -107,7 +107,7 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.5, y: 0.67}
   m_EdgeRadius: 0
---- !u!114 &4678235024137345234
+--- !u!114 &3926754002302211834
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -116,11 +116,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 2914151139949031065}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0854572af4ffaf41b6695bfea55193d, type: 3}
+  m_Script: {fileID: 11500000, guid: fd8674ab86bef4b4ca6b8c0350568109, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  corpseId: 
+  corpseId: Cow_Corpse_Skinned
   corpsePosition: {x: 0, y: 0}
+  mainRenderer: {fileID: 969975498871961381}
+  hoverDarkenFactor: 0.6
+  hoverPeriod: 0.6
 --- !u!1 &6070193740640771373
 GameObject:
   m_ObjectHideFlags: 0

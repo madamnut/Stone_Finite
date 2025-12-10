@@ -270,5 +270,103 @@
     "spriteName": "Tin Chunk",
     "maxStack": 32,
     "tags": []
+  },
+
+
+  "Small Raw Hide": {
+    "name": "Small Raw Hide",
+    "spriteName": "Small Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+  "Medium Raw Hide": {
+    "name": "Medium Raw Hide",
+    "spriteName": "Medium Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+  "Large Raw Hide": {
+    "name": "Large Raw Hide",
+    "spriteName": "Large Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+  "Raw Beef": {
+    "name": "Raw Beef",
+    "spriteName": "Raw Beef",
+    "maxStack": 16,
+    "tags": []
+  },
+  "Beef Stomach": {
+    "name": "Beef Stomach",
+    "spriteName": "Beef Stomach",
+    "maxStack": 16,
+    "tags": []
+  },
+  "Beef Liver": {
+    "name": "Beef Liver",
+    "spriteName": "Beef Liver",
+    "maxStack": 16,
+    "tags": []
+  },
+  "Beef Intestine": {
+    "name": "Beef Intestine",
+    "spriteName": "Beef Intestine",
+    "maxStack": 16,
+    "tags": []
+  },
+  "Animal Fat": {
+    "name": "Animal Fat",
+    "spriteName": "Animal Fat",
+    "maxStack": 16,
+    "tags": []
+  },
+  "Small Bone": {
+    "name": "Small Bone",
+    "spriteName": "Small Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Medium Bone": {
+    "name": "Medium Bone",
+    "spriteName": "Medium Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Bone": {
+    "name": "Large Bone",
+    "spriteName": "Large Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Rib": {
+    "name": "Small Rib",
+    "spriteName": "Small Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Medium Rib": {
+    "name": "Medium Rib",
+    "spriteName": "Medium Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Rib": {
+    "name": "Large Rib",
+    "spriteName": "Large Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Horn": {
+    "name": "Horn",
+    "spriteName": "Horn",
+    "maxStack": 32,
+    "tags": []
   }
 }
