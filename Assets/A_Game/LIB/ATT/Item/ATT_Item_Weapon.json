@@ -7,12 +7,7 @@
 
     "maxDurability": 32,
 
-    "craftingActions": [],
-    "interActions": [],
-    "toolActions": [],
-    "weaponActions": ["Swing"],
-
-    "params": {
+    "weaponActions": {
       "Swing": {
         "damage": 1,
         "knockback": 1.0,
@@ -31,12 +26,7 @@
 
     "maxDurability": 32,
 
-    "craftingActions": [],
-    "interActions": [],
-    "toolActions": [],
-    "weaponActions": ["Thrust"],
-
-    "params": {
+    "weaponActions": {
       "Thrust": {
         "damage": 2,
         "knockback": 0.6,

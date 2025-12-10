@@ -256,11 +256,10 @@ public static class WorldSaveSystem
                         bw.Write(it.Durability);
                         bw.Write(it.Count);
 
-                        // JSON 직렬화
+                        // JSON 직렬화 (새 구조)
                         bw.Write(JsonConvert.SerializeObject(it.Tags));
-                        bw.Write(JsonConvert.SerializeObject(it.Parameters));
-                        bw.Write(JsonConvert.SerializeObject(it.CraftingActions));
-                        bw.Write(JsonConvert.SerializeObject(it.InterActions));
+                        bw.Write(JsonConvert.SerializeObject(it.Details));
+                        bw.Write(JsonConvert.SerializeObject(it.BreakActions));
                         bw.Write(JsonConvert.SerializeObject(it.ToolActions));
                         bw.Write(JsonConvert.SerializeObject(it.WeaponActions));
                     }
@@ -320,12 +319,17 @@ public static class WorldSaveSystem
                 int dur    = br.ReadInt32();
                 int count  = br.ReadInt32();
 
-                var tags       = JsonConvert.DeserializeObject<List<string>>(br.ReadString());
-                var parameters = JsonConvert.DeserializeObject<Dictionary<string, object>>(br.ReadString());
-                var craft      = JsonConvert.DeserializeObject<List<string>>(br.ReadString());
-                var inter      = JsonConvert.DeserializeObject<List<string>>(br.ReadString());
-                var tool       = JsonConvert.DeserializeObject<List<string>>(br.ReadString());
-                var weapon     = JsonConvert.DeserializeObject<List<string>>(br.ReadString());
+                var tags    = JsonConvert.DeserializeObject<List<string>>(br.ReadString()) 
+                              ?? new List<string>();
+                var details = JsonConvert.DeserializeObject<Dictionary<string, object>>(br.ReadString()) 
+                              ?? new Dictionary<string, object>();
+
+                var breakA = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
+                             ?? new Dictionary<string, Dictionary<string, object>>();
+                var toolA  = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
+                             ?? new Dictionary<string, Dictionary<string, object>>();
+                var weaponA = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
+                              ?? new Dictionary<string, Dictionary<string, object>>();
 
                 Sprite icon = itemLibrary.GetSprite(spriteName);
 
@@ -337,12 +341,11 @@ public static class WorldSaveSystem
                     maxStack,
                     maxDur,
                     dur,
-                    craft,
-                    inter,
-                    tool,
-                    weapon,
+                    toolA,      // ToolActions
+                    weaponA,    // WeaponActions
+                    breakA,     // BreakActions
                     tags,
-                    parameters,
+                    details,
                     icon,
                     count
                 );

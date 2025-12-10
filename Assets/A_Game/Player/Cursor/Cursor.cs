@@ -96,28 +96,25 @@ public class Cursor : MonoBehaviour
                 sb.AppendLine(" - (none)");
             }
 
-            // 액션들
+            // 액션들 (전체 파라미터 딕셔너리까지 표시)
             sb.AppendLine();
-            sb.AppendLine("CraftingActions:");
-            AppendStringListInline(sb, it.CraftingActions);
-
-            sb.AppendLine("InterActions:");
-            AppendStringListInline(sb, it.InterActions);
-
             sb.AppendLine("ToolActions:");
-            AppendStringListInline(sb, it.ToolActions);
+            AppendActionKeysInline(sb, it.ToolActions);
 
             sb.AppendLine("WeaponActions:");
-            AppendStringListInline(sb, it.WeaponActions);
+            AppendActionKeysInline(sb, it.WeaponActions);
 
-            // 파라미터 전체(중첩 포함)
+            sb.AppendLine("BreakActions:");
+            AppendActionKeysInline(sb, it.BreakActions);
+
+            // 디테일 전체(중첩 포함, ATT details + 런타임 확장)
             sb.AppendLine();
-            sb.AppendLine("Params:");
-            if (it.Parameters != null && it.Parameters.Count > 0)
+            sb.AppendLine("Details:");
+            if (it.Details != null && it.Details.Count > 0)
             {
-                foreach (var kv in it.Parameters)
+                foreach (var kv in it.Details)
                 {
-                    AppendParamRecursive(sb, " - ", kv.Key, kv.Value);
+                    AppendDetailRecursive(sb, " - ", kv.Key, kv.Value);
                 }
             }
             else
@@ -168,27 +165,51 @@ public class Cursor : MonoBehaviour
         if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
     }
 
-    // 문자열 리스트 한 줄 또는 여러 줄로 출력
-    static void AppendStringListInline(StringBuilder sb, IList<string> list)
+    // 액션 딕셔너리 전체 출력 (tool/weapon/break)
+    //  - 액션 이름
+    //  - 그 아래에 파라미터 딕셔너리 전체(중첩 구조 포함) 출력
+    static void AppendActionKeysInline(
+        StringBuilder sb,
+        IDictionary<string, Dictionary<string, object>> actions)
     {
-        if (list == null || list.Count == 0)
+        if (actions == null || actions.Count == 0)
         {
             sb.AppendLine(" - (none)");
             return;
         }
 
-        for (int i = 0; i < list.Count; i++)
-            sb.Append(" - ").AppendLine(list[i]);
+        foreach (var kv in actions)
+        {
+            string actionName = kv.Key;
+            var paramDict     = kv.Value;
+
+            // 액션 이름
+            sb.Append(" - ").Append(actionName).AppendLine(":");
+
+            if (paramDict != null && paramDict.Count > 0)
+            {
+                // 각 파라미터 키/값을 다 까서 표시
+                foreach (var p in paramDict)
+                {
+                    // indent "    " 붙여서 nested 형식으로 표시
+                    AppendDetailRecursive(sb, "    ", p.Key, p.Value);
+                }
+            }
+            else
+            {
+                sb.AppendLine("    (no params)");
+            }
+        }
     }
 
-    // parameters 값 전체를 중첩 구조 포함해서 출력
-    static void AppendParamRecursive(StringBuilder sb, string indent, string key, object value)
+    // details 값 전체를 중첩 구조 포함해서 출력
+    static void AppendDetailRecursive(StringBuilder sb, string indent, string key, object value)
     {
         if (value is Dictionary<string, object> dict)
         {
             sb.Append(indent).Append(key).AppendLine(":");
             foreach (var kv in dict)
-                AppendParamRecursive(sb, indent + "  ", kv.Key, kv.Value);
+                AppendDetailRecursive(sb, indent + "  ", kv.Key, kv.Value);
         }
         else if (value is IList list && value is not string)
         {
@@ -197,7 +218,7 @@ public class Cursor : MonoBehaviour
             foreach (var v in list)
             {
                 string k = $"[{idx}]";
-                AppendParamRecursive(sb, indent + "  ", k, v);
+                AppendDetailRecursive(sb, indent + "  ", k, v);
                 idx++;
             }
             sb.Append(indent).AppendLine("]");
@@ -284,21 +305,20 @@ public class Cursor : MonoBehaviour
                 {
                     int take = (slot.Count + 1) / 2;
                     var copy = new ItemData(
-                        itemId:          slot.ItemId,
-                        name:            slot.Name,
-                        spriteName:      slot.SpriteName,
-                        itemType:        slot.ItemType,
-                        maxStack:        slot.MaxStack,
-                        maxDurability:   slot.MaxDurability,
-                        durability:      slot.Durability,
-                        craftingActions: slot.CraftingActions,
-                        interActions:    slot.InterActions,
-                        toolActions:     slot.ToolActions,
-                        weaponActions:   slot.WeaponActions,
-                        tags:            slot.Tags,
-                        parameters:      slot.Parameters,
-                        icon:            slot.Icon,
-                        count:           take
+                        itemId:        slot.ItemId,
+                        name:          slot.Name,
+                        spriteName:    slot.SpriteName,
+                        itemType:      slot.ItemType,
+                        maxStack:      slot.MaxStack,
+                        maxDurability: slot.MaxDurability,
+                        durability:    slot.Durability,
+                        toolActions:   slot.ToolActions,
+                        weaponActions: slot.WeaponActions,
+                        breakActions:  slot.BreakActions,
+                        tags:          slot.Tags,
+                        details:       slot.Details,
+                        icon:          slot.Icon,
+                        count:         take
                     );
                     cursorSlot.Set(copy);
 
@@ -312,21 +332,20 @@ public class Cursor : MonoBehaviour
                 if (cur != null && slot == null)
                 {
                     var newSlot = new ItemData(
-                        itemId:          cur.ItemId,
-                        name:            cur.Name,
-                        spriteName:      cur.SpriteName,
-                        itemType:        cur.ItemType,
-                        maxStack:        cur.MaxStack,
-                        maxDurability:   cur.MaxDurability,
-                        durability:      cur.Durability,
-                        craftingActions: cur.CraftingActions,
-                        interActions:    cur.InterActions,
-                        toolActions:     cur.ToolActions,
-                        weaponActions:   cur.WeaponActions,
-                        tags:            cur.Tags,
-                        parameters:      cur.Parameters,
-                        icon:            cur.Icon,
-                        count:           1
+                        itemId:        cur.ItemId,
+                        name:          cur.Name,
+                        spriteName:    cur.SpriteName,
+                        itemType:      cur.ItemType,
+                        maxStack:      cur.MaxStack,
+                        maxDurability: cur.MaxDurability,
+                        durability:    cur.Durability,
+                        toolActions:   cur.ToolActions,
+                        weaponActions: cur.WeaponActions,
+                        breakActions:  cur.BreakActions,
+                        tags:          cur.Tags,
+                        details:       cur.Details,
+                        icon:          cur.Icon,
+                        count:         1
                     );
                     slotView.Set(newSlot);
 
@@ -396,21 +415,20 @@ public class Cursor : MonoBehaviour
             {
                 int take = (slotInv.Count + 1) / 2;
                 var copy = new ItemData(
-                    itemId:          slotInv.ItemId,
-                    name:            slotInv.Name,
-                    spriteName:      slotInv.SpriteName,
-                    itemType:        slotInv.ItemType,
-                    maxStack:        slotInv.MaxStack,
-                    maxDurability:   slotInv.MaxDurability,
-                    durability:      slotInv.Durability,
-                    craftingActions: slotInv.CraftingActions,
-                    interActions:    slotInv.InterActions,
-                    toolActions:     slotInv.ToolActions,
-                    weaponActions:   slotInv.WeaponActions,
-                    tags:            slotInv.Tags,
-                    parameters:      slotInv.Parameters,
-                    icon:            slotInv.Icon,
-                    count:           take
+                    itemId:        slotInv.ItemId,
+                    name:          slotInv.Name,
+                    spriteName:    slotInv.SpriteName,
+                    itemType:      slotInv.ItemType,
+                    maxStack:      slotInv.MaxStack,
+                    maxDurability: slotInv.MaxDurability,
+                    durability:    slotInv.Durability,
+                    toolActions:   slotInv.ToolActions,
+                    weaponActions: slotInv.WeaponActions,
+                    breakActions:  slotInv.BreakActions,
+                    tags:          slotInv.Tags,
+                    details:       slotInv.Details,
+                    icon:          slotInv.Icon,
+                    count:         take
                 );
                 cursorSlot.Set(copy);
 
@@ -424,21 +442,20 @@ public class Cursor : MonoBehaviour
             if (cur != null && slotInv == null)
             {
                 items[idx] = new ItemData(
-                    itemId:          cur.ItemId,
-                    name:            cur.Name,
-                    spriteName:      cur.SpriteName,
-                    itemType:        cur.ItemType,
-                    maxStack:        cur.MaxStack,
-                    maxDurability:   cur.MaxDurability,
-                    durability:      cur.Durability,
-                    craftingActions: cur.CraftingActions,
-                    interActions:    cur.InterActions,
-                    toolActions:     cur.ToolActions,
-                    weaponActions:   cur.WeaponActions,
-                    tags:            cur.Tags,
-                    parameters:      cur.Parameters,
-                    icon:            cur.Icon,
-                    count:           1
+                    itemId:        cur.ItemId,
+                    name:          cur.Name,
+                    spriteName:    cur.SpriteName,
+                    itemType:      cur.ItemType,
+                    maxStack:      cur.MaxStack,
+                    maxDurability: cur.MaxDurability,
+                    durability:    cur.Durability,
+                    toolActions:   cur.ToolActions,
+                    weaponActions: cur.WeaponActions,
+                    breakActions:  cur.BreakActions,
+                    tags:          cur.Tags,
+                    details:       cur.Details,
+                    icon:          cur.Icon,
+                    count:         1
                 );
                 cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);

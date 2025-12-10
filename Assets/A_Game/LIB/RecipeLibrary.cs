@@ -148,18 +148,10 @@ public class RecipeLibrary : MonoBehaviour
             var inActs = r["inputActions"] as JArray;
             var oaRoot = r["outputActions"] as JArray; // null 가능
 
-            // 빈 슬롯 처리
+            // 빈 슬롯 처리: "레시피 인풋들만" 존재해야 함
             int filledCount = presentIdx.Count;
-            if (!fourContext)
-            {
-                if (filledCount != inputs.Count)
-                    continue;
-            }
-            else
-            {
-                if (filledCount < inputs.Count)
-                    continue;
-            }
+            if (filledCount != inputs.Count)
+                continue;
 
             int[] assign = null;
 
@@ -269,14 +261,14 @@ public class RecipeLibrary : MonoBehaviour
 
         if (recipeSet2 == null || slots.Count != 4) return false;
 
-        // 1) inputs.Count == 2 레시피 먼저 (예: Plant Twine + Plant Twine → Long Plant Twine)
+        // 1) inputs.Count == 2 레시피 먼저
         var cnt2 = FilterByInputCount(recipeSet2, 2);
         if (cnt2.Count > 0 &&
             TryMatchSet(cnt2, slots, fourContext: true,
                         out resultItems, out remappedInputActions, out matchedRecipe))
             return true;
 
-        // 2) 그 다음 inputs.Count == 1 레시피 (예: Plant Twine → Short Plant Twine)
+        // 2) 그 다음 inputs.Count == 1 레시피
         var cnt1 = FilterByInputCount(recipeSet2, 1);
         if (cnt1.Count > 0 &&
             TryMatchSet(cnt1, slots, fourContext: true,
@@ -326,8 +318,8 @@ public class RecipeLibrary : MonoBehaviour
 
         for (int k = 0; k < win.Length; k++)
         {
-            int si = win[k];
-            var it = slots[si];
+            int si   = win[k];
+            var it   = slots[si];
             var spec = inputs[k] as JObject;
             if (!MatchSpec(it, spec)) return false;
 
@@ -375,13 +367,13 @@ public class RecipeLibrary : MonoBehaviour
     {
         assign = null;
         var present = allowed.Where(i => i >= 0 && i < slots.Count && slots[i] != null).ToList();
-        var res = TryUnordered(inputs, slots, present);
+        var res     = TryUnordered(inputs, slots, present);
         if (res == null) return false;
         assign = res;
         return true;
     }
 
-    // 스펙 매칭(itemId/name/params/hasTag/craftingActions, 배열 부분집합 지원)
+    // 스펙 매칭(itemId/name/hasTag/toolActions 조건)
     bool MatchSpec(ItemData it, JObject spec)
     {
         if (spec == null) return false;
@@ -390,6 +382,7 @@ public class RecipeLibrary : MonoBehaviour
 
         string wantId = spec.Value<string>("itemId");
         string wantNm = spec.Value<string>("name");
+
         if (!string.IsNullOrEmpty(wantId)) constraints++;
         if (!string.IsNullOrEmpty(wantNm)) constraints++;
 
@@ -400,19 +393,12 @@ public class RecipeLibrary : MonoBehaviour
                 !string.Equals(it.Name,   wantId, StringComparison.Ordinal))
                 return false;
         }
+
         if (!string.IsNullOrEmpty(wantNm))
         {
             if (it == null) return false;
-            if (!string.Equals(it.Name, wantNm, StringComparison.Ordinal)) return false;
-        }
-
-        // params 매칭 (점 표기법/중첩 구조 지원)
-        var paramSpec = spec["params"] as JObject;
-        if (paramSpec != null && paramSpec.Properties().Any())
-        {
-            constraints++;
-            if (it == null) return false;
-            if (!MatchParams(it.Parameters, paramSpec)) return false;
+            if (!string.Equals(it.Name, wantNm, StringComparison.Ordinal))
+                return false;
         }
 
         // 태그 매칭
@@ -429,112 +415,85 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
-        // craftingActions 매칭 (tool gating용)
-        var caSpec = spec["craftingActions"] as JArray;
-        if (caSpec != null && caSpec.Count > 0)
+        // toolActions 매칭 (JObject / JArray / 단일 값 모두 지원)
+        var toolSpec = spec["toolActions"];
+        if (toolSpec != null && toolSpec.Type != JTokenType.Null)
         {
             constraints++;
             if (it == null) return false;
-
-            var required = caSpec.Select(x => x.ToString()).ToList();
-            var haveList = it.CraftingActions ?? new List<string>();
-            foreach (var req in required)
-            {
-                if (!haveList.Contains(req))
-                    return false;
-            }
+            if (!MatchToolActions(it, toolSpec)) return false;
         }
 
         if (constraints == 0) return false;
         return true;
     }
 
-    // params: 점 표기법(Head.type) + 중첩 JObject 모두 지원
-    bool MatchParams(Dictionary<string, object> parameters, JObject paramSpec)
+    /// <summary>
+    /// toolActions 스펙 매칭.
+    /// - spec 예시:
+    ///   { "toolActions": { "PercussionFlaking": {}, "X": { "foo": "bar" } } }
+    ///   { "toolActions": ["PercussionFlaking", "X"] }
+    ///   { "toolActions": "PercussionFlaking" }
+    ///
+    /// ItemData.ToolActions:
+    ///   Dictionary&lt;string, Dictionary&lt;string, object&gt;&gt;
+    ///   (키 = 액션명, 값 = 파라미터 딕셔너리)
+    /// </summary>
+    bool MatchToolActions(ItemData it, JToken toolSpec)
     {
-        if (paramSpec == null || !paramSpec.Properties().Any())
-            return true;
-
-        if (parameters == null)
+        if (it.ToolActions == null || it.ToolActions.Count == 0)
             return false;
 
-        // 실제 아이템 파라미터 전체를 JObject로 래핑
-        var haveRoot = JObject.FromObject(parameters);
-
-        // paramSpec 의 각 프로퍼티를 경로 기반으로 비교
-        foreach (var p in paramSpec.Properties())
+        // 배열: ["A","B"] → 이름만 검사
+        if (toolSpec is JArray arr)
         {
-            string path = p.Name;          // 예: "Head.type"
-            JToken want = p.Value;
-
-            // 경로 분해 (점 표기법)
-            var parts = path.Split('.');
-            JToken current = haveRoot;
-            for (int i = 0; i < parts.Length; i++)
+            var required = arr.Select(x => x.ToString()).ToList();
+            foreach (var name in required)
             {
-                string key = parts[i];
-
-                if (current is JObject jo)
-                {
-                    if (!jo.TryGetValue(key, out var next))
-                        return false;      // 경로에 해당하는 키 없음 → 불일치
-                    current = next;
-                }
-                else
-                {
-                    return false;          // 중간에 객체가 아닌 타입이 나옴 → 불일치
-                }
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!it.ToolActions.ContainsKey(name))
+                    return false;
             }
+            return true;
+        }
 
-            // 최종 토큰 current 와 원하는 want 비교
-            if (!MatchToken(current, want))
+        // 단일 값: "A"
+        if (toolSpec is not JObject obj)
+        {
+            string single = toolSpec.ToString();
+            if (string.IsNullOrEmpty(single)) return false;
+            return it.ToolActions.ContainsKey(single);
+        }
+
+        // 정식 JObject: { "A": { ... }, "B": { ... } }
+        foreach (var prop in obj.Properties())
+        {
+            string toolName = prop.Name;
+            if (string.IsNullOrEmpty(toolName))
                 return false;
+
+            if (!it.ToolActions.TryGetValue(toolName, out var cfgDict) || cfgDict == null)
+                return false;
+
+            if (prop.Value is not JObject wantCfg)
+                continue; // 빈 오브젝트면 이름만 체크하는 셈
+
+            // wantCfg 내부 필드 전부 일치 검사 (부분집합 조건)
+            foreach (var cfgProp in wantCfg.Properties())
+            {
+                string key     = cfgProp.Name;
+                string wantVal = cfgProp.Value.ToString();
+
+                if (!cfgDict.TryGetValue(key, out var haveObj))
+                    return false;
+
+                string haveVal = haveObj?.ToString() ?? "";
+                if (!string.Equals(haveVal, wantVal, StringComparison.Ordinal))
+                    return false;
+            }
         }
 
         return true;
-    }
-
-    bool MatchToken(JToken have, JToken want)
-    {
-        if (want == null) return have == null;
-
-        if (want.Type == JTokenType.Object)
-        {
-            if (have == null || have.Type != JTokenType.Object) return false;
-            var wObj = (JObject)want;
-            var hObj = (JObject)have;
-
-            foreach (var p in wObj.Properties())
-            {
-                if (!hObj.TryGetValue(p.Name, out var subHave))
-                    return false;
-                if (!MatchToken(subHave, p.Value))
-                    return false;
-            }
-            return true;
-        }
-
-        if (want.Type == JTokenType.Array)
-        {
-            var wArr = (JArray)want;
-
-            if (have != null && have.Type == JTokenType.Array)
-            {
-                var hArr = (JArray)have;
-                var haveStrings = hArr.Select(x => x.ToString()).ToList();
-                var wantStrings = wArr.Select(x => x.ToString()).ToList();
-                return wantStrings.All(w => haveStrings.Contains(w));
-            }
-            else
-            {
-                if (wArr.Count != 1) return false;
-                return MatchToken(have, wArr[0]);
-            }
-        }
-
-        var haveStr = have?.ToString() ?? "";
-        var wantStr = want.ToString();
-        return string.Equals(haveStr, wantStr, StringComparison.Ordinal);
     }
 
     List<string> ToStringList(object v)
@@ -550,22 +509,89 @@ public class RecipeLibrary : MonoBehaviour
         return new List<string> { v.ToString() };
     }
 
-    // 출력액션(루트 name/spriteName/itemId/durability/maxDurability/액션 배열 반영 + 나머지는 Parameters/params)
+    // 액션 딕셔너리 변환:
+    // - null → null
+    // - Dictionary<string, Dictionary<string, object>> 그대로 복사
+    // - Dictionary<string, object> → 내부를 Dictionary<string, object>로 캐스팅/래핑
+    // - 리스트/배열/단일 문자열 → 이름만 키로 두고 빈 파라미터 딕셔너리
+    Dictionary<string, Dictionary<string, object>> ToActionDict(object v)
+    {
+        if (v == null)
+            return null;
+
+        if (v is Dictionary<string, Dictionary<string, object>> dd)
+        {
+            return dd.ToDictionary(kv => kv.Key,
+                                   kv => kv.Value != null
+                                       ? new Dictionary<string, object>(kv.Value)
+                                       : new Dictionary<string, object>());
+        }
+
+        if (v is Dictionary<string, object> d0)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var kv in d0)
+            {
+                if (kv.Value is Dictionary<string, object> inner)
+                    res[kv.Key] = new Dictionary<string, object>(inner);
+                else
+                    res[kv.Key] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        if (v is JArray ja)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var x in ja)
+            {
+                string name = x.ToString();
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!res.ContainsKey(name))
+                    res[name] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        if (v is System.Collections.IEnumerable ien && v is not string)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var x in ien)
+            {
+                string name = x?.ToString();
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!res.ContainsKey(name))
+                    res[name] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        // 단일 값
+        string single = v.ToString();
+        if (string.IsNullOrEmpty(single))
+            return null;
+
+        return new Dictionary<string, Dictionary<string, object>>
+        {
+            { single, new Dictionary<string, object>() }
+        };
+    }
+
+    // 출력액션 적용 (name/spriteName/itemId/durability/maxDurability/액션 딕셔너리 + Details 조작)
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign)
     {
         if (dst == null) return null;
         if (outActs == null || outActs.Count == 0) return dst;
-        if (dst.Parameters == null) return dst;
 
         string       overrideName       = null;
         string       overrideSprite     = null;
         string       overrideItemId     = null;
         int?         overrideDurability = null;
         int?         overrideMaxDur     = null;
-        List<string> overrideCraft      = null;
-        List<string> overrideInter      = null;
-        List<string> overrideTool       = null;
-        List<string> overrideWeapon     = null;
+
+        Dictionary<string, Dictionary<string, object>> overrideTool   = null;
+        Dictionary<string, Dictionary<string, object>> overrideWeapon = null;
+        Dictionary<string, Dictionary<string, object>> overrideBreak  = null;
 
         for (int i = 0; i < outActs.Count; i++)
         {
@@ -582,19 +608,19 @@ public class RecipeLibrary : MonoBehaviour
                     object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
                     if (val is string sv) val = ExpandTokens(sv);
 
-                    if (field == "craftingActions" ||
-                        field == "interActions" ||
-                        field == "toolActions" ||
-                        field == "weaponActions")
+                    // 액션 딕셔너리 직접 세팅
+                    if (field == "toolActions" ||
+                        field == "weaponActions" ||
+                        field == "breakActions")
                     {
-                        var list = ToStringList(val);
-                        if (field == "craftingActions")      overrideCraft  = list;
-                        else if (field == "interActions")    overrideInter  = list;
-                        else if (field == "toolActions")     overrideTool   = list;
-                        else                                 overrideWeapon = list;
+                        var dict = ToActionDict(val);
+                        if (field == "toolActions")        overrideTool   = dict;
+                        else if (field == "weaponActions") overrideWeapon = dict;
+                        else                               overrideBreak  = dict;
                         continue;
                     }
 
+                    // 특수 필드
                     if (field == "name")       { overrideName   = val?.ToString(); continue; }
                     if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
                     if (field == "itemId")     { overrideItemId = val?.ToString(); continue; }
@@ -612,16 +638,21 @@ public class RecipeLibrary : MonoBehaviour
                         continue;
                     }
 
-                    dst.SetParamPath(field, val);
+                    // 나머지는 Details
+                    if (field.StartsWith("details.", StringComparison.Ordinal))
+                        dst.SetDetailPath(field.Substring("details.".Length), val);
+                    else
+                        dst.SetDetailPath(field, val);
+
                     continue;
                 }
 
                 // fromInput (+ stripSuffix)
-                int? from = act.Value<int?>("fromInput");
+                int?   from       = act.Value<int?>("fromInput");
                 string inputField = act.Value<string>("inputField");
                 if (from.HasValue && !string.IsNullOrEmpty(inputField))
                 {
-                    int si = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
+                    int si  = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
                     var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                     var val = ReadField(src, inputField);
 
@@ -629,16 +660,14 @@ public class RecipeLibrary : MonoBehaviour
                     if (!string.IsNullOrEmpty(strip) && val is string svFrom && svFrom.EndsWith(strip))
                         val = svFrom.Substring(0, svFrom.Length - strip.Length);
 
-                    if (field == "craftingActions" ||
-                        field == "interActions" ||
-                        field == "toolActions" ||
-                        field == "weaponActions")
+                    if (field == "toolActions" ||
+                        field == "weaponActions" ||
+                        field == "breakActions")
                     {
-                        var list = ToStringList(val);
-                        if (field == "craftingActions")      overrideCraft  = list;
-                        else if (field == "interActions")    overrideInter  = list;
-                        else if (field == "toolActions")     overrideTool   = list;
-                        else                                 overrideWeapon = list;
+                        var dict = ToActionDict(val);
+                        if (field == "toolActions")        overrideTool   = dict;
+                        else if (field == "weaponActions") overrideWeapon = dict;
+                        else                               overrideBreak  = dict;
                         continue;
                     }
 
@@ -661,7 +690,11 @@ public class RecipeLibrary : MonoBehaviour
                         continue;
                     }
 
-                    dst.SetParamPath(field, val);
+                    if (field.StartsWith("details.", StringComparison.Ordinal))
+                        dst.SetDetailPath(field.Substring("details.".Length), val);
+                    else
+                        dst.SetDetailPath(field, val);
+
                     continue;
                 }
 
@@ -671,11 +704,12 @@ public class RecipeLibrary : MonoBehaviour
                 {
                     string sep = act.Value<string>("separator") ?? "";
                     string pre = act.Value<string>("prefixEach") ?? "";
-                    var vals = new List<string>(vff.Count);
+                    var vals   = new List<string>(vff.Count);
+
                     foreach (var jf in vff)
                     {
                         string key = jf.ToString();
-                        object v = ReadFromParameters(dst, key);
+                        object v   = ReadField(dst, key);
                         if (v != null)
                         {
                             string s = v.ToString();
@@ -689,13 +723,17 @@ public class RecipeLibrary : MonoBehaviour
                     if (field == "spriteName") { overrideSprite = joined; continue; }
                     if (field == "itemId")     { overrideItemId = joined; continue; }
 
-                    dst.SetParamPath(field, joined);
+                    if (field.StartsWith("details.", StringComparison.Ordinal))
+                        dst.SetDetailPath(field.Substring("details.".Length), joined);
+                    else
+                        dst.SetDetailPath(field, joined);
+
                     continue;
                 }
             }
             else if (type == "copyId")
             {
-                int from = act.Value<int>("fromInput");
+                int    from    = act.Value<int>("fromInput");
                 string toField = act.Value<string>("toField");
                 int si = (assign != null && from >= 0 && from < assign.Length) ? assign[from] : -1;
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
@@ -705,27 +743,31 @@ public class RecipeLibrary : MonoBehaviour
                 if (toField == "spriteName") { overrideSprite = val; continue; }
                 if (toField == "itemId")     { overrideItemId = val; continue; }
 
-                dst.SetParamPath(toField, val);
+                if (toField.StartsWith("details.", StringComparison.Ordinal))
+                    dst.SetDetailPath(toField.Substring("details.".Length), val);
+                else
+                    dst.SetDetailPath(toField, val);
             }
             else if (type == "copyField")
             {
-                int from = act.Value<int>("fromInput");
+                int    from    = act.Value<int>("fromInput");
                 string inField = act.Value<string>("inputField");
                 string toField = act.Value<string>("toField");
                 int si = (assign != null && from >= 0 && from < assign.Length) ? assign[from] : -1;
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                 var val = ReadField(src, inField);
 
-                if (toField == "craftingActions" ||
-                    toField == "interActions" ||
-                    toField == "toolActions" ||
-                    toField == "weaponActions")
+                if (toField == "toolActions" ||
+                    toField == "weaponActions" ||
+                    toField == "breakActions")
                 {
-                    var list = ToStringList(val);
-                    if (toField == "craftingActions")      overrideCraft  = list;
-                    else if (toField == "interActions")    overrideInter  = list;
-                    else if (toField == "toolActions")     overrideTool   = list;
-                    else                                   overrideWeapon = list;
+                    var dict = ToActionDict(val);
+                    if (dict != null)
+                    {
+                        if (toField == "toolActions")        overrideTool   = dict;
+                        else if (toField == "weaponActions") overrideWeapon = dict;
+                        else                                 overrideBreak  = dict;
+                    }
                     continue;
                 }
 
@@ -748,14 +790,18 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                dst.SetParamPath(toField, val);
+                if (toField.StartsWith("details.", StringComparison.Ordinal))
+                    dst.SetDetailPath(toField.Substring("details.".Length), val);
+                else
+                    dst.SetDetailPath(toField, val);
             }
             else if (type == "sumFields")
             {
-                string outField = act.Value<string>("field");
-                string inField  = act.Value<string>("inputField");
-                var fromInputs  = act["fromInputs"] as JArray;
+                string outField  = act.Value<string>("field");
+                string inField   = act.Value<string>("inputField");
+                var    fromInputs = act["fromInputs"] as JArray;
                 int sum = 0;
+
                 if (fromInputs != null)
                 {
                     foreach (var jf in fromInputs)
@@ -763,14 +809,10 @@ public class RecipeLibrary : MonoBehaviour
                         int fi = jf.Value<int>();
                         int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
                         var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                        var v = ReadField(src, inField);
+                        var v   = ReadField(src, inField);
                         if (v != null && int.TryParse(v.ToString(), out int iv)) sum += iv;
                     }
                 }
-
-                if (outField == "name")       { overrideName   = sum.ToString(); continue; }
-                if (outField == "spriteName") { overrideSprite = sum.ToString(); continue; }
-                if (outField == "itemId")     { overrideItemId = sum.ToString(); continue; }
 
                 if (outField == "durability")
                 {
@@ -783,7 +825,14 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                dst.SetParamPath(outField, sum);
+                if (outField == "name")       { overrideName   = sum.ToString(); continue; }
+                if (outField == "spriteName") { overrideSprite = sum.ToString(); continue; }
+                if (outField == "itemId")     { overrideItemId = sum.ToString(); continue; }
+
+                if (outField.StartsWith("details.", StringComparison.Ordinal))
+                    dst.SetDetailPath(outField.Substring("details.".Length), sum);
+                else
+                    dst.SetDetailPath(outField, sum);
             }
             else if (type == "paramSet")
             {
@@ -792,27 +841,38 @@ public class RecipeLibrary : MonoBehaviour
                 if (act.TryGetValue("value", out var jv))
                 {
                     object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
-                    dst.SetParamPath(field, val);
+
+                    if (field.StartsWith("details.", StringComparison.Ordinal))
+                        dst.SetDetailPath(field.Substring("details.".Length), val);
+                    else
+                        dst.SetDetailPath(field, val);
+
                     continue;
                 }
 
-                int? from = act.Value<int?>("fromInput");
+                int?   from       = act.Value<int?>("fromInput");
                 string inputField = act.Value<string>("inputField");
                 if (from.HasValue && !string.IsNullOrEmpty(inputField))
                 {
-                    int si = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
+                    int si  = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
                     var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                     var val = ReadField(src, inputField);
-                    dst.SetParamPath(field, val);
+
+                    if (field.StartsWith("details.", StringComparison.Ordinal))
+                        dst.SetDetailPath(field.Substring("details.".Length), val);
+                    else
+                        dst.SetDetailPath(field, val);
+
                     continue;
                 }
             }
             else if (type == "paramSum")
             {
-                string field    = act.Value<string>("field");
-                string inField  = act.Value<string>("inputField");
-                var fromInputs  = act["fromInputs"] as JArray;
+                string field     = act.Value<string>("field");
+                string inField   = act.Value<string>("inputField");
+                var    fromInputs = act["fromInputs"] as JArray;
                 int sum = 0;
+
                 if (fromInputs != null)
                 {
                     foreach (var jf in fromInputs)
@@ -820,11 +880,15 @@ public class RecipeLibrary : MonoBehaviour
                         int fi = jf.Value<int>();
                         int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
                         var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                        var v = ReadField(src, inField);
+                        var v   = ReadField(src, inField);
                         if (v != null && int.TryParse(v.ToString(), out int iv)) sum += iv;
                     }
                 }
-                dst.SetParamPath(field, sum);
+
+                if (field.StartsWith("details.", StringComparison.Ordinal))
+                    dst.SetDetailPath(field.Substring("details.".Length), sum);
+                else
+                    dst.SetDetailPath(field, sum);
             }
         }
 
@@ -834,10 +898,9 @@ public class RecipeLibrary : MonoBehaviour
             overrideItemId     != null ||
             overrideDurability.HasValue ||
             overrideMaxDur.HasValue ||
-            overrideCraft  != null ||
-            overrideInter  != null ||
             overrideTool   != null ||
-            overrideWeapon != null;
+            overrideWeapon != null ||
+            overrideBreak  != null;
 
         if (!changed)
             return dst;
@@ -848,70 +911,89 @@ public class RecipeLibrary : MonoBehaviour
         int    finalMaxDur     = overrideMaxDur     ?? dst.MaxDurability;
         int    finalDurability = overrideDurability ?? dst.Durability;
 
-        var finalCraft  = overrideCraft  ?? dst.CraftingActions;
-        var finalInter  = overrideInter  ?? dst.InterActions;
         var finalTool   = overrideTool   ?? dst.ToolActions;
         var finalWeapon = overrideWeapon ?? dst.WeaponActions;
+        var finalBreak  = overrideBreak  ?? dst.BreakActions;
 
-        var finalIcon = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
+        var finalIcon    = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
+        var finalDetails = dst.Details;
 
         return new ItemData(
-            itemId:          finalId,
-            name:            finalName,
-            spriteName:      finalSprite,
-            itemType:        dst.ItemType,
-            maxStack:        dst.MaxStack,
-            maxDurability:   finalMaxDur,
-            durability:      finalDurability,
-            craftingActions: finalCraft,
-            interActions:    finalInter,
-            toolActions:     finalTool,
-            weaponActions:   finalWeapon,
-            tags:            dst.Tags,
-            parameters:      dst.Parameters,
-            icon:            finalIcon,
-            count:           dst.Count
+            itemId:        finalId,
+            name:          finalName,
+            spriteName:    finalSprite,
+            itemType:      dst.ItemType,
+            maxStack:      dst.MaxStack,
+            maxDurability: finalMaxDur,
+            durability:    finalDurability,
+            toolActions:   finalTool,
+            weaponActions: finalWeapon,
+            breakActions:  finalBreak,
+            tags:          dst.Tags,
+            details:       finalDetails,
+            icon:          finalIcon,
+            count:         dst.Count
         );
     }
 
     object ReadField(ItemData src, string field)
     {
-        if (src == null) return null;
+        if (src == null || string.IsNullOrEmpty(field)) return null;
 
-        var val = ReadFromParameters(src, field);
-        if (val != null) return val;
+        const string prefix = "details.";
 
+        // Details.* 경로
+        if (field.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            string inner = field.Substring(prefix.Length);
+            return ReadFromDetails(src, inner);
+        }
+
+        // 특수 필드
         switch (field)
         {
-            case "name":            return src.Name;
-            case "spriteName":      return src.SpriteName;
-            case "itemId":          return src.ItemId;
-            case "durability":      return src.Durability;
-            case "maxDurability":   return src.MaxDurability;
-            case "craftingActions": return src.CraftingActions;
-            case "interActions":    return src.InterActions;
-            case "toolActions":     return src.ToolActions;
-            case "weaponActions":   return src.WeaponActions;
-            case "tags":            return src.Tags;
+            case "name":          return src.Name;
+            case "spriteName":    return src.SpriteName;
+            case "itemId":        return src.ItemId;
+            case "durability":    return src.Durability;
+            case "maxDurability": return src.MaxDurability;
+            case "tags":          return src.Tags;
+
+            case "toolActions":
+            {
+                var v = ReadFromDetails(src, "toolActions");
+                return v ?? (object)src.ToolActions;
+            }
+            case "weaponActions":
+            {
+                var v = ReadFromDetails(src, "weaponActions");
+                return v ?? (object)src.WeaponActions;
+            }
+            case "breakActions":
+            {
+                var v = ReadFromDetails(src, "breakActions");
+                return v ?? (object)src.BreakActions;
+            }
         }
-        return null;
+
+        // fallback: Details 루트 기준 경로로 시도
+        return ReadFromDetails(src, field);
     }
 
-    object ReadFromParameters(ItemData dst, string field)
+    object ReadFromDetails(ItemData dst, string path)
     {
-        if (dst?.Parameters == null || string.IsNullOrEmpty(field)) return null;
+        if (dst?.Details == null || string.IsNullOrEmpty(path)) return null;
 
-        var root = JObject.FromObject(dst.Parameters);
-        var parts = field.Split('.');
-        JToken current = root;
+        var parts   = path.Split('.');
+        object curr = dst.Details;
 
         for (int i = 0; i < parts.Length; i++)
         {
             string key = parts[i];
 
-            if (current is JObject jo)
+            if (curr is Dictionary<string, object> dict)
             {
-                if (!jo.TryGetValue(key, out current))
+                if (!dict.TryGetValue(key, out curr))
                     return null;
             }
             else
@@ -920,8 +1002,7 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
-        if (current is JValue jv) return jv.Value;
-        return current;
+        return curr;
     }
 
     string ExpandTokens(string s)

@@ -1,2 +1,96 @@
 {
+  "Leather Cap": {
+    "name": "Leather Cap",
+    "spriteName": "Leather Cap",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 20,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Head",
+        "armor": 1
+      }
+    }
+  },
+
+  "Leather Tunic": {
+    "name": "Leather Tunic",
+    "spriteName": "Leather Tunic",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 25,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Body",
+        "armor": 2
+      }
+    }
+  },
+
+  "Leather Pants": {
+    "name": "Leather Pants",
+    "spriteName": "Leather Pants",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 25,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Legs",
+        "armor": 2
+      }
+    }
+  },
+
+  "Leather Boots": {
+    "name": "Leather Boots",
+    "spriteName": "Leather Boots",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 20,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Feet",
+        "armor": 1
+      }
+    }
+  },
+
+  "Leather Gloves": {
+    "name": "Leather Gloves",
+    "spriteName": "Leather Gloves",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 15,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Hands",
+        "armor": 1
+      }
+    }
+  }
 }

@@ -5,9 +5,7 @@
     "maxStack": 32,
     "tags": [],
 
-    "interActions": ["UseOnLiquid"],
-
-    "params": {
+    "toolActions": {
       "UseOnLiquid": {
         "liquid": "Water",
         "cost": 1,
@@ -20,72 +18,56 @@
     "name": "Mud Chunk",
     "spriteName": "Mud Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Sand Pile": {
     "name": "Sand Pile",
     "spriteName": "Sand Pile",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Clay Chunk": {
     "name": "Clay Chunk",
     "spriteName": "Clay Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Grass Scrap": {
     "name": "Grass Scrap",
     "spriteName": "Grass Scrap",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Leaf": {
     "name": "Leaf",
     "spriteName": "Leaf",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Pebble": {
     "name": "Pebble",
     "spriteName": "Pebble",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Plant": {
     "name": "Plant",
     "spriteName": "Plant",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Plant Fiber": {
     "name": "Plant Fiber",
     "spriteName": "Plant Fiber",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Plant Twine": {
@@ -94,9 +76,10 @@
     "maxStack": 32,
     "tags": ["Binding"],
 
-    "params": {
-      "Binding": {
-        "type": "Default",
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Standard",
         "potentialDurability": 16
       }
     }
@@ -108,8 +91,9 @@
     "maxStack": 32,
     "tags": ["Binding"],
 
-    "params": {
-      "Binding": {
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
         "type": "Short",
         "potentialDurability": 16
       }
@@ -122,115 +106,90 @@
     "maxStack": 32,
     "tags": ["Binding"],
 
-    "params": {
-      "Binding": {
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
         "type": "Long",
         "potentialDurability": 16
       }
     }
   },
 
-
   "Twig": {
     "name": "Twig",
     "spriteName": "Twig",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Branch": {
     "name": "Branch",
     "spriteName": "Branch",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Bough": {
     "name": "Bough",
     "spriteName": "Bough",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
-
 
   "Log": {
     "name": "Log",
     "spriteName": "Log",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Stripped Log": {
     "name": "Stripped Log",
     "spriteName": "Stripped Log",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Bark Strip": {
     "name": "Bark Strip",
     "spriteName": "Bark Strip",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Half Stripped Log": {
     "name": "Half Stripped Log",
     "spriteName": "Half Stripped Log",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Quarter Stripped Log": {
     "name": "Quarter Stripped Log",
     "spriteName": "Quarter Stripped Log",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Wood Shavings": {
     "name": "Wood Shavings",
     "spriteName": "Wood Shavings",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Crude Wooden Plank": {
     "name": "Crude Wooden Plank",
     "spriteName": "Crude Wooden Plank",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
-
-
 
   "Charcoal": {
     "name": "Charcoal",
     "spriteName": "Charcoal",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Wooden Stick": {
@@ -239,9 +198,10 @@
     "maxStack": 32,
     "tags": ["Handle"],
 
-    "params": {
-      "Handle": {
-        "type": "Default",
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
         "potentialDurability": 16
       }
     }
@@ -253,8 +213,9 @@
     "maxStack": 32,
     "tags": ["Handle"],
 
-    "params": {
-      "Handle": {
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
         "type": "Short",
         "potentialDurability": 16
       }
@@ -267,61 +228,47 @@
     "maxStack": 32,
     "tags": ["Handle"],
 
-    "params": {
-      "Handle": {
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
         "type": "Long",
         "potentialDurability": 16
       }
     }
   },
 
-
-
-
-
-
   "Rock Chunk": {
     "name": "Rock Chunk",
     "spriteName": "Rock Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Coal Chunk": {
     "name": "Coal Chunk",
     "spriteName": "Coal Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Copper Chunk": {
     "name": "Copper Chunk",
     "spriteName": "Copper Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Iron Chunk": {
     "name": "Iron Chunk",
     "spriteName": "Iron Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   },
 
   "Tin Chunk": {
     "name": "Tin Chunk",
     "spriteName": "Tin Chunk",
     "maxStack": 32,
-    "tags": [],
-
-    "params": {}
+    "tags": []
   }
 }

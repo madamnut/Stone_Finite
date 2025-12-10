@@ -1,4 +1,3 @@
-// ItemLibrary.cs
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -186,6 +185,15 @@ public class ItemLibrary : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// ATT JSON → ItemData 생성
+    /// - breakActions/toolActions/weaponActions:
+    ///   • 배열: ["A","B"]                       → { "A": {}, "B": {} }
+    ///   • 오브젝트: { "A": {...}, "B": {...} }  → 그대로 Dictionary<string, Dictionary<string,object>>
+    ///   • 값 하나(string 등)                    → { value: {} }
+    /// - Details:
+    ///   • ATT 루트의 "details" 블록만 복사 (toolActions 등은 여기 안 넣음)
+    /// </summary>
     public ItemData Create(string itemId, int count = 1)
     {
         var def = GetItemJson(itemId);
@@ -197,45 +205,12 @@ public class ItemLibrary : MonoBehaviour
         string itemType   = def.Value<string>("itemType")   ?? "Generic";
         int    maxStack   = def.Value<int?>("maxStack")     ?? 1;
 
-        // 내구도 (ATT 루트의 maxDurability → ItemData.MaxDurability / Durability)
+        // 내구도
         int maxDurability = def.Value<int?>("maxDurability") ?? 0;
         int durability    = maxDurability;
 
-        // 액션 4종 (ATT 루트의 배열을 그대로 계승)
-        var craftingActions = new List<string>();
-        if (def["craftingActions"] is JArray craftingArr)
-        {
-            var list = craftingArr.ToObject<List<string>>();
-            if (list != null)
-                craftingActions.AddRange(list);
-        }
-
-        var interActions = new List<string>();
-        if (def["interActions"] is JArray interArr)
-        {
-            var list = interArr.ToObject<List<string>>();
-            if (list != null)
-                interActions.AddRange(list);
-        }
-
-        var toolActions = new List<string>();
-        if (def["toolActions"] is JArray toolArr)
-        {
-            var list = toolArr.ToObject<List<string>>();
-            if (list != null)
-                toolActions.AddRange(list);
-        }
-
-        var weaponActions = new List<string>();
-        if (def["weaponActions"] is JArray weaponArr)
-        {
-            var list = weaponArr.ToObject<List<string>>();
-            if (list != null)
-                weaponActions.AddRange(list);
-        }
-
-        // tags (별도 보관 + 필요 시 Parameters에도 넣을 수 있음)
-        List<string> tags = new List<string>();
+        // 태그
+        var tags = new List<string>();
         if (def["tags"] is JArray tagsArray)
         {
             var list = tagsArray.ToObject<List<string>>();
@@ -243,17 +218,20 @@ public class ItemLibrary : MonoBehaviour
                 tags.AddRange(list);
         }
 
-        // Parameters: ATT의 params 등 확장 필드
-        var parameters = new Dictionary<string, object>();
+        // 액션 3종: dict<액션이름, 세부파라미터>
+        var breakActions  = ReadActionDict(def["breakActions"]);
+        var toolActions   = ReadActionDict(def["toolActions"]);
+        var weaponActions = ReadActionDict(def["weaponActions"]);
 
-        // params 블록 통째로 복사 (중첩 구조 유지)
-        if (def["params"] is JObject paramObj)
+        // Details: ATT 루트의 "details" 블록만 복사
+        var details = new Dictionary<string, object>();
+        if (def["details"] is JObject detObj)
         {
-            var paramDict = paramObj.ToObject<Dictionary<string, object>>();
-            if (paramDict != null)
+            var detDict = detObj.ToObject<Dictionary<string, object>>();
+            if (detDict != null)
             {
-                foreach (var kv in paramDict)
-                    parameters[kv.Key] = kv.Value;
+                foreach (var kv in detDict)
+                    details[kv.Key] = kv.Value;
             }
         }
 
@@ -262,21 +240,90 @@ public class ItemLibrary : MonoBehaviour
 
         // 최종 ItemData 생성
         return new ItemData(
-            itemId:          itemId,
-            name:            name,
-            spriteName:      spriteName,
-            itemType:        itemType,
-            maxStack:        maxStack,
-            maxDurability:   maxDurability,
-            durability:      durability,
-            craftingActions: craftingActions,
-            interActions:    interActions,
-            toolActions:     toolActions,
-            weaponActions:   weaponActions,
-            tags:            tags,
-            parameters:      parameters,
-            icon:            icon,
-            count:           count
+            itemId:        itemId,
+            name:          name,
+            spriteName:    spriteName,
+            itemType:      itemType,
+            maxStack:      maxStack,
+            maxDurability: maxDurability,
+            durability:    durability,
+            toolActions:   toolActions,
+            weaponActions: weaponActions,
+            breakActions:  breakActions,
+            tags:          tags,
+            details:       details,
+            icon:          icon,
+            count:         count
         );
+    }
+
+    /// <summary>
+    /// 액션 필드 파싱 헬퍼
+    /// 반환형: Dictionary&lt;string, Dictionary&lt;string, object&gt;&gt;
+    /// - null → 빈 dict
+    /// - JArray ["A","B"] → { "A": {}, "B": {} }
+    /// - JObject { "A": {...}, "B": {...} }
+    ///   → { "A": (A의 JObject → dict), "B": (B의 JObject → dict) }
+    /// - 값 하나(string 등) → { value: {} }
+    /// </summary>
+    Dictionary<string, Dictionary<string, object>> ReadActionDict(JToken token)
+    {
+        var dict = new Dictionary<string, Dictionary<string, object>>();
+
+        if (token == null || token.Type == JTokenType.Null)
+            return dict;
+
+        // ["A","B"] 형태
+        if (token is JArray arr)
+        {
+            foreach (var t in arr)
+            {
+                if (t == null || t.Type == JTokenType.Null) continue;
+                var name = t.ToString();
+                if (string.IsNullOrEmpty(name)) continue;
+
+                if (!dict.ContainsKey(name))
+                    dict[name] = new Dictionary<string, object>(); // 파라미터 없음
+            }
+            return dict;
+        }
+
+        // { "A": {...}, "B": {...} } 형태
+        if (token is JObject obj)
+        {
+            foreach (var prop in obj.Properties())
+            {
+                string name = prop.Name;
+                if (string.IsNullOrEmpty(name)) continue;
+
+                Dictionary<string, object> paramDict = null;
+
+                if (prop.Value is JObject paramObj)
+                {
+                    paramDict = paramObj.ToObject<Dictionary<string, object>>() 
+                                ?? new Dictionary<string, object>();
+                }
+                else
+                {
+                    // 값이 JObject가 아니면, 그냥 하나의 값으로 감싸서 넣어준다.
+                    paramDict = new Dictionary<string, object>
+                    {
+                        ["value"] = (prop.Value is JValue jv) ? jv.Value : prop.Value?.ToString()
+                    };
+                }
+
+                dict[name] = paramDict;
+            }
+            return dict;
+        }
+
+        // 단일 값 (string 등)
+        var single = token.ToString();
+        if (!string.IsNullOrEmpty(single))
+        {
+            dict[single] = new Dictionary<string, object>();
+        }
+
+        return dict;
     }
 }

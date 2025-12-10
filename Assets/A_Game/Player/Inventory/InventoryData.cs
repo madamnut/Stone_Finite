@@ -54,21 +54,20 @@ public class InventoryData
 
             int take = left > incoming.MaxStack ? incoming.MaxStack : left;
             items[i] = new ItemData(
-                itemId:          incoming.ItemId,
-                name:            incoming.Name,
-                spriteName:      incoming.SpriteName,
-                itemType:        incoming.ItemType,
-                maxStack:        incoming.MaxStack,
-                maxDurability:   incoming.MaxDurability,
-                durability:      incoming.Durability,
-                craftingActions: incoming.CraftingActions,
-                interActions:    incoming.InterActions,
-                toolActions:     incoming.ToolActions,
-                weaponActions:   incoming.WeaponActions,
-                tags:            incoming.Tags,
-                parameters:      incoming.Parameters,
-                icon:            incoming.Icon,
-                count:           take
+                itemId:        incoming.ItemId,
+                name:          incoming.Name,
+                spriteName:    incoming.SpriteName,
+                itemType:      incoming.ItemType,
+                maxStack:      incoming.MaxStack,
+                maxDurability: incoming.MaxDurability,
+                durability:    incoming.Durability,
+                toolActions:   incoming.ToolActions,
+                weaponActions: incoming.WeaponActions,
+                breakActions:  incoming.BreakActions,
+                tags:          incoming.Tags,
+                details:       incoming.Details,
+                icon:          incoming.Icon,
+                count:         take
             );
 
             left -= take;

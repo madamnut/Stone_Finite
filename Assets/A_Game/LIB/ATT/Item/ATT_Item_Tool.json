@@ -5,11 +5,11 @@
     "maxStack": 1,
     "tags": ["Tool"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["PercussionFlaking"],
-
-    "params": {}
+    "toolActions": {
+      "PercussionFlaking": {}
+    }
   },
 
   "Stone Chopper": {
@@ -18,13 +18,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Chopping"],
+    "toolActions": {
+      "Chopping": {},
 
-    "params": {
-      "Head": {
-        "type": "LongGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
         "potentialName": "Stone Chopper"
       }
     }
@@ -36,13 +37,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Hewing"],
+    "toolActions": {
+      "Hewing": {},
 
-    "params": {
-      "Head": {
-        "type": "DefaultGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
         "potentialName": "Stone Handaxe"
       }
     }
@@ -54,13 +56,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Splitting"],
+    "toolActions": {
+      "Splitting": {},
 
-    "params": {
-      "Head": {
-        "type": "DefaultGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
         "potentialName": "Stone Cleaver"
       }
     }
@@ -72,13 +75,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Pounding"],
+    "toolActions": {
+      "Pounding": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Stone Pounder"
       }
     }
@@ -90,13 +94,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Smashing"],
+    "toolActions": {
+      "Smashing": {},
 
-    "params": {
-      "Head": {
-        "type": "LongGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
         "potentialName": "Stone Sledgehammer"
       }
     }
@@ -108,13 +113,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Hammering"],
+    "toolActions": {
+      "Hammering": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Stone Hammer"
       }
     }
@@ -126,11 +132,11 @@
     "maxStack": 1,
     "tags": ["Tool"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["PressureFlaking"],
-
-    "params": {}
+    "toolActions": {
+      "PressureFlaking": {}
+    }
   },
 
   "Flint Blade": {
@@ -139,13 +145,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Cutting"],
+    "toolActions": {
+      "Cutting": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Knife"
       }
     }
@@ -157,13 +164,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Piercing"],
+    "toolActions": {
+      "Piercing": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Awl"
       }
     }
@@ -175,13 +183,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Engraving"],
+    "toolActions": {
+      "Engraving": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Burin"
       }
     }
@@ -193,13 +202,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Scraping"],
+    "toolActions": {
+      "Scraping": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Scraper"
       }
     }
@@ -211,13 +221,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Carving"],
+    "toolActions": {
+      "Carving": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Graver"
       }
     }
@@ -229,13 +240,14 @@
     "maxStack": 1,
     "tags": ["Tool", "Head"],
 
-    "maxDurability": 16,
+    "maxDurability": 32,
 
-    "craftingActions": ["Notching"],
+    "toolActions": {
+      "Notching": {},
 
-    "params": {
-      "Head": {
-        "type": "ShortGrip",
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
         "potentialName": "Flint Denticulate"
       }
     }

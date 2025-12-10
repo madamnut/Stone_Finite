@@ -10,7 +10,7 @@ public class ItemData
     public string ItemType   { get; }
     public int    MaxStack   { get; }
 
-    /* 내구도 (ATT의 maxDurability + 현재 내구도) */
+    /* 내구도 */
     public int MaxDurability { get; }
     public int Durability    { get; set; }
 
@@ -21,14 +21,13 @@ public class ItemData
     /* 태그 (ATT의 tags) */
     public List<string> Tags { get; }
 
-    /* 액션 4종 (ATT의 crafting/inter/tool/weaponActions 계승) */
-    public List<string> CraftingActions { get; }
-    public List<string> InterActions    { get; }
-    public List<string> ToolActions     { get; }
-    public List<string> WeaponActions   { get; }
+    /* 액션 3종 (각 액션 이름 → 해당 액션의 세부 파라미터 딕셔너리) */
+    public Dictionary<string, Dictionary<string, object>> ToolActions   { get; }
+    public Dictionary<string, Dictionary<string, object>> WeaponActions { get; }
+    public Dictionary<string, Dictionary<string, object>> BreakActions  { get; }
 
-    /* 수정 가능 파라미터 (ATT의 params 등 확장 필드) */
-    public Dictionary<string, object> Parameters { get; private set; }
+    /* 디테일스 (ATT details + 조합 결과 등 기타 확장 구조) */
+    public Dictionary<string, object> Details { get; private set; }
 
     /* 생성자 */
     public ItemData(
@@ -39,12 +38,11 @@ public class ItemData
         int    maxStack,
         int    maxDurability,
         int    durability,
-        List<string> craftingActions,
-        List<string> interActions,
-        List<string> toolActions,
-        List<string> weaponActions,
+        Dictionary<string, Dictionary<string, object>> toolActions,
+        Dictionary<string, Dictionary<string, object>> weaponActions,
+        Dictionary<string, Dictionary<string, object>> breakActions,
         List<string> tags,
-        Dictionary<string, object> parameters,
+        Dictionary<string, object> details,
         Sprite icon,
         int    count = 1)
     {
@@ -60,56 +58,52 @@ public class ItemData
         Icon  = icon;
         Count = count;
 
-        CraftingActions = craftingActions != null
-            ? new List<string>(craftingActions)
-            : new List<string>();
-
-        InterActions = interActions != null
-            ? new List<string>(interActions)
-            : new List<string>();
-
-        ToolActions = toolActions != null
-            ? new List<string>(toolActions)
-            : new List<string>();
-
-        WeaponActions = weaponActions != null
-            ? new List<string>(weaponActions)
-            : new List<string>();
-
         Tags = tags != null
             ? new List<string>(tags)
             : new List<string>();
 
-        // 방어 복사하여 내부에서 독립적으로 소유
-        Parameters = parameters != null
-            ? new Dictionary<string, object>(parameters)
+        // 액션 3종: 이름 → 파라미터 딕셔너리
+        ToolActions = toolActions != null
+            ? new Dictionary<string, Dictionary<string, object>>(toolActions)
+            : new Dictionary<string, Dictionary<string, object>>();
+
+        WeaponActions = weaponActions != null
+            ? new Dictionary<string, Dictionary<string, object>>(weaponActions)
+            : new Dictionary<string, Dictionary<string, object>>();
+
+        BreakActions = breakActions != null
+            ? new Dictionary<string, Dictionary<string, object>>(breakActions)
+            : new Dictionary<string, Dictionary<string, object>>();
+
+        Details = details != null
+            ? new Dictionary<string, object>(details)
             : new Dictionary<string, object>();
     }
 
     /* ───────────────── 유틸 메서드 ───────────────── */
 
-    // 파라미터 조회
-    public T GetParameter<T>(string key)
+    // 단일 키 조회
+    public T GetDetail<T>(string key)
     {
-        if (Parameters.TryGetValue(key, out var v) && v is T t)
+        if (Details.TryGetValue(key, out var v) && v is T t)
             return t;
         return default;
     }
 
-    // 파라미터 설정 (1단계 키)
-    public void SetParameter(string key, object value)
+    // 단일 키 설정
+    public void SetDetail(string key, object value)
     {
-        Parameters[key] = value;
+        Details[key] = value;
     }
 
-    // 중첩 경로 기반 파라미터 설정 (예: "Parts.head")
-    public void SetParamPath(string path, object value)
+    // 중첩 경로 기반 detail 설정 (예: "head.itemId", "weapon.head.damage")
+    public void SetDetailPath(string path, object value)
     {
         if (string.IsNullOrEmpty(path))
             return;
 
         var parts = path.Split('.');
-        var dict  = Parameters;
+        var dict  = Details;
 
         for (int i = 0; i < parts.Length - 1; i++)
         {
@@ -128,7 +122,7 @@ public class ItemData
         dict[last] = value;
     }
 
-    // 내구도 변경 (레시피/사용 시 공통 로직)
+    // 내구도 조절
     public void ModifyDurability(int amount)
     {
         Durability += amount;
@@ -136,28 +130,48 @@ public class ItemData
         if (Durability < 0)            Durability = 0;
     }
 
-    // 태그 보유 여부 (Tags 우선, 없으면 Parameters["tags"] fallback)
+    // 태그 검사
     public bool HasTag(string tag)
     {
         if (Tags != null && Tags.Contains(tag))
             return true;
 
-        if (Parameters.TryGetValue("tags", out var v) && v is List<string> tags)
+        // fallback
+        if (Details.TryGetValue("tags", out var v) && v is List<string> tags)
             return tags.Contains(tag);
 
         return false;
     }
 
-    // 액션 4종 검사
-    public bool HasCraftingAction(string action)
-        => CraftingActions.Contains(action);
-
-    public bool HasInterAction(string action)
-        => InterActions.Contains(action);
-
+    // 액션 보유 여부
     public bool HasToolAction(string action)
-        => ToolActions.Contains(action);
+        => ToolActions != null && ToolActions.ContainsKey(action);
 
     public bool HasWeaponAction(string action)
-        => WeaponActions.Contains(action);
+        => WeaponActions != null && WeaponActions.ContainsKey(action);
+
+    public bool HasBreakAction(string action)
+        => BreakActions != null && BreakActions.ContainsKey(action);
+
+    // 액션 파라미터 딕셔너리 가져오기 (없으면 null)
+    public Dictionary<string, object> GetToolActionParams(string action)
+    {
+        if (ToolActions != null && ToolActions.TryGetValue(action, out var cfg))
+            return cfg;
+        return null;
+    }
+
+    public Dictionary<string, object> GetWeaponActionParams(string action)
+    {
+        if (WeaponActions != null && WeaponActions.TryGetValue(action, out var cfg))
+            return cfg;
+        return null;
+    }
+
+    public Dictionary<string, object> GetBreakActionParams(string action)
+    {
+        if (BreakActions != null && BreakActions.TryGetValue(action, out var cfg))
+            return cfg;
+        return null;
+    }
 }

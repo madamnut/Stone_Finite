@@ -7,17 +7,14 @@
 
     "maxDurability": 0,
 
-    "craftingActions": [],
-    "interActions": [],
-    "toolActions": [],
-    "weaponActions": [],
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
 
-    "params": {
-      "Parts": {
-        "head": null,
-        "binding": null,
-        "handle": null
-      }
+    "details": {
+      "head": null,
+      "binding": null,
+      "handle": null
     }
   },
 
@@ -29,32 +26,28 @@
 
     "maxDurability": 0,
 
-    "craftingActions": [],
-    "interActions": [],
-    "toolActions": [],
-    "weaponActions": [],
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
 
-    "params": {
-      "Parts": {
-        "head": null,
-        "binding": null
-      }
+    "details": {
+      "head": null,
+      "binding": null
     }
   },
 
   "Example": {
-  "name": "Example",
-  "spriteName": "Example",
-  "tags": [],
-  "maxStack": 1,
+    "name": "Example",
+    "spriteName": "Example",
+    "tags": [],
+    "maxStack": 1,
 
-  "maxDurability": 0,
+    "maxDurability": 0,
 
-  "craftingActions": [],
-  "interActions": [],
-  "toolActions": [],
-  "weaponActions": [],
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
 
-  "params": {}
+    "details": {}
   }
 }

@@ -116,7 +116,6 @@ public class InteractionController : MonoBehaviour
         _hlGO.SetActive(false);
 
         hotbar.SetScope(_hotbarScope);
-        // 오른손 스프라이트는 여기서 접근하지 않음 (Player.Inventory 초기화 순서 문제 방지)
 
         recipeLibrary.itemLibrary = itemLibrary;
 
@@ -466,23 +465,22 @@ public class InteractionController : MonoBehaviour
         if (held.WeaponActions == null || held.WeaponActions.Count == 0)
             return;
 
-        if (held.Parameters == null)
-            return;
-
         // 지금은 첫 번째 weaponAction만 사용: "Swing" 또는 "Thrust"
-        string actionName = held.WeaponActions[0];
+        string actionName = null;
+        Dictionary<string, object> paramDict = null;
+
+        foreach (var kv in held.WeaponActions)
+        {
+            actionName = kv.Key;
+            paramDict  = kv.Value;
+            break;
+        }
+
         if (string.IsNullOrEmpty(actionName))
             return;
 
-        if (!held.Parameters.TryGetValue(actionName, out var paramObj))
-            return;
-
-        var paramDict =
-            paramObj as Dictionary<string, object> ??
-            (paramObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
-
         if (paramDict == null)
-            return;
+            paramDict = new Dictionary<string, object>();
 
         float staminaCost = 0f;
         float cooldown    = 0f;
@@ -764,21 +762,14 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return false;
 
-        // 새로운 양식만 사용: interActions + params[actionName]
-        if (held.InterActions == null || held.InterActions.Count == 0)
-            return false;
-        if (held.Parameters == null)
+        // 새로운 양식: toolActions 딕셔너리 사용 (키=액션이름, 값=파라미터 딕셔너리)
+        if (held.ToolActions == null || held.ToolActions.Count == 0)
             return false;
 
-        foreach (var actionName in held.InterActions)
+        foreach (var kv in held.ToolActions)
         {
-            if (!held.Parameters.TryGetValue(actionName, out var paramObj))
-                continue;
-
-            var param =
-                paramObj as Dictionary<string, object> ??
-                (paramObj is JObject jo ? jo.ToObject<Dictionary<string, object>>() : null);
-            if (param == null) continue;
+            string actionName = kv.Key;
+            var    param      = kv.Value ?? new Dictionary<string, object>();
 
             bool ok = false;
 
@@ -795,7 +786,7 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
-    // params["Place"]용
+    // toolActions["Place"]용
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
         if (placeParam == null) return false;
@@ -890,7 +881,7 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // params["UseOnLiquid"]용
+    // toolActions["UseOnLiquid"]용
     bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         if (param == null) return false;
@@ -959,7 +950,7 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // params["BuildMultiblock"]는 아직 별도 파라미터 사용 X. 필요하면 확장.
+    // toolActions["BuildMultiblock"]는 아직 별도 파라미터 사용 X. 필요하면 확장.
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");

@@ -5,9 +5,7 @@
     "maxStack": 32,
     "tags": ["Placeable"],
 
-    "interActions": ["Place"],
-
-    "params": {
+    "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Dirt"
@@ -21,9 +19,7 @@
     "maxStack": 32,
     "tags": ["Placeable"],
 
-    "interActions": ["Place"],
-
-    "params": {
+    "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Mud"
@@ -37,9 +33,7 @@
     "maxStack": 32,
     "tags": ["Placeable"],
 
-    "interActions": ["Place"],
-
-    "params": {
+    "toolActions": {
       "Place": {
         "layer": "Default",
         "cell": "Primal Workbench"
@@ -53,9 +47,7 @@
     "maxStack": 32,
     "tags": ["Placeable", "Light"],
 
-    "interActions": ["Place"],
-
-    "params": {
+    "toolActions": {
       "Place": {
         "layer": "Default",
         "cell": "Torch"
