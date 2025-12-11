@@ -6,7 +6,7 @@ Unity 2022.3.47f1
 [PatchNotes] - 자막 ON
 https://www.youtube.com/watch?v=sjb8gKHDYFo&list=PLqqBsGlhWG3twfFLFDOJMIWJVX9QUouei
 
-[Itch.io] - 수정예정
+[Itch.io]
 https://madamnut.itch.io/stone-the-beginning
 
 [기획 기록]
