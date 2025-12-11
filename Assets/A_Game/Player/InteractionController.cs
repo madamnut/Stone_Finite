@@ -40,9 +40,10 @@ public class InteractionController : MonoBehaviour
     public Texture2D combatCursorTex;
 
     [Header("World References")]
-    public WorldManager worldManager;
-    public Camera       worldCamera;
-    public int          cellSize = 1;
+    public WorldManager      worldManager;
+    public MultiblockManager multiblockManager;
+    public Camera            worldCamera;
+    public int               cellSize = 1;
 
     [Header("Highlight Sprites")]
     public Sprite HighLight_FG;
@@ -135,8 +136,7 @@ public class InteractionController : MonoBehaviour
             UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
 
         // 공격 모션 없을 때는 공격 객체 비활성화
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
+        meleeRoot.gameObject.SetActive(false);
     }
 
     void Update()
@@ -149,26 +149,20 @@ public class InteractionController : MonoBehaviour
             hotbar.SetScope(_hotbarScope);
 
             // 스크롤로 스코프 바뀔 때 오른손 스프라이트 갱신
-            if (player != null &&
-                player.Inventory != null &&
-                player.Inventory.items != null &&
-                player.rightHandItemRenderer != null)
-            {
-                var items = player.Inventory.items;
-                ItemData held = null;
-                if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                    held = items[_hotbarScope];
+            var items = player.Inventory.items;
+            ItemData held = null;
+            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                held = items[_hotbarScope];
 
-                if (held != null && held.Count > 0 && held.Icon != null)
-                {
-                    player.rightHandItemRenderer.enabled = true;
-                    player.rightHandItemRenderer.sprite  = held.Icon;
-                }
-                else
-                {
-                    player.rightHandItemRenderer.enabled = false;
-                    player.rightHandItemRenderer.sprite  = null;
-                }
+            if (held != null && held.Count > 0 && held.Icon != null)
+            {
+                player.rightHandItemRenderer.enabled = true;
+                player.rightHandItemRenderer.sprite  = held.Icon;
+            }
+            else
+            {
+                player.rightHandItemRenderer.enabled = false;
+                player.rightHandItemRenderer.sprite  = null;
             }
         }
 
@@ -193,35 +187,26 @@ public class InteractionController : MonoBehaviour
                 hotbar.SetScope(_hotbarScope);
 
                 // 숫자키로 스코프 바뀔 때 오른손 스프라이트 갱신
-                if (player != null &&
-                    player.Inventory != null &&
-                    player.Inventory.items != null &&
-                    player.rightHandItemRenderer != null)
-                {
-                    var items = player.Inventory.items;
-                    ItemData held = null;
-                    if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                        held = items[_hotbarScope];
+                var items = player.Inventory.items;
+                ItemData held = null;
+                if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+                    held = items[_hotbarScope];
 
-                    if (held != null && held.Count > 0 && held.Icon != null)
-                    {
-                        player.rightHandItemRenderer.enabled = true;
-                        player.rightHandItemRenderer.sprite  = held.Icon;
-                    }
-                    else
-                    {
-                        player.rightHandItemRenderer.enabled = false;
-                        player.rightHandItemRenderer.sprite  = null;
-                    }
+                if (held != null && held.Count > 0 && held.Icon != null)
+                {
+                    player.rightHandItemRenderer.enabled = true;
+                    player.rightHandItemRenderer.sprite  = held.Icon;
+                }
+                else
+                {
+                    player.rightHandItemRenderer.enabled = false;
+                    player.rightHandItemRenderer.sprite  = null;
                 }
             }
         }
 
         // ───────── 현재 들고 있는 아이템 기준 전투/파괴 모드 및 커서 전환 ─────────
         ItemData scopeHeld = null;
-        if (player != null &&
-            player.Inventory != null &&
-            player.Inventory.items != null)
         {
             var items = player.Inventory.items;
             if (_hotbarScope >= 0 && _hotbarScope < items.Count)
@@ -513,9 +498,6 @@ public class InteractionController : MonoBehaviour
 
     void TryWeaponAttack()
     {
-        if (player == null || player.Inventory == null || player.Inventory.items == null)
-            return;
-
         // 이미 공격 모션 중이면 새로 시작하지 않음
         if (_attackCo != null)
             return;
@@ -622,8 +604,7 @@ public class InteractionController : MonoBehaviour
         bool isLeftSide = (mouseWorld.x < origin.x);
 
         // 공격 시작 시 루트 활성화 → 스프라이트 넣기 → 모션 진행
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(true);
+        meleeRoot.gameObject.SetActive(true);
 
         if (meleeSprite != null)
         {
@@ -704,8 +685,7 @@ public class InteractionController : MonoBehaviour
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
         // 공격 모션 종료 → 공격 객체 끔
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
+        meleeRoot.gameObject.SetActive(false);
 
         // 한 번의 공격 종료 → 히트 상태 리셋
         _attackActive = false;
@@ -762,8 +742,7 @@ public class InteractionController : MonoBehaviour
         meleeOffset.localPosition = new Vector3(baseX, 0f, baseZ);
 
         // 공격 모션 종료 → 공격 객체 끔
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
+        meleeRoot.gameObject.SetActive(false);
 
         // 한 번의 공격 종료 → 히트 상태 리셋
         _attackActive = false;
@@ -775,10 +754,7 @@ public class InteractionController : MonoBehaviour
     bool TryCorpseInteraction()
     {
         if (_state != GameState.Ingame) return false;
-        if (corpseLibrary == null)      return false;
         if (_hoverCorpse == null)       return false;
-        if (player == null || player.Inventory == null || player.Inventory.items == null)
-            return false;
 
         var items = player.Inventory.items;
         if (_hotbarScope < 0 || _hotbarScope >= items.Count)
@@ -878,7 +854,7 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return false;
 
-        // 새로운 양식: toolActions 딕셔너리 사용 (키=액션이름, 값=파라미터 딕셔너리)
+        // toolActions 딕셔너리 사용 (키=액션이름, 값=파라미터 딕셔너리)
         if (held.ToolActions == null || held.ToolActions.Count == 0)
             return false;
 
@@ -891,8 +867,6 @@ public class InteractionController : MonoBehaviour
 
             if (actionName == "Place")
                 ok = HandlePlace(held, cx, cy, param);
-            else if (actionName == "UseOnLiquid")
-                ok = HandleUseOnLiquid(held, cx, cy, param);
             else if (actionName == "BuildMultiblock")
                 ok = HandleBuildMultiblock(held, cx, cy, param);
 
@@ -972,79 +946,6 @@ public class InteractionController : MonoBehaviour
         player.Inventory.NotifyChanged();
 
         // 아이템 소모 후 오른손 스프라이트 갱신
-        if (player != null &&
-            player.Inventory != null &&
-            player.Inventory.items != null &&
-            player.rightHandItemRenderer != null)
-        {
-            var items = player.Inventory.items;
-            ItemData newHeld = null;
-            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                newHeld = items[_hotbarScope];
-
-            if (newHeld != null && newHeld.Count > 0 && newHeld.Icon != null)
-            {
-                player.rightHandItemRenderer.enabled = true;
-                player.rightHandItemRenderer.sprite  = newHeld.Icon;
-            }
-            else
-            {
-                player.rightHandItemRenderer.enabled = false;
-                player.rightHandItemRenderer.sprite  = null;
-            }
-        }
-
-        return true;
-    }
-
-    // toolActions["UseOnLiquid"]용
-    bool HandleUseOnLiquid(ItemData held, int cx, int cy, Dictionary<string, object> param)
-    {
-        if (param == null) return false;
-
-        string liquidName = param.TryGetValue("liquid", out var lo) ? lo?.ToString() : null;
-        string outputName = param.TryGetValue("output", out var oo) ? oo?.ToString() : null;
-        if (string.IsNullOrEmpty(liquidName) || string.IsNullOrEmpty(outputName)) return false;
-
-        ushort targetLiquidId = 0;
-        for (ushort id = 1; id < ushort.MaxValue; id++)
-        {
-            var nm = CellLibrary.GetName(id);
-            if (!string.IsNullOrEmpty(nm) && nm == liquidName)
-            {
-                targetLiquidId = id;
-                break;
-            }
-        }
-        if (targetLiquidId == 0) return false;
-
-        byte amount;
-        ushort fluidId = worldManager.worldMap.GetFluidId(cx, cy, out amount);
-        if (fluidId != targetLiquidId || amount < 1) return false;
-
-        held.Count -= 1;
-        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-        player.Inventory.NotifyChanged();
-
-        const int MaxFluid = 128;
-        int newAmt = Mathf.Clamp(amount - 1, 0, MaxFluid);
-
-        var cell = worldManager.worldMap.fg[cx, cy];
-        cell.fluidAmount = (byte)newAmt;
-        if (newAmt == 0) cell.fluidId = 0;
-        worldManager.worldMap.fg[cx, cy] = cell;
-
-        worldManager.MarkChunkDirty(cx, cy, markFG: true);
-        worldManager.EnqTick(cx, cy);
-
-        var outItem = itemLibrary.Create(outputName, 1);
-        if (outItem != null) player.Inventory.AddItem(outItem);
-
-        // 아이템 소모 후 오른손 스프라이트 갱신
-        if (player != null &&
-            player.Inventory != null &&
-            player.Inventory.items != null &&
-            player.rightHandItemRenderer != null)
         {
             var items = player.Inventory.items;
             ItemData newHeld = null;
@@ -1180,10 +1081,10 @@ public class InteractionController : MonoBehaviour
                             $"origin=({originX},{originY}), 클릭 셀 대응 위치=({px},{py})"
                         );
                         defMatched = true;
-                        anyMatch = true;
+                        anyMatch   = true;
 
-                        var inst = worldManager.CreateMudFurnaceInstance(def, originX, originY);
-                        Debug.Log($"{LOG_MB} MudFurnaceInstance 생성 완료: instanceId={inst.instanceId}, occupied={inst.occupiedCells.Count}");
+                        var kiln = multiblockManager.CreateClayKiln(def, originX, originY);
+                        Debug.Log($"{LOG_MB} ClayKiln 생성 완료: instId={kiln.InstId}, occupied={kiln.OccupiedCells.Count}");
 
                         if (sound != null) sound.PlayMultiblockComplete();
                     }
@@ -1258,3 +1159,4 @@ public class InteractionController : MonoBehaviour
         SceneManager.LoadScene("Loby");
     }
 }
+ 

@@ -39,11 +39,11 @@
   "Granite":            { "id": 4000,  "collidable": true,  "gravity": false },
   "Amphibolite":        { "id": 4001,  "collidable": true,  "gravity": false },
   
-  "Mud Furnace_0":   { "id": 5000, "collidable": false,  "gravity": false, "interaction": "multiblock" },
-  "Mud Furnace_1":   { "id": 5001, "collidable": false,  "gravity": false, "interaction": "multiblock" },
+  "Clay Kiln_Bottom":   { "id": 5000, "collidable": false,  "gravity": false, "interaction": "multiblock" },
+  "Clay Kiln_Top":   { "id": 5001, "collidable": false,  "gravity": false, "interaction": "multiblock" },
   
   
-  "Primal Workbench":   { "id": 50000, "collidable": true,  "gravity": false, "interaction": "primalcraftModule" },
+  "Primal Workbench":   { "id": 50000, "collidable": false,  "gravity": false, "interaction": "primalcraftModule" },
   "Torch":              { "id": 50001, "collidable": false, "gravity": false, "brightness": 15 },
 
   

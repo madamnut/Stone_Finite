@@ -3,15 +3,7 @@
     "name": "Dirt Pile",
     "spriteName": "Dirt Pile",
     "maxStack": 32,
-    "tags": [],
-
-    "toolActions": {
-      "UseOnLiquid": {
-        "liquid": "Water",
-        "cost": 1,
-        "output": "Mud Chunk"
-      }
-    }
+    "tags": []
   },
 
   "Mud Chunk": {

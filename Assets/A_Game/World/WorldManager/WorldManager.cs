@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -59,7 +58,7 @@ public class WorldManager : MonoBehaviour
     private const ushort ID_WATER = 60000;
 
     [Header("Global Brightness Offset (auto by time) 0=밝음, 15=어두움")]
-    [Range(0,15)] public byte globalBrightnessOffset = 0;
+    [Range(0, 15)] public byte globalBrightnessOffset = 0;
     private byte _lastBrightnessOffset = 255;
 
     private const int ATT_AIR = 1;
@@ -68,9 +67,6 @@ public class WorldManager : MonoBehaviour
 
     private int W, H;
     public WorldData worldMap;
-
-    public List<MultiblockInstanceBase> multiblocks = new();
-    public Dictionary<Vector2Int, MultiblockInstanceBase> multiblockByCell = new();
 
     private WorldChunkSystem chunkSystem;
 
@@ -94,14 +90,6 @@ public class WorldManager : MonoBehaviour
 
     [Header("Random Tick")]
     public int randomTicksPerWorldTick = 64;
-
-    struct RandomTickDebug
-    {
-        public Vector3 pos;
-        public float   expireTime;
-    }
-
-    List<RandomTickDebug> _randomTickDebug = new List<RandomTickDebug>();
 
     public void EnqTick(int x, int y)
     {
@@ -181,34 +169,6 @@ public class WorldManager : MonoBehaviour
                     }
                 }
             }
-
-            // 디버그 기즈모
-            var pos = new Vector3(gx + 0.5f, gy + 0.5f, 0f);
-            _randomTickDebug.Add(new RandomTickDebug
-            {
-                pos        = pos,
-                expireTime = Time.time + 0.2f
-            });
-        }
-    }
-
-    void OnDrawGizmos()
-    {
-        if (_randomTickDebug == null || _randomTickDebug.Count == 0) return;
-
-        float now = Application.isPlaying ? Time.time : 0f;
-
-        for (int i = _randomTickDebug.Count - 1; i >= 0; i--)
-        {
-            var e = _randomTickDebug[i];
-            if (Application.isPlaying && e.expireTime < now)
-            {
-                _randomTickDebug.RemoveAt(i);
-                continue;
-            }
-
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(e.pos, Vector3.one * 0.9f);
         }
     }
 
@@ -334,7 +294,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markFG: true);
     }
 
-    //──────────────── Gravity FallingBlock 스폰 경로 수정됨
+    //──────────────── Gravity FallingBlock 스폰 경로
     void StepGravityAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
@@ -371,7 +331,6 @@ public class WorldManager : MonoBehaviour
                 entityManager.Register(fb);
         }
     }
-
 
     // ───────── 설치 (FG) ─────────
     public bool PlaceCell(int x, int y, ushort id)
@@ -434,101 +393,24 @@ public class WorldManager : MonoBehaviour
         {
             case CellLayer.FG:
             {
-                var pos = new Vector2Int(x, y);
+                ushort removed = worldMap.RemoveFG(x, y);
+                if (removed == 0) return 0;
 
-                // ───────── 멀티블럭 여부 먼저 확인 ─────────
-                if (multiblockByCell.TryGetValue(pos, out MultiblockInstanceBase inst))
+                MarkChunkDirty(x, y, markFG: true);
+                OnCellEditedFG(x, y);
+
+                HandleArtificialChange(x, y, removed, 0);
+
+                string key = CellLibrary.GetKey(removed);
+                if (!string.IsNullOrEmpty(key))
                 {
-                    // 1) 클릭한 파츠 제거 + 드랍/이펙트
-                    ushort removed = worldMap.RemoveFG(x, y);
-                    if (removed != 0)
-                    {
-                        MarkChunkDirty(x, y, markFG: true);
-                        OnCellEditedFG(x, y);
-                        HandleArtificialChange(x, y, removed, 0);
-
-                        string key = CellLibrary.GetKey(removed);
-                        if (!string.IsNullOrEmpty(key))
-                        {
-                            var dropPos = new Vector3(x + 0.5f, y + 0.5f, 0f);
-                            if (vfx != null)
-                                vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
-                            if (itemDropper != null)
-                                itemDropper.SpawnDroppedItems(key, dropPos);
-                        }
-                    }
-
-                    // 2) 기본 블럭(Mud) ID 찾기
-                    ushort baseId = 0;
-                    for (ushort id = 1; id < ushort.MaxValue; id++)
-                    {
-                        var nm = CellLibrary.GetName(id);
-                        if (!string.IsNullOrEmpty(nm) && nm == "Mud")
-                        {
-                            baseId = id;
-                            break;
-                        }
-                    }
-
-                    if (baseId == 0)
-                    {
-                        Debug.LogWarning("[MBUILD] BreakCell: 'Mud' 셀 ID를 찾지 못했습니다. 멀티블럭 롤백 생략.");
-                    }
-                    else
-                    {
-                        // 3) 멀티블럭이 차지하던 셀 중 클릭한 칸 제외하고 Mud로 롤백
-                        foreach (var cellPos in inst.occupiedCells)
-                        {
-                            if (cellPos == pos) continue;
-
-                            int wx = cellPos.x;
-                            int wy = cellPos.y;
-                            if (!worldMap.InBounds(wx, wy)) continue;
-
-                            ushort oldId2 = worldMap.GetFGId(wx, wy);
-
-                            var src = CellLibrary.MakeFgCell(baseId);
-                            worldMap.ForceFG(wx, wy, in src);
-
-                            MarkChunkDirty(wx, wy, markFG: true);
-                            OnCellEditedFG(wx, wy);
-                            HandleArtificialChange(wx, wy, oldId2, baseId);
-                        }
-                    }
-
-                    // 4) 멀티블럭 매핑 제거
-                    foreach (var cellPos in inst.occupiedCells)
-                        multiblockByCell.Remove(cellPos);
-
-                    multiblocks.Remove(inst);
-
-                    // 5) 훅
-                    inst.OnPartBroken(this, pos);
-
-                    return removed;
+                    var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                    if (vfx != null)
+                        vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+                    if (itemDropper != null)
+                        itemDropper.SpawnDroppedItems(key, pos3);
                 }
-
-                // ───────── 일반 단일 FG 블럭 파괴 ─────────
-                {
-                    ushort removed = worldMap.RemoveFG(x, y);
-                    if (removed == 0) return 0;
-
-                    MarkChunkDirty(x, y, markFG: true);
-                    OnCellEditedFG(x, y);
-
-                    HandleArtificialChange(x, y, removed, 0);
-
-                    string key = CellLibrary.GetKey(removed);
-                    if (!string.IsNullOrEmpty(key))
-                    {
-                        var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
-                        if (vfx != null)
-                            vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
-                        if (itemDropper != null)
-                            itemDropper.SpawnDroppedItems(key, pos3);
-                    }
-                    return removed;
-                }
+                return removed;
             }
 
             case CellLayer.BG:
@@ -543,8 +425,6 @@ public class WorldManager : MonoBehaviour
         }
         return 0;
     }
-
-
 
     /// <summary>FG 편집 후 틱 인큐 + 라이트 계산</summary>
     public void OnCellEditedFG(int gx, int gy)
@@ -700,16 +580,6 @@ public class WorldManager : MonoBehaviour
         );
         chunkSystem.InitializePool(initialPoolSize);
 
-        // Player 컴포넌트 자동 보정
-        if (playerComp == null && player != null)
-        {
-            playerComp = player.GetComponent<Player>();
-            if (playerComp == null) playerComp = player.GetComponentInParent<Player>();
-            if (playerComp == null) playerComp = player.GetComponentInChildren<Player>();
-        }
-        if (playerComp == null)
-            Debug.LogWarning("WorldManager: Player 컴포넌트를 찾지 못했습니다. 인벤토리 저장/로드가 비활성화됩니다.");
-
         // 월드 시간 초기화/복원
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
@@ -744,7 +614,7 @@ public class WorldManager : MonoBehaviour
         }
         _lastLoggedSecondTick = worldTick;
 
-        ApplyTimeSyncedBrightness(forceDirty:true);
+        ApplyTimeSyncedBrightness(forceDirty: true);
 
         if (player != null && chunkSystem != null)
             chunkSystem.ResetLastPlayerChunk(player.position);
@@ -772,10 +642,6 @@ public class WorldManager : MonoBehaviour
     {
         if (player != null && chunkSystem != null)
             chunkSystem.UpdateVisibleChunks(player.position, this);
-
-        // 디버그: P 키로 Cow 스폰
-        if (Input.GetKeyDown(KeyCode.P))
-            SpawnCowNearPlayer();
     }
 
     void FixedUpdate()
@@ -801,7 +667,7 @@ public class WorldManager : MonoBehaviour
             }
             worldHour = worldMinute / 60;
 
-            ApplyTimeSyncedBrightness(forceDirty:false);
+            ApplyTimeSyncedBrightness(forceDirty: false);
             var band = GetTimeBand();
         }
 
@@ -813,7 +679,11 @@ public class WorldManager : MonoBehaviour
     IEnumerator AutosaveLoop()
     {
         var wait = new WaitForSecondsRealtime(300f);
-        while (true) { yield return wait; SaveWorld(); }
+        while (true)
+        {
+            yield return wait;
+            SaveWorld();
+        }
     }
 
     private void ApplyTimeSyncedBrightness(bool forceDirty)
@@ -956,7 +826,7 @@ public class WorldManager : MonoBehaviour
     {
         if ((uint)sx >= W || ((uint)sy >= H) || b == 0) return;
 
-        var q = new Queue<(int x,int y, byte v)>();
+        var q = new Queue<(int x, int y, byte v)>();
         q.Enqueue((sx, sy, b));
 
         while (q.Count > 0)
@@ -976,8 +846,8 @@ public class WorldManager : MonoBehaviour
                 if ((uint)nx >= W || ((uint)ny >= H)) return;
 
                 int cost = ATT_AIR;
-                if (worldMap.IsCollidable(nx, ny))      cost = ATT_FG;
-                else if (worldMap.bg[nx, ny] != 0)      cost = ATT_BG;
+                if (worldMap.IsCollidable(nx, ny)) cost = ATT_FG;
+                else if (worldMap.bg[nx, ny] != 0) cost = ATT_BG;
 
                 int nv = v - cost;
                 if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
@@ -994,14 +864,6 @@ public class WorldManager : MonoBehaviour
     // ───────── 저장/로드 (WorldSaveSystem 위임) ─────────
     public void SaveWorld()
     {
-        Player pCompLog = playerComp;
-        if (pCompLog == null && player != null)
-        {
-            pCompLog = player.GetComponent<Player>();
-            if (pCompLog == null) pCompLog = player.GetComponentInParent<Player>();
-            if (pCompLog == null) pCompLog = player.GetComponentInChildren<Player>();
-        }
-
         WorldSaveSystem.SaveWorld(
             W,
             H,
@@ -1009,7 +871,7 @@ public class WorldManager : MonoBehaviour
             worldTick,
             tickCurr,
             tickNext,
-            pCompLog,
+            playerComp,
             player,
             entityManager
         );
@@ -1077,17 +939,9 @@ public class WorldManager : MonoBehaviour
         player.position = new Vector3(_loadedPlayerPos.x, _loadedPlayerPos.y, pos.z);
 
         if (_loadedInventory == null) return;
+        if (playerComp == null || playerComp.Inventory == null) return;
 
-        Player pComp = playerComp;
-        if (pComp == null && player != null)
-        {
-            pComp = player.GetComponent<Player>();
-            if (pComp == null) pComp = player.GetComponentInParent<Player>();
-            if (pComp == null) pComp = player.GetComponentInChildren<Player>();
-        }
-        if (pComp == null || pComp.Inventory == null) return;
-
-        var slots = pComp.Inventory.items;
+        var slots = playerComp.Inventory.items;
         int n = Mathf.Min(slots.Count, _loadedInventory.Count);
 
         for (int i = 0; i < n; i++)
@@ -1099,104 +953,6 @@ public class WorldManager : MonoBehaviour
         for (int i = n; i < slots.Count; i++)
             slots[i] = null;
 
-        pComp.Inventory.NotifyChanged();
-    }
-
-    // ───────── 멀티블럭 생성 헬퍼 (MudFurnace 전용) ─────────
-    public MudFurnaceInstance CreateMudFurnaceInstance(
-        MultiblockLibrary.Definition def,
-        int originX,
-        int originY)
-    {
-        var inst = new MudFurnaceInstance
-        {
-            defKey  = def.key,
-            originX = originX,
-            originY = originY,
-            width   = def.width,
-            height  = def.height
-        };
-
-        inst.occupiedCells.Clear();
-
-        for (int px = 0; px < def.width; px++)
-        {
-            for (int py = 0; py < def.height; py++)
-            {
-                string cellName = def.pattern[px, py];
-                if (string.IsNullOrEmpty(cellName)) continue;
-
-                int wx = originX + px;
-                int wy = originY + py;
-                if (!worldMap.InBounds(wx, wy)) continue;
-
-                var pos = new Vector2Int(wx, wy);
-                inst.occupiedCells.Add(pos);
-                multiblockByCell[pos] = inst;
-            }
-        }
-
-        inst.instanceId = multiblocks.Count;
-        multiblocks.Add(inst);
-
-        Debug.Log(
-            $"[MBUILD] MudFurnaceInstance 생성: def='{def.key}', origin=({originX},{originY}), " +
-            $"id={inst.instanceId}, cells={inst.occupiedCells.Count}"
-        );
-
-        for (int px = 0; px < def.width; px++)
-        {
-            for (int py = 0; py < def.height; py++)
-            {
-                string resultName = def.result[px, py];
-                if (string.IsNullOrEmpty(resultName)) continue;
-
-                int wx = originX + px;
-                int wy = originY + py;
-                if (!worldMap.InBounds(wx, wy)) continue;
-
-                ushort placeId = 0;
-                for (ushort id = 1; id < ushort.MaxValue; id++)
-                {
-                    var nm = CellLibrary.GetName(id);
-                    if (!string.IsNullOrEmpty(nm) && nm == resultName)
-                    {
-                        placeId = id;
-                        break;
-                    }
-                }
-                if (placeId == 0)
-                {
-                    Debug.LogWarning($"[MBUILD] resultName='{resultName}' 에 해당하는 셀 ID를 찾지 못했습니다.");
-                    continue;
-                }
-
-                ushort oldId = worldMap.GetFGId(wx, wy);
-
-                var src = CellLibrary.MakeFgCell(placeId);
-                worldMap.ForceFG(wx, wy, in src);
-
-                MarkChunkDirty(wx, wy, markFG: true);
-                OnCellEditedFG(wx, wy);
-                HandleArtificialChange(wx, wy, oldId, placeId);
-            }
-        }
-
-        return inst;
-    }
-
-    // ───────── Mob 디버그 스폰 ─────────
-    private void SpawnCowNearPlayer()
-    {
-        if (mobLibrary == null || entityManager == null || player == null)
-        {
-            Debug.LogWarning("[WorldManager] Cow 스폰 실패: mobLibrary / entityManager / player 참조가 없습니다.");
-            return;
-        }
-
-        Vector3 spawnPos = player.position + new Vector3(1f, 0f, 0f);
-        var mob = mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
-        if (mob == null)
-            Debug.LogWarning("[WorldManager] Cow 스폰 실패: MobLibrary에서 'Cow' 프리팹을 찾지 못했거나 생성 실패.");
+        playerComp.Inventory.NotifyChanged();
     }
 }

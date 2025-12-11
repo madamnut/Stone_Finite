@@ -1,202 +1,220 @@
-using System;
+// MultiblockLibrary.cs
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-[DefaultExecutionOrder(-90)]
+/// <summary>
+/// 멀티블럭 패턴/결과 정의 + 재료(셀 이름) → 멀티블럭 후보 역조회 전담.
+/// JSON 포맷(예):
+/// {
+///   "Clay Kiln": [
+///     {
+///       "name": "Clay Kiln",
+///       "pattern": [
+///         ["Clay"],
+///         ["Clay"]
+///       ],
+///       "result": [
+///         ["Clay Kiln_Top"],
+///         ["Clay Kiln_Bottom"]
+///       ]
+///     }
+///   ]
+/// }
+/// </summary>
 public class MultiblockLibrary : MonoBehaviour
 {
-    [Header("멀티블럭 레시피 JSON (예: ATT_Multiblock.json)")]
-    [SerializeField] private TextAsset multiblockJson;
+    [Header("Multiblock Json")]
+    [Tooltip("멀티블럭 정의 JSON (예: Clay Kiln 패턴/결과 등)")]
+    public TextAsset multiblockJson;
 
-    public sealed class Definition
+    /// <summary>
+    /// 하나의 멀티블럭 정의.
+    /// - key: JSON 최상단 키 (예: "Clay Kiln")
+    /// - name: 표시용 이름
+    /// - width/height: 패턴 크기
+    /// - pattern[x,y]: 요구 재료 셀 이름 (null/빈문자열 → 와일드카드)
+    /// - result[x,y]: 완성 후 배치될 셀 이름 (null/빈문자열 → 변경 없음)
+    /// </summary>
+    public class Def
     {
-        public string key;
-        public string name;
-        public int width;
-        public int height;
-
-        // 내부 좌표계: x = 0..width-1, y = 0..height-1 (y=0이 "아래")
-        // 값은 셀 키 문자열 (예: "Mud", "MudFurnace_0")
-        public string[,] pattern; 
+        public string   key;
+        public string   name;
+        public int      width;
+        public int      height;
+        public string[,] pattern;
         public string[,] result;
     }
 
-    // 재료(셀 키) → 이 재료를 사용하는 모든 멀티블럭 정의
-    static readonly Dictionary<string, List<Definition>> _byIngredient = new();
-
+    // 정적 캐시 (한 번만 로드)
     static bool _initialized;
+    static readonly List<Def> _defs         = new List<Def>();
+    static readonly Dictionary<string, List<Def>> _byIngredient = new Dictionary<string, List<Def>>();
+    static readonly Dictionary<string, List<Def>> _byKey        = new Dictionary<string, List<Def>>();
 
     void Awake()
     {
+        // 이미 다른 씬/오브젝트에서 초기화되었으면 스킵
         if (_initialized) return;
         _initialized = true;
 
-        _byIngredient.Clear();
-
-        if (multiblockJson == null || string.IsNullOrWhiteSpace(multiblockJson.text))
+        if (multiblockJson == null || string.IsNullOrEmpty(multiblockJson.text))
         {
-            Debug.LogWarning("[MultiblockLibrary] multiblockJson 이 비어있음.");
+            Debug.LogError("[MultiblockLibrary] multiblockJson 이 비어있습니다.");
             return;
         }
 
+        LoadFromJson(multiblockJson.text);
+    }
+
+    static void LoadFromJson(string json)
+    {
         JObject root;
         try
         {
-            root = JObject.Parse(multiblockJson.text);
+            root = JObject.Parse(json);
         }
-        catch (Exception ex)
+        catch (System.Exception e)
         {
-            Debug.LogError($"[MultiblockLibrary] JSON 파싱 실패: {ex.Message}");
+            Debug.LogError($"[MultiblockLibrary] JSON parse error: {e}");
             return;
         }
 
+        _defs.Clear();
+        _byIngredient.Clear();
+        _byKey.Clear();
+
         foreach (var prop in root.Properties())
         {
-            string key = prop.Name; // 예: "MudFurnace"
-
-            if (prop.Value is not JArray arr)
-            {
-                Debug.LogWarning($"[MultiblockLibrary] '{key}' 값이 배열이 아님. 스킵.");
+            string defKey = prop.Name;      // 예: "Clay Kiln"
+            var arr = prop.Value as JArray;
+            if (arr == null)
                 continue;
-            }
 
-            for (int i = 0; i < arr.Count; i++)
+            foreach (var entryToken in arr)
             {
-                if (arr[i] is not JObject obj)
+                var entryObj = entryToken as JObject;
+                if (entryObj == null)
+                    continue;
+
+                string name = entryObj.Value<string>("name") ?? defKey;
+
+                var patternArr = entryObj["pattern"] as JArray;
+                var resultArr  = entryObj["result"]  as JArray;
+
+                if (patternArr == null || resultArr == null)
                 {
-                    Debug.LogWarning($"[MultiblockLibrary] '{key}'[{i}] 가 객체가 아님. 스킵.");
+                    Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' has no pattern/result.");
                     continue;
                 }
 
-                var def = ParseDefinition(key, obj);
-                if (def == null) continue;
+                int height = patternArr.Count;
+                if (height == 0)
+                {
+                    Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern has zero height.");
+                    continue;
+                }
 
-                RegisterIngredients(def);
+                var firstRow = patternArr[0] as JArray;
+                if (firstRow == null)
+                {
+                    Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern first row invalid.");
+                    continue;
+                }
+
+                int width = firstRow.Count;
+                if (width == 0)
+                {
+                    Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern has zero width.");
+                    continue;
+                }
+
+                var pattern = new string[width, height];
+                var result  = new string[width, height];
+
+                for (int y = 0; y < height; y++)
+                {
+                    var prow = patternArr[y] as JArray;
+                    var rrow = resultArr[y]  as JArray;
+
+                    if (prow == null || rrow == null)
+                    {
+                        Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' row {y} invalid.");
+                        continue;
+                    }
+
+                    for (int x = 0; x < width; x++)
+                    {
+                        string p = (x < prow.Count && prow[x] != null) ? prow[x].ToString() : null;
+                        string r = (x < rrow.Count && rrow[x] != null) ? rrow[x].ToString() : null;
+
+                        if (string.IsNullOrEmpty(p)) p = null;
+                        if (string.IsNullOrEmpty(r)) r = null;
+
+                        pattern[x, y] = p;
+                        result[x,  y] = r;
+                    }
+                }
+
+                var def = new Def
+                {
+                    key     = defKey,
+                    name    = name,
+                    width   = width,
+                    height  = height,
+                    pattern = pattern,
+                    result  = result
+                };
+
+                _defs.Add(def);
+
+                if (!_byKey.TryGetValue(defKey, out var listByKey))
+                {
+                    listByKey = new List<Def>();
+                    _byKey.Add(defKey, listByKey);
+                }
+                listByKey.Add(def);
+
+                // ingredient index: pattern 내부에서 null/빈칸 아닌 셀 이름 전부 재료로 등록
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        string ingredient = pattern[x, y];
+                        if (string.IsNullOrEmpty(ingredient))
+                            continue;
+
+                        if (!_byIngredient.TryGetValue(ingredient, out var list))
+                        {
+                            list = new List<Def>();
+                            _byIngredient.Add(ingredient, list);
+                        }
+                        if (!list.Contains(def))
+                            list.Add(def);
+                    }
+                }
             }
         }
 
 #if UNITY_EDITOR
-        Debug.Log($"[MultiblockLibrary] 로드 완료: 재료 인덱스 개수 = {_byIngredient.Count}");
+        Debug.Log($"[MultiblockLibrary] Loaded defs={_defs.Count}, ingredients={_byIngredient.Count}, keys={_byKey.Count}");
 #endif
     }
 
-    static Definition ParseDefinition(string key, JObject obj)
+    /// <summary>
+    /// 특정 재료 셀 이름을 포함하는 멀티블럭 후보 정의 목록을 가져온다.
+    /// InteractionController.HandleBuildMultiblock 에서 사용.
+    /// </summary>
+    public static bool TryGetByIngredient(string ingredientCellKey, out List<Def> defs)
     {
-        string name = obj.Value<string>("name") ?? key;
-
-        var patternToken = obj["pattern"] as JArray;
-        var resultToken  = obj["result"]  as JArray;
-
-        if (patternToken == null || resultToken == null)
+        if (string.IsNullOrEmpty(ingredientCellKey))
         {
-            Debug.LogWarning($"[MultiblockLibrary] '{key}' 에 pattern/result 가 없음. 스킵.");
-            return null;
+            defs = null;
+            return false;
         }
 
-        int hPat = patternToken.Count;
-        if (hPat == 0)
-        {
-            Debug.LogWarning($"[MultiblockLibrary] '{key}' pattern 높이가 0. 스킵.");
-            return null;
-        }
-
-        int wPat = (patternToken[0] as JArray)?.Count ?? 0;
-        if (wPat == 0)
-        {
-            Debug.LogWarning($"[MultiblockLibrary] '{key}' pattern 폭이 0. 스킵.");
-            return null;
-        }
-
-        // pattern 가로 길이 검증
-        for (int ry = 0; ry < hPat; ry++)
-        {
-            if (patternToken[ry] is not JArray row || row.Count != wPat)
-            {
-                Debug.LogWarning($"[MultiblockLibrary] '{key}' pattern row {ry} 폭이 일치하지 않음. 스킵.");
-                return null;
-            }
-        }
-
-        int hRes = resultToken.Count;
-        if (hRes != hPat)
-        {
-            Debug.LogWarning($"[MultiblockLibrary] '{key}' pattern/result 높이 불일치. 스킵.");
-            return null;
-        }
-
-        // result 가로 길이 검증
-        for (int ry = 0; ry < hRes; ry++)
-        {
-            if (resultToken[ry] is not JArray row || row.Count != wPat)
-            {
-                Debug.LogWarning($"[MultiblockLibrary] '{key}' result row {ry} 폭이 pattern 과 다름. 스킵.");
-                return null;
-            }
-        }
-
-        int width  = wPat;
-        int height = hPat;
-
-        var pattern = new string[width, height];
-        var result  = new string[width, height];
-
-        // JSON: 위→아래
-        // 내부: 아래(y=0)→위 구조로 뒤집어서 저장
-        for (int ry = 0; ry < height; ry++)
-        {
-            int y = (height - 1) - ry;
-
-            var prow = (JArray)patternToken[ry];
-            var rrow = (JArray)resultToken[ry];
-
-            for (int x = 0; x < width; x++)
-            {
-                pattern[x, y] = prow[x]?.ToString();
-                result[x, y]  = rrow[x]?.ToString();
-            }
-        }
-
-        return new Definition
-        {
-            key     = key,
-            name    = name,
-            width   = width,
-            height  = height,
-            pattern = pattern,
-            result  = result
-        };
-    }
-
-    static void RegisterIngredients(Definition def)
-    {
-        // 같은 Definition에서 같은 재료를 중복 등록하지 않기 위한 집합
-        HashSet<string> seen = new HashSet<string>();
-
-        for (int y = 0; y < def.height; y++)
-        {
-            for (int x = 0; x < def.width; x++)
-            {
-                string cell = def.pattern[x, y];
-                if (string.IsNullOrEmpty(cell)) continue;
-                if (!seen.Add(cell)) continue; // 이미 이 def에서 등록한 재료면 스킵
-
-                if (!_byIngredient.TryGetValue(cell, out var list))
-                {
-                    list = new List<Definition>();
-                    _byIngredient[cell] = list;
-                }
-                list.Add(def);
-            }
-        }
-    }
-
-    // ────────────────────── 외부 API ──────────────────────
-    // 이 라이브러리의 역할은 "이 셀 키가 들어가는 모든 멀티블럭 레시피 반환" 딱 하나.
-
-    public static bool TryGetByIngredient(string cellKey, out IReadOnlyList<Definition> defs)
-    {
-        if (_byIngredient.TryGetValue(cellKey, out var list) && list != null && list.Count > 0)
+        if (_byIngredient.TryGetValue(ingredientCellKey, out var list) &&
+            list != null && list.Count > 0)
         {
             defs = list;
             return true;
@@ -205,4 +223,22 @@ public class MultiblockLibrary : MonoBehaviour
         defs = null;
         return false;
     }
+
+    /// <summary>
+    /// 멀티블럭 key(JSON 최상단 키)로 정의 목록 조회.
+    /// (하나의 key 아래 여러 변형이 있을 수 있음.)
+    /// </summary>
+    public static List<Def> GetByKey(string defKey)
+    {
+        if (string.IsNullOrEmpty(defKey))
+            return null;
+
+        if (_byKey.TryGetValue(defKey, out var list))
+            return list;
+
+        return null;
+    }
+
+    /// <summary>전체 정의 열람이 필요할 때 사용.</summary>
+    public static IReadOnlyList<Def> AllDefs => _defs;
 }

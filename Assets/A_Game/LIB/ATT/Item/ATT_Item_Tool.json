@@ -118,6 +118,8 @@
     "toolActions": {
       "Hammering": {},
 
+      "BuildMultiblock": {},
+
       "Combine": {
         "partType": "Head",
         "type": "Light",

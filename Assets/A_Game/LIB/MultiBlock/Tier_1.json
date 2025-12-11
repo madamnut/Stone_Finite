@@ -1,16 +1,16 @@
 {
-  "MudFurnace": [
+  "Clay Kiln": [
     {
-      "name": "Mud Furnace",
+      "name": "Clay Kiln",
 
       "pattern": [
-        ["Mud"],
-        ["Mud"]
+        ["Clay"],
+        ["Clay"]
       ],
 
       "result": [
-        ["Mud Furnace_1"],
-        ["Mud Furnace_0"]
+        ["Clay Kiln_Top"],
+        ["Clay Kiln_Bottom"]
       ]
     }
   ]
