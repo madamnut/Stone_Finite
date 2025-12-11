@@ -28,6 +28,13 @@ public static class WorldSaveSystem
         public string mobId;
     }
 
+    // 시체 스폰용 최소 페이로드 (CorpseLibrary.SpawnCorpse 용)
+    [System.Serializable]
+    private class CorpseSavePayload
+    {
+        public string corpseId;
+    }
+
     // ────────────────────────────────────────────────
     //   월드 저장
     // ────────────────────────────────────────────────
@@ -434,7 +441,8 @@ public static class WorldSaveSystem
         ItemLibrary itemLibrary,
         FallingBlock fallingPrefab,
         GameObject droppedItemPrefab,
-        MobLibrary mobLibrary
+        MobLibrary mobLibrary,
+        CorpseLibrary corpseLibrary
     )
     {
         string path = Path.Combine(WorldLoadContext.GetSavePath(), ENTITY_SAVE_FILE);
@@ -550,6 +558,45 @@ public static class WorldSaveSystem
                     continue;
                 }
 
+                // Corpse 로드
+                if (kind == EntityKind.Corpse)
+                {
+                    if (corpseLibrary == null)
+                        continue;
+
+                    CorpseSavePayload cp = null;
+                    if (!string.IsNullOrEmpty(payload))
+                    {
+                        try
+                        {
+                            cp = JsonConvert.DeserializeObject<CorpseSavePayload>(payload);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Debug.LogError($"[LOAD-ENTITY] Corpse payload 파싱 실패: {ex.Message}");
+                        }
+                    }
+
+                    if (cp == null || string.IsNullOrEmpty(cp.corpseId))
+                        continue;
+
+                    // 시체 프리팹 스폰 (CorpseLibrary 안에서 EntityManager.Register까지 수행)
+                    var corpse = corpseLibrary.SpawnCorpse(cp.corpseId, pos);
+                    if (corpse == null)
+                        continue;
+
+                    var data = new EntitySaveData
+                    {
+                        Kind        = kind,
+                        Position    = pos,
+                        PayloadJson = payload
+                    };
+
+                    corpse.FromSaveData(data);
+                    spawned++;
+                    continue;
+                }
+
                 // FallingBlock
                 if (kind == EntityKind.FallingBlock)
                 {
@@ -577,7 +624,7 @@ public static class WorldSaveSystem
                     continue;
                 }
 
-                // 아직 처리 안 하는 Kind (Corpse 등)는 스킵
+                // 아직 처리 안 하는 Kind 는 스킵
             }
 
             Debug.Log($"[LOAD-ENTITY] spawned={spawned}");

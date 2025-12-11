@@ -5,7 +5,7 @@ using UnityEngine;
 /// 시체 라이브러리
 /// - corpseId → 시체 프리팹 스폰
 /// - (corpseId, toolAction) → 다음 시체 단계로 전환
-/// 드랍템은 여기서 처리하지 않음.
+/// - 시체 단계별 corpseId를 키로 해서 드랍 아이템 스폰
 /// </summary>
 public class CorpseLibrary : MonoBehaviour
 {
@@ -38,6 +38,20 @@ public class CorpseLibrary : MonoBehaviour
 
     [Header("Corpse Process Rules")]
     public CorpseProcessDef[] processDefs;
+
+    [Header("Drops")]
+    [Tooltip("corpseId를 키로 사용하는 드랍 테이블을 가진 ItemDropper")]
+    public ItemDropper itemDropper;
+
+    [Header("Entity System")]
+    [Tooltip("시체를 EntityManager에 등록하기 위한 참조 (비워두면 자동 검색)")]
+    public EntityManager entityManager;
+
+    void Awake()
+    {
+        if (entityManager == null)
+            entityManager = FindObjectOfType<EntityManager>();
+    }
 
     /// <summary>
     /// corpseId 에 대응하는 시체 프리팹을 해당 위치에 스폰하고 Corpse 컴포넌트를 반환.
@@ -78,14 +92,17 @@ public class CorpseLibrary : MonoBehaviour
         corpse.CorpseId       = corpseId;
         corpse.CorpsePosition = position;
 
+        // EntityManager에 등록 (세이브/로드 대상이 되도록)
+        if (entityManager != null)
+            entityManager.Register(corpse);
+
         return corpse;
     }
 
     /// <summary>
     /// 시체 위에 툴액션을 사용했을 때 가공 시도.
     /// - corpseId + toolActionName 조합으로 레시피를 찾아 처리.
-    /// - 성공 시: 현재 시체 제거 → 필요하면 다음 단계 시체 스폰.
-    /// - 드랍 아이템은 여기서 처리하지 않음.
+    /// - 성공 시: 현재 시체 드랍 → 현재 시체 제거 → 필요하면 다음 단계 시체 스폰.
     /// </summary>
     /// <param name="corpse">대상 시체</param>
     /// <param name="toolActionName">툴 액션 이름 (예: "Scraping")</param>
@@ -121,10 +138,17 @@ public class CorpseLibrary : MonoBehaviour
 
         Vector2 pos = corpse.CorpsePosition;
 
-        // 1) 기존 시체 제거
+        // 1) 드랍: 이 시체 단계의 corpseId를 키로 사용
+        if (itemDropper != null)
+        {
+            Vector3 dropPos = new Vector3(pos.x, pos.y, 0f);
+            itemDropper.SpawnDroppedItems(corpseId, dropPos);
+        }
+
+        // 2) 기존 시체 제거
         Destroy(corpse.gameObject);
 
-        // 2) 다음 단계 시체 스폰 (있으면)
+        // 3) 다음 단계 시체 스폰 (있으면)
         if (!string.IsNullOrEmpty(proc.nextCorpseId))
         {
             SpawnCorpse(proc.nextCorpseId, pos);

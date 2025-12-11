@@ -151,8 +151,9 @@ public class Mob : Entity
 
             if (lib != null)
             {
-                // 시체 스폰 위치는 현재 논리 위치 기준
-                lib.SpawnCorpse(corpseIdOnDeath, MobPosition);
+                // 시체 스폰 위치는 현재 논리 위치 기준 
+                Vector2 pos = transform.position;
+                lib.SpawnCorpse(corpseIdOnDeath, pos);
             }
         }
 

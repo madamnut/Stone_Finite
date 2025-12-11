@@ -60,6 +60,7 @@ public class InteractionController : MonoBehaviour
     [Header("Libraries")]
     public RecipeLibrary recipeLibrary;
     public ItemLibrary   itemLibrary;
+    public CorpseLibrary corpseLibrary;
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
@@ -464,6 +465,10 @@ public class InteractionController : MonoBehaviour
 
     void HandleRightClick()
     {
+        // 1) 시체 상호작용 우선
+        if (TryCorpseInteraction())
+            return;
+
         bool shift =
             Input.GetKey(KeyCode.LeftShift) ||
             Input.GetKey(KeyCode.RightShift);
@@ -765,6 +770,47 @@ public class InteractionController : MonoBehaviour
         _hitMobsThisAttack.Clear();
 
         _attackCo = null;
+    }
+
+    bool TryCorpseInteraction()
+    {
+        if (_state != GameState.Ingame) return false;
+        if (corpseLibrary == null)      return false;
+        if (_hoverCorpse == null)       return false;
+        if (player == null || player.Inventory == null || player.Inventory.items == null)
+            return false;
+
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+            return false;
+
+        var held = items[_hotbarScope];
+        if (held == null || held.Count <= 0)
+            return false;
+
+        // 도축용 도구: ToolActions 기반
+        if (held.ToolActions == null || held.ToolActions.Count == 0)
+            return false;
+
+        foreach (var kv in held.ToolActions)
+        {
+            string actionName = kv.Key;
+            if (string.IsNullOrEmpty(actionName))
+                continue;
+
+            if (corpseLibrary.TryProcessCorpse(_hoverCorpse, actionName))
+            {
+                // 더 이상 유효하지 않은 시체에 대한 호버 해제
+                _hoverCorpse.SetHovered(false);
+                _hoverCorpse = null;
+
+                // 도축 시 내구도/인벤 변화가 필요하면 여기서 처리 가능
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     bool TryCellInteraction()

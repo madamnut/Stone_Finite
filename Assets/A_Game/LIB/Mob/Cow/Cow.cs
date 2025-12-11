@@ -24,7 +24,21 @@ public class Cow : Mob
 
     // ===== 오디오 =====
     [Header("Audio")]
-    public AudioManager audioManager;
+    [Tooltip("소 위치 기준 3D 사운드를 재생할 AudioSource (Cow 프리팹에 붙어있는 것)")]
+    public AudioSource audioSource;
+
+    [Tooltip("주기적으로 재생될 울음 소리들 (3개, 랜덤 선택)")]
+    public AudioClip[] mooClips;   // 3개 클립
+
+    [Tooltip("주기적으로 재생될 숨소리/코고는 소리 등 (1개)")]
+    public AudioClip breathClip;   // 1개
+
+    [Tooltip("죽을 때 재생될 소리 (1개)")]
+    public AudioClip deathClip;    // 1개
+
+    [Range(0f, 1f)]
+    [Tooltip("소 울음 소리 볼륨")]
+    public float mooVolume = 0.6f; // ← 요구한 0.6 기본값
 
     [Header("Cow SFX Timing")]
     public float mooIntervalMin    = 5f;
@@ -77,8 +91,9 @@ public class Cow : Mob
 
         SetSpriteOrder();
 
-        if (audioManager == null)
-            audioManager = FindObjectOfType<AudioManager>();
+        // Cow 프리팹에 붙은 AudioSource 자동 캐싱
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
 
         // 피격 시 색 바꿀 스프라이트 캐싱 (한 번만)
         _hitRenderers = new SpriteRenderer[]
@@ -152,8 +167,8 @@ public class Cow : Mob
             legBR.localRotation = Quaternion.identity;
         }
 
-        // ===== 소 SFX 타이밍 =====
-        if (audioManager != null)
+        // ===== 소 SFX 타이밍 (3D AudioSource로 재생) =====
+        if (audioSource != null)
         {
             float dt = Time.deltaTime;
             _mooTimer    -= dt;
@@ -162,17 +177,24 @@ public class Cow : Mob
             bool playedThisFrame = false;
 
             // 울음소리: 5~15초마다, 이 프레임에 다른 소리 안 나왔을 때만
-            if (_mooTimer <= 0f && !playedThisFrame)
+            if (_mooTimer <= 0f && !playedThisFrame && mooClips != null && mooClips.Length > 0)
             {
-                audioManager.PlayCowMoo();
-                playedThisFrame = true;
+                int idx = Random.Range(0, mooClips.Length);
+                AudioClip clip = mooClips[idx];
+
+                if (clip != null)
+                {
+                    audioSource.PlayOneShot(clip, mooVolume); // ← 볼륨 0.6 적용
+                    playedThisFrame = true;
+                }
+
                 _mooTimer = Random.Range(mooIntervalMin, mooIntervalMax);
             }
 
             // 숨소리: 5~15초마다, 이 프레임에 울음소리가 안 나왔을 때만
-            if (_breathTimer <= 0f && !playedThisFrame)
+            if (_breathTimer <= 0f && !playedThisFrame && breathClip != null)
             {
-                audioManager.PlayCowBreath();
+                audioSource.PlayOneShot(breathClip); // 숨소리는 기본 볼륨 (AudioSource.volume)
                 playedThisFrame = true;
                 _breathTimer = Random.Range(breathIntervalMin, breathIntervalMax);
             }
@@ -294,22 +316,14 @@ public class Cow : Mob
     // ========== 죽음 처리 ==========
     protected override void OnDeath()
     {
-        if (audioManager != null)
-            audioManager.PlayCowDeath();
-
-        // 시체 생성
-        if (corpsePrefab != null)
+        // 죽음 소리는 위치 기반 3D로 한 번만 재생
+        if (deathClip != null)
         {
-            Vector3 pos = transform.position;
-            var corpse = Instantiate(corpsePrefab, pos, Quaternion.identity);
-
-            // 시체 엔티티 매니저 등록
-            if (corpse != null)
-            {
-                var em = FindObjectOfType<EntityManager>();
-                if (em != null)
-                    em.Register(corpse);
-            }
+            // audioSource가 있으면 그걸 우선 사용 (3D 세팅 그대로)
+            if (audioSource != null)
+                audioSource.PlayOneShot(deathClip);
+            else
+                AudioSource.PlayClipAtPoint(deathClip, transform.position);
         }
 
         // 원래 Mob 사망 처리 (게임오브젝트 파괴 등)

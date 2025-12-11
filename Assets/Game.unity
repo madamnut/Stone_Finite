@@ -3934,6 +3934,7 @@ MonoBehaviour:
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
   itemDropper: {fileID: 1159117176}
   vfx: {fileID: 672136422}
+  corpseLibrary: {fileID: 867055871}
   entityManager: {fileID: 1036664766}
   mobLibrary: {fileID: 708102119}
   ticksPerSecond: 20
@@ -5891,7 +5892,7 @@ MonoBehaviour:
     prefab: {fileID: 2914151139949031065, guid: f43161fe3e8dbf84d8b2588ba411c014, type: 3}
   processDefs:
   - corpseId: Cow_Corpse
-    toolAction: Scrapping
+    toolAction: Scraping
     nextCorpseId: Cow_Corpse_Skinned
   - corpseId: Cow_Corpse_Skinned
     toolAction: Cutting
@@ -5899,6 +5900,8 @@ MonoBehaviour:
   - corpseId: Cow_Corpse_Bone
     toolAction: Chopping
     nextCorpseId: null
+  itemDropper: {fileID: 1159117176}
+  entityManager: {fileID: 0}
 --- !u!1001 &867350693
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6479,7 +6482,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 0.0.2.6 [Dev]
+  m_text: 0.0.2.7 [Dev]
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -7153,6 +7156,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemLibrary: {fileID: 236639235}
   dropTableJson: {fileID: 4900000, guid: d979972a23b54ee4ebd67eb53f8f1278, type: 3}
+  corpseDropTableJson: {fileID: 4900000, guid: f8f7eec4267e83c40b05a94d32c73a50, type: 3}
   droppedItemPrefab: {fileID: 3070165475067672412, guid: b1c53d349b80504439afd305ccaef35f, type: 3}
   entityManager: {fileID: 1036664766}
   dropRoot: {fileID: 427397956}
@@ -10453,6 +10457,7 @@ MonoBehaviour:
   period: 1
   recipeLibrary: {fileID: 1177056459}
   itemLibrary: {fileID: 236639235}
+  corpseLibrary: {fileID: 867055871}
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
   primalcraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   sound: {fileID: 2008242133}
@@ -10507,7 +10512,7 @@ MonoBehaviour:
   hunger: 100
   thirst: 100
   stamina: 100
-  staminaRegenPerSecond: 2
+  staminaRegenPerSecond: 20
   staminaMoveCostPerSecond: 4
   staminaJumpCost: 5
 --- !u!50 &1746062762
@@ -12110,18 +12115,6 @@ MonoBehaviour:
   placeClip: {fileID: 8300000, guid: 6571d299c0ee7d34abf1f97b07deed5f, type: 3}
   multiblockCompleteClip: {fileID: 8300000, guid: b4d2adc4c98dd6c49ac28f35af2f82a8, type: 3}
   playerTookDamageClip: {fileID: 8300000, guid: 6d6eedc87f966fa48b1a7da3bd236931, type: 3}
-  cowMooClips:
-  - {fileID: 8300000, guid: 94de968914722fd4f82d45c70747d0a6, type: 3}
-  - {fileID: 8300000, guid: 7eec9986ac6d68f45b82b9fee26e3ebc, type: 3}
-  - {fileID: 8300000, guid: 69339613824ad6c40bf36963eddff27e, type: 3}
-  cowDeathClip: {fileID: 8300000, guid: 919880128b93fa247b0da60118f6d032, type: 3}
-  cowBreathClip: {fileID: 8300000, guid: bce4a85003ef7ea4b9f0a5791b20bcc3, type: 3}
-  cowMooVolume: 0.5
-  pigOinkClips:
-  - {fileID: 8300000, guid: 13f48a878d573cf4880c81cf382e01b3, type: 3}
-  - {fileID: 8300000, guid: 36a09fab5d4d6884790acbcac2a1f39d, type: 3}
-  - {fileID: 8300000, guid: 13bb1c8f11738fa41b644c17af78c8ea, type: 3}
-  pigDeathClip: {fileID: 8300000, guid: 37b59bc814c99e1489fdf6033912806a, type: 3}
   swingClips:
   - {fileID: 8300000, guid: c17368906c92b7b4aa6e8000b682d793, type: 3}
   - {fileID: 8300000, guid: d22d2c3dfc036324dacb91959bde559b, type: 3}

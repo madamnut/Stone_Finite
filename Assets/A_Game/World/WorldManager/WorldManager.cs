@@ -33,6 +33,9 @@ public class WorldManager : MonoBehaviour
     public ItemDropper itemDropper;
     public VfxManager  vfx;
 
+    [Header("Corpse")]
+    public CorpseLibrary corpseLibrary;
+
     [Header("엔티티 시스템")]
     public EntityManager entityManager;
 
@@ -1061,7 +1064,8 @@ public class WorldManager : MonoBehaviour
             itemLibrary,
             fallingBlockPrefab,
             dropPrefab,
-            mobLibrary
+            mobLibrary,
+            corpseLibrary
         );
     }
 
