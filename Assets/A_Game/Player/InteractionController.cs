@@ -87,8 +87,6 @@ public class InteractionController : MonoBehaviour
     [Tooltip("공격 무기 스프라이트를 표시하는 SpriteRenderer (Sprite)")]
     public SpriteRenderer meleeSprite;
 
-    // ───────── 근접 공격 판정 상태 ─────────
-    // 한 번의 공격(스윙/찌르기) 동안 데미지를 한 번만 주기 위한 상태
     bool _attackActive = false;
     HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
     int _currentAttackDamage = 1;
@@ -100,15 +98,12 @@ public class InteractionController : MonoBehaviour
     float _timer;
     int   _hotbarScope = 0;
 
-    // 전투/파괴 모드 및 커서 관련
-    bool    _combatMode     = false;              // false = 파괴모드, true = 전투모드
-    Vector2 _breakHotspot   = new Vector2(7, 6);  // 파괴 모드 클릭 지점 (텍스처 좌표)
-    Vector2 _combatHotspot  = new Vector2(5, 4);  // 전투 모드 클릭 지점 (텍스처 좌표)
+    bool    _combatMode     = false;
+    Vector2 _breakHotspot   = new Vector2(7, 6);
+    Vector2 _combatHotspot  = new Vector2(5, 4);
 
-    // 근접 공격 코루틴
     Coroutine _attackCo;
 
-    // 시체 호버 대상
     Corpse _hoverCorpse;
 
     void Awake()
@@ -131,11 +126,9 @@ public class InteractionController : MonoBehaviour
         resumeButton.onClick.AddListener(OnClickResume);
         exitButton.onClick.AddListener(OnClickQuitToLobby);
 
-        // 시작 시 기본은 파괴 모드 커서
         if (breakCursorTex != null)
             UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
 
-        // 공격 모션 없을 때는 공격 객체 비활성화
         meleeRoot.gameObject.SetActive(false);
     }
 
@@ -148,7 +141,6 @@ public class InteractionController : MonoBehaviour
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
             hotbar.SetScope(_hotbarScope);
 
-            // 스크롤로 스코프 바뀔 때 오른손 스프라이트 갱신
             var items = player.Inventory.items;
             ItemData held = null;
             if (_hotbarScope >= 0 && _hotbarScope < items.Count)
@@ -186,7 +178,6 @@ public class InteractionController : MonoBehaviour
             {
                 hotbar.SetScope(_hotbarScope);
 
-                // 숫자키로 스코프 바뀔 때 오른손 스프라이트 갱신
                 var items = player.Inventory.items;
                 ItemData held = null;
                 if (_hotbarScope >= 0 && _hotbarScope < items.Count)
@@ -217,14 +208,12 @@ public class InteractionController : MonoBehaviour
 
         if (hasWeapon && !_combatMode)
         {
-            // Weapon 태그 아이템을 손에 든 경우 → 전투모드 진입
             _combatMode = true;
             if (combatCursorTex != null)
                 UnityEngine.Cursor.SetCursor(combatCursorTex, _combatHotspot, CursorMode.Auto);
         }
         else if (!hasWeapon && _combatMode)
         {
-            // Weapon 태그가 사라진 경우 → 파괴모드로 복귀
             _combatMode = false;
             if (breakCursorTex != null)
                 UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
@@ -312,7 +301,6 @@ public class InteractionController : MonoBehaviour
                 Time.timeScale = 0f;
                 _hlGO.SetActive(false);
 
-                // 일시정지 진입 시 시체 호버도 해제
                 if (_hoverCorpse != null)
                 {
                     _hoverCorpse.SetHovered(false);
@@ -331,7 +319,6 @@ public class InteractionController : MonoBehaviour
         {
             _hlGO.SetActive(false);
 
-            // 인게임이 아니면 시체 호버도 모두 해제
             if (_hoverCorpse != null)
             {
                 _hoverCorpse.SetHovered(false);
@@ -344,7 +331,6 @@ public class InteractionController : MonoBehaviour
         {
             _hlGO.SetActive(false);
 
-            // UI 위에서는 시체 호버도 해제
             if (_hoverCorpse != null)
             {
                 _hoverCorpse.SetHovered(false);
@@ -353,7 +339,6 @@ public class InteractionController : MonoBehaviour
             return;
         }
 
-        // ───────── 셀 하이라이트: 전투/비전투 상관없이 항상 표시 ─────────
         UpdateHighlight();
 
         // ───────── 시체 호버 처리: 마우스 아래 Corpse 중 최전면만 ─────────
@@ -412,9 +397,11 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        var fgCell  = worldManager.worldMap.fg[cx, cy];
-        bool hasBody = fgCell.id != 0;
-        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
+        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort bgId = worldManager.GetBGId(cx, cy);
+
+        bool hasBody = fgId != 0;
+        bool hasBg   = bgId != 0;
 
         if (_layerMode == LayerMode.FG)
         {
@@ -450,7 +437,6 @@ public class InteractionController : MonoBehaviour
 
     void HandleRightClick()
     {
-        // 1) 시체 상호작용 우선
         if (TryCorpseInteraction())
             return;
 
@@ -460,13 +446,11 @@ public class InteractionController : MonoBehaviour
 
         if (!shift)
         {
-            // 기본: 셀 → 아이템
             if (TryCellInteraction()) return;
             if (TryItemInteraction()) return;
         }
         else
         {
-            // Shift: 아이템 → 셀
             if (TryItemInteraction()) return;
             if (TryCellInteraction()) return;
         }
@@ -476,29 +460,29 @@ public class InteractionController : MonoBehaviour
     {
         if (!GetMouseCell(out int cx, out int cy)) return;
 
-        // LayerMode(FG/BG) → WorldManager.CellLayer 로 변환
-        WorldManager.CellLayer layer =
-            (_layerMode == LayerMode.FG)
-                ? WorldManager.CellLayer.FG
-                : WorldManager.CellLayer.BG;
+        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort bgId = worldManager.GetBGId(cx, cy);
 
-        var fgCell  = worldManager.worldMap.fg[cx, cy];
-        bool hasBody = fgCell.id != 0;
-        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
+        bool hasBody = fgId != 0;
+        bool hasBg   = bgId != 0;
 
-        bool canBreak =
-            (layer == WorldManager.CellLayer.FG) ? hasBody
-            : /* BG */                             (hasBg && !hasBody);
-
-        if (!canBreak) return;
-
-        worldManager.BreakCell(cx, cy, layer);
-        if (sound != null) sound.PlayDig();
+        if (_layerMode == LayerMode.FG)
+        {
+            if (!hasBody) return;
+            worldManager.BreakFG(cx, cy);
+            if (sound != null) sound.PlayDig();
+        }
+        else
+        {
+            if (!hasBg) return;
+            if (hasBody) return; // BG는 FG가 있으면 못 부숨(기존 정책 유지)
+            worldManager.BreakBG(cx, cy);
+            if (sound != null) sound.PlayDig();
+        }
     }
 
     void TryWeaponAttack()
     {
-        // 이미 공격 모션 중이면 새로 시작하지 않음
         if (_attackCo != null)
             return;
 
@@ -510,11 +494,9 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return;
 
-        // WeaponActions 없으면 무기 아님
         if (held.WeaponActions == null || held.WeaponActions.Count == 0)
             return;
 
-        // 지금은 첫 번째 weaponAction만 사용: "Swing" 또는 "Thrust"
         string actionName = null;
         Dictionary<string, object> paramDict = null;
 
@@ -553,7 +535,7 @@ public class InteractionController : MonoBehaviour
         {
             if      (cdObj is float f)   cooldown = f;
             else if (cdObj is double d)  cooldown = (float)d;
-            else if (cdObj is int i)     cooldown = i;
+           	else if (cdObj is int i)     cooldown = i;
             else if (cdObj is long l)    cooldown = l;
             else
             {
@@ -563,7 +545,6 @@ public class InteractionController : MonoBehaviour
             }
         }
 
-        // 데미지(없으면 1)
         if (paramDict.TryGetValue("damage", out var dmgObj) && dmgObj != null)
         {
             if      (dmgObj is float f)   damage = f;
@@ -578,7 +559,6 @@ public class InteractionController : MonoBehaviour
             }
         }
 
-        // 쿨다운/스태미나 체크 + 소모
         if (!player.TryConsumeStaminaForAttack(staminaCost))
             return;
 
@@ -587,8 +567,6 @@ public class InteractionController : MonoBehaviour
         if (meleeAngle == null)
             return;
 
-        // 공격 방향 계산: 머리 수직 위를 클릭하면 0도,
-        // 거기서 반시계(+) / 시계(-) 방향으로 회전
         Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
         Vector2 mouseWorld  = new Vector2(mouseWorld3.x, mouseWorld3.y);
         Vector2 origin      = meleeAngle.position;
@@ -597,13 +575,9 @@ public class InteractionController : MonoBehaviour
         if (dir.sqrMagnitude < 0.0001f)
             dir = Vector2.up;
 
-        // 우측 기준 atan2(y,x)에서, "위쪽이 0도"가 되도록 -90도 오프셋
         float angleFromUp = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-
-        // 마우스가 플레이어 기준 왼쪽/오른쪽인지
         bool isLeftSide = (mouseWorld.x < origin.x);
 
-        // 공격 시작 시 루트 활성화 → 스프라이트 넣기 → 모션 진행
         meleeRoot.gameObject.SetActive(true);
 
         if (meleeSprite != null)
@@ -613,24 +587,20 @@ public class InteractionController : MonoBehaviour
                 meleeSprite.sprite = held.Icon;
         }
 
-        // 각도 기본 세팅
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, angleFromUp);
 
-        // 이 공격 동안 사용할 데미지/히트 정보 초기화
         _currentAttackDamage = Mathf.Max(1, Mathf.RoundToInt(damage));
         _attackActive = true;
         _hitMobsThisAttack.Clear();
 
-        // 공격 음 재생
         if (sound != null)
         {
             if (actionName == "Swing")
-                sound.PlayWeaponSwing();   // 휘두르기 3종 중 랜덤
+                sound.PlayWeaponSwing();
             else if (actionName == "Thrust")
-                sound.PlayWeaponThrust();  // 찌르기 1종
+                sound.PlayWeaponThrust();
         }
 
-        // 액션 타입별 모션 시작
         if (actionName == "Swing")
         {
             _attackCo = StartCoroutine(CoSwing(angleFromUp, isLeftSide));
@@ -641,8 +611,6 @@ public class InteractionController : MonoBehaviour
         }
     }
 
-    // 휘두르기: 각도 2배(±60도), 속도 2배(0.25초)
-    // 마우스가 왼쪽이면 반시계(CCW), 오른쪽이면 시계(CW) 방향으로 "위 → 아래" 느낌으로 회전
     IEnumerator CoSwing(float centerAngle, bool isLeftSide)
     {
         if (meleeAngle == null)
@@ -652,21 +620,19 @@ public class InteractionController : MonoBehaviour
             yield break;
         }
 
-        float duration   = 0.25f;   // 기존 0.5 → 2배 속도
-        float halfRange  = 60f;     // 기존 ±30 → ±60
+        float duration   = 0.25f;
+        float halfRange  = 60f;
 
         float startAngle;
         float endAngle;
 
         if (isLeftSide)
         {
-            // 왼쪽: 반시계 방향 (각도 증가)
             startAngle = centerAngle - halfRange;
             endAngle   = centerAngle + halfRange;
         }
         else
         {
-            // 오른쪽: 시계 방향 (각도 감소)
             startAngle = centerAngle + halfRange;
             endAngle   = centerAngle - halfRange;
         }
@@ -681,20 +647,16 @@ public class InteractionController : MonoBehaviour
             yield return null;
         }
 
-        // 종료 시 중앙 각도로 정리
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
-        // 공격 모션 종료 → 공격 객체 끔
         meleeRoot.gameObject.SetActive(false);
 
-        // 한 번의 공격 종료 → 히트 상태 리셋
         _attackActive = false;
         _hitMobsThisAttack.Clear();
 
         _attackCo = null;
     }
 
-    // 찌르기: y -0.5 → +0.5 왕복 (0.5초)
     IEnumerator CoThrust(float centerAngle)
     {
         if (meleeAngle == null || meleeOffset == null)
@@ -723,13 +685,11 @@ public class InteractionController : MonoBehaviour
             float y;
             if (u < 0.5f)
             {
-                // 전진 구간
                 float k = u * 2f;
                 y = Mathf.Lerp(startY, endY, k);
             }
             else
             {
-                // 복귀 구간
                 float k = (u - 0.5f) * 2f;
                 y = Mathf.Lerp(endY, startY, k);
             }
@@ -738,13 +698,10 @@ public class InteractionController : MonoBehaviour
             yield return null;
         }
 
-        // 기본 위치로 복귀 (y=0 기준)
         meleeOffset.localPosition = new Vector3(baseX, 0f, baseZ);
 
-        // 공격 모션 종료 → 공격 객체 끔
         meleeRoot.gameObject.SetActive(false);
 
-        // 한 번의 공격 종료 → 히트 상태 리셋
         _attackActive = false;
         _hitMobsThisAttack.Clear();
 
@@ -764,7 +721,6 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return false;
 
-        // 도축용 도구: ToolActions 기반
         if (held.ToolActions == null || held.ToolActions.Count == 0)
             return false;
 
@@ -776,12 +732,8 @@ public class InteractionController : MonoBehaviour
 
             if (corpseLibrary.TryProcessCorpse(_hoverCorpse, actionName))
             {
-                // 더 이상 유효하지 않은 시체에 대한 호버 해제
                 _hoverCorpse.SetHovered(false);
                 _hoverCorpse = null;
-
-                // 도축 시 내구도/인벤 변화가 필요하면 여기서 처리 가능
-
                 return true;
             }
         }
@@ -794,7 +746,7 @@ public class InteractionController : MonoBehaviour
         if (_state != GameState.Ingame) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        ushort id = worldManager.worldMap.fg[cx, cy].id;
+        ushort id = worldManager.GetFGId(cx, cy);
         if (id == 0) return false;
 
         string interaction = CellLibrary.InteractionOf(id);
@@ -824,7 +776,6 @@ public class InteractionController : MonoBehaviour
             }
             _hlGO.SetActive(false);
 
-            // 패널 열릴 때 시체 호버도 해제
             if (_hoverCorpse != null)
             {
                 _hoverCorpse.SetHovered(false);
@@ -854,7 +805,6 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return false;
 
-        // toolActions 딕셔너리 사용 (키=액션이름, 값=파라미터 딕셔너리)
         if (held.ToolActions == null || held.ToolActions.Count == 0)
             return false;
 
@@ -876,7 +826,6 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
-    // toolActions["Place"]용
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
         if (placeParam == null) return false;
@@ -885,9 +834,11 @@ public class InteractionController : MonoBehaviour
         string cellName = placeParam.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
         if (string.IsNullOrEmpty(cellName)) return false;
 
-        var fgCell  = worldManager.worldMap.fg[cx, cy];
-        bool hasBody = fgCell.id != 0;
-        bool hasBg   = worldManager.worldMap.bg[cx, cy] != 0;
+        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort bgId = worldManager.GetBGId(cx, cy);
+
+        bool hasBody = fgId != 0;
+        bool hasBg   = bgId != 0;
 
         WorldManager.CellLayer targetLayer;
         if (layerStr == "Dynamic")
@@ -898,22 +849,19 @@ public class InteractionController : MonoBehaviour
         }
         else
         {
-            // Default 등 → FG 고정
             targetLayer = WorldManager.CellLayer.FG;
         }
 
-        // 충돌 조건
         if (targetLayer == WorldManager.CellLayer.FG)
         {
             if (hasBody) return false;
         }
-        else // BG
+        else
         {
             if (hasBody) return false;
             if (hasBg)   return false;
         }
 
-        // cellName → 셀 ID 변환
         ushort placeId = 0;
         for (ushort id = 1; id < ushort.MaxValue; id++)
         {
@@ -926,16 +874,11 @@ public class InteractionController : MonoBehaviour
         }
         if (placeId == 0) return false;
 
-        bool placed = false;
-
+        bool placed;
         if (targetLayer == WorldManager.CellLayer.FG)
-        {
-            placed = worldManager.PlaceCell(cx, cy, placeId);
-        }
+            placed = worldManager.PlaceFG(cx, cy, placeId);
         else
-        {
-            placed = worldManager.PlaceBgCell(cx, cy, placeId);
-        }
+            placed = worldManager.PlaceBG(cx, cy, placeId);
 
         if (!placed) return false;
 
@@ -945,7 +888,6 @@ public class InteractionController : MonoBehaviour
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
-        // 아이템 소모 후 오른손 스프라이트 갱신
         {
             var items = player.Inventory.items;
             ItemData newHeld = null;
@@ -967,24 +909,23 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // toolActions["BuildMultiblock"]는 아직 별도 파라미터 사용 X. 필요하면 확장.
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
 
-        var fgCell = worldManager.worldMap.fg[cx, cy];
-        if (fgCell.id == 0)
+        ushort fgId = worldManager.GetFGId(cx, cy);
+        if (fgId == 0)
         {
             Debug.Log($"{LOG_MB} 대상 셀이 비어있음(id=0). 취소.");
             return false;
         }
 
-        string clickedKey = CellLibrary.GetName(fgCell.id);
-        Debug.Log($"{LOG_MB} 대상 셀 id={fgCell.id}, key='{clickedKey}'");
+        string clickedKey = CellLibrary.GetName(fgId);
+        Debug.Log($"{LOG_MB} 대상 셀 id={fgId}, key='{clickedKey}'");
 
         if (string.IsNullOrEmpty(clickedKey))
         {
-            Debug.LogWarning($"{LOG_MB} CellLibrary.GetName({fgCell.id}) 결과가 비어있음. 취소.");
+            Debug.LogWarning($"{LOG_MB} CellLibrary.GetName({fgId}) 결과가 비어있음. 취소.");
             return false;
         }
 
@@ -1016,12 +957,11 @@ public class InteractionController : MonoBehaviour
 
             bool defMatched = false;
 
-            // 패턴 안에서 클릭된 셀 key가 들어갈 수 있는 모든 위치를 시도
             for (int py = 0; py < patternHeight && !defMatched; py++)
             {
                 for (int px = 0; px < patternWidth && !defMatched; px++)
                 {
-                    string patternKey = def.pattern[px, py]; // pattern[x, y]
+                    string patternKey = def.pattern[px, py];
 
                     if (patternKey != clickedKey) continue;
 
@@ -1033,7 +973,6 @@ public class InteractionController : MonoBehaviour
                         $"pattern({px},{py})=='{clickedKey}', origin=({originX},{originY})"
                     );
 
-                    // 월드 범위 체크
                     if (originX < 0 || originY < 0 ||
                         originX + patternWidth  > worldW ||
                         originY + patternHeight > worldH)
@@ -1044,21 +983,18 @@ public class InteractionController : MonoBehaviour
 
                     bool mismatch = false;
 
-                    // 패턴 전체 비교
                     for (int ly = 0; ly < patternHeight && !mismatch; ly++)
                     {
                         for (int lx = 0; lx < patternWidth; lx++)
                         {
                             string expectedKey = def.pattern[lx, ly];
-
-                            // expectedKey가 비어있으면 와일드카드로 취급
                             if (string.IsNullOrEmpty(expectedKey))
                                 continue;
 
                             int wx = originX + lx;
                             int wy = originY + ly;
 
-                            ushort wid = worldManager.worldMap.fg[wx, wy].id;
+                            ushort wid = worldManager.GetFGId(wx, wy);
                             string worldKey = CellLibrary.GetName(wid);
 
                             if (worldKey != expectedKey)
@@ -1120,30 +1056,22 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // ───────── 무기 콜라이더 트리거 → 몹에게 데미지 ─────────
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 공격 중이 아닐 때는 무시
         if (!_attackActive)
             return;
 
-        // 몹 찾기 (콜라이더가 자식에 있어도 상위에서 Mob 찾기)
         var mob = other.GetComponentInParent<Mob>();
         if (mob == null)
             return;
 
-        // 이번 공격 동안 이미 맞은 몹이면 스킵
         if (_hitMobsThisAttack.Contains(mob))
             return;
 
-        // 데미지 적용
         mob.TakeDamage(_currentAttackDamage);
-
-        // 기록
         _hitMobsThisAttack.Add(mob);
     }
 
-    // ───────── 일시정지 메뉴 버튼 ─────────
     public void OnClickResume()
     {
         if (_state != GameState.Inmenu) return;
@@ -1159,4 +1087,3 @@ public class InteractionController : MonoBehaviour
         SceneManager.LoadScene("Loby");
     }
 }
- 

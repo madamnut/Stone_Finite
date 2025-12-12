@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 using UnityEngine.SceneManagement;
 
 public class WorldManager : MonoBehaviour
@@ -55,10 +54,12 @@ public class WorldManager : MonoBehaviour
     private const byte NAT_MAX = 15;
     private const byte ART_MAX = 15;
 
-    private const ushort ID_WATER = 60000;
-
     [Header("Global Brightness Offset (auto by time) 0=밝음, 15=어두움")]
     [Range(0, 15)] public byte globalBrightnessOffset = 0;
+
+    [Header("Night Darkness Limit (0=밝음, 15=완전 암흑)")]
+    [Range(0, 15)] public byte maxDarknessOffset = 3;
+
     private byte _lastBrightnessOffset = 255;
 
     private const int ATT_AIR = 1;
@@ -66,7 +67,9 @@ public class WorldManager : MonoBehaviour
     private const int ATT_FG  = 3;
 
     private int W, H;
-    public WorldData worldMap;
+
+    // 외부에서 직접 만지지 않도록 숨김 (월드 편집은 반드시 WorldManager API 경유)
+    private WorldData worldMap;
 
     private WorldChunkSystem chunkSystem;
 
@@ -91,6 +94,18 @@ public class WorldManager : MonoBehaviour
     [Header("Random Tick")]
     public int randomTicksPerWorldTick = 64;
 
+    /*────────────────────────────────────────────────────────────
+     * Read-only Query (외부 조회는 여기로만)
+     *────────────────────────────────────────────────────────────*/
+    public bool InBounds(int x, int y) => worldMap.InBounds(x, y);
+    public ushort GetFGId(int x, int y) => worldMap.GetFGId(x, y);
+    public ushort GetBGId(int x, int y) => worldMap.GetBGId(x, y);
+    public ushort GetFluidId(int x, int y, out byte amount) => worldMap.GetFluidId(x, y, out amount);
+    public bool IsCollidable(int x, int y) => worldMap.IsCollidable(x, y);
+
+    /*────────────────────────────────────────────────────────────
+     * Tick
+     *────────────────────────────────────────────────────────────*/
     public void EnqTick(int x, int y)
     {
         if ((uint)x >= W || ((uint)y >= H)) return;
@@ -113,7 +128,7 @@ public class WorldManager : MonoBehaviour
         foreach (var p in tickCurr)
         {
             StepGravityAt(p.x, p.y);
-            StepWaterAt(p.x, p.y);
+            StepFluidAt(p.x, p.y);
         }
         tickCurr.Clear();
     }
@@ -151,7 +166,6 @@ public class WorldManager : MonoBehaviour
             int gx = Random.Range(xMin, xMax);
             int gy = Random.Range(yMin, yMax);
 
-            // ───────── 랜덤틱: Grass_ 타일이면 5% 확률로 Cow 스폰 ─────────
             ushort fgId = worldMap.GetFGId(gx, gy);
             if (fgId != 0)
             {
@@ -168,22 +182,34 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    // ───────── 물 ─────────
-    void StepWaterAt(int x, int y)
+    /*────────────────────────────────────────────────────────────
+     * Fluid Simulation (내부 전용: SetFluid/MoveFluid)
+     *────────────────────────────────────────────────────────────*/
+    void StepFluidAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
 
         ref var cell = ref worldMap.fg[x, y];
-        int Wc = cell.fluidAmount;
 
+        ushort fluidId = cell.fluidId;
+        int    Wc      = cell.fluidAmount;
+
+        // 비어있는데 id가 남아있으면 정리
         if (Wc <= 0)
         {
-            if (cell.fluidId != 0)
+            if (fluidId != 0)
             {
-                cell.fluidId     = 0;
-                cell.fluidAmount = 0;
+                SetFluidInternal(x, y, 0, 0);
                 MarkChunkDirty(x, y, markFG: true);
             }
+            return;
+        }
+
+        if (fluidId == 0)
+        {
+            // amount 있는데 id가 0이면 정리(데이터 정합성)
+            SetFluidInternal(x, y, 0, 0);
+            MarkChunkDirty(x, y, markFG: true);
             return;
         }
 
@@ -198,14 +224,18 @@ public class WorldManager : MonoBehaviour
         if (dy >= 0 && !Blocked(x, dy))
         {
             ref var below = ref worldMap.fg[x, dy];
-            int Wd = below.fluidAmount;
-            const int MaxFluid = 128;
-            int cap = MaxFluid - Wd;
+
+            // 다른 유체가 이미 있으면 이동 불가(혼합 금지 정책)
+            if (below.fluidAmount > 0 && below.fluidId != 0 && below.fluidId != fluidId)
+                return;
+
+            int Wd  = below.fluidAmount;
+            int cap = WorldData.MaxFluid - Wd;
             if (cap > 0)
             {
                 int move = Mathf.Min(Wc, cap);
-                WriteWater(x,  y,  Wc - move);
-                WriteWater(x,  dy, Wd + move);
+
+                MoveFluidInternal(x, y, x, dy, fluidId, move);
 
                 OnCellEditedFG(x, y);
                 OnCellEditedFG(x, dy);
@@ -219,12 +249,22 @@ public class WorldManager : MonoBehaviour
         bool canR = xr < W  && !Blocked(xr, y);
 
         int Wl = 0, Wr = 0;
-        if (canL) Wl = worldMap.fg[xl, y].fluidAmount;
-        if (canR) Wr = worldMap.fg[xr, y].fluidAmount;
 
-        const int MaxAmt = 128;
-        int capL = canL ? (MaxAmt - Wl) : 0;
-        int capR = canR ? (MaxAmt - Wr) : 0;
+        if (canL)
+        {
+            var c = worldMap.fg[xl, y];
+            if (c.fluidAmount > 0 && c.fluidId != 0 && c.fluidId != fluidId) canL = false;
+            else Wl = c.fluidAmount;
+        }
+        if (canR)
+        {
+            var c = worldMap.fg[xr, y];
+            if (c.fluidAmount > 0 && c.fluidId != 0 && c.fluidId != fluidId) canR = false;
+            else Wr = c.fluidAmount;
+        }
+
+        int capL = canL ? (WorldData.MaxFluid - Wl) : 0;
+        int capR = canR ? (WorldData.MaxFluid - Wr) : 0;
 
         int flowL = 0, flowR = 0;
 
@@ -264,9 +304,8 @@ public class WorldManager : MonoBehaviour
             else if (flowL > 0) takeL = Mathf.Min(total, flowL);
             else                takeR = Mathf.Min(total, flowR);
 
-            WriteWater(x,  y,  Wc - (takeL + takeR));
-            if (takeL > 0) WriteWater(xl, y,  Wl + takeL);
-            if (takeR > 0) WriteWater(xr, y,  Wr + takeR);
+            if (takeL > 0) MoveFluidInternal(x, y, xl, y, fluidId, takeL);
+            if (takeR > 0) MoveFluidInternal(x, y, xr, y, fluidId, takeR);
 
             OnCellEditedFG(x, y);
             if (takeL > 0) OnCellEditedFG(xl, y);
@@ -274,23 +313,52 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    void WriteWater(int x, int y, int newAmount)
+    // 내부 전용: 결과값 세팅(시뮬용). 외부에서 호출 금지.
+    void SetFluidInternal(int x, int y, ushort fluidId, int newAmount)
     {
-        if (!worldMap.InBounds(x, y)) return;
-
         ref var cell = ref worldMap.fg[x, y];
-        int cur = cell.fluidAmount;
 
-        newAmount = Mathf.Clamp(newAmount, 0, 128);
-        if (cur == newAmount) return;
+        newAmount = Mathf.Clamp(newAmount, 0, WorldData.MaxFluid);
 
-        cell.fluidAmount = (byte)newAmount;
-        cell.fluidId     = (ushort)(newAmount > 0 ? ID_WATER : 0);
+        if (newAmount == 0)
+        {
+            cell.fluidId     = 0;
+            cell.fluidAmount = 0;
+        }
+        else
+        {
+            cell.fluidId     = fluidId;
+            cell.fluidAmount = (byte)newAmount;
+        }
 
         MarkChunkDirty(x, y, markFG: true);
     }
 
-    //──────────────── Gravity FallingBlock 스폰 경로
+    // 내부 전용: 원자적 이동(시뮬용). 외부에서 호출 금지.
+    void MoveFluidInternal(int fx, int fy, int tx, int ty, ushort fluidId, int amount)
+    {
+        if (amount <= 0) return;
+
+        ref var from = ref worldMap.fg[fx, fy];
+        ref var to   = ref worldMap.fg[tx, ty];
+
+        if (from.fluidAmount <= 0 || from.fluidId != fluidId) return;
+        if (to.fluidAmount > 0 && to.fluidId != 0 && to.fluidId != fluidId) return;
+
+        int fromAmt = from.fluidAmount;
+        int toAmt   = to.fluidAmount;
+
+        int move = Mathf.Min(amount, fromAmt);
+        move = Mathf.Min(move, WorldData.MaxFluid - toAmt);
+        if (move <= 0) return;
+
+        SetFluidInternal(fx, fy, fluidId, fromAmt - move);
+        SetFluidInternal(tx, ty, fluidId, toAmt + move);
+    }
+
+    /*────────────────────────────────────────────────────────────
+     * Gravity
+     *────────────────────────────────────────────────────────────*/
     void StepGravityAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
@@ -316,39 +384,24 @@ public class WorldManager : MonoBehaviour
         var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
         var spr = CellLibrary.GetSprite(id);
 
-        // FallingBlock 인스턴스 생성
         var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
         fb.Init(id, this, spr);
 
-        // 엔티티 등록
         entityManager.Register(fb);
     }
 
-    // ───────── 설치 (FG) ─────────
-    public bool PlaceCell(int x, int y, ushort id)
+    /*────────────────────────────────────────────────────────────
+     * World Edit API (6종)
+     *────────────────────────────────────────────────────────────*/
+
+    // ───────── 설치(FG) ─────────
+    public bool PlaceFG(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        // 기존 FG id (인공광 변화 감지용)
         ushort oldId = worldMap.GetFGId(x, y);
 
-        // 유체 배치
-        if (id == ID_WATER)
-        {
-            const byte amount = 128; // 가득 채우기 기준
-            worldMap.TryPlaceFluid(x, y, ID_WATER, amount, out byte leftover);
-            int inserted = amount - leftover;
-            if (inserted <= 0) return false;
-
-            MarkChunkDirty(x, y, markFG: true);
-            EnqTick(x, y);
-            EnqTick(x - 1, y); EnqTick(x + 1, y);
-            EnqTick(x, y + 1); if (y > 0) EnqTick(x, y - 1);
-            return true;
-        }
-
-        // 일반 FG 배치
         var src = CellLibrary.MakeFgCell(id);
         bool ok = worldMap.TryPlaceFG(x, y, in src);
         if (!ok) return false;
@@ -360,14 +413,29 @@ public class WorldManager : MonoBehaviour
         return true;
     }
 
-    // ───────── 설치 (BG) ─────────
-    public bool PlaceBgCell(int x, int y, ushort id)
+    // ───────── 설치(Fluid) ─────────
+    public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+        if (fluidId == 0 || amount == 0) return false;
+
+        worldMap.TryPlaceFluid(x, y, fluidId, amount, out byte leftover);
+        int inserted = amount - leftover;
+        if (inserted <= 0) return false;
+
+        MarkChunkDirty(x, y, markFG: true);
+        OnCellEditedFG(x, y);
+        return true;
+    }
+
+    // ───────── 설치(BG) ─────────
+    public bool PlaceBG(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
         ushort oldId = worldMap.bg[x, y];
-        if (oldId == id) return false; // 이미 동일 셀인 경우 생략
+        if (oldId == id) return false;
 
         worldMap.bg[x, y] = id;
 
@@ -376,44 +444,61 @@ public class WorldManager : MonoBehaviour
         return true;
     }
 
-    // ───────── 파괴 ─────────
-    public ushort BreakCell(int x, int y, CellLayer layer)
+    // ───────── 파괴(FG) ─────────
+    public ushort BreakFG(int x, int y)
     {
         if ((uint)x >= W || (uint)y >= H) return 0;
 
-        switch (layer)
+        ushort removed = worldMap.RemoveFG(x, y);
+        if (removed == 0) return 0;
+
+        MarkChunkDirty(x, y, markFG: true);
+        OnCellEditedFG(x, y);
+
+        HandleArtificialChange(x, y, removed, 0);
+
+        string key = CellLibrary.GetKey(removed);
+        if (!string.IsNullOrEmpty(key))
         {
-            case CellLayer.FG:
-            {
-                ushort removed = worldMap.RemoveFG(x, y);
-                if (removed == 0) return 0;
-
-                MarkChunkDirty(x, y, markFG: true);
-                OnCellEditedFG(x, y);
-
-                HandleArtificialChange(x, y, removed, 0);
-
-                string key = CellLibrary.GetKey(removed);
-                if (!string.IsNullOrEmpty(key))
-                {
-                    var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
-                    vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
-                    itemDropper.SpawnDroppedItems(key, pos3);
-                }
-                return removed;
-            }
-
-            case CellLayer.BG:
-            {
-                ushort removed = worldMap.RemoveBG(x, y);
-                if (removed == 0) return 0;
-
-                MarkChunkDirty(x, y, markFG: false, markBG: true);
-                RecalculateLightAt(x, y);
-                return removed;
-            }
+            var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+            vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+            itemDropper.SpawnDroppedItems(key, pos3);
         }
-        return 0;
+        return removed;
+    }
+
+    // ───────── 파괴(Fluid) ─────────
+    public (ushort removedFluidId, byte removedFluidAmount) BreakFluid(int x, int y)
+    {
+        if ((uint)x >= W || (uint)y >= H) return (0, 0);
+
+        var removed = worldMap.RemoveFluid(x, y);
+        if (removed.removedFluidId == 0 || removed.removedFluidAmount == 0) return removed;
+
+        MarkChunkDirty(x, y, markFG: true);
+        OnCellEditedFG(x, y);
+        return removed;
+    }
+
+    // ───────── 파괴(BG) ─────────
+    public ushort BreakBG(int x, int y)
+    {
+        if ((uint)x >= W || (uint)y >= H) return 0;
+
+        ushort removed = worldMap.RemoveBG(x, y);
+        if (removed == 0) return 0;
+
+        MarkChunkDirty(x, y, markFG: false, markBG: true);
+        RecalculateLightAt(x, y);
+        return removed;
+    }
+
+    // ───────── 기존 API 유지(호환용) ─────────
+    public bool PlaceCell(int x, int y, ushort id) => PlaceFG(x, y, id);
+    public bool PlaceBgCell(int x, int y, ushort id) => PlaceBG(x, y, id);
+    public ushort BreakCell(int x, int y, CellLayer layer)
+    {
+        return layer == CellLayer.FG ? BreakFG(x, y) : BreakBG(x, y);
     }
 
     /// <summary>FG 편집 후 틱 인큐 + 라이트 계산</summary>
@@ -430,28 +515,26 @@ public class WorldManager : MonoBehaviour
         RecalculateLightAt(gx, gy);
     }
 
-    // ───────── 생명주기 ─────────
+    /*────────────────────────────────────────────────────────────
+     * Lifecycle
+     *────────────────────────────────────────────────────────────*/
     void Awake()
     {
         W = settings.width;
         H = settings.height;
 
-        // 틱 큐 초기화
         tickCurr.Clear();
         tickNext.Clear();
 
-        // BOOT 로그
-        string dirBoot = WorldLoadContext.GetSavePath();
+        string dirBoot  = WorldLoadContext.GetSavePath();
         string pathBoot = Path.Combine(dirBoot, "world.bin");
         Debug.Log($"[BOOT] loadType={WorldLoadContext.loadType}, seed={WorldLoadContext.seed}, saveExists={File.Exists(pathBoot)}, path={pathBoot}");
 
-        // 생성/로드 분기
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
             Debug.Log("[BOOT] NewWorld branch: Generate → SaveWorld()");
             worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
 
-            // ───────── 새 월드 최초 스폰 위치 결정 ─────────
             int centerX = 2500;
             if (centerX < 0) centerX = 0;
             if (centerX >= W) centerX = W - 1;
@@ -460,38 +543,25 @@ public class WorldManager : MonoBehaviour
             int spawnX = centerX;
             int spawnY = 0;
 
-            // 2500 → 2499 → 2501 → 2498 → 2502 ... 순서로 탐색
             for (int radius = 0; radius < W; radius++)
             {
-                int[] xs =
-                {
-                    centerX,
-                    centerX - radius,
-                    centerX + radius
-                };
+                int[] xs = { centerX, centerX - radius, centerX + radius };
 
                 foreach (int x in xs)
                 {
                     if (found) break;
                     if (x < 0 || x >= W) continue;
 
-                    // 위에서 아래로 스캔하면서 본체/유체 중 먼저 만나는 것 판단
                     for (int y = H - 1; y >= 0; y--)
                     {
                         ushort fgId = worldMap.GetFGId(x, y);
                         worldMap.GetFluidId(x, y, out byte waterAmount);
 
-                        if (waterAmount > 0)
-                        {
-                            // 액체가 먼저 나오면 이 x 전체 스킵
-                            break;
-                        }
+                        if (waterAmount > 0) break;
 
                         if (fgId != 0)
                         {
-                            // 본체가 먼저 나왔으므로 스폰 지점은 y + 5
                             int ySpawn = Mathf.Min(y + 5, H - 1);
-
                             spawnX = x;
                             spawnY = ySpawn;
                             found = true;
@@ -515,7 +585,6 @@ public class WorldManager : MonoBehaviour
                 Debug.LogWarning("[SPAWN] 적절한 스폰 위치를 찾지 못했습니다. 기존 플레이어 위치 유지.");
             }
 
-            // 스폰까지 반영된 상태로 첫 저장
             SaveWorld();
         }
         else if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
@@ -527,14 +596,12 @@ public class WorldManager : MonoBehaviour
                 return;
             }
 
-            // 월드 로드 성공 시 플레이어/엔티티 데이터 로드
             LoadPlayerData();
             LoadEntities();
         }
 
         if (chunkRoot == null) chunkRoot = transform;
 
-        // 청크 시스템 생성 및 초기화
         chunkSystem = new WorldChunkSystem(
             W,
             H,
@@ -548,11 +615,10 @@ public class WorldManager : MonoBehaviour
         );
         chunkSystem.InitializePool(initialPoolSize);
 
-        // 월드 시간 초기화/복원
         if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
         {
             worldTick   = 0L;
-            worldMinute = 12 * 60; // 720 = 12:00
+            worldMinute = 12 * 60;
             worldHour   = 12;
             worldDay    = 0;
         }
@@ -560,8 +626,8 @@ public class WorldManager : MonoBehaviour
         {
             if (ticksPerDay > 0 && minutesPerDay > 0)
             {
-                long day       = worldTick / ticksPerDay;
-                long tickOfDay = worldTick % ticksPerDay;
+                long day         = worldTick / ticksPerDay;
+                long tickOfDay   = worldTick % ticksPerDay;
                 int  ticksPerMin = ticksPerDay / minutesPerDay;
 
                 int baseMinutes = 12 * 60;
@@ -580,16 +646,16 @@ public class WorldManager : MonoBehaviour
                 worldHour   = 0;
             }
         }
+
         _lastLoggedSecondTick = worldTick;
 
         ApplyTimeSyncedBrightness(forceDirty: true);
-
         chunkSystem.ResetLastPlayerChunk(player.position);
     }
 
     void Start()
     {
-        ApplyLoadedPlayerAndInventory(); // 모든 Awake 이후 시점
+        ApplyLoadedPlayerAndInventory();
         StartCoroutine(AutosaveLoop());
     }
 
@@ -612,13 +678,9 @@ public class WorldManager : MonoBehaviour
 
     void FixedUpdate()
     {
-        // 월드 시뮬레이션 (물/중력)
         StepTick();
-
-        // 랜덤틱
         DoRandomTicks();
 
-        // 월드 시간 진행
         worldTick++;
 
         if (worldTick - _lastLoggedSecondTick >= ticksPerSecond)
@@ -637,7 +699,6 @@ public class WorldManager : MonoBehaviour
             var band = GetTimeBand();
         }
 
-        // 청크/라이트 더티 처리
         chunkSystem.ProcessDirtyChunks();
     }
 
@@ -659,7 +720,8 @@ public class WorldManager : MonoBehaviour
             (m >= 540  && m < 1080) ? 0f :
             (m >= 1080 && m < 1260) ? 15f * ((m - 1080) / 180f) :
                                        15f;
-        byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, 15f));
+
+        byte newOffset = (byte)Mathf.RoundToInt(Mathf.Clamp(off, 0f, maxDarknessOffset));
 
         if (forceDirty || newOffset != globalBrightnessOffset)
         {
@@ -677,8 +739,8 @@ public class WorldManager : MonoBehaviour
     public TimeBand GetTimeBand()
     {
         int h = worldHour;
-        int m = worldMinute % 60;
-        int t = h * 100 + m;
+        int mm = worldMinute % 60;
+        int t = h * 100 + mm;
 
         if (t == 0)   return TimeBand.Midnight;
         if (t < 400)  return TimeBand.LateNight;
@@ -692,7 +754,9 @@ public class WorldManager : MonoBehaviour
         return TimeBand.Night;
     }
 
-    // ───────── 라이트 재계산 ─────────
+    /*────────────────────────────────────────────────────────────
+     * Light
+     *────────────────────────────────────────────────────────────*/
     public void RecalculateLightAt(int x0, int y0)
     {
         if ((uint)x0 >= W || (uint)y0 >= H) return;
@@ -723,9 +787,9 @@ public class WorldManager : MonoBehaviour
 
             if (best != oldN)
             {
-                var cell = worldMap.light[x, y];
-                cell.natural = best;
-                worldMap.light[x, y] = cell;
+                var lc = worldMap.light[x, y];
+                lc.natural = best;
+                worldMap.light[x, y] = lc;
 
                 foreach (var (dx, dy) in dirs)
                 {
@@ -739,7 +803,9 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    // ───────── 청크 더티 플래그 위임 ─────────
+    /*────────────────────────────────────────────────────────────
+     * Chunk Dirty
+     *────────────────────────────────────────────────────────────*/
     public void MarkChunkDirty(int worldX, int worldY, bool markFG, bool markBG = false, bool markDeco = false, bool markLiquid = false)
     {
         chunkSystem.MarkChunkDirty(worldX, worldY, markFG, markBG, markDeco, markLiquid);
@@ -750,7 +816,9 @@ public class WorldManager : MonoBehaviour
         chunkSystem.MarkLightDirtyRect(x, y, w, h);
     }
 
-    // ───────── 인공광(스칼라) ─────────
+    /*────────────────────────────────────────────────────────────
+     * Artificial Light
+     *────────────────────────────────────────────────────────────*/
     private void HandleArtificialChange(int x, int y, ushort oldId, ushort newId)
     {
         byte oldB = CellLibrary.BrightnessOf(oldId);
@@ -823,7 +891,9 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    // ───────── 저장/로드 (WorldSaveSystem 위임) ─────────
+    /*────────────────────────────────────────────────────────────
+     * Save/Load
+     *────────────────────────────────────────────────────────────*/
     public void SaveWorld()
     {
         WorldSaveSystem.SaveWorld(
