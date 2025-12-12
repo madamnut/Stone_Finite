@@ -94,14 +94,45 @@ public class WorldManager : MonoBehaviour
     [Header("Random Tick")]
     public int randomTicksPerWorldTick = 64;
 
+    [Header("Artificial Light Flood (Budget)")]
+    [Tooltip("FixedUpdate 1회당 인공빛 큐에서 처리할 최대 노드 수(감소+증가 합산)")]
+    public int artificialLightOpsPerTick = 8000;
+
+    // ────────────────────────────────────────────────
+    // Artificial Light: Increase / Decrease Queues
+    // ────────────────────────────────────────────────
+    private struct IncNode
+    {
+        public int x, y;
+        public byte v;
+        public IncNode(int x, int y, byte v) { this.x = x; this.y = y; this.v = v; }
+    }
+
+    private struct DecNode
+    {
+        public int x, y;
+        public byte v;
+        public DecNode(int x, int y, byte v) { this.x = x; this.y = y; this.v = v; }
+    }
+
+    private readonly Queue<IncNode> _incQ = new();
+    private readonly Queue<DecNode> _decQ = new();
+
+    // Decrease 중에 발견된 "다른 광원 영향권" 시드(Decrease 끝난 뒤에만 Increase로 복구)
+    private readonly HashSet<Vector2Int> _seedSet  = new();
+    private readonly List<Vector2Int>    _seedList = new();
+
+    private readonly HashSet<Vector2Int> _lightChangedSet  = new();
+    private readonly List<Vector2Int>    _lightChangedList = new();
+
     /*────────────────────────────────────────────────────────────
      * Read-only Query (외부 조회는 여기로만)
      *────────────────────────────────────────────────────────────*/
-    public bool InBounds(int x, int y) => worldMap.InBounds(x, y);
+    public bool   InBounds(int x, int y) => worldMap.InBounds(x, y);
     public ushort GetFGId(int x, int y) => worldMap.GetFGId(x, y);
     public ushort GetBGId(int x, int y) => worldMap.GetBGId(x, y);
     public ushort GetFluidId(int x, int y, out byte amount) => worldMap.GetFluidId(x, y, out amount);
-    public bool IsCollidable(int x, int y) => worldMap.IsCollidable(x, y);
+    public bool   IsCollidable(int x, int y) => worldMap.IsCollidable(x, y);
 
     /*────────────────────────────────────────────────────────────
      * Tick
@@ -600,8 +631,6 @@ public class WorldManager : MonoBehaviour
             LoadEntities();
         }
 
-        if (chunkRoot == null) chunkRoot = transform;
-
         chunkSystem = new WorldChunkSystem(
             W,
             H,
@@ -699,6 +728,8 @@ public class WorldManager : MonoBehaviour
             var band = GetTimeBand();
         }
 
+        ProcessArtificialLightQueues();
+
         chunkSystem.ProcessDirtyChunks();
     }
 
@@ -742,15 +773,15 @@ public class WorldManager : MonoBehaviour
         int mm = worldMinute % 60;
         int t = h * 100 + mm;
 
-        if (t == 0)   return TimeBand.Midnight;
-        if (t < 400)  return TimeBand.LateNight;
-        if (t < 600)  return TimeBand.Dawn;
-        if (t < 900)  return TimeBand.EarlyMorning;
-        if (t < 1200) return TimeBand.Morning;
-        if (t == 1200)return TimeBand.Noon;
-        if (t < 1700) return TimeBand.Afternoon;
-        if (t < 1900) return TimeBand.Evening;
-        if (t < 2100) return TimeBand.Dusk;
+        if (t == 0)    return TimeBand.Midnight;
+        if (t < 400)   return TimeBand.LateNight;
+        if (t < 600)   return TimeBand.Dawn;
+        if (t < 900)   return TimeBand.EarlyMorning;
+        if (t < 1200)  return TimeBand.Morning;
+        if (t == 1200) return TimeBand.Noon;
+        if (t < 1700)  return TimeBand.Afternoon;
+        if (t < 1900)  return TimeBand.Evening;
+        if (t < 2100)  return TimeBand.Dusk;
         return TimeBand.Night;
     }
 
@@ -811,83 +842,297 @@ public class WorldManager : MonoBehaviour
         chunkSystem.MarkChunkDirty(worldX, worldY, markFG, markBG, markDeco, markLiquid);
     }
 
+    public void MarkLightDirtyCell(int x, int y)
+    {
+        chunkSystem.MarkLightDirtyCell(x, y);
+    }
+
+    public void MarkLightDirtyCells(List<Vector2Int> cells)
+    {
+        chunkSystem.MarkLightDirtyCells(cells);
+    }
+
     private void MarkLightDirtyRect(int x, int y, int w, int h)
     {
         chunkSystem.MarkLightDirtyRect(x, y, w, h);
     }
 
     /*────────────────────────────────────────────────────────────
-     * Artificial Light
+     * Artificial Light (Increase / Decrease)
      *────────────────────────────────────────────────────────────*/
+    private int GetArtCost(int nx, int ny)
+    {
+        int cost = ATT_AIR;
+        if (worldMap.IsCollidable(nx, ny)) cost = ATT_FG;
+        else if (worldMap.bg[nx, ny] != 0) cost = ATT_BG;
+        return cost;
+    }
+
+    private void RecordLightChanged(int x, int y)
+    {
+        var p = new Vector2Int(x, y);
+        if (_lightChangedSet.Add(p))
+            _lightChangedList.Add(p);
+    }
+
+    private void RecordSeed(int x, int y)
+    {
+        var p = new Vector2Int(x, y);
+        if (_seedSet.Add(p))
+            _seedList.Add(p);
+    }
+
+    private void EnqueueIncrease(int x, int y, byte v)
+    {
+        if (v == 0) return;
+        if ((uint)x >= W || (uint)y >= H) return;
+        if (v > ART_MAX) v = ART_MAX;
+        _incQ.Enqueue(new IncNode(x, y, v));
+    }
+
+    private void EnqueueDecrease(int x, int y, byte oldV)
+    {
+        if (oldV == 0) return;
+        if ((uint)x >= W || (uint)y >= H) return;
+
+        // 소스는 즉시 0
+        var lc = worldMap.light[x, y];
+        if (lc.artificial != 0)
+        {
+            lc.artificial = 0;
+            worldMap.light[x, y] = lc;
+            RecordLightChanged(x, y);
+        }
+
+        _decQ.Enqueue(new DecNode(x, y, oldV));
+    }
+
+    private void ProcessArtificialLightQueues()
+    {
+        if (_decQ.Count == 0 && _incQ.Count == 0) return;
+        if (artificialLightOpsPerTick <= 0) return;
+
+        _lightChangedSet.Clear();
+        _lightChangedList.Clear();
+
+        int ops = artificialLightOpsPerTick;
+
+        // 규칙:
+        // - Decrease가 남아있으면 Decrease만 처리(중간에 Increase 실행 금지)
+        // - Decrease가 완전히 끝난 뒤에 seed들을 Increase 큐에 주입
+        // - 그 다음 Increase 처리
+
+        // 1) Decrease
+        while (ops > 0 && _decQ.Count > 0)
+        {
+            ops--;
+
+            var n = _decQ.Dequeue();
+            int x = n.x, y = n.y;
+            byte v = n.v;
+
+            // Decrease 판정은 cost 기반이 아니라, "이웃이 현재값보다 어두우면(작으면) 영향권"으로 처리
+            // - cur != 0 && cur < v  => 0으로 지우고 계속 감소
+            // - cur >= v             => 다른 광원 영향 가능 -> seed로만 기록(Decrease 끝난 뒤 복구)
+            int nx, ny;
+            byte cur;
+
+            // +x
+            nx = x + 1; ny = y;
+            if ((uint)nx < W)
+            {
+                cur = worldMap.light[nx, ny].artificial;
+                if (cur != 0)
+                {
+                    if (cur < v)
+                    {
+                        var lc = worldMap.light[nx, ny];
+                        lc.artificial = 0;
+                        worldMap.light[nx, ny] = lc;
+                        RecordLightChanged(nx, ny);
+                        _decQ.Enqueue(new DecNode(nx, ny, cur));
+                    }
+                    else
+                    {
+                        RecordSeed(nx, ny);
+                    }
+                }
+            }
+
+            // -x
+            nx = x - 1; ny = y;
+            if (nx >= 0)
+            {
+                cur = worldMap.light[nx, ny].artificial;
+                if (cur != 0)
+                {
+                    if (cur < v)
+                    {
+                        var lc = worldMap.light[nx, ny];
+                        lc.artificial = 0;
+                        worldMap.light[nx, ny] = lc;
+                        RecordLightChanged(nx, ny);
+                        _decQ.Enqueue(new DecNode(nx, ny, cur));
+                    }
+                    else
+                    {
+                        RecordSeed(nx, ny);
+                    }
+                }
+            }
+
+            // +y
+            nx = x; ny = y + 1;
+            if ((uint)ny < H)
+            {
+                cur = worldMap.light[nx, ny].artificial;
+                if (cur != 0)
+                {
+                    if (cur < v)
+                    {
+                        var lc = worldMap.light[nx, ny];
+                        lc.artificial = 0;
+                        worldMap.light[nx, ny] = lc;
+                        RecordLightChanged(nx, ny);
+                        _decQ.Enqueue(new DecNode(nx, ny, cur));
+                    }
+                    else
+                    {
+                        RecordSeed(nx, ny);
+                    }
+                }
+            }
+
+            // -y
+            nx = x; ny = y - 1;
+            if (ny >= 0)
+            {
+                cur = worldMap.light[nx, ny].artificial;
+                if (cur != 0)
+                {
+                    if (cur < v)
+                    {
+                        var lc = worldMap.light[nx, ny];
+                        lc.artificial = 0;
+                        worldMap.light[nx, ny] = lc;
+                        RecordLightChanged(nx, ny);
+                        _decQ.Enqueue(new DecNode(nx, ny, cur));
+                    }
+                    else
+                    {
+                        RecordSeed(nx, ny);
+                    }
+                }
+            }
+        }
+
+        // 2) Decrease가 완전히 끝난 순간에만 seed -> Increase 주입
+        if (_decQ.Count == 0 && _seedList.Count > 0)
+        {
+            for (int i = 0; i < _seedList.Count; i++)
+            {
+                var p = _seedList[i];
+                if ((uint)p.x >= W || (uint)p.y >= H) continue;
+
+                byte cur = worldMap.light[p.x, p.y].artificial;
+                if (cur > 0)
+                    EnqueueIncrease(p.x, p.y, cur);
+            }
+            _seedSet.Clear();
+            _seedList.Clear();
+        }
+
+        // 3) Increase
+        while (ops > 0 && _decQ.Count == 0 && _incQ.Count > 0)
+        {
+            ops--;
+
+            var n = _incQ.Dequeue();
+            int x = n.x, y = n.y;
+            byte v = n.v;
+
+            if ((uint)x >= W || (uint)y >= H) continue;
+
+            var lc = worldMap.light[x, y];
+            if (v <= lc.artificial) continue;
+
+            lc.artificial = v;
+            worldMap.light[x, y] = lc;
+            RecordLightChanged(x, y);
+
+            if (v <= 1) continue;
+
+            int nx, ny;
+            int cost;
+            int nv;
+
+            // +x
+            nx = x + 1; ny = y;
+            if ((uint)nx < W)
+            {
+                cost = GetArtCost(nx, ny);
+                nv = v - cost;
+                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                    _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
+            }
+
+            // -x
+            nx = x - 1; ny = y;
+            if (nx >= 0)
+            {
+                cost = GetArtCost(nx, ny);
+                nv = v - cost;
+                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                    _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
+            }
+
+            // +y
+            nx = x; ny = y + 1;
+            if ((uint)ny < H)
+            {
+                cost = GetArtCost(nx, ny);
+                nv = v - cost;
+                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                    _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
+            }
+
+            // -y
+            nx = x; ny = y - 1;
+            if (ny >= 0)
+            {
+                cost = GetArtCost(nx, ny);
+                nv = v - cost;
+                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                    _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
+            }
+        }
+
+        if (_lightChangedList.Count > 0)
+            MarkLightDirtyCells(_lightChangedList);
+    }
+
     private void HandleArtificialChange(int x, int y, ushort oldId, ushort newId)
     {
         byte oldB = CellLibrary.BrightnessOf(oldId);
         byte newB = CellLibrary.BrightnessOf(newId);
         if (oldB == 0 && newB == 0) return;
 
-        int r  = Mathf.Max(oldB, newB);
-        int x0 = Mathf.Max(0, x - r);
-        int y0 = Mathf.Max(0, y - r);
-        int x1 = Mathf.Min(W - 1, x + r);
-        int y1 = Mathf.Min(H - 1, y + r);
+        // "이 위치의 기존 인공광 값"을 감소 파동 기준값으로 사용
+        byte oldV = 0;
+        if ((uint)x < W && (uint)y < H)
+            oldV = worldMap.light[x, y].artificial;
 
-        for (int yy = y0; yy <= y1; yy++)
-        for (int xx = x0; xx <= x1; xx++)
+        // 제거/감소: 소스가 사라지거나 약해진 경우
+        if (oldB > 0 && oldB >= newB)
         {
-            var lc = worldMap.light[xx, yy];
-            lc.artificial = 0;
-            worldMap.light[xx, yy] = lc;
+            if (oldV > 0)
+                EnqueueDecrease(x, y, oldV);
         }
 
-        for (int yy = y0; yy <= y1; yy++)
-        for (int xx = x0; xx <= x1; xx++)
+        // 추가/증가: 새 소스가 생기거나 더 밝아진 경우
+        if (newB > 0)
         {
-            ushort id = worldMap.GetFGId(xx, yy);
-            if (id == 0) continue;
-
-            byte b = CellLibrary.BrightnessOf(id);
-            if (b > 0) AddLightScalar(xx, yy, b);
-        }
-
-        MarkLightDirtyRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
-    }
-
-    private void AddLightScalar(int sx, int sy, byte b)
-    {
-        if ((uint)sx >= W || ((uint)sy >= H) || b == 0) return;
-
-        var q = new Queue<(int x, int y, byte v)>();
-        q.Enqueue((sx, sy, b));
-
-        while (q.Count > 0)
-        {
-            var (x, y, v) = q.Dequeue();
-            if ((uint)x >= W || ((uint)y >= H)) continue;
-
-            var cell = worldMap.light[x, y];
-            if (v <= cell.artificial) continue;
-            cell.artificial = v;
-            worldMap.light[x, y] = cell;
-
-            if (v <= 1) continue;
-
-            void Prop(int nx, int ny)
-            {
-                if ((uint)nx >= W || ((uint)ny >= H)) return;
-
-                int cost = ATT_AIR;
-                if (worldMap.IsCollidable(nx, ny)) cost = ATT_FG;
-                else if (worldMap.bg[nx, ny] != 0) cost = ATT_BG;
-
-                int nv = v - cost;
-                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
-                    q.Enqueue((nx, ny, (byte)nv));
-            }
-
-            Prop(x + 1, y);
-            Prop(x - 1, y);
-            Prop(x, y + 1);
-            Prop(x, y - 1);
+            EnqueueIncrease(x, y, newB);
         }
     }
 

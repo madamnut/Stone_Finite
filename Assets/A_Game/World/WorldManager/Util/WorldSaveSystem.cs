@@ -93,28 +93,19 @@ public static class WorldSaveSystem
                     bw.Write(worldMap.light[x, y].artificial);
                 }
 
-                // tick buffers
-                int cCount = (tickCurr != null ? tickCurr.Count : 0);
-                int nCount = (tickNext != null ? tickNext.Count : 0);
-
-                bw.Write(cCount);
-                if (tickCurr != null)
+                // tick buffers (전제: null 아님)
+                bw.Write(tickCurr.Count);
+                foreach (var p in tickCurr)
                 {
-                    foreach (var p in tickCurr)
-                    {
-                        bw.Write(p.x);
-                        bw.Write(p.y);
-                    }
+                    bw.Write(p.x);
+                    bw.Write(p.y);
                 }
 
-                bw.Write(nCount);
-                if (tickNext != null)
+                bw.Write(tickNext.Count);
+                foreach (var p in tickNext)
                 {
-                    foreach (var p in tickNext)
-                    {
-                        bw.Write(p.x);
-                        bw.Write(p.y);
-                    }
+                    bw.Write(p.x);
+                    bw.Write(p.y);
                 }
             }
 
@@ -132,7 +123,6 @@ public static class WorldSaveSystem
             Debug.LogError($"SaveWorld 실패: {e}");
         }
     }
-
 
     // ────────────────────────────────────────────────
     //   월드 로드
@@ -191,17 +181,17 @@ public static class WorldSaveSystem
             data.light[x, y].artificial = br.ReadByte();
         }
 
-        // tick
-        tickCurr?.Clear();
-        tickNext?.Clear();
+        // tick (전제: null 아님)
+        tickCurr.Clear();
+        tickNext.Clear();
 
         int cCount = br.ReadInt32();
         for (int i = 0; i < cCount; i++)
         {
             int x = br.ReadInt32();
             int y = br.ReadInt32();
-            if ((uint)x < width && (uint)y < height)
-                tickCurr?.Add(new Vector2Int(x, y));
+            if ((uint)x < (uint)width && (uint)y < (uint)height)
+                tickCurr.Add(new Vector2Int(x, y));
         }
 
         int nCount = br.ReadInt32();
@@ -209,14 +199,13 @@ public static class WorldSaveSystem
         {
             int x = br.ReadInt32();
             int y = br.ReadInt32();
-            if ((uint)x < width && (uint)y < height)
-                tickNext?.Add(new Vector2Int(x, y));
+            if ((uint)x < (uint)width && (uint)y < (uint)height)
+                tickNext.Add(new Vector2Int(x, y));
         }
 
         loaded = data;
         return true;
     }
-
 
     // ────────────────────────────────────────────────
     //   플레이어 저장/로드
@@ -234,42 +223,39 @@ public static class WorldSaveSystem
             using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
             using (var bw = new BinaryWriter(fs))
             {
-                float px = playerTransform != null ? playerTransform.position.x : 0;
-                float py = playerTransform != null ? playerTransform.position.y : 0;
+                float px = playerTransform.position.x;
+                float py = playerTransform.position.y;
 
                 bw.Write(px);
                 bw.Write(py);
 
-                // inventory
-                int slotCount = playerComp?.Inventory?.items?.Count ?? 0;
+                // inventory (전제: playerComp / Inventory / items null 아님)
+                int slotCount = playerComp.Inventory.items.Count;
                 bw.Write(slotCount);
 
-                if (slotCount > 0)
+                foreach (var it in playerComp.Inventory.items)
                 {
-                    foreach (var it in playerComp.Inventory.items)
-                    {
-                        bool has = it != null && it.Count > 0;
-                        bw.Write(has);
+                    bool has = it != null && it.Count > 0;
+                    bw.Write(has);
 
-                        if (!has) continue;
+                    if (!has) continue;
 
-                        bw.Write(it.ItemId);
-                        bw.Write(it.Name);
-                        bw.Write(it.SpriteName);
-                        bw.Write(it.ItemType);
-                        bw.Write(it.MaxStack);
+                    bw.Write(it.ItemId);
+                    bw.Write(it.Name);
+                    bw.Write(it.SpriteName);
+                    bw.Write(it.ItemType);
+                    bw.Write(it.MaxStack);
 
-                        bw.Write(it.MaxDurability);
-                        bw.Write(it.Durability);
-                        bw.Write(it.Count);
+                    bw.Write(it.MaxDurability);
+                    bw.Write(it.Durability);
+                    bw.Write(it.Count);
 
-                        // JSON 직렬화 (새 구조)
-                        bw.Write(JsonConvert.SerializeObject(it.Tags));
-                        bw.Write(JsonConvert.SerializeObject(it.Details));
-                        bw.Write(JsonConvert.SerializeObject(it.BreakActions));
-                        bw.Write(JsonConvert.SerializeObject(it.ToolActions));
-                        bw.Write(JsonConvert.SerializeObject(it.WeaponActions));
-                    }
+                    // JSON 직렬화 (새 구조)
+                    bw.Write(JsonConvert.SerializeObject(it.Tags));
+                    bw.Write(JsonConvert.SerializeObject(it.Details));
+                    bw.Write(JsonConvert.SerializeObject(it.BreakActions));
+                    bw.Write(JsonConvert.SerializeObject(it.ToolActions));
+                    bw.Write(JsonConvert.SerializeObject(it.WeaponActions));
                 }
             }
 
@@ -326,15 +312,13 @@ public static class WorldSaveSystem
                 int dur    = br.ReadInt32();
                 int count  = br.ReadInt32();
 
-                var tags    = JsonConvert.DeserializeObject<List<string>>(br.ReadString()) 
-                              ?? new List<string>();
-                var details = JsonConvert.DeserializeObject<Dictionary<string, object>>(br.ReadString()) 
-                              ?? new Dictionary<string, object>();
+                var tags    = JsonConvert.DeserializeObject<List<string>>(br.ReadString()) ?? new List<string>();
+                var details = JsonConvert.DeserializeObject<Dictionary<string, object>>(br.ReadString()) ?? new Dictionary<string, object>();
 
-                var breakA = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
-                             ?? new Dictionary<string, Dictionary<string, object>>();
-                var toolA  = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
-                             ?? new Dictionary<string, Dictionary<string, object>>();
+                var breakA  = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
+                              ?? new Dictionary<string, Dictionary<string, object>>();
+                var toolA   = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
+                              ?? new Dictionary<string, Dictionary<string, object>>();
                 var weaponA = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(br.ReadString())
                               ?? new Dictionary<string, Dictionary<string, object>>();
 
@@ -369,7 +353,6 @@ public static class WorldSaveSystem
         }
     }
 
-
     // ────────────────────────────────────────────────
     //   엔티티 저장 (EntityManager 기반)
     // ────────────────────────────────────────────────
@@ -377,8 +360,7 @@ public static class WorldSaveSystem
     {
         try
         {
-            if (em == null)
-                return;
+            // 전제: em null 아님
 
             string dir = WorldLoadContext.GetSavePath();
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
@@ -419,7 +401,7 @@ public static class WorldSaveSystem
                     bw.Write(bytes.Length);
                     bw.Write(bytes);
                 }
-            } // 여기서 fs/bw Dispose → 파일 핸들 완전히 해제
+            }
 
             if (File.Exists(path)) File.Delete(path);
             File.Move(tmp, path);
@@ -431,7 +413,6 @@ public static class WorldSaveSystem
             Debug.LogError($"SaveEntities 실패: {e}");
         }
     }
-
 
     // ────────────────────────────────────────────────
     //   엔티티 로드
@@ -475,8 +456,7 @@ public static class WorldSaveSystem
                 // DroppedItem은 ItemLibrary 기반으로 직접 복원
                 if (kind == EntityKind.DroppedItem)
                 {
-                    if (itemLibrary == null || droppedItemPrefab == null)
-                        continue;
+                    // 전제: itemLibrary / droppedItemPrefab null 아님
 
                     DroppedItemSavePayload p = null;
                     if (!string.IsNullOrEmpty(payload))
@@ -520,8 +500,7 @@ public static class WorldSaveSystem
                 // Mob 로드
                 if (kind == EntityKind.Mob)
                 {
-                    if (mobLibrary == null)
-                        continue;
+                    // 전제: mobLibrary null 아님
 
                     // prefab 선택용으로 mobId만 가볍게 파싱
                     MobSavePayload mp = null;
@@ -561,8 +540,7 @@ public static class WorldSaveSystem
                 // Corpse 로드
                 if (kind == EntityKind.Corpse)
                 {
-                    if (corpseLibrary == null)
-                        continue;
+                    // 전제: corpseLibrary null 아님
 
                     CorpseSavePayload cp = null;
                     if (!string.IsNullOrEmpty(payload))
@@ -600,8 +578,7 @@ public static class WorldSaveSystem
                 // FallingBlock
                 if (kind == EntityKind.FallingBlock)
                 {
-                    if (fallingPrefab == null)
-                        continue;
+                    // 전제: fallingPrefab null 아님
 
                     var go = Object.Instantiate(fallingPrefab, pos, Quaternion.identity);
                     var fb = go.GetComponent<FallingBlock>();

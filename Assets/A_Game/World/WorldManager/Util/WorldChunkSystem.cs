@@ -79,8 +79,6 @@ public class WorldChunkSystem
     /// <summary>초기 청크 풀 생성 (WorldManager.Awake 에서 호출)</summary>
     public void InitializePool(int initialPoolSize)
     {
-        if (chunkRoot == null || chunkPrefab == null) return;
-
         for (int i = 0; i < initialPoolSize; i++)
         {
             var go = Object.Instantiate(chunkPrefab, chunkRoot);
@@ -174,7 +172,7 @@ public class WorldChunkSystem
 
         loadIndex = 0;
 
-        if (!isLoading && loadList.Count > 0 && coroutineHost != null)
+        if (!isLoading && loadList.Count > 0)
             coroutineHost.StartCoroutine(ProcessLoadQueue());
     }
 
@@ -196,7 +194,7 @@ public class WorldChunkSystem
             {
                 if (!activeChunks.TryGetValue(coord, out var go)) continue;
                 var c = go.GetComponent<Chunk>();
-                if (c == null || !c.bgDirty) continue;
+                if (!c.bgDirty) continue;
 
                 RefreshChunkLayer(coord, LayerType.BG);
                 c.bgDirty = false;
@@ -211,13 +209,10 @@ public class WorldChunkSystem
             {
                 if (!activeChunks.TryGetValue(coord, out var go)) continue;
                 var c = go.GetComponent<Chunk>();
-                if (c == null || !c.fgDirty) continue;
+                if (!c.fgDirty) continue;
 
                 RefreshChunkLayer(coord, LayerType.FG);
                 c.fgDirty = false;
-
-                // FG 변경 시 청크 전체 라이트 재계산은 제거
-                // (개별 셀 변경 시 WorldManager 쪽에서 RecalculateLightAt 호출)
             }
             fgDirtyChunks.Clear();
         }
@@ -229,7 +224,7 @@ public class WorldChunkSystem
             {
                 if (!activeChunks.TryGetValue(coord, out var go)) continue;
                 var c = go.GetComponent<Chunk>();
-                if (c == null || !c.lightDirty) continue;
+                if (!c.lightDirty) continue;
 
                 RefreshLightLayer(coord);
                 c.lightDirty = false;
@@ -253,9 +248,9 @@ public class WorldChunkSystem
         int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
         int cy = Mathf.FloorToInt(worldY / (float)chunkSize);
         var coord = new Vector2Int(cx, cy);
+
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var c = go.GetComponent<Chunk>();
-        if (c == null) return;
 
         if (markFG)
         {
@@ -270,8 +265,40 @@ public class WorldChunkSystem
     }
 
     /// <summary>
+    /// 월드 좌표 1칸이 속한 청크의 lightDirty를 켠다.
+    /// (인공빛 큐 처리 결과처럼 셀 단위 변경에 사용)
+    /// </summary>
+    public void MarkLightDirtyCell(int worldX, int worldY)
+    {
+        int x = Mathf.Clamp(worldX, 0, worldWidth  - 1);
+        int y = Mathf.Clamp(worldY, 0, worldHeight - 1);
+
+        int cx = x / chunkSize;
+        int cy = y / chunkSize;
+
+        var coord = new Vector2Int(cx, cy);
+        if (!activeChunks.TryGetValue(coord, out var go)) return;
+
+        var c = go.GetComponent<Chunk>();
+        c.lightDirty = true;
+        lightDirtyChunks.Add(coord);
+    }
+
+    /// <summary>
+    /// 여러 셀 변경을 한 번에 반영.
+    /// </summary>
+    public void MarkLightDirtyCells(List<Vector2Int> cells)
+    {
+        for (int i = 0; i < cells.Count; i++)
+        {
+            var p = cells[i];
+            MarkLightDirtyCell(p.x, p.y);
+        }
+    }
+
+    /// <summary>
     /// [x,y]~[x+w-1,y+h-1] 영역이 걸치는 청크들의 lightDirty를 켜준다.
-    /// (WorldManager.HandleArtificialChange 에서 사용 예정)
+    /// (레거시/디버그/대량 갱신용)
     /// </summary>
     public void MarkLightDirtyRect(int x, int y, int w, int h)
     {
@@ -287,15 +314,11 @@ public class WorldChunkSystem
         for (int cx = cx0; cx <= cx1; cx++)
         {
             var coord = new Vector2Int(cx, cy);
-            if (activeChunks.TryGetValue(coord, out var go))
-            {
-                var c = go.GetComponent<Chunk>();
-                if (c != null)
-                {
-                    c.lightDirty = true;
-                    lightDirtyChunks.Add(coord);
-                }
-            }
+            if (!activeChunks.TryGetValue(coord, out var go)) continue;
+
+            var c = go.GetComponent<Chunk>();
+            c.lightDirty = true;
+            lightDirtyChunks.Add(coord);
         }
     }
 
@@ -309,11 +332,8 @@ public class WorldChunkSystem
         {
             var coord = kv.Key;
             var c = kv.Value.GetComponent<Chunk>();
-            if (c != null)
-            {
-                c.lightDirty = true;
-                lightDirtyChunks.Add(coord);
-            }
+            c.lightDirty = true;
+            lightDirtyChunks.Add(coord);
         }
     }
 
@@ -384,7 +404,6 @@ public class WorldChunkSystem
         go.transform.localPosition = new Vector3(coord.x * chunkSize, coord.y * chunkSize, 0f);
 
         var c = go.GetComponent<Chunk>();
-        if (c == null) return;
 
         var bgBuf = c.bgBuffer;
         var fgBuf = c.fgBuffer;
@@ -527,7 +546,6 @@ public class WorldChunkSystem
     {
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var c = go.GetComponent<Chunk>();
-        if (c == null || c.lightMeshFilter == null) return;
 
         var mesh = c.lightMeshFilter.sharedMesh;
         if (mesh == null) return;
@@ -543,17 +561,19 @@ public class WorldChunkSystem
         {
             for (int vx = 0; vx <= chunkSize; vx++)
             {
-                int gx = sx + vx, gy = sy + vy;
-
-                int cx0 = Mathf.Clamp(gx - 1, 0, worldWidth  - 1);
-                int cy0 = Mathf.Clamp(gy - 1, 0, worldHeight - 1);
-                int cx1 = Mathf.Clamp(gx    , 0, worldWidth  - 1);
-                int cy1 = Mathf.Clamp(gy    , 0, worldHeight - 1);
+                int gx = sx + vx;
+                int gy = sy + vy;
 
                 float sum = 0f;
+                int samples = 0;
 
-                void Sample(int x, int y)
+                // 3x3 샘플 (월드 경계는 Clamp)
+                for (int oy = -1; oy <= 1; oy++)
+                for (int ox = -1; ox <= 1; ox++)
                 {
+                    int x = Mathf.Clamp(gx + ox, 0, worldWidth  - 1);
+                    int y = Mathf.Clamp(gy + oy, 0, worldHeight - 1);
+
                     var L = worldMap.light[x, y];
 
                     // 자연광: 0~15, 전역 오프셋 0~15
@@ -562,17 +582,18 @@ public class WorldChunkSystem
 
                     float n01 = ns / (float)NAT_MAX;
                     float a01 = L.artificial / (float)ART_MAX;
+
                     sum += Mathf.Max(n01, a01);
+                    samples++;
                 }
 
-                Sample(cx0, cy0);
-                Sample(cx1, cy0);
-                Sample(cx0, cy1);
-                Sample(cx1, cy1);
+                float avg = (samples > 0) ? (sum / samples) : 0f;
 
-                float avg = sum * 0.25f;
-                float A01 = 1f - Mathf.Clamp01(avg);
-                byte Ab  = (byte)Mathf.RoundToInt(A01 * 255f);
+                // 선택: 경계 더 부드럽게(원하면 유지/제거 가능)
+                avg = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(avg));
+
+                float A01 = 1f - avg;
+                byte Ab = (byte)Mathf.RoundToInt(Mathf.Clamp01(A01) * 255f);
 
                 cols[vy * vW + vx] = new Color32(0, 0, 0, Ab);
             }
