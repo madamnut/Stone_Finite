@@ -121,7 +121,6 @@ public class WorldManager : MonoBehaviour
     void DoRandomTicks()
     {
         if (!Application.isPlaying) return;
-        if (player == null) return;
         if (randomTicksPerWorldTick <= 0) return;
 
         Vector3 p = player.position;
@@ -161,11 +160,8 @@ public class WorldManager : MonoBehaviour
                 {
                     if (Random.value < 0.05f)
                     {
-                        if (mobLibrary != null && entityManager != null)
-                        {
-                            Vector3 spawnPos = new Vector3(gx + 0.5f, gy + 1.5f, 0f);
-                            mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
-                        }
+                        Vector3 spawnPos = new Vector3(gx + 0.5f, gy + 1.5f, 0f);
+                        mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
                     }
                 }
             }
@@ -317,19 +313,15 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markFG: true);
         OnCellEditedFG(x, y);
 
-        if (fallingBlockPrefab != null)
-        {
-            var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
-            var spr = CellLibrary.GetSprite(id);
+        var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
+        var spr = CellLibrary.GetSprite(id);
 
-            // FallingBlock 인스턴스 생성
-            var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
-            fb.Init(id, this, spr);
+        // FallingBlock 인스턴스 생성
+        var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
+        fb.Init(id, this, spr);
 
-            // 엔티티 등록
-            if (entityManager != null)
-                entityManager.Register(fb);
-        }
+        // 엔티티 등록
+        entityManager.Register(fb);
     }
 
     // ───────── 설치 (FG) ─────────
@@ -405,10 +397,8 @@ public class WorldManager : MonoBehaviour
                 if (!string.IsNullOrEmpty(key))
                 {
                     var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
-                    if (vfx != null)
-                        vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
-                    if (itemDropper != null)
-                        itemDropper.SpawnDroppedItems(key, pos3);
+                    vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+                    itemDropper.SpawnDroppedItems(key, pos3);
                 }
                 return removed;
             }
@@ -450,25 +440,6 @@ public class WorldManager : MonoBehaviour
         tickCurr.Clear();
         tickNext.Clear();
 
-        // 엔티티 시스템 초기 설정 (플레이어/청크 정보 주입)
-        if (entityManager != null)
-        {
-            if (entityManager.player == null && player != null)
-                entityManager.player = player;
-
-            entityManager.chunkSize       = ChunkSize;
-            entityManager.loadChunkRadius = ChunkRadius;
-        }
-
-        // ItemDropper에 EntityManager/Library 자동 주입(있을 때)
-        if (itemDropper != null)
-        {
-            if (itemDropper.entityManager == null)
-                itemDropper.entityManager = entityManager;
-            if (itemDropper.itemLibrary == null)
-                itemDropper.itemLibrary = itemLibrary;
-        }
-
         // BOOT 로그
         string dirBoot = WorldLoadContext.GetSavePath();
         string pathBoot = Path.Combine(dirBoot, "world.bin");
@@ -481,70 +452,67 @@ public class WorldManager : MonoBehaviour
             worldMap = WorldDataGenerator.Generate(settings, WorldLoadContext.seed);
 
             // ───────── 새 월드 최초 스폰 위치 결정 ─────────
-            if (player != null)
+            int centerX = 2500;
+            if (centerX < 0) centerX = 0;
+            if (centerX >= W) centerX = W - 1;
+
+            bool found = false;
+            int spawnX = centerX;
+            int spawnY = 0;
+
+            // 2500 → 2499 → 2501 → 2498 → 2502 ... 순서로 탐색
+            for (int radius = 0; radius < W; radius++)
             {
-                int centerX = 2500;
-                if (centerX < 0) centerX = 0;
-                if (centerX >= W) centerX = W - 1;
-
-                bool found = false;
-                int spawnX = centerX;
-                int spawnY = 0;
-
-                // 2500 → 2499 → 2501 → 2498 → 2502 ... 순서로 탐색
-                for (int radius = 0; radius < W; radius++)
+                int[] xs =
                 {
-                    int[] xs =
-                    {
-                        centerX,
-                        centerX - radius,
-                        centerX + radius
-                    };
+                    centerX,
+                    centerX - radius,
+                    centerX + radius
+                };
 
-                    foreach (int x in xs)
-                    {
-                        if (found) break;
-                        if (x < 0 || x >= W) continue;
+                foreach (int x in xs)
+                {
+                    if (found) break;
+                    if (x < 0 || x >= W) continue;
 
-                        // 위에서 아래로 스캔하면서 본체/유체 중 먼저 만나는 것 판단
-                        for (int y = H - 1; y >= 0; y--)
+                    // 위에서 아래로 스캔하면서 본체/유체 중 먼저 만나는 것 판단
+                    for (int y = H - 1; y >= 0; y--)
+                    {
+                        ushort fgId = worldMap.GetFGId(x, y);
+                        worldMap.GetFluidId(x, y, out byte waterAmount);
+
+                        if (waterAmount > 0)
                         {
-                            ushort fgId = worldMap.GetFGId(x, y);
-                            worldMap.GetFluidId(x, y, out byte waterAmount);
+                            // 액체가 먼저 나오면 이 x 전체 스킵
+                            break;
+                        }
 
-                            if (waterAmount > 0)
-                            {
-                                // 액체가 먼저 나오면 이 x 전체 스킵
-                                break;
-                            }
+                        if (fgId != 0)
+                        {
+                            // 본체가 먼저 나왔으므로 스폰 지점은 y + 5
+                            int ySpawn = Mathf.Min(y + 5, H - 1);
 
-                            if (fgId != 0)
-                            {
-                                // 본체가 먼저 나왔으므로 스폰 지점은 y + 5
-                                int ySpawn = Mathf.Min(y + 5, H - 1);
-
-                                spawnX = x;
-                                spawnY = ySpawn;
-                                found = true;
-                                break;
-                            }
+                            spawnX = x;
+                            spawnY = ySpawn;
+                            found = true;
+                            break;
                         }
                     }
-
-                    if (found) break;
                 }
 
-                if (found)
-                {
-                    float px = spawnX + 0.5f;
-                    float py = spawnY + 0.5f;
-                    player.position = new Vector3(px, py, player.position.z);
-                    Debug.Log($"[SPAWN] Spawn at X={spawnX}, Y={spawnY}");
-                }
-                else
-                {
-                    Debug.LogWarning("[SPAWN] 적절한 스폰 위치를 찾지 못했습니다. 기존 플레이어 위치 유지.");
-                }
+                if (found) break;
+            }
+
+            if (found)
+            {
+                float px = spawnX + 0.5f;
+                float py = spawnY + 0.5f;
+                player.position = new Vector3(px, py, player.position.z);
+                Debug.Log($"[SPAWN] Spawn at X={spawnX}, Y={spawnY}");
+            }
+            else
+            {
+                Debug.LogWarning("[SPAWN] 적절한 스폰 위치를 찾지 못했습니다. 기존 플레이어 위치 유지.");
             }
 
             // 스폰까지 반영된 상태로 첫 저장
@@ -616,8 +584,7 @@ public class WorldManager : MonoBehaviour
 
         ApplyTimeSyncedBrightness(forceDirty: true);
 
-        if (player != null && chunkSystem != null)
-            chunkSystem.ResetLastPlayerChunk(player.position);
+        chunkSystem.ResetLastPlayerChunk(player.position);
     }
 
     void Start()
@@ -640,8 +607,7 @@ public class WorldManager : MonoBehaviour
 
     void Update()
     {
-        if (player != null && chunkSystem != null)
-            chunkSystem.UpdateVisibleChunks(player.position, this);
+        chunkSystem.UpdateVisibleChunks(player.position, this);
     }
 
     void FixedUpdate()
@@ -672,8 +638,7 @@ public class WorldManager : MonoBehaviour
         }
 
         // 청크/라이트 더티 처리
-        if (chunkSystem != null)
-            chunkSystem.ProcessDirtyChunks();
+        chunkSystem.ProcessDirtyChunks();
     }
 
     IEnumerator AutosaveLoop()
@@ -700,7 +665,7 @@ public class WorldManager : MonoBehaviour
         {
             globalBrightnessOffset = newOffset;
 
-            if ((newOffset != _lastBrightnessOffset || forceDirty) && chunkSystem != null)
+            if (newOffset != _lastBrightnessOffset || forceDirty)
             {
                 _lastBrightnessOffset = newOffset;
                 chunkSystem.SetGlobalBrightnessOffset(globalBrightnessOffset);
@@ -769,8 +734,7 @@ public class WorldManager : MonoBehaviour
                     q.Enqueue((mx, my));
                 }
 
-                if (chunkSystem != null)
-                    MarkLightDirtyRect(x - 1, y - 1, 3, 3);
+                MarkLightDirtyRect(x - 1, y - 1, 3, 3);
             }
         }
     }
@@ -778,13 +742,11 @@ public class WorldManager : MonoBehaviour
     // ───────── 청크 더티 플래그 위임 ─────────
     public void MarkChunkDirty(int worldX, int worldY, bool markFG, bool markBG = false, bool markDeco = false, bool markLiquid = false)
     {
-        if (chunkSystem == null) return;
         chunkSystem.MarkChunkDirty(worldX, worldY, markFG, markBG, markDeco, markLiquid);
     }
 
     private void MarkLightDirtyRect(int x, int y, int w, int h)
     {
-        if (chunkSystem == null) return;
         chunkSystem.MarkLightDirtyRect(x, y, w, h);
     }
 
@@ -911,15 +873,7 @@ public class WorldManager : MonoBehaviour
 
     private void LoadEntities()
     {
-        if (entityManager == null)
-        {
-            Debug.LogWarning("[WorldManager] EntityManager 가 없어 엔티티 로드를 건너뜁니다.");
-            return;
-        }
-
-        GameObject dropPrefab = null;
-        if (itemDropper != null)
-            dropPrefab = itemDropper.droppedItemPrefab;
+        GameObject dropPrefab = itemDropper.droppedItemPrefab;
 
         WorldSaveSystem.LoadEntities(
             entityManager,
@@ -933,13 +887,10 @@ public class WorldManager : MonoBehaviour
 
     private void ApplyLoadedPlayerAndInventory()
     {
-        if (!_hasLoadedPlayerData || player == null) return;
+        if (!_hasLoadedPlayerData) return;
 
         var pos = player.position;
         player.position = new Vector3(_loadedPlayerPos.x, _loadedPlayerPos.y, pos.z);
-
-        if (_loadedInventory == null) return;
-        if (playerComp == null || playerComp.Inventory == null) return;
 
         var slots = playerComp.Inventory.items;
         int n = Mathf.Min(slots.Count, _loadedInventory.Count);

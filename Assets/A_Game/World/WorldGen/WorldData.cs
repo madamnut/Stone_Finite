@@ -1,35 +1,37 @@
 using System;
 
 [Serializable]
-public struct WorldData
+public sealed class WorldData
 {
     public const byte MaxFluid = 128;
-    public ushort[,]   bg;      // 후경
-    public FgCell[,]   fg;      // 전경(본체(솔리드 + 데코) + 유체)
+    public ushort[,]    bg;     // 후경
+    public FgCell[,]    fg;     // 전경(본체(솔리드 + 데코) + 유체)
     public LightCell[,] light;  // 빛 (자연 / 인공)
 
     public WorldData(int width, int height)
     {
-        bg    = new ushort  [width, height];
-        fg    = new FgCell  [width, height];
+        bg    = new ushort   [width, height];
+        fg    = new FgCell   [width, height];
         light = new LightCell[width, height];
 
         for (int x = 0; x < width; x++)
         for (int y = 0; y < height; y++)
         {
             bg[x, y] = 0;
+
             fg[x, y] = new FgCell
             {
-                id           = 0,
-                fluidId      = 0,
-                fluidAmount  = 0,
-                brightness   = 0,
-                flags        = FgFlags.None
+                id          = 0,
+                fluidId     = 0,
+                fluidAmount = 0,
+                brightness  = 0,
+                flags       = FgFlags.None
             };
+
             light[x, y] = new LightCell
             {
-                natural     = 0,
-                artificial  = 0
+                natural    = 0,
+                artificial = 0
             };
         }
     }
@@ -67,7 +69,7 @@ public struct WorldData
         var cell = fg[x, y];
 
         ushort removedFluidId = cell.fluidId;
-        byte   removedFluidAmount  = cell.fluidAmount;
+        byte   removedFluidAmount = cell.fluidAmount;
 
         cell.fluidId     = 0;
         cell.fluidAmount = 0;
@@ -163,10 +165,9 @@ public struct WorldData
         bg[x, y] = id;
         return true;
     }
-
     #endregion
 
-    #region  Force[강제배치]
+    #region Force[강제배치]
     public void ForceFG(int x, int y, in FgCell src)
     {
         fg[x, y] = src;
@@ -194,8 +195,8 @@ public struct WorldData
     // 월드 경계 이탈 여부
     public bool InBounds(int x, int y)
     {
-        return 
-            x >= 0 && 
+        return
+            x >= 0 &&
             y >= 0 &&
             x < fg.GetLength(0) &&
             y < fg.GetLength(1);
