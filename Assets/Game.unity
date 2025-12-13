@@ -1693,7 +1693,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 2f84c6b340ea6074c8b20c501d2d51b2, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -2233,7 +2233,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &342105584
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2247,7 +2247,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 268327655}
-  m_Father: {fileID: 2142438014}
+  m_Father: {fileID: 1019568695}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -3986,12 +3986,14 @@ MonoBehaviour:
   minutesPerDay: 1440
   ticksPerDay: 28800
   globalBrightnessOffset: 0
+  maxDarknessOffset: 13
   worldTick: 0
   worldMinute: 0
   worldHour: 0
   worldDay: 0
   itemLibrary: {fileID: 236639235}
   randomTicksPerWorldTick: 64
+  artificialLightOpsPerTick: 8000
 --- !u!4 &557152422
 Transform:
   m_ObjectHideFlags: 0
@@ -6120,7 +6122,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 23069696
+    m_Bits: 39845888
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: 9bb4d988b48d8b6418a7b6c194c0ec78, type: 2}
   m_TargetDisplay: 0
@@ -6698,6 +6700,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 342105584}
   - {fileID: 2142438014}
   - {fileID: 229961356}
   - {fileID: 1518966281}
@@ -9177,7 +9180,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1552801293
 Transform:
   m_ObjectHideFlags: 0
@@ -9187,7 +9190,7 @@ Transform:
   m_GameObject: {fileID: 1552801292}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2500, y: 800, z: 0}
+  m_LocalPosition: {x: 2500, y: 810, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9218,7 +9221,10 @@ MonoBehaviour:
   weight0: 0.05
   weight1: 0.07
   weight2: 0.1
-  yTightness: 1
+  yBaseline: 800
+  yParallax0: 0.98
+  yParallax1: 0.95
+  yParallax2: 0.92
   world: {fileID: 557152421}
   center: {fileID: 797447395}
   sun: {fileID: 1656837885}
@@ -9226,6 +9232,7 @@ MonoBehaviour:
   a: 23
   b: 12
   orbitSmooth: 6
+  sunAngleOffsetDeg: 180
   dark:
     serializedVersion: 2
     rgba: 4280163870
@@ -10189,7 +10196,7 @@ Transform:
   m_GameObject: {fileID: 1656837884}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 23, y: 0, z: 0}
+  m_LocalPosition: {x: 3.22, y: 22.71, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10489,7 +10496,7 @@ MonoBehaviour:
   breakCursorTex: {fileID: 2800000, guid: 696114dedffcce944b27a36764a78b56, type: 3}
   combatCursorTex: {fileID: 2800000, guid: 0af31b91609b82544b177e06a4cf710e, type: 3}
   worldManager: {fileID: 557152421}
-  multiblockManager: {fileID: 0}
+  multiblockManager: {fileID: 143361366}
   worldCamera: {fileID: 137679049}
   cellSize: 1
   HighLight_FG: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
@@ -11996,7 +12003,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 17039872
+    m_Bits: 16777216
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
   m_TargetDisplay: 0
@@ -13247,7 +13254,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 342105584}
   - {fileID: 1278894244}
   - {fileID: 1982691452}
   - {fileID: 1581225103}

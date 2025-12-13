@@ -75,6 +75,14 @@ Material:
         m_Texture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _TextureBG:
+        m_Texture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureFG:
+        m_Texture: {fileID: 8400000, guid: 9bb4d988b48d8b6418a7b6c194c0ec78, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _Alpha: 1
@@ -85,7 +93,7 @@ Material:
     - _Density: 0.789
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _EndT: 0.881
+    - _EndT: 0.832
     - _Exposure: 0.61
     - _FGAlpha: 0.6
     - _GlossMapScale: 1
@@ -94,7 +102,11 @@ Material:
     - _Intensity: 1.7
     - _InvertMask: 0
     - _Metallic: 0
+    - _Mix: 0.806
     - _Mode: 0
+    - _NoiseFreq: 198
+    - _NoiseSpeed: 0.4
+    - _NoiseStrength: 1.24
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _Samples: 128
@@ -103,13 +115,25 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _StartT: 0.124
+    - _StartT: 1
+    - _StripeFreq: 22
+    - _StripePower: 5.15
+    - _StripeRadialFreq: 12.1
+    - _StripeRadialSpeed: 3
+    - _StripeSpeed: 2.8
+    - _StripeStrength: 0.01
+    - _SunAngle: -5.6323957
     - _UVSec: 0
     - _UseAlphaAsMask: 1
+    - _WarpAmp: 0.0239
+    - _WarpByT: 4.15
+    - _WarpFreq: 113
+    - _WarpMaskPow: 3.14
+    - _WarpSpeed: -8.4
     - _Weight: 0.372
     - _ZWrite: 1
     m_Colors:
-    - _Center: {r: 0.8833351, g: 0.5, b: 0, a: 0}
+    - _Center: {r: 0.7128639, g: 1.0900364, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Tint: {r: 0, g: 0, b: 0, a: 1}
