@@ -5,6 +5,9 @@ using Newtonsoft.Json;
 
 /// <summary>
 /// 월드 / 플레이어 / 엔티티 저장/로드 전담 시스템
+/// ⚠ 호환성 전혀 고려 안 함 (신규 포맷 고정)
+/// WorldData 구조:
+///   bg / solid / liquid / light
 /// </summary>
 public static class WorldSaveSystem
 {
@@ -73,16 +76,24 @@ public static class WorldSaveSystem
                     bw.Write(worldMap.bg[x, y]);
                 }
 
-                // fg
+                // solid
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
-                    var c = worldMap.fg[x, y];
-                    bw.Write(c.id);
-                    bw.Write(c.fluidId);
-                    bw.Write(c.fluidAmount);
-                    bw.Write(c.brightness);
-                    bw.Write((ushort)c.flags);
+                    var s = worldMap.solid[x, y];
+                    bw.Write(s.id);
+                    bw.Write(s.brightness);
+                    bw.Write((ushort)s.flags);
+                }
+
+                // liquid
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    var l = worldMap.liquid[x, y];
+                    bw.Write(l.id);
+                    bw.Write(l.amount);
+                    bw.Write(l.brightness);
                 }
 
                 // light
@@ -147,64 +158,83 @@ public static class WorldSaveSystem
             return false;
         }
 
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var br = new BinaryReader(fs);
-
-        width      = br.ReadInt32();
-        height     = br.ReadInt32();
-        loadedTick = br.ReadInt64();
-
-        var data = new WorldData(width, height);
-
-        // bg
-        for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
-            data.bg[x, y] = br.ReadUInt16();
-
-        // fg
-        for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
+        try
         {
-            ref var c = ref data.fg[x, y];
-            c.id          = br.ReadUInt16();
-            c.fluidId     = br.ReadUInt16();
-            c.fluidAmount = br.ReadByte();
-            c.brightness  = br.ReadByte();
-            c.flags       = (FgFlags)br.ReadUInt16();
-        }
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var br = new BinaryReader(fs);
 
-        // light
-        for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
+            width      = br.ReadInt32();
+            height     = br.ReadInt32();
+            loadedTick = br.ReadInt64();
+
+            var data = new WorldData(width, height);
+
+            // bg
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                data.bg[x, y] = br.ReadUInt16();
+
+            // solid
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                ref var s = ref data.solid[x, y];
+                s.id         = br.ReadUInt16();
+                s.brightness = br.ReadByte();
+                s.flags      = (SolidFlags)br.ReadUInt16();
+            }
+
+            // liquid
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                ref var l = ref data.liquid[x, y];
+                l.id         = br.ReadUInt16();
+                l.amount     = br.ReadByte();
+                l.brightness = br.ReadByte();
+            }
+
+            // light
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                data.light[x, y].natural    = br.ReadByte();
+                data.light[x, y].artificial = br.ReadByte();
+            }
+
+            // tick (전제: null 아님)
+            tickCurr.Clear();
+            tickNext.Clear();
+
+            int cCount = br.ReadInt32();
+            for (int i = 0; i < cCount; i++)
+            {
+                int x = br.ReadInt32();
+                int y = br.ReadInt32();
+                if ((uint)x < (uint)width && (uint)y < (uint)height)
+                    tickCurr.Add(new Vector2Int(x, y));
+            }
+
+            int nCount = br.ReadInt32();
+            for (int i = 0; i < nCount; i++)
+            {
+                int x = br.ReadInt32();
+                int y = br.ReadInt32();
+                if ((uint)x < (uint)width && (uint)y < (uint)height)
+                    tickNext.Add(new Vector2Int(x, y));
+            }
+
+            loaded = data;
+            return true;
+        }
+        catch (System.Exception e)
         {
-            data.light[x, y].natural    = br.ReadByte();
-            data.light[x, y].artificial = br.ReadByte();
+            Debug.LogError($"LoadWorldFromDisk 실패: {e}");
+            loaded = null;
+            width = height = 0;
+            loadedTick = 0;
+            return false;
         }
-
-        // tick (전제: null 아님)
-        tickCurr.Clear();
-        tickNext.Clear();
-
-        int cCount = br.ReadInt32();
-        for (int i = 0; i < cCount; i++)
-        {
-            int x = br.ReadInt32();
-            int y = br.ReadInt32();
-            if ((uint)x < (uint)width && (uint)y < (uint)height)
-                tickCurr.Add(new Vector2Int(x, y));
-        }
-
-        int nCount = br.ReadInt32();
-        for (int i = 0; i < nCount; i++)
-        {
-            int x = br.ReadInt32();
-            int y = br.ReadInt32();
-            if ((uint)x < (uint)width && (uint)y < (uint)height)
-                tickNext.Add(new Vector2Int(x, y));
-        }
-
-        loaded = data;
-        return true;
     }
 
     // ────────────────────────────────────────────────
@@ -456,15 +486,10 @@ public static class WorldSaveSystem
                 // DroppedItem은 ItemLibrary 기반으로 직접 복원
                 if (kind == EntityKind.DroppedItem)
                 {
-                    // 전제: itemLibrary / droppedItemPrefab null 아님
-
                     DroppedItemSavePayload p = null;
                     if (!string.IsNullOrEmpty(payload))
                     {
-                        try
-                        {
-                            p = JsonConvert.DeserializeObject<DroppedItemSavePayload>(payload);
-                        }
+                        try { p = JsonConvert.DeserializeObject<DroppedItemSavePayload>(payload); }
                         catch (System.Exception ex)
                         {
                             Debug.LogError($"[LOAD-ENTITY] DroppedItem payload 파싱 실패: {ex.Message}");
@@ -474,12 +499,10 @@ public static class WorldSaveSystem
                     if (p == null || string.IsNullOrEmpty(p.itemId) || p.count <= 0)
                         continue;
 
-                    // ItemLibrary로 새 ItemData 생성
                     var item = itemLibrary.Create(p.itemId, p.count);
                     if (item == null)
                         continue;
 
-                    // 내구도 복원 (가능하면)
                     if (p.durability >= 0 && p.durability <= item.MaxDurability)
                         item.Durability = p.durability;
 
@@ -500,16 +523,10 @@ public static class WorldSaveSystem
                 // Mob 로드
                 if (kind == EntityKind.Mob)
                 {
-                    // 전제: mobLibrary null 아님
-
-                    // prefab 선택용으로 mobId만 가볍게 파싱
                     MobSavePayload mp = null;
                     if (!string.IsNullOrEmpty(payload))
                     {
-                        try
-                        {
-                            mp = JsonConvert.DeserializeObject<MobSavePayload>(payload);
-                        }
+                        try { mp = JsonConvert.DeserializeObject<MobSavePayload>(payload); }
                         catch (System.Exception ex)
                         {
                             Debug.LogError($"[LOAD-ENTITY] Mob payload 파싱 실패: {ex.Message}");
@@ -519,12 +536,10 @@ public static class WorldSaveSystem
                     if (mp == null || string.IsNullOrEmpty(mp.mobId))
                         continue;
 
-                    // 프리팹 스폰 (EntityManager 등록까지 내부에서 처리한다고 가정)
                     var mob = mobLibrary.SpawnMob(mp.mobId, pos, em);
                     if (mob == null)
                         continue;
 
-                    // HP 등 상세 상태는 Mob.FromSaveData 에서 payload 전체 다시 파싱
                     var data = new EntitySaveData
                     {
                         Kind        = kind,
@@ -540,15 +555,10 @@ public static class WorldSaveSystem
                 // Corpse 로드
                 if (kind == EntityKind.Corpse)
                 {
-                    // 전제: corpseLibrary null 아님
-
                     CorpseSavePayload cp = null;
                     if (!string.IsNullOrEmpty(payload))
                     {
-                        try
-                        {
-                            cp = JsonConvert.DeserializeObject<CorpseSavePayload>(payload);
-                        }
+                        try { cp = JsonConvert.DeserializeObject<CorpseSavePayload>(payload); }
                         catch (System.Exception ex)
                         {
                             Debug.LogError($"[LOAD-ENTITY] Corpse payload 파싱 실패: {ex.Message}");
@@ -558,7 +568,6 @@ public static class WorldSaveSystem
                     if (cp == null || string.IsNullOrEmpty(cp.corpseId))
                         continue;
 
-                    // 시체 프리팹 스폰 (CorpseLibrary 안에서 EntityManager.Register까지 수행)
                     var corpse = corpseLibrary.SpawnCorpse(cp.corpseId, pos);
                     if (corpse == null)
                         continue;
@@ -578,8 +587,6 @@ public static class WorldSaveSystem
                 // FallingBlock
                 if (kind == EntityKind.FallingBlock)
                 {
-                    // 전제: fallingPrefab null 아님
-
                     var go = Object.Instantiate(fallingPrefab, pos, Quaternion.identity);
                     var fb = go.GetComponent<FallingBlock>();
                     if (fb == null)

@@ -40,14 +40,9 @@
   "Amphibolite":        { "id": 4001,  "collidable": true,  "gravity": false },
   
   "Clay Kiln_Bottom":   { "id": 5000, "collidable": false,  "gravity": false, "interaction": "multiblock" },
-  "Clay Kiln_Top":   { "id": 5001, "collidable": false,  "gravity": false, "interaction": "multiblock" },
+  "Clay Kiln_Top":      { "id": 5001, "collidable": false,  "gravity": false, "interaction": "multiblock" },
   
   
   "Primal Workbench":   { "id": 50000, "collidable": false,  "gravity": false, "interaction": "primalcraftModule" },
-  "Torch":              { "id": 50001, "collidable": false, "gravity": false, "brightness": 15 },
-
-  
-  
-  
-  "Water":              { "id": 60000, "collidable": false, "gravity": false }
+  "Torch":              { "id": 50001, "collidable": false, "gravity": false, "brightness": 15 }
 }

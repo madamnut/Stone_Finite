@@ -3969,6 +3969,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
+  cellLibrary: {fileID: 2047849824}
   chunkPrefab: {fileID: 1467755856479255932, guid: a781b01f90409ab4591ea34f295ab47b, type: 3}
   chunkRoot: {fileID: 105343928}
   initialPoolSize: 200
@@ -3982,6 +3983,7 @@ MonoBehaviour:
   corpseLibrary: {fileID: 867055871}
   entityManager: {fileID: 1036664766}
   mobLibrary: {fileID: 708102119}
+  itemLibrary: {fileID: 236639235}
   ticksPerSecond: 20
   minutesPerDay: 1440
   ticksPerDay: 28800
@@ -3991,7 +3993,6 @@ MonoBehaviour:
   worldMinute: 0
   worldHour: 0
   worldDay: 0
-  itemLibrary: {fileID: 236639235}
   randomTicksPerWorldTick: 64
   artificialLightOpsPerTick: 8000
 --- !u!4 &557152422
@@ -4790,7 +4791,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -90
   m_Sprite: {fileID: 21300000, guid: 2a0a673446a7a294c81c7372ed13597c, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.86399215, b: 0.7028302, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -5876,7 +5877,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -100
   m_Sprite: {fileID: 21300000, guid: a165cd3e6cb114740ad295b9407ebf67, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.759434, g: 0.98703504, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -8215,7 +8216,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -80
   m_Sprite: {fileID: 21300000, guid: 24866fbfd27369b43b1bab5a8547dc09, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.5330188, g: 1, b: 0.65477455, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -12531,8 +12532,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc39b78313c29c0428c9868793c739fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  solidJson: {fileID: 4900000, guid: 57be3d6a3243fae4292a15d60c73b6bb, type: 3}
+  liquidJson: {fileID: 4900000, guid: 72159f13681dc4b48b792fe70adbfb9e, type: 3}
   atlas: {fileID: 100100200, guid: 5715605989584c24ca8824127f00ef23, type: 3}
-  cellJson: {fileID: 4900000, guid: 57be3d6a3243fae4292a15d60c73b6bb, type: 3}
 --- !u!1 &2072805834
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,20 @@ using UnityEngine.Tilemaps;
 /// <summary>
 /// 청크 풀 / 로드 / 언로드 / 타일맵 리프레시 / 라이트 메쉬까지 담당하는 시스템
 /// (WorldManager에서 의존성만 주입해서 사용)
+///
+/// WorldData 구조 전제:
+///   bg / solid / liquid / light
+///
+/// Chunk 컴포넌트 전제(필드명):
+///   - Tilemap bgTilemap;
+///   - Tilemap solidTilemap;
+///   - Tilemap liquidTilemap;
+///   - TileBase[] bgBuffer, solidBuffer, liquidBuffer;
+///   - bool bgDirty, solidDirty, liquidDirty, lightDirty;
+///   - lightMeshFilter/lightColors 등은 기존과 동일
+///
+/// Liquid 스프라이트 전제:
+///   Water_1 ~ Water_16 (amount 1..128 → 1..16, 8단위)
 /// </summary>
 public class WorldChunkSystem
 {
@@ -16,37 +30,43 @@ public class WorldChunkSystem
     private readonly int chunkRadius;
     private readonly int maxLoadsPerFrame;
 
-    private readonly WorldData  worldMap;
+    private readonly WorldData worldMap;
     private readonly GameObject chunkPrefab;
-    private readonly Transform  chunkRoot;
+    private readonly Transform chunkRoot;
 
-    // FG 타일 편집 시, 해당 영역 라이트 재계산 위해 WorldManager의 메서드를 콜백으로 받음
+    private readonly CellLibrary cellLibrary;
+
+    // (현재 스크립트 내에선 직접 호출하진 않지만, 외부 정책상 유지)
     private readonly System.Action<int, int> recalcLightAt;
 
-    // 라이트 메쉬 계산용 상수 (WorldManager와 동일, 0~15)
+    // 라이트 메쉬 계산용 상수 (0~15)
     private const byte NAT_MAX = 15;
     private const byte ART_MAX = 15;
 
-    // 시간에 따라 바뀌는 전역 밝기 오프셋 (WorldManager에서 세팅해줄 것, 0~15)
+    // 시간에 따라 바뀌는 전역 밝기 오프셋 (0~15)
     private byte globalBrightnessOffset = 0;
 
     // ───────── 풀 / 로드 큐 / 활성 청크 ─────────
-    private readonly Queue<GameObject>                  chunkPool     = new();
-    private readonly List<Vector2Int>                   loadList      = new();
-    private          int                                loadIndex     = 0;
-    private readonly List<Vector2Int>                   unloadList    = new();
-    private readonly HashSet<Vector2Int>                currentNeeded = new();
-    private readonly Dictionary<Vector2Int, GameObject> activeChunks  = new();
+    private readonly Queue<GameObject> chunkPool = new();
+    private readonly List<Vector2Int> loadList = new();
+    private int loadIndex = 0;
+    private readonly List<Vector2Int> unloadList = new();
+    private readonly HashSet<Vector2Int> currentNeeded = new();
+    private readonly Dictionary<Vector2Int, GameObject> activeChunks = new();
 
     // ───────── 더티 청크 집합 ─────────
-    private readonly HashSet<Vector2Int> fgDirtyChunks    = new();
-    private readonly HashSet<Vector2Int> bgDirtyChunks    = new();
+    private readonly HashSet<Vector2Int> solidDirtyChunks = new();
+    private readonly HashSet<Vector2Int> liquidDirtyChunks = new();
+    private readonly HashSet<Vector2Int> bgDirtyChunks = new();
     private readonly HashSet<Vector2Int> lightDirtyChunks = new();
 
-    private bool       isLoading       = false;
+    private bool isLoading = false;
     private Vector2Int lastPlayerChunk = Vector2Int.zero;
 
     public IReadOnlyDictionary<Vector2Int, GameObject> ActiveChunks => activeChunks;
+
+    // ───────── 타일 캐시(인스턴스) ─────────
+    private readonly TileCache tileCache;
 
     // ───────── 생성자 ─────────
     public WorldChunkSystem(
@@ -58,20 +78,24 @@ public class WorldChunkSystem
         WorldData worldMap,
         GameObject chunkPrefab,
         Transform chunkRoot,
+        CellLibrary cellLibrary,
         System.Action<int, int> recalcLightAt
     )
     {
-        this.worldWidth       = worldWidth;
-        this.worldHeight      = worldHeight;
-        this.chunkSize        = chunkSize;
-        this.chunkRadius      = chunkRadius;
+        this.worldWidth = worldWidth;
+        this.worldHeight = worldHeight;
+        this.chunkSize = chunkSize;
+        this.chunkRadius = chunkRadius;
         this.maxLoadsPerFrame = maxLoadsPerFrame;
 
-        this.worldMap    = worldMap;
+        this.worldMap = worldMap;
         this.chunkPrefab = chunkPrefab;
-        this.chunkRoot   = chunkRoot;
+        this.chunkRoot = chunkRoot;
 
+        this.cellLibrary = cellLibrary;
         this.recalcLightAt = recalcLightAt;
+
+        tileCache = new TileCache(cellLibrary);
     }
 
     // ───────── 외부에서 세팅/호출할 API ─────────
@@ -124,7 +148,7 @@ public class WorldChunkSystem
         // 유효 청크 범위 계산
         int cxMin = 0;
         int cyMin = 0;
-        int cxMax = Mathf.Max(0, (worldWidth  - 1) / chunkSize);
+        int cxMax = Mathf.Max(0, (worldWidth - 1) / chunkSize);
         int cyMax = Mathf.Max(0, (worldHeight - 1) / chunkSize);
 
         // 필요한 청크 집합 구성
@@ -134,7 +158,7 @@ public class WorldChunkSystem
         {
             int cx = playerChunk.x + dx;
             int cy = playerChunk.y + dy;
-            if (cx < cxMin || cy < cyMin || cx > cxMax || cy > cyMax) continue; // 범위 밖 제외
+            if (cx < cxMin || cy < cyMin || cx > cxMax || cy > cyMax) continue;
             currentNeeded.Add(new Vector2Int(cx, cy));
         }
 
@@ -147,6 +171,12 @@ public class WorldChunkSystem
         {
             ReturnToPool(activeChunks[coord]);
             activeChunks.Remove(coord);
+
+            // 혹시 남아있을 수 있는 더티 기록 제거
+            bgDirtyChunks.Remove(coord);
+            solidDirtyChunks.Remove(coord);
+            liquidDirtyChunks.Remove(coord);
+            lightDirtyChunks.Remove(coord);
         }
 
         // 로드 대상 리스트 재구성 (아직 없는 청크만)
@@ -182,7 +212,8 @@ public class WorldChunkSystem
     /// </summary>
     public void ProcessDirtyChunks()
     {
-        if (fgDirtyChunks.Count == 0 &&
+        if (solidDirtyChunks.Count == 0 &&
+            liquidDirtyChunks.Count == 0 &&
             bgDirtyChunks.Count == 0 &&
             lightDirtyChunks.Count == 0)
             return;
@@ -202,19 +233,34 @@ public class WorldChunkSystem
             bgDirtyChunks.Clear();
         }
 
-        // FG
-        if (fgDirtyChunks.Count > 0)
+        // Solid
+        if (solidDirtyChunks.Count > 0)
         {
-            foreach (var coord in fgDirtyChunks)
+            foreach (var coord in solidDirtyChunks)
             {
                 if (!activeChunks.TryGetValue(coord, out var go)) continue;
                 var c = go.GetComponent<Chunk>();
-                if (!c.fgDirty) continue;
+                if (!c.solidDirty) continue;
 
-                RefreshChunkLayer(coord, LayerType.FG);
-                c.fgDirty = false;
+                RefreshChunkLayer(coord, LayerType.Solid);
+                c.solidDirty = false;
             }
-            fgDirtyChunks.Clear();
+            solidDirtyChunks.Clear();
+        }
+
+        // Liquid
+        if (liquidDirtyChunks.Count > 0)
+        {
+            foreach (var coord in liquidDirtyChunks)
+            {
+                if (!activeChunks.TryGetValue(coord, out var go)) continue;
+                var c = go.GetComponent<Chunk>();
+                if (!c.liquidDirty) continue;
+
+                RefreshChunkLayer(coord, LayerType.Liquid);
+                c.liquidDirty = false;
+            }
+            liquidDirtyChunks.Clear();
         }
 
         // Light
@@ -235,15 +281,14 @@ public class WorldChunkSystem
 
     /// <summary>
     /// 월드 좌표 기준으로 해당하는 청크를 dirty 표시.
-    /// (FG/BG 플래그를 선택적으로 켬. deco/liquid 인자는 무시)
     /// </summary>
     public void MarkChunkDirty(
         int worldX,
         int worldY,
-        bool markFG,
+        bool markSolid,
         bool markBG = false,
-        bool markDeco = false,
-        bool markLiquid = false)
+        bool markLiquid = false
+    )
     {
         int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
         int cy = Mathf.FloorToInt(worldY / (float)chunkSize);
@@ -252,10 +297,15 @@ public class WorldChunkSystem
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var c = go.GetComponent<Chunk>();
 
-        if (markFG)
+        if (markSolid)
         {
-            c.fgDirty = true;
-            fgDirtyChunks.Add(coord);
+            c.solidDirty = true;
+            solidDirtyChunks.Add(coord);
+        }
+        if (markLiquid)
+        {
+            c.liquidDirty = true;
+            liquidDirtyChunks.Add(coord);
         }
         if (markBG)
         {
@@ -266,11 +316,10 @@ public class WorldChunkSystem
 
     /// <summary>
     /// 월드 좌표 1칸이 속한 청크의 lightDirty를 켠다.
-    /// (인공빛 큐 처리 결과처럼 셀 단위 변경에 사용)
     /// </summary>
     public void MarkLightDirtyCell(int worldX, int worldY)
     {
-        int x = Mathf.Clamp(worldX, 0, worldWidth  - 1);
+        int x = Mathf.Clamp(worldX, 0, worldWidth - 1);
         int y = Mathf.Clamp(worldY, 0, worldHeight - 1);
 
         int cx = x / chunkSize;
@@ -284,9 +333,6 @@ public class WorldChunkSystem
         lightDirtyChunks.Add(coord);
     }
 
-    /// <summary>
-    /// 여러 셀 변경을 한 번에 반영.
-    /// </summary>
     public void MarkLightDirtyCells(List<Vector2Int> cells)
     {
         for (int i = 0; i < cells.Count; i++)
@@ -296,15 +342,11 @@ public class WorldChunkSystem
         }
     }
 
-    /// <summary>
-    /// [x,y]~[x+w-1,y+h-1] 영역이 걸치는 청크들의 lightDirty를 켜준다.
-    /// (레거시/디버그/대량 갱신용)
-    /// </summary>
     public void MarkLightDirtyRect(int x, int y, int w, int h)
     {
-        int x0 = Mathf.Clamp(x,         0, worldWidth  - 1);
-        int y0 = Mathf.Clamp(y,         0, worldHeight - 1);
-        int x1 = Mathf.Clamp(x + w - 1, 0, worldWidth  - 1);
+        int x0 = Mathf.Clamp(x, 0, worldWidth - 1);
+        int y0 = Mathf.Clamp(y, 0, worldHeight - 1);
+        int x1 = Mathf.Clamp(x + w - 1, 0, worldWidth - 1);
         int y1 = Mathf.Clamp(y + h - 1, 0, worldHeight - 1);
 
         int cx0 = x0 / chunkSize, cy0 = y0 / chunkSize;
@@ -322,10 +364,6 @@ public class WorldChunkSystem
         }
     }
 
-    /// <summary>
-    /// 모든 활성 청크의 lightDirty 를 켜줌.
-    /// (시간대 변경에 따른 글로벌 밝기 재적용 시 사용)
-    /// </summary>
     public void MarkAllChunksLightDirty()
     {
         foreach (var kv in activeChunks)
@@ -343,9 +381,8 @@ public class WorldChunkSystem
     {
         isLoading = true;
 
-        // 유효 청크 범위 계산
         int cxMin = 0, cyMin = 0;
-        int cxMax = Mathf.Max(0, (worldWidth  - 1) / chunkSize);
+        int cxMax = Mathf.Max(0, (worldWidth - 1) / chunkSize);
         int cyMax = Mathf.Max(0, (worldHeight - 1) / chunkSize);
 
         int loads = 0;
@@ -353,7 +390,7 @@ public class WorldChunkSystem
         {
             var coord = loadList[loadIndex++];
             if (!currentNeeded.Contains(coord)) continue;
-            if (coord.x < cxMin || coord.y < cyMin || coord.x > cxMax || coord.y > cyMax) continue; // 범위 밖 스킵
+            if (coord.x < cxMin || coord.y < cyMin || coord.x > cxMax || coord.y > cyMax) continue;
 
             CreateChunk(coord);
             loads++;
@@ -393,8 +430,7 @@ public class WorldChunkSystem
 
     private void CreateChunk(Vector2Int coord)
     {
-        // 유효 청크 범위 하드 가드
-        int cxMax = Mathf.Max(0, (worldWidth  - 1) / chunkSize);
+        int cxMax = Mathf.Max(0, (worldWidth - 1) / chunkSize);
         int cyMax = Mathf.Max(0, (worldHeight - 1) / chunkSize);
         if (coord.x < 0 || coord.y < 0 || coord.x > cxMax || coord.y > cyMax) return;
 
@@ -406,13 +442,15 @@ public class WorldChunkSystem
         var c = go.GetComponent<Chunk>();
 
         var bgBuf = c.bgBuffer;
-        var fgBuf = c.fgBuffer;
-        int size  = chunkSize * chunkSize;
+        var solidBuf = c.solidBuffer;
+        var liqBuf = c.liquidBuffer;
 
+        int size = chunkSize * chunkSize;
         for (int i = 0; i < size; i++)
         {
             bgBuf[i] = null;
-            fgBuf[i] = null;
+            solidBuf[i] = null;
+            liqBuf[i] = null;
         }
 
         var bounds = new BoundsInt(0, 0, 0, chunkSize, chunkSize, 1);
@@ -423,44 +461,43 @@ public class WorldChunkSystem
             int wx = coord.x * chunkSize + x;
             int wy = coord.y * chunkSize + y;
             int idx = y * chunkSize + x;
+
             if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
                 continue;
 
             // BG
-            bgBuf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
+            bgBuf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
 
-            // FG: 본체/유체를 단일 타일맵에서 처리
-            var cell = worldMap.fg[wx, wy];
+            // Solid
+            var s = worldMap.solid[wx, wy];
+            if (s.id != 0)
+                solidBuf[idx] = tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0);
+            else
+                solidBuf[idx] = null;
 
-            Tile fgTile = null;
-
-            if (cell.id != 0)
+            // Liquid (Collidable solid이면 표시 안 함)
+            if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
             {
-                fgTile = TileCache.Get(cell.id);
-                if (fgTile != null)
-                {
-                    bool collidable = (cell.flags & FgFlags.Collidable) != 0;
-                    fgTile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
-                }
+                liqBuf[idx] = null;
             }
-            else if (cell.fluidAmount > 0 && cell.fluidId != 0)
+            else
             {
-                // 본체가 없고 유체만 있는 경우 → 물 타일
-                fgTile = TileCache.GetWaterByAmount(cell.fluidId, cell.fluidAmount);
-                if (fgTile != null)
-                    fgTile.colliderType = Tile.ColliderType.None;
+                var l = worldMap.liquid[wx, wy];
+                liqBuf[idx] = (l.id != 0 && l.amount > 0)
+                    ? tileCache.GetLiquidTile(l.id, l.amount)
+                    : null;
             }
-
-            fgBuf[idx] = fgTile;
         }
 
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
-        c.fgTilemap.SetTilesBlock(bounds, fgBuf);
+        c.solidTilemap.SetTilesBlock(bounds, solidBuf);
+        c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
 
-        var coll = c.fgTilemap.GetComponent<TilemapCollider2D>();
+        // Solid collider 갱신
+        var coll = c.solidTilemap.GetComponent<TilemapCollider2D>();
         if (coll != null)
         {
-            c.fgTilemap.RefreshAllTiles();
+            c.solidTilemap.RefreshAllTiles();
             coll.ProcessTilemapChanges();
         }
 
@@ -469,15 +506,19 @@ public class WorldChunkSystem
         // 라이트 메쉬 초기화
         RefreshLightLayer(coord);
 
-        c.bgDirty = c.fgDirty = c.lightDirty = false;
+        c.bgDirty = false;
+        c.solidDirty = false;
+        c.liquidDirty = false;
+        c.lightDirty = false;
     }
 
-    private enum LayerType { BG, FG }
+    private enum LayerType { BG, Solid, Liquid }
 
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
-        var go = activeChunks[coord];
-        var c  = go.GetComponent<Chunk>();
+        if (!activeChunks.TryGetValue(coord, out var go)) return;
+
+        var c = go.GetComponent<Chunk>();
         var bounds = new BoundsInt(0, 0, 0, chunkSize, chunkSize, 1);
 
         switch (type)
@@ -491,52 +532,67 @@ public class WorldChunkSystem
                     int wx = coord.x * chunkSize + x;
                     int wy = coord.y * chunkSize + y;
                     int idx = y * chunkSize + x;
-                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) continue;
-                    buf[idx] = TileCache.Get(worldMap.bg[wx, wy]);
+                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
+                    buf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
                 }
                 c.bgTilemap.SetTilesBlock(bounds, buf);
                 break;
             }
-            case LayerType.FG:
+
+            case LayerType.Solid:
             {
-                var buf = c.fgBuffer;
+                var buf = c.solidBuffer;
                 for (int y = 0; y < chunkSize; y++)
                 for (int x = 0; x < chunkSize; x++)
                 {
                     int wx = coord.x * chunkSize + x;
                     int wy = coord.y * chunkSize + y;
                     int idx = y * chunkSize + x;
-                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) continue;
+                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
 
-                    var cell = worldMap.fg[wx, wy];
-                    Tile tile = null;
-
-                    if (cell.id != 0)
-                    {
-                        tile = TileCache.Get(cell.id);
-                        if (tile != null)
-                        {
-                            bool collidable = (cell.flags & FgFlags.Collidable) != 0;
-                            tile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
-                        }
-                    }
-                    else if (cell.fluidAmount > 0 && cell.fluidId != 0)
-                    {
-                        tile = TileCache.GetWaterByAmount(cell.fluidId, cell.fluidAmount);
-                        if (tile != null)
-                            tile.colliderType = Tile.ColliderType.None;
-                    }
-
-                    buf[idx] = tile;
+                    var s = worldMap.solid[wx, wy];
+                    buf[idx] = (s.id != 0)
+                        ? tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0)
+                        : null;
                 }
 
-                c.fgTilemap.SetTilesBlock(bounds, buf);
-                var coll2 = c.fgTilemap.GetComponent<TilemapCollider2D>();
+                c.solidTilemap.SetTilesBlock(bounds, buf);
+
+                var coll2 = c.solidTilemap.GetComponent<TilemapCollider2D>();
                 if (coll2 != null)
                 {
-                    c.fgTilemap.RefreshAllTiles();
+                    c.solidTilemap.RefreshAllTiles();
                     coll2.ProcessTilemapChanges();
                 }
+
+                break;
+            }
+
+            case LayerType.Liquid:
+            {
+                var buf = c.liquidBuffer;
+                for (int y = 0; y < chunkSize; y++)
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    int wx = coord.x * chunkSize + x;
+                    int wy = coord.y * chunkSize + y;
+                    int idx = y * chunkSize + x;
+                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
+
+                    var s = worldMap.solid[wx, wy];
+                    if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
+                    {
+                        buf[idx] = null;
+                        continue;
+                    }
+
+                    var l = worldMap.liquid[wx, wy];
+                    buf[idx] = (l.id != 0 && l.amount > 0)
+                        ? tileCache.GetLiquidTile(l.id, l.amount)
+                        : null;
+                }
+
+                c.liquidTilemap.SetTilesBlock(bounds, buf);
                 break;
             }
         }
@@ -567,16 +623,15 @@ public class WorldChunkSystem
                 float sum = 0f;
                 int samples = 0;
 
-                // 3x3 샘플 (월드 경계는 Clamp)
+                // 3x3 샘플
                 for (int oy = -1; oy <= 1; oy++)
                 for (int ox = -1; ox <= 1; ox++)
                 {
-                    int x = Mathf.Clamp(gx + ox, 0, worldWidth  - 1);
+                    int x = Mathf.Clamp(gx + ox, 0, worldWidth - 1);
                     int y = Mathf.Clamp(gy + oy, 0, worldHeight - 1);
 
                     var L = worldMap.light[x, y];
 
-                    // 자연광: 0~15, 전역 오프셋 0~15
                     int ns = L.natural - globalBrightnessOffset;
                     if (ns < 0) ns = 0;
 
@@ -588,8 +643,6 @@ public class WorldChunkSystem
                 }
 
                 float avg = (samples > 0) ? (sum / samples) : 0f;
-
-                // 선택: 경계 더 부드럽게(원하면 유지/제거 가능)
                 avg = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(avg));
 
                 float A01 = 1f - avg;
@@ -603,83 +656,68 @@ public class WorldChunkSystem
         mesh.colors32 = cols;
     }
 
-    // ───────── 타일 캐시 ─────────
-    private static class TileCache
+    // ───────── 타일 캐시(인스턴스) ─────────
+    private sealed class TileCache
     {
-        private static readonly Dictionary<ushort, Tile> cache = new();
-        private static Tile[] waterLevelTiles;
+        private readonly CellLibrary lib;
 
-        public static Tile Get(ushort id)
+        private readonly Dictionary<ushort, Tile> bgTiles = new();
+        private readonly Dictionary<ushort, Tile> solidTiles = new();
+
+        // ✅ amount 기준 캐시
+        private readonly Dictionary<(ushort liquidId, byte amount), Tile> liquidTiles = new();
+
+        public TileCache(CellLibrary lib)
         {
-            if (id == 0) return null;
-            if (cache.TryGetValue(id, out var tile)) return tile;
-            var t = ScriptableObject.CreateInstance<Tile>();
-            t.sprite = CellLibrary.GetSprite(id);
-            t.name   = CellLibrary.GetName(id);
-            cache[id] = t;
-            return t;
+            this.lib = lib;
         }
 
-        public static Tile GetWaterByAmount(ushort waterId, int amountRaw)
+        public TileBase GetBgTile(ushort id)
         {
-            if (amountRaw <= 0) return null;
+            if (id == 0) return null;
+            if (bgTiles.TryGetValue(id, out var t)) return t;
 
-            // 내부 표현(0..128)을 0..100 으로 압축 후 10단계로 매핑
-            int amount = amountRaw;
-            if (amount > 100) amount = 100;
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = lib.GetSolidSprite(id);
+            tile.name = lib.GetSolidName(id);
+            tile.colliderType = Tile.ColliderType.None;
 
-            int level = (amount - 1) / 10 + 1; // 1..10
-            if (level < 1) level = 1;
-            if (level > 10) level = 10;
+            bgTiles[id] = tile;
+            return tile;
+        }
 
-            waterLevelTiles ??= new Tile[11];
-            if (waterLevelTiles[level] != null) return waterLevelTiles[level];
+        public TileBase GetSolidTile(ushort id, bool collidable)
+        {
+            if (id == 0) return null;
+            if (solidTiles.TryGetValue(id, out var t)) return t;
 
-            var baseTile = Get(waterId);
-            var s = baseTile != null ? baseTile.sprite : null;
-            if (s == null) return null;
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = lib.GetSolidSprite(id);
+            tile.name = lib.GetSolidName(id);
+            tile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
 
-            var tex = s.texture;
-            if (tex == null) return null;
+            solidTiles[id] = tile;
+            return tile;
+        }
 
-            Rect r = s.textureRect;
-            int fullW = Mathf.RoundToInt(r.width);
-            int fullH = Mathf.RoundToInt(r.height);
-            int copyH = Mathf.CeilToInt(fullH * (level / 10f));
+        public TileBase GetLiquidTile(ushort liquidId, byte amount)
+        {
+            if (liquidId == 0 || amount == 0) return null;
 
-            var newTex = new Texture2D(fullW, fullH, TextureFormat.RGBA32, false);
-            newTex.filterMode = tex.filterMode;
-            newTex.wrapMode   = TextureWrapMode.Clamp;
+            // amount 단위로 캐시 (CellLibrary가 amount->level 매핑까지 처리)
+            var key = (liquidId, amount);
+            if (liquidTiles.TryGetValue(key, out var t)) return t;
 
-            var clear = new Color32(0, 0, 0, 0);
-            var buf   = new Color32[fullW * fullH];
-            for (int i = 0; i < buf.Length; i++) buf[i] = clear;
-            newTex.SetPixels32(buf);
+            var sp = lib.GetLiquidSpriteByAmount(liquidId, amount);
+            if (sp == null) return null;
 
-            int srcX = Mathf.RoundToInt(r.x);
-            int srcY = Mathf.RoundToInt(r.y);
-            Color[] src = tex.GetPixels(srcX, srcY, fullW, copyH);
-            newTex.SetPixels(0, 0, fullW, copyH, src);
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = sp;
+            tile.name = sp.name; // 보통 "Water_1" 같은 스프라이트 이름
+            tile.colliderType = Tile.ColliderType.None;
 
-            newTex.Apply(false, false);
-
-            var spr = Sprite.Create(
-                newTex,
-                new Rect(0, 0, fullW, fullH),
-                new Vector2(0.5f, 0.5f),
-                s.pixelsPerUnit,
-                0,
-                SpriteMeshType.FullRect
-            );
-            spr.name = $"Water_L{level}";
-
-            var t = ScriptableObject.CreateInstance<Tile>();
-            t.sprite       = spr;
-            t.name         = $"Water_L{level}";
-            t.colliderType = Tile.ColliderType.None;
-
-            waterLevelTiles[level] = t;
-            return t;
+            liquidTiles[key] = tile;
+            return tile;
         }
     }
 }

@@ -66,18 +66,15 @@ public class MultiblockManager : MonoBehaviour
                 if (string.IsNullOrEmpty(resultCellName))
                     continue;
 
-                ushort placeId = 0;
-                for (ushort id = 1; id < ushort.MaxValue; id++)
+                // ✅ 케이스 A: WorldManager가 들고 있는 CellLibrary 사용
+                if (world.cellLibrary == null)
                 {
-                    string nm = CellLibrary.GetName(id);
-                    if (!string.IsNullOrEmpty(nm) && nm == resultCellName)
-                    {
-                        placeId = id;
-                        break;
-                    }
+                    Debug.LogError($"{LOG_MB} WorldManager.cellLibrary not assigned.");
+                    continue;
                 }
 
-                if (placeId == 0)
+                // ✅ 이름 -> ID 역조회는 CellLibrary에 위임
+                if (!world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId) || placeId == 0)
                 {
                     Debug.LogWarning($"{LOG_MB} result cell '{resultCellName}' 에 해당하는 ID를 찾지 못함 (wx={wx}, wy={wy}). 스킵.");
                     continue;

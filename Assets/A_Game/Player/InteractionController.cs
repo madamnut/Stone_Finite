@@ -535,9 +535,9 @@ public class InteractionController : MonoBehaviour
         {
             if      (cdObj is float f)   cooldown = f;
             else if (cdObj is double d)  cooldown = (float)d;
-           	else if (cdObj is int i)     cooldown = i;
+            else if (cdObj is int i)     cooldown = i;
             else if (cdObj is long l)    cooldown = l;
-            else
+           	else
             {
                 float tmp;
                 if (float.TryParse(cdObj.ToString(), out tmp))
@@ -549,7 +549,7 @@ public class InteractionController : MonoBehaviour
         {
             if      (dmgObj is float f)   damage = f;
             else if (dmgObj is double d)  damage = (float)d;
-            else if (dmgObj is int i)     damage = i;
+           	else if (dmgObj is int i)     damage = i;
             else if (dmgObj is long l)    damage = l;
             else
             {
@@ -749,7 +749,8 @@ public class InteractionController : MonoBehaviour
         ushort id = worldManager.GetFGId(cx, cy);
         if (id == 0) return false;
 
-        string interaction = CellLibrary.InteractionOf(id);
+        // ✅ 인스턴스 CellLibrary 사용
+        string interaction = worldManager.cellLibrary.GetSolidInteraction(id);
         if (string.IsNullOrEmpty(interaction)) return false;
 
         if (interaction == "primalcraftModule")
@@ -862,17 +863,9 @@ public class InteractionController : MonoBehaviour
             if (hasBg)   return false;
         }
 
-        ushort placeId = 0;
-        for (ushort id = 1; id < ushort.MaxValue; id++)
-        {
-            var nm = CellLibrary.GetName(id);
-            if (!string.IsNullOrEmpty(nm) && nm == cellName)
-            {
-                placeId = id;
-                break;
-            }
-        }
-        if (placeId == 0) return false;
+        // ✅ 이름->ID 역조회는 CellLibrary에 위임
+        if (!worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId))
+            return false;
 
         bool placed;
         if (targetLayer == WorldManager.CellLayer.FG)
@@ -920,12 +913,13 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
-        string clickedKey = CellLibrary.GetName(fgId);
+        // ✅ 인스턴스 CellLibrary 사용
+        string clickedKey = worldManager.cellLibrary.GetSolidName(fgId);
         Debug.Log($"{LOG_MB} 대상 셀 id={fgId}, key='{clickedKey}'");
 
         if (string.IsNullOrEmpty(clickedKey))
         {
-            Debug.LogWarning($"{LOG_MB} CellLibrary.GetName({fgId}) 결과가 비어있음. 취소.");
+            Debug.LogWarning($"{LOG_MB} GetSolidName({fgId}) 결과가 비어있음. 취소.");
             return false;
         }
 
@@ -995,7 +989,9 @@ public class InteractionController : MonoBehaviour
                             int wy = originY + ly;
 
                             ushort wid = worldManager.GetFGId(wx, wy);
-                            string worldKey = CellLibrary.GetName(wid);
+
+                            // ✅ 인스턴스 CellLibrary 사용
+                            string worldKey = worldManager.cellLibrary.GetSolidName(wid);
 
                             if (worldKey != expectedKey)
                             {

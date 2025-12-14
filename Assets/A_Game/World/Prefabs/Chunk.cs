@@ -5,9 +5,10 @@ public class Chunk : MonoBehaviour
 {
     public const int ChunkSize = 16;
 
-    // ── Tilemap 레이어: 후경 + 전경 ──
+    // ── Tilemap 레이어: 후경 + 솔리드 + 유체 ──
     public Tilemap bgTilemap;
-    public Tilemap fgTilemap;
+    public Tilemap solidTilemap;
+    public Tilemap liquidTilemap;
 
     // ── 라이트 메쉬 오브젝트 ──
     public GameObject lightMeshObject;
@@ -18,41 +19,33 @@ public class Chunk : MonoBehaviour
 
     // ── 타일 버퍼(재사용) ──
     [HideInInspector] public TileBase[] bgBuffer;
-    [HideInInspector] public TileBase[] fgBuffer;
+    [HideInInspector] public TileBase[] solidBuffer;
+    [HideInInspector] public TileBase[] liquidBuffer;
 
     // ── Dirty 플래그 ──
-    [HideInInspector] public bool bgDirty    = false;
-    [HideInInspector] public bool fgDirty    = false;
-    [HideInInspector] public bool lightDirty = false;
+    [HideInInspector] public bool bgDirty     = false;
+    [HideInInspector] public bool solidDirty  = false;
+    [HideInInspector] public bool liquidDirty = false;
+    [HideInInspector] public bool lightDirty  = false;
 
     void Awake()
     {
         // 타일 버퍼
         int ts = ChunkSize * ChunkSize;
-        bgBuffer = new TileBase[ts];
-        fgBuffer = new TileBase[ts];
+        bgBuffer     = new TileBase[ts];
+        solidBuffer  = new TileBase[ts];
+        liquidBuffer = new TileBase[ts];
 
-        // ── 라이트 메쉬: 미리 준비해 둔 객체에서 한 번에 참조 ──
-        if (lightMeshObject == null)
-        {
-            Debug.LogError("[Chunk] lightMeshObject가 비었습니다. 미리 만든 라이트 오브젝트를 드래그하세요.");
-            return;
-        }
-
+        // ── 라이트 메쉬 ──
         lightMeshFilter   = lightMeshObject.GetComponent<MeshFilter>();
         lightMeshRenderer = lightMeshObject.GetComponent<MeshRenderer>();
 
-        if (lightMeshFilter == null || lightMeshRenderer == null)
-        {
-            Debug.LogError("[Chunk] lightMeshObject에 MeshFilter 또는 MeshRenderer가 없습니다.");
-            return;
-        }
-
-        // 메쉬가 비어있다면 청크 격자(17×17 정점) 메쉬를 생성
         var mesh = lightMeshFilter.sharedMesh;
+
         int vW = ChunkSize + 1;
         int vH = ChunkSize + 1;
         int vCount = vW * vH;
+
         bool needBuild = (mesh == null) || (mesh.vertexCount != vCount);
 
         if (needBuild)
@@ -83,6 +76,7 @@ public class Chunk : MonoBehaviour
             int quadCount = ChunkSize * ChunkSize;
             var tris = new int[quadCount * 6];
             int ti = 0;
+
             for (int y = 0; y < ChunkSize; y++)
             {
                 for (int x = 0; x < ChunkSize; x++)
@@ -107,7 +101,6 @@ public class Chunk : MonoBehaviour
         }
         else
         {
-            // 기존 메쉬를 재사용. 정점수에 맞춰 컬러 버퍼 준비.
             lightColors = mesh.colors32;
             if (lightColors == null || lightColors.Length != vCount)
                 lightColors = new Color32[vCount];

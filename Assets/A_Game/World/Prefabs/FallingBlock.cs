@@ -10,24 +10,23 @@ public class FallingBlock : Entity
 
     [Header("Data")]
     [SerializeField] private ushort cellId;
-    bool placed;
-
-
-    //────────────────────────────────────────────
-    // Entity 구현
-    //────────────────────────────────────────────
+    [SerializeField] private bool placed;
 
     public override EntityKind Kind => EntityKind.FallingBlock;
-    // 별도 커스텀 로직이 없으므로 SetSimActive는
-    // Entity 기본 구현 그대로 사용 (override 제거)
 
+    //────────────────────────────────────────────
+    // Save / Load
+    //────────────────────────────────────────────
 
     public override EntitySaveData ToSaveData()
     {
+        // 이미 셀로 박힌 상태면 저장 의미 없음
+        if (placed)
+            return null;
+
         var payload = new FallingBlockPayload
         {
-            cellId = this.cellId,
-            placed = this.placed
+            cellId = cellId
         };
 
         return new EntitySaveData
@@ -38,7 +37,6 @@ public class FallingBlock : Entity
         };
     }
 
-
     public override void FromSaveData(EntitySaveData data)
     {
         transform.position = data.Position;
@@ -46,32 +44,18 @@ public class FallingBlock : Entity
         if (!string.IsNullOrEmpty(data.PayloadJson))
         {
             var payload = JsonConvert.DeserializeObject<FallingBlockPayload>(data.PayloadJson);
-
             if (payload != null)
-            {
                 cellId = payload.cellId;
-                placed = payload.placed;
-
-                if (!sr)
-                    sr = GetComponent<SpriteRenderer>();
-
-                // cellId 기준으로 스프라이트 복원
-                if (sr != null)
-                    sr.sprite = CellLibrary.GetSprite(cellId);
-            }
         }
 
-        // placed 상태 = 이미 땅에 박혀있던 것 → 로드 시 제거
-        if (placed)
-            Destroy(gameObject);
+        ApplySprite();
     }
 
-
     //────────────────────────────────────────────
-    // 초기화
+    // Init
     //────────────────────────────────────────────
 
-    public void Init(ushort id, WorldManager wm, Sprite sprite = null)
+    public void Init(ushort id, WorldManager wm, Sprite overrideSprite = null)
     {
         cellId = id;
         world  = wm;
@@ -79,44 +63,56 @@ public class FallingBlock : Entity
         if (!sr)
             sr = GetComponent<SpriteRenderer>();
 
-        if (sr)
+        if (overrideSprite != null)
         {
-            if (sprite != null)
-                sr.sprite = sprite;
-            else
-                sr.sprite = CellLibrary.GetSprite(cellId);
+            sr.sprite = overrideSprite;
+        }
+        else
+        {
+            ApplySprite();
         }
     }
 
+    private void ApplySprite()
+    {
+        if (!sr)
+            sr = GetComponent<SpriteRenderer>();
+
+        if (sr == null || world == null || world.cellLibrary == null)
+            return;
+
+        sr.sprite = world.cellLibrary.GetSolidSprite(cellId);
+    }
 
     //────────────────────────────────────────────
-    // 충돌 처리 → 땅에 박히면 셀로 변환
+    // Collision → Cell placement
     //────────────────────────────────────────────
 
     void OnTriggerEnter2D(Collider2D other)
     {
         if (placed) return;
-        if (((1 << other.gameObject.layer) & triggerMask.value) == 0) return;
+        if (world == null) return;
+
+        if (((1 << other.gameObject.layer) & triggerMask.value) == 0)
+            return;
 
         int gx = Mathf.FloorToInt(transform.position.x);
         int gy = Mathf.FloorToInt(transform.position.y);
 
-        if (world != null && world.PlaceCell(gx, gy, cellId))
+        if (world.PlaceFG(gx, gy, cellId))
         {
             placed = true;
             Destroy(gameObject);
         }
     }
 
-
     //────────────────────────────────────────────
-    // 저장용 payload
+    // Payload
     //────────────────────────────────────────────
 
     [System.Serializable]
     private class FallingBlockPayload
     {
         public ushort cellId;
-        public bool   placed;
     }
 }
