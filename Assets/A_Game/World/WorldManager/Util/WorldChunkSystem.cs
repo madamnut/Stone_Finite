@@ -18,6 +18,12 @@ using UnityEngine.Tilemaps;
 ///   - bool bgDirty, solidDirty, liquidDirty, lightDirty;
 ///   - lightMeshFilter/lightColors 등은 기존과 동일
 ///
+/// Liquid Mask 전제(Chunk.cs에 추가된 필드):
+///   - Texture2D liquidTypeTex, liquidAmountTex (16x16)
+///   - Color32[] liquidTypePixels, liquidAmtPixels (256)
+///   - MaterialPropertyBlock liquidMpb
+///   - TilemapRenderer liquidRenderer
+///
 /// Liquid 스프라이트 전제:
 ///   Water_1 ~ Water_16 (amount 1..128 → 1..16, 8단위)
 /// </summary>
@@ -493,6 +499,51 @@ public class WorldChunkSystem
         c.solidTilemap.SetTilesBlock(bounds, solidBuf);
         c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
 
+        // ===== Liquid Mask: 초기 1회 굽기 + MPB 적용 =====
+        for (int y = 0; y < chunkSize; y++)
+        for (int x = 0; x < chunkSize; x++)
+        {
+            int wx = coord.x * chunkSize + x;
+            int wy = coord.y * chunkSize + y;
+            int idx = y * chunkSize + x;
+
+            if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
+            {
+                c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                continue;
+            }
+
+            var s2 = worldMap.solid[wx, wy];
+            if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
+            {
+                c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                continue;
+            }
+
+            var l2 = worldMap.liquid[wx, wy];
+            byte type = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0); // liquidId == typeIndex
+            byte amt  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+
+            c.liquidTypePixels[idx] = new Color32(type, 0, 0, 255);
+            c.liquidAmtPixels[idx]  = new Color32(amt, 0, 0, 255);
+        }
+
+        c.liquidTypeTex.SetPixels32(c.liquidTypePixels);
+        c.liquidTypeTex.Apply(false, false);
+
+        c.liquidAmountTex.SetPixels32(c.liquidAmtPixels);
+        c.liquidAmountTex.Apply(false, false);
+
+        Vector3 origin = go.transform.position;
+
+        c.liquidRenderer.GetPropertyBlock(c.liquidMpb);
+        c.liquidMpb.SetTexture("_TypeTex", c.liquidTypeTex);
+        c.liquidMpb.SetTexture("_AmountTex", c.liquidAmountTex);
+        c.liquidMpb.SetVector("_ChunkOriginWS", new Vector4(origin.x, origin.y, 0f, 0f));
+        c.liquidRenderer.SetPropertyBlock(c.liquidMpb);
+
         // Solid collider 갱신
         var coll = c.solidTilemap.GetComponent<TilemapCollider2D>();
         if (coll != null)
@@ -593,6 +644,52 @@ public class WorldChunkSystem
                 }
 
                 c.liquidTilemap.SetTilesBlock(bounds, buf);
+
+                // ===== Liquid Mask: Dirty 갱신 + MPB 적용 =====
+                for (int y = 0; y < chunkSize; y++)
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    int wx = coord.x * chunkSize + x;
+                    int wy = coord.y * chunkSize + y;
+                    int idx = y * chunkSize + x;
+
+                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
+                    {
+                        c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                        c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                        continue;
+                    }
+
+                    var s2 = worldMap.solid[wx, wy];
+                    if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
+                    {
+                        c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                        c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                        continue;
+                    }
+
+                    var l2 = worldMap.liquid[wx, wy];
+                    byte type2 = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0);
+                    byte amt2  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+
+                    c.liquidTypePixels[idx] = new Color32(type2, 0, 0, 255);
+                    c.liquidAmtPixels[idx]  = new Color32(amt2, 0, 0, 255);
+                }
+
+                c.liquidTypeTex.SetPixels32(c.liquidTypePixels);
+                c.liquidTypeTex.Apply(false, false);
+
+                c.liquidAmountTex.SetPixels32(c.liquidAmtPixels);
+                c.liquidAmountTex.Apply(false, false);
+
+                Vector3 origin2 = go.transform.position;
+
+                c.liquidRenderer.GetPropertyBlock(c.liquidMpb);
+                c.liquidMpb.SetTexture("_TypeTex", c.liquidTypeTex);
+                c.liquidMpb.SetTexture("_AmountTex", c.liquidAmountTex);
+                c.liquidMpb.SetVector("_ChunkOriginWS", new Vector4(origin2.x, origin2.y, 0f, 0f));
+                c.liquidRenderer.SetPropertyBlock(c.liquidMpb);
+
                 break;
             }
         }

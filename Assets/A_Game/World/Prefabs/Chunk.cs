@@ -28,6 +28,14 @@ public class Chunk : MonoBehaviour
     [HideInInspector] public bool liquidDirty = false;
     [HideInInspector] public bool lightDirty  = false;
 
+    // ── Liquid Mask (청크별 렌더 분기용) ──
+    [HideInInspector] public Texture2D liquidTypeTex;     // 16x16, R=liquidId(0..255)
+    [HideInInspector] public Texture2D liquidAmountTex;   // 16x16, R=amount(0..128)
+    [HideInInspector] public Color32[] liquidTypePixels;  // 256
+    [HideInInspector] public Color32[] liquidAmtPixels;   // 256
+    [HideInInspector] public MaterialPropertyBlock liquidMpb;
+    [HideInInspector] public TilemapRenderer liquidRenderer;
+
     void Awake()
     {
         // 타일 버퍼
@@ -35,6 +43,22 @@ public class Chunk : MonoBehaviour
         bgBuffer     = new TileBase[ts];
         solidBuffer  = new TileBase[ts];
         liquidBuffer = new TileBase[ts];
+
+        // ── Liquid Mask 기본 리소스 (청크당 1회 생성, 이후 재사용) ──
+        liquidRenderer = liquidTilemap.GetComponent<TilemapRenderer>();
+        liquidMpb = new MaterialPropertyBlock();
+
+        liquidTypePixels = new Color32[ts];
+        liquidAmtPixels  = new Color32[ts];
+
+        // R8을 쓰고 싶으면 TextureFormat.R8로 바꿔도 됨(URP/플랫폼 호환 확인 필요)
+        liquidTypeTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
+        liquidTypeTex.filterMode = FilterMode.Point;
+        liquidTypeTex.wrapMode   = TextureWrapMode.Clamp;
+
+        liquidAmountTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
+        liquidAmountTex.filterMode = FilterMode.Point;
+        liquidAmountTex.wrapMode   = TextureWrapMode.Clamp;
 
         // ── 라이트 메쉬 ──
         lightMeshFilter   = lightMeshObject.GetComponent<MeshFilter>();
