@@ -8,24 +8,30 @@ using UnityEngine.Tilemaps;
 /// (WorldManager에서 의존성만 주입해서 사용)
 ///
 /// WorldData 구조 전제:
-///   bg / solid / liquid / light
+///   bg / solid / fluid / light
 ///
 /// Chunk 컴포넌트 전제(필드명):
 ///   - Tilemap bgTilemap;
 ///   - Tilemap solidTilemap;
-///   - Tilemap liquidTilemap;
-///   - TileBase[] bgBuffer, solidBuffer, liquidBuffer;
-///   - bool bgDirty, solidDirty, liquidDirty, lightDirty;
+///   - Tilemap fluidTilemap;
+///   - TileBase[] bgBuffer, solidBuffer, fluidBuffer;
+///   - bool bgDirty, solidDirty, fluidDirty, lightDirty;
 ///   - lightMeshFilter/lightColors 등은 기존과 동일
 ///
-/// Liquid Mask 전제(Chunk.cs에 추가된 필드):
-///   - Texture2D liquidTypeTex, liquidAmountTex (16x16)
-///   - Color32[] liquidTypePixels, liquidAmtPixels (256)
-///   - MaterialPropertyBlock liquidMpb
-///   - TilemapRenderer liquidRenderer
+/// Fluid Mask 전제(Chunk.cs에 추가된 필드):
+///   - Texture2D fluidTypeTex, fluidAmountTex (16x16)
+///   - Color32[] fluidTypePixels, fluidAmtPixels (256)
+///   - MaterialPropertyBlock fluidMpb
+///   - TilemapRenderer fluidRenderer
 ///
-/// Liquid 스프라이트 전제:
+/// Fluid 스프라이트 전제:
 ///   Water_1 ~ Water_16 (amount 1..128 → 1..16, 8단위)
+///
+/// 타일 제공 정책(고정):
+/// - BG: collider 없음
+/// - Solid(FG): collidable=true면 collider Sprite, 아니면 None
+/// - Fluid: collider 항상 있음(Trigger는 TilemapCollider2D 인스펙터에서)
+/// - 타일 생성/캐싱은 CellLibrary가 담당 (WorldChunkSystem은 Tile을 “요청”만)
 /// </summary>
 public class WorldChunkSystem
 {
@@ -62,7 +68,7 @@ public class WorldChunkSystem
 
     // ───────── 더티 청크 집합 ─────────
     private readonly HashSet<Vector2Int> solidDirtyChunks = new();
-    private readonly HashSet<Vector2Int> liquidDirtyChunks = new();
+    private readonly HashSet<Vector2Int> fluidDirtyChunks = new();
     private readonly HashSet<Vector2Int> bgDirtyChunks = new();
     private readonly HashSet<Vector2Int> lightDirtyChunks = new();
 
@@ -70,9 +76,6 @@ public class WorldChunkSystem
     private Vector2Int lastPlayerChunk = Vector2Int.zero;
 
     public IReadOnlyDictionary<Vector2Int, GameObject> ActiveChunks => activeChunks;
-
-    // ───────── 타일 캐시(인스턴스) ─────────
-    private readonly TileCache tileCache;
 
     // ───────── 생성자 ─────────
     public WorldChunkSystem(
@@ -100,8 +103,6 @@ public class WorldChunkSystem
 
         this.cellLibrary = cellLibrary;
         this.recalcLightAt = recalcLightAt;
-
-        tileCache = new TileCache(cellLibrary);
     }
 
     // ───────── 외부에서 세팅/호출할 API ─────────
@@ -181,7 +182,7 @@ public class WorldChunkSystem
             // 혹시 남아있을 수 있는 더티 기록 제거
             bgDirtyChunks.Remove(coord);
             solidDirtyChunks.Remove(coord);
-            liquidDirtyChunks.Remove(coord);
+            fluidDirtyChunks.Remove(coord);
             lightDirtyChunks.Remove(coord);
         }
 
@@ -219,7 +220,7 @@ public class WorldChunkSystem
     public void ProcessDirtyChunks()
     {
         if (solidDirtyChunks.Count == 0 &&
-            liquidDirtyChunks.Count == 0 &&
+            fluidDirtyChunks.Count == 0 &&
             bgDirtyChunks.Count == 0 &&
             lightDirtyChunks.Count == 0)
             return;
@@ -254,19 +255,19 @@ public class WorldChunkSystem
             solidDirtyChunks.Clear();
         }
 
-        // Liquid
-        if (liquidDirtyChunks.Count > 0)
+        // Fluid
+        if (fluidDirtyChunks.Count > 0)
         {
-            foreach (var coord in liquidDirtyChunks)
+            foreach (var coord in fluidDirtyChunks)
             {
                 if (!activeChunks.TryGetValue(coord, out var go)) continue;
                 var c = go.GetComponent<Chunk>();
-                if (!c.liquidDirty) continue;
+                if (!c.fluidDirty) continue;
 
-                RefreshChunkLayer(coord, LayerType.Liquid);
-                c.liquidDirty = false;
+                RefreshChunkLayer(coord, LayerType.Fluid);
+                c.fluidDirty = false;
             }
-            liquidDirtyChunks.Clear();
+            fluidDirtyChunks.Clear();
         }
 
         // Light
@@ -293,7 +294,7 @@ public class WorldChunkSystem
         int worldY,
         bool markSolid,
         bool markBG = false,
-        bool markLiquid = false
+        bool markFluid = false
     )
     {
         int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
@@ -308,10 +309,10 @@ public class WorldChunkSystem
             c.solidDirty = true;
             solidDirtyChunks.Add(coord);
         }
-        if (markLiquid)
+        if (markFluid)
         {
-            c.liquidDirty = true;
-            liquidDirtyChunks.Add(coord);
+            c.fluidDirty = true;
+            fluidDirtyChunks.Add(coord);
         }
         if (markBG)
         {
@@ -449,14 +450,14 @@ public class WorldChunkSystem
 
         var bgBuf = c.bgBuffer;
         var solidBuf = c.solidBuffer;
-        var liqBuf = c.liquidBuffer;
+        var fluidBuf = c.fluidBuffer;
 
         int size = chunkSize * chunkSize;
         for (int i = 0; i < size; i++)
         {
             bgBuf[i] = null;
             solidBuf[i] = null;
-            liqBuf[i] = null;
+            fluidBuf[i] = null;
         }
 
         var bounds = new BoundsInt(0, 0, 0, chunkSize, chunkSize, 1);
@@ -471,35 +472,34 @@ public class WorldChunkSystem
             if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
                 continue;
 
-            // BG
-            bgBuf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
+            // BG: 항상 collider 없음
+            bgBuf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
 
             // Solid
             var s = worldMap.solid[wx, wy];
-            if (s.id != 0)
-                solidBuf[idx] = tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0);
-            else
-                solidBuf[idx] = null;
+            solidBuf[idx] = (s.id != 0) ? cellLibrary.GetSolidTile(s.id, s.meta) : null;
 
-            // Liquid (Collidable solid이면 표시 안 함)
-            if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
+            // Fluid: collidable solid이면 표시 안 함
+            bool solidCollidable = false;
+            if (s.id != 0)
+                solidCollidable = (cellLibrary.GetSolidFlags(s.id) & CellLibrary.SolidFlags.Collidable) != 0;
+
+            if (solidCollidable)
             {
-                liqBuf[idx] = null;
+                fluidBuf[idx] = null;
             }
             else
             {
-                var l = worldMap.liquid[wx, wy];
-                liqBuf[idx] = (l.id != 0 && l.amount > 0)
-                    ? tileCache.GetLiquidTile(l.id, l.amount)
-                    : null;
+                var f = worldMap.fluid[wx, wy];
+                fluidBuf[idx] = (f.id != 0 && f.amount > 0) ? cellLibrary.GetFluidTile(f.id, f.amount) : null;
             }
         }
 
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
         c.solidTilemap.SetTilesBlock(bounds, solidBuf);
-        c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
+        c.fluidTilemap.SetTilesBlock(bounds, fluidBuf);
 
-        // ===== Liquid Mask: 초기 1회 굽기 + MPB 적용 =====
+        // ===== Fluid Mask: 초기 1회 굽기 + MPB 적용 =====
         for (int y = 0; y < chunkSize; y++)
         for (int x = 0; x < chunkSize; x++)
         {
@@ -509,47 +509,59 @@ public class WorldChunkSystem
 
             if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
             {
-                c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                c.fluidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                c.fluidAmtPixels[idx] = new Color32(0, 0, 0, 255);
                 continue;
             }
 
             var s2 = worldMap.solid[wx, wy];
-            if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
+            bool s2Collidable = false;
+            if (s2.id != 0)
+                s2Collidable = (cellLibrary.GetSolidFlags(s2.id) & CellLibrary.SolidFlags.Collidable) != 0;
+
+            if (s2Collidable)
             {
-                c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                c.fluidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                c.fluidAmtPixels[idx] = new Color32(0, 0, 0, 255);
                 continue;
             }
 
-            var l2 = worldMap.liquid[wx, wy];
-            byte type = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0); // liquidId == typeIndex
-            byte amt  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+            var f2 = worldMap.fluid[wx, wy];
+            byte type = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0); // fluidId == typeIndex
+            byte amt  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
-            c.liquidTypePixels[idx] = new Color32(type, 0, 0, 255);
-            c.liquidAmtPixels[idx]  = new Color32(amt, 0, 0, 255);
+            c.fluidTypePixels[idx] = new Color32(type, 0, 0, 255);
+            c.fluidAmtPixels[idx]  = new Color32(amt, 0, 0, 255);
         }
 
-        c.liquidTypeTex.SetPixels32(c.liquidTypePixels);
-        c.liquidTypeTex.Apply(false, false);
+        c.fluidTypeTex.SetPixels32(c.fluidTypePixels);
+        c.fluidTypeTex.Apply(false, false);
 
-        c.liquidAmountTex.SetPixels32(c.liquidAmtPixels);
-        c.liquidAmountTex.Apply(false, false);
+        c.fluidAmountTex.SetPixels32(c.fluidAmtPixels);
+        c.fluidAmountTex.Apply(false, false);
 
         Vector3 origin = go.transform.position;
 
-        c.liquidRenderer.GetPropertyBlock(c.liquidMpb);
-        c.liquidMpb.SetTexture("_TypeTex", c.liquidTypeTex);
-        c.liquidMpb.SetTexture("_AmountTex", c.liquidAmountTex);
-        c.liquidMpb.SetVector("_ChunkOriginWS", new Vector4(origin.x, origin.y, 0f, 0f));
-        c.liquidRenderer.SetPropertyBlock(c.liquidMpb);
+        c.fluidRenderer.GetPropertyBlock(c.fluidMpb);
+        c.fluidMpb.SetTexture("_TypeTex", c.fluidTypeTex);
+        c.fluidMpb.SetTexture("_AmountTex", c.fluidAmountTex);
+        c.fluidMpb.SetVector("_ChunkOriginWS", new Vector4(origin.x, origin.y, 0f, 0f));
+        c.fluidRenderer.SetPropertyBlock(c.fluidMpb);
 
         // Solid collider 갱신
-        var coll = c.solidTilemap.GetComponent<TilemapCollider2D>();
-        if (coll != null)
+        var solidColl = c.solidTilemap.GetComponent<TilemapCollider2D>();
+        if (solidColl != null)
         {
             c.solidTilemap.RefreshAllTiles();
-            coll.ProcessTilemapChanges();
+            solidColl.ProcessTilemapChanges();
+        }
+
+        // Fluid collider 갱신 (Trigger는 인스펙터에서)
+        var fluidColl = c.fluidTilemap.GetComponent<TilemapCollider2D>();
+        if (fluidColl != null)
+        {
+            c.fluidTilemap.RefreshAllTiles();
+            fluidColl.ProcessTilemapChanges();
         }
 
         activeChunks[coord] = go;
@@ -559,11 +571,11 @@ public class WorldChunkSystem
 
         c.bgDirty = false;
         c.solidDirty = false;
-        c.liquidDirty = false;
+        c.fluidDirty = false;
         c.lightDirty = false;
     }
 
-    private enum LayerType { BG, Solid, Liquid }
+    private enum LayerType { BG, Solid, Fluid }
 
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
@@ -584,7 +596,7 @@ public class WorldChunkSystem
                     int wy = coord.y * chunkSize + y;
                     int idx = y * chunkSize + x;
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
-                    buf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
+                    buf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
                 }
                 c.bgTilemap.SetTilesBlock(bounds, buf);
                 break;
@@ -602,26 +614,24 @@ public class WorldChunkSystem
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
 
                     var s = worldMap.solid[wx, wy];
-                    buf[idx] = (s.id != 0)
-                        ? tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0)
-                        : null;
+                    buf[idx] = (s.id != 0) ? cellLibrary.GetSolidTile(s.id, s.meta) : null;
                 }
 
                 c.solidTilemap.SetTilesBlock(bounds, buf);
 
-                var coll2 = c.solidTilemap.GetComponent<TilemapCollider2D>();
-                if (coll2 != null)
+                var solidColl = c.solidTilemap.GetComponent<TilemapCollider2D>();
+                if (solidColl != null)
                 {
                     c.solidTilemap.RefreshAllTiles();
-                    coll2.ProcessTilemapChanges();
+                    solidColl.ProcessTilemapChanges();
                 }
 
                 break;
             }
 
-            case LayerType.Liquid:
+            case LayerType.Fluid:
             {
-                var buf = c.liquidBuffer;
+                var buf = c.fluidBuffer;
                 for (int y = 0; y < chunkSize; y++)
                 for (int x = 0; x < chunkSize; x++)
                 {
@@ -631,21 +641,23 @@ public class WorldChunkSystem
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
 
                     var s = worldMap.solid[wx, wy];
-                    if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
+                    bool solidCollidable = false;
+                    if (s.id != 0)
+                        solidCollidable = (cellLibrary.GetSolidFlags(s.id) & CellLibrary.SolidFlags.Collidable) != 0;
+
+                    if (solidCollidable)
                     {
                         buf[idx] = null;
                         continue;
                     }
 
-                    var l = worldMap.liquid[wx, wy];
-                    buf[idx] = (l.id != 0 && l.amount > 0)
-                        ? tileCache.GetLiquidTile(l.id, l.amount)
-                        : null;
+                    var f = worldMap.fluid[wx, wy];
+                    buf[idx] = (f.id != 0 && f.amount > 0) ? cellLibrary.GetFluidTile(f.id, f.amount) : null;
                 }
 
-                c.liquidTilemap.SetTilesBlock(bounds, buf);
+                c.fluidTilemap.SetTilesBlock(bounds, buf);
 
-                // ===== Liquid Mask: Dirty 갱신 + MPB 적용 =====
+                // ===== Fluid Mask: Dirty 갱신 + MPB 적용 =====
                 for (int y = 0; y < chunkSize; y++)
                 for (int x = 0; x < chunkSize; x++)
                 {
@@ -655,40 +667,52 @@ public class WorldChunkSystem
 
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight)
                     {
-                        c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                        c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                        c.fluidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                        c.fluidAmtPixels[idx] = new Color32(0, 0, 0, 255);
                         continue;
                     }
 
                     var s2 = worldMap.solid[wx, wy];
-                    if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
+                    bool s2Collidable = false;
+                    if (s2.id != 0)
+                        s2Collidable = (cellLibrary.GetSolidFlags(s2.id) & CellLibrary.SolidFlags.Collidable) != 0;
+
+                    if (s2Collidable)
                     {
-                        c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                        c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
+                        c.fluidTypePixels[idx] = new Color32(0, 0, 0, 255);
+                        c.fluidAmtPixels[idx] = new Color32(0, 0, 0, 255);
                         continue;
                     }
 
-                    var l2 = worldMap.liquid[wx, wy];
-                    byte type2 = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0);
-                    byte amt2  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+                    var f2 = worldMap.fluid[wx, wy];
+                    byte type2 = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0);
+                    byte amt2  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
-                    c.liquidTypePixels[idx] = new Color32(type2, 0, 0, 255);
-                    c.liquidAmtPixels[idx]  = new Color32(amt2, 0, 0, 255);
+                    c.fluidTypePixels[idx] = new Color32(type2, 0, 0, 255);
+                    c.fluidAmtPixels[idx]  = new Color32(amt2, 0, 0, 255);
                 }
 
-                c.liquidTypeTex.SetPixels32(c.liquidTypePixels);
-                c.liquidTypeTex.Apply(false, false);
+                c.fluidTypeTex.SetPixels32(c.fluidTypePixels);
+                c.fluidTypeTex.Apply(false, false);
 
-                c.liquidAmountTex.SetPixels32(c.liquidAmtPixels);
-                c.liquidAmountTex.Apply(false, false);
+                c.fluidAmountTex.SetPixels32(c.fluidAmtPixels);
+                c.fluidAmountTex.Apply(false, false);
 
                 Vector3 origin2 = go.transform.position;
 
-                c.liquidRenderer.GetPropertyBlock(c.liquidMpb);
-                c.liquidMpb.SetTexture("_TypeTex", c.liquidTypeTex);
-                c.liquidMpb.SetTexture("_AmountTex", c.liquidAmountTex);
-                c.liquidMpb.SetVector("_ChunkOriginWS", new Vector4(origin2.x, origin2.y, 0f, 0f));
-                c.liquidRenderer.SetPropertyBlock(c.liquidMpb);
+                c.fluidRenderer.GetPropertyBlock(c.fluidMpb);
+                c.fluidMpb.SetTexture("_TypeTex", c.fluidTypeTex);
+                c.fluidMpb.SetTexture("_AmountTex", c.fluidAmountTex);
+                c.fluidMpb.SetVector("_ChunkOriginWS", new Vector4(origin2.x, origin2.y, 0f, 0f));
+                c.fluidRenderer.SetPropertyBlock(c.fluidMpb);
+
+                // Fluid collider 갱신 (Trigger는 인스펙터에서)
+                var fluidColl = c.fluidTilemap.GetComponent<TilemapCollider2D>();
+                if (fluidColl != null)
+                {
+                    c.fluidTilemap.RefreshAllTiles();
+                    fluidColl.ProcessTilemapChanges();
+                }
 
                 break;
             }
@@ -751,70 +775,5 @@ public class WorldChunkSystem
 
         c.lightColors = cols;
         mesh.colors32 = cols;
-    }
-
-    // ───────── 타일 캐시(인스턴스) ─────────
-    private sealed class TileCache
-    {
-        private readonly CellLibrary lib;
-
-        private readonly Dictionary<ushort, Tile> bgTiles = new();
-        private readonly Dictionary<ushort, Tile> solidTiles = new();
-
-        // ✅ amount 기준 캐시
-        private readonly Dictionary<(ushort liquidId, byte amount), Tile> liquidTiles = new();
-
-        public TileCache(CellLibrary lib)
-        {
-            this.lib = lib;
-        }
-
-        public TileBase GetBgTile(ushort id)
-        {
-            if (id == 0) return null;
-            if (bgTiles.TryGetValue(id, out var t)) return t;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = lib.GetSolidSprite(id);
-            tile.name = lib.GetSolidName(id);
-            tile.colliderType = Tile.ColliderType.None;
-
-            bgTiles[id] = tile;
-            return tile;
-        }
-
-        public TileBase GetSolidTile(ushort id, bool collidable)
-        {
-            if (id == 0) return null;
-            if (solidTiles.TryGetValue(id, out var t)) return t;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = lib.GetSolidSprite(id);
-            tile.name = lib.GetSolidName(id);
-            tile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
-
-            solidTiles[id] = tile;
-            return tile;
-        }
-
-        public TileBase GetLiquidTile(ushort liquidId, byte amount)
-        {
-            if (liquidId == 0 || amount == 0) return null;
-
-            // amount 단위로 캐시 (CellLibrary가 amount->level 매핑까지 처리)
-            var key = (liquidId, amount);
-            if (liquidTiles.TryGetValue(key, out var t)) return t;
-
-            var sp = lib.GetLiquidSpriteByAmount(liquidId, amount);
-            if (sp == null) return null;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = sp;
-            tile.name = sp.name; // 보통 "Water_1" 같은 스프라이트 이름
-            tile.colliderType = Tile.ColliderType.None;
-
-            liquidTiles[key] = tile;
-            return tile;
-        }
     }
 }

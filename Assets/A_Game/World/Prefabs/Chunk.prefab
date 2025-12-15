@@ -62,6 +62,11 @@ MonoBehaviour:
   solidDirty: 0
   liquidDirty: 0
   lightDirty: 0
+  liquidTypeTex: {fileID: 0}
+  liquidAmountTex: {fileID: 0}
+  liquidTypePixels: []
+  liquidAmtPixels: []
+  liquidRenderer: {fileID: 0}
 --- !u!1 &3638139694076564505
 GameObject:
   m_ObjectHideFlags: 0
@@ -404,7 +409,7 @@ GameObject:
   - component: {fileID: 5391658305255225601}
   - component: {fileID: 1974234210681592445}
   m_Layer: 26
-  m_Name: Liquid
+  m_Name: Fluid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

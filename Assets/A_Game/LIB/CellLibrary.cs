@@ -2,72 +2,103 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
 
 /// <summary>
-/// Solid / Liquid 정의 JSON + 단일 SpriteAtlas를 받아서
-/// - 배치 시점: id -> SolidCell / LiquidCell (정의값 그대로)
-/// - 런타임 조회: id -> name / interaction(string) / sprite 등 제공
+/// Solid / Fluid 정의 JSON + 단일 SpriteAtlas를 받아서
+/// - 런타임 조회: id/meta -> sprite, attachedAt, interaction 등 제공
+/// - 타일(Tile) 캐싱 제공: BG/Solid/Fluid
 ///
 /// JSON 규칙:
 /// - 기재되지 않은 속성은 0/false/null 취급
 /// - brightness는 0~15 클램프
 ///
 /// Sprite 규칙(권장):
-/// - Atlas 안 Sprite 이름 = JSON의 key(name)
-/// - Liquid 단계 스프라이트: "{LiquidName}_1" ~ "{LiquidName}_16"
+/// - Solid variants Sprite 이름 = variants[].sprite
+/// - Fluid 단계 스프라이트: "{FluidName}_1" ~ "{FluidName}_16"
 ///   (예: Water_1 .. Water_16)
+///
+/// Tile 정책(확정):
+/// - BG: 항상 collider 없음 (Tile.colliderType = None)
+/// - Solid(FG): collidable=true면 collider Sprite, 아니면 None
+/// - Fluid: 항상 collider 있음(Trigger는 TilemapCollider2D 인스펙터에서 처리),
+///          따라서 Tile.colliderType = Sprite
 /// </summary>
-
 [DefaultExecutionOrder(-10000)]
 public class CellLibrary : MonoBehaviour
 {
     [Header("Solid Json (ATT_Solid.json)")]
     public TextAsset solidJson;
 
-    [Header("Liquid Json (ATT_Liquid.json)")]
-    public TextAsset liquidJson;
+    [Header("Fluid Json (ATT_Fluid.json)")]
+    public TextAsset fluidJson;
 
-    [Header("Sprite Atlas (Solid+Liquid)")]
+    [Header("Sprite Atlas (Solid+Fluid)")]
     public SpriteAtlas atlas;
+
+    [Serializable, Flags]
+    public enum SolidFlags : byte
+    {
+        None       = 0,
+        Collidable = 1 << 0,
+        HasGravity = 1 << 1,
+    }
+
+    struct SolidVariantDef
+    {
+        public ushort meta;
+        public string spriteName; // variants[].sprite (필수)
+        public string attachedAt; // variants[].attachedAt (선택)
+        // key는 가독성용이라 저장/사용 안 함
+    }
 
     struct SolidDef
     {
         public ushort id;
         public byte brightness;
         public SolidFlags flags;
-        public string interaction; // 그대로(없으면 null)
+        public string interaction; // 없으면 null
         public string name;        // JSON key
+        public Dictionary<ushort, SolidVariantDef> variants; // meta -> variant (필수라고 가정)
     }
 
-    struct LiquidDef
+    struct FluidDef
     {
         public ushort id;
         public byte brightness;
         public string name; // JSON key (예: "Water")
     }
 
-    readonly Dictionary<ushort, SolidDef>  _solidById      = new Dictionary<ushort, SolidDef>(256);
-    readonly Dictionary<ushort, LiquidDef> _liquidById     = new Dictionary<ushort, LiquidDef>(32);
+    // ───────── 정의 캐시 ─────────
+    readonly Dictionary<ushort, SolidDef> _solidById = new Dictionary<ushort, SolidDef>(256);
+    readonly Dictionary<ushort, FluidDef> _fluidById = new Dictionary<ushort, FluidDef>(32);
 
-    readonly Dictionary<string, ushort> _solidIdByName  = new Dictionary<string, ushort>(256);
-    readonly Dictionary<string, ushort> _liquidIdByName = new Dictionary<string, ushort>(32);
+    readonly Dictionary<string, ushort> _solidIdByName = new Dictionary<string, ushort>(256);
+    readonly Dictionary<string, ushort> _fluidIdByName = new Dictionary<string, ushort>(32);
 
-    readonly Dictionary<ushort, Sprite> _solidSpriteById  = new Dictionary<ushort, Sprite>(256);
+    // ───────── 스프라이트 캐시 ─────────
+    readonly Dictionary<uint, Sprite> _solidSpriteByKey = new Dictionary<uint, Sprite>(512);
 
-    // Liquid는 2종류 캐시:
-    // 1) 베이스(디버그/대표용): id -> Sprite (LiquidName)
-    // 2) 양 기반 렌더링용:     id -> Sprite[17] (index 1..16), "{LiquidName}_{level}"
-    readonly Dictionary<ushort, Sprite>   _liquidBaseSpriteById  = new Dictionary<ushort, Sprite>(32);
-    readonly Dictionary<ushort, Sprite[]> _liquidLevelSpritesById = new Dictionary<ushort, Sprite[]>(32);
+    readonly Dictionary<ushort, Sprite> _fluidBaseSpriteById = new Dictionary<ushort, Sprite>(32);
+    readonly Dictionary<ushort, Sprite[]> _fluidLevelSpritesById = new Dictionary<ushort, Sprite[]>(32);
+
+    // ───────── 타일 캐시 ─────────
+    // BG는 meta 개념 없음 (bg는 ushort id만 가진다고 가정)
+    readonly Dictionary<ushort, Tile> _bgTileById = new Dictionary<ushort, Tile>(256);
+
+    // Solid(FG): (id, meta) -> Tile (colliderType은 collidable 고정이므로 키에 불필요)
+    readonly Dictionary<uint, Tile> _solidTileByKey = new Dictionary<uint, Tile>(512);
+
+    // Fluid: (id, level) -> Tile (level 1..16)
+    readonly Dictionary<uint, Tile> _fluidTileByKey = new Dictionary<uint, Tile>(256);
 
     // amount(1..128) -> level(1..16) 맵 (8단위)
     static readonly byte[] _amountToLevel = BuildAmountToLevel();
 
     static byte[] BuildAmountToLevel()
     {
-        // index: 0..128, value: 0..16 (0은 비어있음)
-        var map = new byte[WorldData.MaxFluid + 1];
+        var map = new byte[WorldData.MaxFluid + 1]; // index: 0..128
         for (int a = 0; a <= WorldData.MaxFluid; a++)
         {
             if (a <= 0) { map[a] = 0; continue; }
@@ -82,8 +113,19 @@ public class CellLibrary : MonoBehaviour
     void Awake()
     {
         BuildSolidCache();
-        BuildLiquidCache();
+        BuildFluidCache();
         BuildSpriteCache();
+        BuildTileCache(); // 스프라이트 캐시 후
+    }
+
+    static uint MakeKey(ushort id, ushort meta)
+    {
+        return ((uint)id << 16) | meta;
+    }
+
+    static uint MakeFluidLevelKey(ushort fluidId, byte level)
+    {
+        return ((uint)fluidId << 16) | level;
     }
 
     void BuildSolidCache()
@@ -111,31 +153,49 @@ public class CellLibrary : MonoBehaviour
             byte brightness = (byte)bInt;
 
             bool collidable = o["collidable"]?.Value<bool>() ?? false;
-            bool gravity    = o["gravity"]?.Value<bool>() ?? false;
+            bool gravity = o["gravity"]?.Value<bool>() ?? false;
 
             SolidFlags flags = SolidFlags.None;
             if (collidable) flags |= SolidFlags.Collidable;
-            if (gravity)    flags |= SolidFlags.HasGravity;
-
-            if (o.TryGetValue("depend", out JToken depTok) && depTok is JArray deps)
-            {
-                for (int i = 0; i < deps.Count; i++)
-                {
-                    string d = deps[i]?.Value<string>();
-                    if (string.IsNullOrEmpty(d)) continue;
-
-                    switch (d)
-                    {
-                        case "background": flags |= SolidFlags.DepBackground; break;
-                        case "up":         flags |= SolidFlags.DepUp; break;
-                        case "down":       flags |= SolidFlags.DepDown; break;
-                        case "left":       flags |= SolidFlags.DepLeft; break;
-                        case "right":      flags |= SolidFlags.DepRight; break;
-                    }
-                }
-            }
+            if (gravity) flags |= SolidFlags.HasGravity;
 
             string interaction = o["interaction"]?.Value<string>(); // 없으면 null
+
+            Dictionary<ushort, SolidVariantDef> variants = null;
+
+            if (o.TryGetValue("variants", out JToken vTok) && vTok is JArray vArr && vArr.Count > 0)
+            {
+                variants = new Dictionary<ushort, SolidVariantDef>(vArr.Count);
+
+                for (int i = 0; i < vArr.Count; i++)
+                {
+                    if (!(vArr[i] is JObject vObj)) continue;
+
+                    int metaInt = vObj["meta"]?.Value<int>() ?? 0;
+                    if (metaInt < 0) metaInt = 0;
+                    if (metaInt > ushort.MaxValue) metaInt = ushort.MaxValue;
+                    ushort meta = (ushort)metaInt;
+
+                    string spriteName = vObj["sprite"]?.Value<string>();
+                    if (string.IsNullOrEmpty(spriteName))
+                        continue; // sprite는 필수
+
+                    string attachedAt = vObj["attachedAt"]?.Value<string>(); // optional
+
+                    variants[meta] = new SolidVariantDef
+                    {
+                        meta = meta,
+                        spriteName = spriteName,
+                        attachedAt = attachedAt
+                    };
+                }
+
+                if (variants.Count == 0)
+                    variants = null;
+            }
+
+            if (variants == null)
+                continue; // Solid 스펙 전제 위반 -> 등록 안 함
 
             var def = new SolidDef
             {
@@ -143,24 +203,26 @@ public class CellLibrary : MonoBehaviour
                 brightness = brightness,
                 flags = flags,
                 interaction = interaction,
-                name = name
+                name = name,
+                variants = variants
             };
 
             _solidById[id] = def;
+
             if (!_solidIdByName.ContainsKey(name))
                 _solidIdByName.Add(name, id);
         }
     }
 
-    void BuildLiquidCache()
+    void BuildFluidCache()
     {
-        _liquidById.Clear();
-        _liquidIdByName.Clear();
+        _fluidById.Clear();
+        _fluidIdByName.Clear();
 
-        if (liquidJson == null || string.IsNullOrEmpty(liquidJson.text))
+        if (fluidJson == null || string.IsNullOrEmpty(fluidJson.text))
             return;
 
-        var root = JObject.Parse(liquidJson.text);
+        var root = JObject.Parse(fluidJson.text);
 
         foreach (var prop in root.Properties())
         {
@@ -176,45 +238,51 @@ public class CellLibrary : MonoBehaviour
             if (bInt < 0) bInt = 0; else if (bInt > 15) bInt = 15;
             byte brightness = (byte)bInt;
 
-            var def = new LiquidDef
+            var def = new FluidDef
             {
                 id = id,
                 brightness = brightness,
                 name = name
             };
 
-            _liquidById[id] = def;
-            if (!_liquidIdByName.ContainsKey(name))
-                _liquidIdByName.Add(name, id);
+            _fluidById[id] = def;
+
+            if (!_fluidIdByName.ContainsKey(name))
+                _fluidIdByName.Add(name, id);
         }
     }
 
     void BuildSpriteCache()
     {
-        _solidSpriteById.Clear();
-        _liquidBaseSpriteById.Clear();
-        _liquidLevelSpritesById.Clear();
+        _solidSpriteByKey.Clear();
+        _fluidBaseSpriteById.Clear();
+        _fluidLevelSpritesById.Clear();
 
         if (atlas == null) return;
 
+        // Solid: 모든 variants sprite 캐시
         foreach (var kv in _solidById)
         {
             var def = kv.Value;
-            var sp = atlas.GetSprite(def.name);
-            if (sp != null)
-                _solidSpriteById[def.id] = sp;
+
+            foreach (var vkv in def.variants)
+            {
+                var v = vkv.Value;
+                var sp = atlas.GetSprite(v.spriteName);
+                if (sp != null)
+                    _solidSpriteByKey[MakeKey(def.id, v.meta)] = sp;
+            }
         }
 
-        foreach (var kv in _liquidById)
+        // Fluid base + level sprites
+        foreach (var kv in _fluidById)
         {
             var def = kv.Value;
 
-            // 베이스(있으면 넣고, 없어도 무방)
             var baseSp = atlas.GetSprite(def.name);
             if (baseSp != null)
-                _liquidBaseSpriteById[def.id] = baseSp;
+                _fluidBaseSpriteById[def.id] = baseSp;
 
-            // 1..16 단계 스프라이트
             var arr = new Sprite[17]; // 0 unused
             for (int level = 1; level <= 16; level++)
             {
@@ -223,61 +291,36 @@ public class CellLibrary : MonoBehaviour
                 if (sp != null)
                     arr[level] = sp;
             }
-            _liquidLevelSpritesById[def.id] = arr;
+            _fluidLevelSpritesById[def.id] = arr;
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Public API (월드데이터 변환)
-    // ─────────────────────────────────────────────────────────
-
-    public SolidCell MakeSolidCell(ushort id)
+    void BuildTileCache()
     {
-        if (!_solidById.TryGetValue(id, out var def))
-        {
-            return new SolidCell
-            {
-                id = id,
-                brightness = 0,
-                flags = SolidFlags.None
-            };
-        }
+        _bgTileById.Clear();
+        _solidTileByKey.Clear();
+        _fluidTileByKey.Clear();
 
-        return new SolidCell
-        {
-            id = def.id,
-            brightness = def.brightness,
-            flags = def.flags
-        };
-    }
-
-    public LiquidCell MakeLiquidCell(ushort id)
-    {
-        return MakeLiquidCell(id, WorldData.MaxFluid);
-    }
-
-    public LiquidCell MakeLiquidCell(ushort id, byte amount)
-    {
-        if (!_liquidById.TryGetValue(id, out var def))
-        {
-            return new LiquidCell
-            {
-                id = id,
-                amount = amount,
-                brightness = 0
-            };
-        }
-
-        return new LiquidCell
-        {
-            id = def.id,
-            amount = amount,
-            brightness = def.brightness
-        };
+        // BG/Solid/Fluid 타일은 필요 시 Lazy 생성해도 되지만,
+        // 지금은 API 경로 단순화를 위해 캐시 딕셔너리만 초기화.
     }
 
     // ─────────────────────────────────────────────────────────
-    // Public API (런타임 조회)
+    // Public API (WorldData용 생성)
+    // ─────────────────────────────────────────────────────────
+
+    public SolidCell MakeSolidCell(ushort id, ushort meta = 0)
+    {
+        return new SolidCell { id = id, meta = meta };
+    }
+
+    public FluidCell MakeFluidCell(ushort id, byte amount)
+    {
+        return new FluidCell { id = id, amount = amount };
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Public API (기본 조회)
     // ─────────────────────────────────────────────────────────
 
     public string GetSolidName(ushort id)
@@ -285,14 +328,9 @@ public class CellLibrary : MonoBehaviour
         return _solidById.TryGetValue(id, out var def) ? def.name : null;
     }
 
-    public string GetLiquidName(ushort id)
+    public string GetFluidName(ushort id)
     {
-        return _liquidById.TryGetValue(id, out var def) ? def.name : null;
-    }
-
-    public string GetSolidInteraction(ushort id)
-    {
-        return _solidById.TryGetValue(id, out var def) ? def.interaction : null;
+        return _fluidById.TryGetValue(id, out var def) ? def.name : null;
     }
 
     public SolidFlags GetSolidFlags(ushort id)
@@ -305,9 +343,9 @@ public class CellLibrary : MonoBehaviour
         return _solidById.TryGetValue(id, out var def) ? def.brightness : (byte)0;
     }
 
-    public byte GetLiquidBrightness(ushort id)
+    public byte GetFluidBrightness(ushort id)
     {
-        return _liquidById.TryGetValue(id, out var def) ? def.brightness : (byte)0;
+        return _fluidById.TryGetValue(id, out var def) ? def.brightness : (byte)0;
     }
 
     public bool TryGetSolidIdByName(string name, out ushort id)
@@ -315,53 +353,170 @@ public class CellLibrary : MonoBehaviour
         return _solidIdByName.TryGetValue(name, out id);
     }
 
-    public bool TryGetLiquidIdByName(string name, out ushort id)
+    public bool TryGetFluidIdByName(string name, out ushort id)
     {
-        return _liquidIdByName.TryGetValue(name, out id);
+        return _fluidIdByName.TryGetValue(name, out id);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Public API (Interaction)
+    // ─────────────────────────────────────────────────────────
+
+    public bool GetInteraction(ushort id, out string interaction)
+    {
+        if (_solidById.TryGetValue(id, out var def) && !string.IsNullOrEmpty(def.interaction))
+        {
+            interaction = def.interaction;
+            return true;
+        }
+
+        interaction = null;
+        return false;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Public API (AttachedAt)
+    // ─────────────────────────────────────────────────────────
+
+    public bool GetAttachedAt(ushort id, ushort meta, out string attachedAt)
+    {
+        if (_solidById.TryGetValue(id, out var def) &&
+            def.variants != null &&
+            def.variants.TryGetValue(meta, out var v) &&
+            !string.IsNullOrEmpty(v.attachedAt))
+        {
+            attachedAt = v.attachedAt;
+            return true;
+        }
+
+        attachedAt = null;
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────
     // Public API (Sprite)
     // ─────────────────────────────────────────────────────────
 
+    public Sprite GetSolidSprite(ushort id, ushort meta)
+    {
+        return _solidSpriteByKey.TryGetValue(MakeKey(id, meta), out var sp) ? sp : null;
+    }
+
     public Sprite GetSolidSprite(ushort id)
     {
-        return _solidSpriteById.TryGetValue(id, out var sp) ? sp : null;
+        return GetSolidSprite(id, 0);
     }
 
-    /// <summary>
-    /// 액체 "베이스" 스프라이트.
-    /// - atlas에 LiquidName(예: "Water")가 있으면 반환
-    /// - 없으면 null 가능
-    /// </summary>
-    public Sprite GetLiquidSprite(ushort id)
+    public Sprite GetFluidSprite(ushort id)
     {
-        return _liquidBaseSpriteById.TryGetValue(id, out var sp) ? sp : null;
+        return _fluidBaseSpriteById.TryGetValue(id, out var sp) ? sp : null;
     }
 
-    /// <summary>
-    /// amount(1..128)에 따라 "{LiquidName}_1..16"에서 선택.
-    /// - 내부 레벨: (amount + 7) / 8  => 1..16
-    /// - 단계 스프라이트가 없으면, 베이스가 있으면 베이스로 폴백
-    /// </summary>
-    public Sprite GetLiquidSpriteByAmount(ushort liquidId, byte amount)
+    public Sprite GetFluidSpriteByAmount(ushort fluidId, byte amount)
     {
-        if (liquidId == 0 || amount == 0) return null;
+        if (fluidId == 0 || amount == 0) return null;
 
         byte lvl = _amountToLevel[amount];
 
-        if (_liquidLevelSpritesById.TryGetValue(liquidId, out var arr))
+        if (_fluidLevelSpritesById.TryGetValue(fluidId, out var arr))
         {
             var sp = arr[lvl];
             if (sp != null) return sp;
         }
 
-        // 폴백: base sprite
-        return GetLiquidSprite(liquidId);
+        return GetFluidSprite(fluidId);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Public API (Tile)
+    // ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// BG 타일: 항상 collider 없음.
+    /// BG 스프라이트는 Solid meta=0 기준으로 조회.
+    /// </summary>
+    public TileBase GetBgTile(ushort id)
+    {
+        if (id == 0) return null;
+
+        if (_bgTileById.TryGetValue(id, out var t))
+            return t;
+
+        var sp = GetSolidSprite(id, 0);
+        if (sp == null) return null;
+
+        var tile = ScriptableObject.CreateInstance<Tile>();
+        tile.sprite = sp;
+        tile.name = sp.name;
+        tile.colliderType = Tile.ColliderType.None;
+
+        _bgTileById[id] = tile;
+        return tile;
+    }
+
+    /// <summary>
+    /// Solid(FG) 타일: collidable 속성에 따라 collider 결정.
+    /// </summary>
+    public TileBase GetSolidTile(ushort id, ushort meta)
+    {
+        if (id == 0) return null;
+
+        uint key = MakeKey(id, meta);
+        if (_solidTileByKey.TryGetValue(key, out var t))
+            return t;
+
+        var sp = GetSolidSprite(id, meta);
+        if (sp == null) return null;
+
+        bool collidable = (_solidById.TryGetValue(id, out var def) && (def.flags & SolidFlags.Collidable) != 0);
+
+        var tile = ScriptableObject.CreateInstance<Tile>();
+        tile.sprite = sp;
+        tile.name = sp.name;
+        tile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
+
+        _solidTileByKey[key] = tile;
+        return tile;
+    }
+
+    /// <summary>
+    /// Fluid 타일: 전역 정책으로 항상 collider 있음(Trigger는 TilemapCollider2D에서).
+    /// amount(1..128) → level(1..16)로 캐시(16단계 고정).
+    /// </summary>
+    public TileBase GetFluidTile(ushort fluidId, byte amount)
+    {
+        if (fluidId == 0 || amount == 0) return null;
+
+        byte lvl = _amountToLevel[amount];
+        if (lvl == 0) return null;
+
+        uint key = MakeFluidLevelKey(fluidId, lvl);
+        if (_fluidTileByKey.TryGetValue(key, out var t))
+            return t;
+
+        // level 스프라이트 직접 조회 (없으면 base로 폴백)
+        Sprite sp = null;
+        if (_fluidLevelSpritesById.TryGetValue(fluidId, out var arr))
+            sp = arr[lvl];
+
+        if (sp == null)
+            sp = GetFluidSprite(fluidId);
+
+        if (sp == null) return null;
+
+        var tile = ScriptableObject.CreateInstance<Tile>();
+        tile.sprite = sp;
+        tile.name = sp.name;
+        tile.colliderType = Tile.ColliderType.Sprite; // ✅ Fluid는 항상 collider 생성
+
+        _fluidTileByKey[key] = tile;
+        return tile;
     }
 
     public void RebuildSpriteCache()
     {
         BuildSpriteCache();
+        // 스프라이트가 바뀌면 타일도 스프라이트를 다시 매핑해야 하므로 타일 캐시도 비움
+        BuildTileCache();
     }
 }
