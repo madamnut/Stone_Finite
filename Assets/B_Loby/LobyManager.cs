@@ -48,6 +48,10 @@ public class LobyManager : MonoBehaviour
     public Transform worldListContentRoot;
     public GameObject worldEntryPrefab;
 
+    [Header("로비 전용 커서")]
+    public Texture2D lobbyCursorTex;
+    public Vector2 lobbyCursorHotspot = new Vector2(9, 24);
+
     float splashAnimTimer;
     static readonly Regex FileNameSafeRegex = new Regex(@"[^a-zA-Z0-9 _\\-\\(\\)\\[\\]\\.]", RegexOptions.Compiled);
 
@@ -56,6 +60,8 @@ public class LobyManager : MonoBehaviour
 
     void Start()
     {
+        ApplyLobbyCursor();
+
         SetAllPanelsOff();
         ApplyRandomSplashText();
 
@@ -103,6 +109,19 @@ public class LobyManager : MonoBehaviour
     }
 
     void OnTransformChildrenChanged() => RebuildScrollContent();
+
+    void ApplyLobbyCursor()
+    {
+        if (!lobbyCursorTex) return;
+
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible   = true;
+        UnityEngine.Cursor.SetCursor(
+            lobbyCursorTex,
+            lobbyCursorHotspot,
+            CursorMode.Auto
+        );
+    }
 
     void SetAllPanelsOff()
     {

@@ -750,6 +750,8 @@ MonoBehaviour:
   ingameSceneName: Game
   worldListContentRoot: {fileID: 1020117081}
   worldEntryPrefab: {fileID: 968029036561842819, guid: 4e7c4f092348c2544bcdbfd2b399dd90, type: 3}
+  lobbyCursorTex: {fileID: 2800000, guid: 68c132c1ce21d9d4baf06fa246470192, type: 3}
+  lobbyCursorHotspot: {x: 9, y: 8}
 --- !u!1 &335150972
 GameObject:
   m_ObjectHideFlags: 0
