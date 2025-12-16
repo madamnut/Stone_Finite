@@ -131,9 +131,7 @@ public class WorldManager : MonoBehaviour
      * - worldMap 쓰기는 아래 Internal Set 함수로만 한다 (월드 수정 진입점 일원화)
      * - 더티/인공광 파동은 Internal Set에서 처리
      * - Tick 파급은 "조립"해서 호출자가 필요할 때만 수행
-     * - 자연광:
-     *    - Solid 장애물 변화(콜라이더 토글) => SetSolidInternal에서 처리
-     *    - BG 감쇠 변화 => SetBGInternal에서 처리
+     * - 자연광은 SetSolidInternal에서 처리(솔리드 장애물 변화)
      *────────────────────────────────────────────────────────────*/
 
     // ───────── Read-only Query(외부 공개는 최소) ─────────
@@ -267,11 +265,9 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Internal Setters (데이터 변경 + 시각적 반영 + 인공광 파동 + 자연광)
+     * Internal Setters (데이터 변경 + 시각적 반영 + 인공광 파동 + 자연광(솔리드))
      * - Tick 파급은 여기서 하지 않는다
-     * - 자연광:
-     *    - Solid: collidable 토글일 때만 RecalculateLightAt
-     *    - BG: 변경되면 RecalculateLightAt
+     * - 자연광(솔리드 장애물 변화)은 여기서 처리한다
      * - 월드 룰:
      *   1) collidable solid ↔ fluid 공존 불가(데이터상도 불가)
      *   2) collidable solid 배치 시 해당 셀 fluid 제거(덮어쓰기)
@@ -287,10 +283,6 @@ public class WorldManager : MonoBehaviour
 
         worldMap.bg[x, y] = id;
         MarkChunkDirty(x, y, markSolid: false, markBG: true, markFluid: false);
-
-        // 자연광: BG 감쇠 변화 반영 (top row는 고정 취급)
-        if (y != H - 1)
-            RecalculateLightAt(x, y);
     }
 
     void SetSolidInternal(int x, int y, ushort id, ushort meta)
@@ -324,7 +316,8 @@ public class WorldManager : MonoBehaviour
         // 인공광: 광원(솔리드/유체) 변화 반영
         HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
 
-        // 자연광: 솔리드 장애물 변화(콜라이더 on/off)일 때만 + top row 스킵
+        // 자연광: 솔리드 장애물 변화(콜라이더 on/off)일 때만
+        // top row는 고정 취급(스킵)
         if (y != H - 1 && oldCollidable != newCollidable)
             RecalculateLightAt(x, y);
     }
@@ -510,7 +503,7 @@ public class WorldManager : MonoBehaviour
     /*────────────────────────────────────────────────────────────
      * Simulation: Gravity (Solid)
      * - 자연광 처리는 SetSolidInternal에서 처리(여기서는 제거)
-     * - 낙하 연쇄 seed은 FallingBlock 수정 때 재검토(현재는 원래 자리만)
+     * - 낙하 연쇄를 위해 tick seed
      *────────────────────────────────────────────────────────────*/
     void StepGravityAt(int x, int y)
     {
@@ -547,7 +540,7 @@ public class WorldManager : MonoBehaviour
     /*────────────────────────────────────────────────────────────
      * FallingBlock Landing (전용)
      * - 착지 성공: 데이터+파급(seed) 반영
-     * - 착지 실패(이미 솔리드 존재): 해당 id 드랍
+     * - 착지 실패: 해당 id 드랍
      *────────────────────────────────────────────────────────────*/
     public bool PlaceSolid_FallingBlock(int x, int y, ushort id, ushort meta = 0)
     {
@@ -577,7 +570,7 @@ public class WorldManager : MonoBehaviour
 
     /*────────────────────────────────────────────────────────────
      * World Edit API
-     * - Player: 파급(tick) 포함 (자연광은 Internal에서 처리)
+     * - Player: 파급(tick) 포함 (자연광은 SetSolidInternal에서 처리)
      * - Simulation: 데이터만 변경 (필요 시 호출자가 조립)
      *────────────────────────────────────────────────────────────*/
 
@@ -626,12 +619,13 @@ public class WorldManager : MonoBehaviour
     {
         if (!InBounds(x, y)) return false;
         if (id == 0) return false;
+        if (worldMap.bg[x, y] == id) return false;
 
-        // 중복 체크 제거: SetBGInternal이 old==id면 return 처리함
         SetBGInternal(x, y, id);
 
-        // 파급: 주변 시뮬 (자연광은 SetBGInternal에서 처리)
+        // 파급: 주변 시뮬 + 자연광(BG 감쇠 반영)
         EnqTickPlus4(x, y);
+        if (y != H - 1) RecalculateLightAt(x, y);
 
         return true;
     }
@@ -685,8 +679,9 @@ public class WorldManager : MonoBehaviour
 
         SetBGInternal(x, y, 0);
 
-        // 파급: 주변 시뮬 (자연광은 SetBGInternal에서 처리)
+        // 파급: 주변 시뮬 + 자연광(BG 감쇠 반영)
         EnqTickPlus4(x, y);
+        if (y != H - 1) RecalculateLightAt(x, y);
 
         return removed;
     }
@@ -724,8 +719,8 @@ public class WorldManager : MonoBehaviour
     {
         if (!InBounds(x, y)) return false;
         if (id == 0) return false;
+        if (worldMap.bg[x, y] == id) return false;
 
-        // 중복 체크 제거: SetBGInternal이 old==id면 return 처리함
         SetBGInternal(x, y, id);
         return true;
     }
