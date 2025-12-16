@@ -130,7 +130,8 @@ public class WorldManager : MonoBehaviour
      * - WorldData는 "순수 데이터 + InBounds"만 제공
      * - worldMap 쓰기는 아래 Internal Set 함수로만 한다 (월드 수정 진입점 일원화)
      * - 더티/인공광 파동은 Internal Set에서 처리
-     * - 자연광/틱 큐는 OnCellEdited 경로로 처리(호출자 책임)
+     * - Tick 파급은 "조립"해서 호출자가 필요할 때만 수행
+     * - 자연광은 SetSolidInternal에서 처리(솔리드 장애물 변화)
      *────────────────────────────────────────────────────────────*/
 
     // ───────── Read-only Query(외부 공개는 최소) ─────────
@@ -176,25 +177,21 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Tick + Light Recalc (통합)
+     * Tick Seed (시뮬 후보 등록 전용)
      *────────────────────────────────────────────────────────────*/
     public void EnqTick(int x, int y)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
-
-        if (tickNext.Add(new Vector2Int(x, y)))
-            RecalculateLightAt(x, y);
+        tickNext.Add(new Vector2Int(x, y));
     }
 
-    public void OnCellEdited(int gx, int gy)
+    private void EnqTickPlus4(int x, int y)
     {
-        if ((uint)gx >= (uint)W || (uint)gy >= (uint)H) return;
-
-        EnqTick(gx, gy);
-        EnqTick(gx + 1, gy);
-        EnqTick(gx - 1, gy);
-        EnqTick(gx, gy + 1);
-        EnqTick(gx, gy - 1);
+        EnqTick(x, y);
+        EnqTick(x + 1, y);
+        EnqTick(x - 1, y);
+        EnqTick(x, y + 1);
+        EnqTick(x, y - 1);
     }
 
     private void SwapTickBuffers()
@@ -268,10 +265,9 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Internal Setters (월드 수정 진입점 일원화의 핵심)
-     * - 여기서만 worldMap 데이터를 실제로 변경
-     * - 더티/인공광 파동(artificial) 갱신은 여기서 처리
-     * - 자연광/틱 큐는 호출자가 OnCellEdited로 처리
+     * Internal Setters (데이터 변경 + 시각적 반영 + 인공광 파동 + 자연광(솔리드))
+     * - Tick 파급은 여기서 하지 않는다
+     * - 자연광(솔리드 장애물 변화)은 여기서 처리한다
      * - 월드 룰:
      *   1) collidable solid ↔ fluid 공존 불가(데이터상도 불가)
      *   2) collidable solid 배치 시 해당 셀 fluid 제거(덮어쓰기)
@@ -297,6 +293,9 @@ public class WorldManager : MonoBehaviour
         ushort oldFluidId = worldMap.fluid[x, y].id;
         bool oldHadFluid = (oldFluidId != 0 && worldMap.fluid[x, y].amount > 0);
 
+        bool oldCollidable = IsSolidCollidableId(oldSolidId);
+        bool newCollidable = IsSolidCollidableId(id);
+
         // write solid
         if (id == 0)
             worldMap.solid[x, y] = new SolidCell { id = 0, meta = 0 };
@@ -304,7 +303,6 @@ public class WorldManager : MonoBehaviour
             worldMap.solid[x, y] = new SolidCell { id = id, meta = meta };
 
         // 정책: collidable solid는 fluid 덮어쓰기(제거)
-        bool newCollidable = IsSolidCollidableId(id);
         if (newCollidable && oldHadFluid)
         {
             worldMap.fluid[x, y] = new FluidCell { id = 0, amount = 0 };
@@ -315,7 +313,13 @@ public class WorldManager : MonoBehaviour
             MarkChunkDirty(x, y, markSolid: true, markBG: false, markFluid: false);
         }
 
+        // 인공광: 광원(솔리드/유체) 변화 반영
         HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+
+        // 자연광: 솔리드 장애물 변화(콜라이더 on/off)일 때만
+        // top row는 고정 취급(스킵)
+        if (y != H - 1 && oldCollidable != newCollidable)
+            RecalculateLightAt(x, y);
     }
 
     void SetFluidInternal(int x, int y, ushort id, int newAmount)
@@ -370,6 +374,8 @@ public class WorldManager : MonoBehaviour
 
     /*────────────────────────────────────────────────────────────
      * Simulation: Fluid
+     * - 변화가 실제로 일어났을 때만 Tick 파급(seed)한다
+     * - 자연광은(현재 규칙상) fluid 이동으로는 재계산하지 않는다
      *────────────────────────────────────────────────────────────*/
     void StepFluidAt(int x, int y)
     {
@@ -379,14 +385,11 @@ public class WorldManager : MonoBehaviour
         ushort fluidId = f.id;
         int amt = f.amount;
 
-        // 정합성 정리
+        // 정합성 정리 (데이터만)
         if (amt <= 0 || fluidId == 0)
         {
             if (amt > 0 || fluidId != 0)
-            {
                 SetFluidInternal(x, y, 0, 0);
-                OnCellEdited(x, y);
-            }
             return;
         }
 
@@ -411,9 +414,14 @@ public class WorldManager : MonoBehaviour
             if (cap > 0)
             {
                 int move = Mathf.Min(amt, cap);
-                MoveFluidInternal(x, y, x, dy, fluidId, move);
-                OnCellEdited(x, y);
-                OnCellEdited(x, dy);
+                if (move > 0)
+                {
+                    MoveFluidInternal(x, y, x, dy, fluidId, move);
+
+                    // 연쇄 흐름 seed
+                    EnqTickPlus4(x, y);
+                    EnqTickPlus4(x, dy);
+                }
                 return;
             }
         }
@@ -479,16 +487,23 @@ public class WorldManager : MonoBehaviour
         else if (flowL > 0) takeL = Mathf.Min(total, flowL);
         else takeR = Mathf.Min(total, flowR);
 
-        if (takeL > 0) MoveFluidInternal(x, y, xl, y, fluidId, takeL);
-        if (takeR > 0) MoveFluidInternal(x, y, xr, y, fluidId, takeR);
+        bool moved = false;
+        if (takeL > 0) { MoveFluidInternal(x, y, xl, y, fluidId, takeL); moved = true; }
+        if (takeR > 0) { MoveFluidInternal(x, y, xr, y, fluidId, takeR); moved = true; }
 
-        OnCellEdited(x, y);
-        if (takeL > 0) OnCellEdited(xl, y);
-        if (takeR > 0) OnCellEdited(xr, y);
+        if (moved)
+        {
+            // 연쇄 흐름 seed
+            EnqTickPlus4(x, y);
+            if (takeL > 0) EnqTickPlus4(xl, y);
+            if (takeR > 0) EnqTickPlus4(xr, y);
+        }
     }
 
     /*────────────────────────────────────────────────────────────
      * Simulation: Gravity (Solid)
+     * - 자연광 처리는 SetSolidInternal에서 처리(여기서는 제거)
+     * - 낙하 연쇄를 위해 tick seed
      *────────────────────────────────────────────────────────────*/
     void StepGravityAt(int x, int y)
     {
@@ -507,10 +522,13 @@ public class WorldManager : MonoBehaviour
 
         if (worldMap.solid[x, by].id != 0) return;
 
-        // 시뮬레이션 제거: 드랍/이펙트 없음
+        // 데이터 변경 (자연광/인공광/더티는 Internal에서)
         SetSolidInternal(x, y, 0, 0);
-        OnCellEdited(x, y);
 
+        // 연쇄 시뮬 seed (원래 자리만)
+        EnqTickPlus4(x, y);
+
+        // 시뮬레이션 제거: 드랍/이펙트 없음
         var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
         var spr = cellLibrary.GetSolidSprite(id, s.meta);
 
@@ -520,9 +538,40 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * World Edit API (Player vs Simulation 분리)
-     * - Player: VFX/Drop 등 부작용 포함
-     * - Simulation: 데이터 변경만 (부작용 없음)
+     * FallingBlock Landing (전용)
+     * - 착지 성공: 데이터+파급(seed) 반영
+     * - 착지 실패: 해당 id 드랍
+     *────────────────────────────────────────────────────────────*/
+    public bool PlaceSolid_FallingBlock(int x, int y, ushort id, ushort meta = 0)
+    {
+        if (!InBounds(x, y)) return false;
+        if (id == 0) return false;
+
+        // 착지 불가(이미 솔리드 존재) -> 드랍
+        if (worldMap.solid[x, y].id != 0)
+        {
+            string key = cellLibrary.GetSolidName(id);
+            if (!string.IsNullOrEmpty(key))
+            {
+                var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                itemDropper.SpawnDroppedItems(key, pos3);
+            }
+            return false;
+        }
+
+        // 데이터+시각+인공광+자연광(솔리드)은 Internal에서
+        SetSolidInternal(x, y, id, meta);
+
+        // 파급: 주변 시뮬
+        EnqTickPlus4(x, y);
+
+        return true;
+    }
+
+    /*────────────────────────────────────────────────────────────
+     * World Edit API
+     * - Player: 파급(tick) 포함 (자연광은 SetSolidInternal에서 처리)
+     * - Simulation: 데이터만 변경 (필요 시 호출자가 조립)
      *────────────────────────────────────────────────────────────*/
 
     // ───────── Player: Place ─────────
@@ -534,8 +583,11 @@ public class WorldManager : MonoBehaviour
         // 정책: 이미 solid가 있으면 설치 불가
         if (worldMap.solid[x, y].id != 0) return false;
 
-        SetSolidInternal(x, y, id, meta); // collidable이면 fluid 제거 포함
-        OnCellEdited(x, y);
+        SetSolidInternal(x, y, id, meta);
+
+        // 파급: 주변 시뮬
+        EnqTickPlus4(x, y);
+
         return true;
     }
 
@@ -556,7 +608,10 @@ public class WorldManager : MonoBehaviour
 
         int insert = Mathf.Min((int)amount, cap);
         SetFluidInternal(x, y, fluidId, curAmt + insert);
-        OnCellEdited(x, y);
+
+        // 파급: 물 연쇄
+        EnqTickPlus4(x, y);
+
         return insert > 0;
     }
 
@@ -567,7 +622,11 @@ public class WorldManager : MonoBehaviour
         if (worldMap.bg[x, y] == id) return false;
 
         SetBGInternal(x, y, id);
-        OnCellEdited(x, y);
+
+        // 파급: 주변 시뮬 + 자연광(BG 감쇠 반영)
+        EnqTickPlus4(x, y);
+        if (y != H - 1) RecalculateLightAt(x, y);
+
         return true;
     }
 
@@ -581,7 +640,9 @@ public class WorldManager : MonoBehaviour
         if (oldSolidId == 0) return 0;
 
         SetSolidInternal(x, y, 0, 0);
-        OnCellEdited(x, y);
+
+        // 파급: 주변 시뮬
+        EnqTickPlus4(x, y);
 
         string key = cellLibrary.GetSolidName(oldSolidId);
         if (!string.IsNullOrEmpty(key))
@@ -602,7 +663,10 @@ public class WorldManager : MonoBehaviour
         if (removed.id == 0 || removed.amount == 0) return removed;
 
         SetFluidInternal(x, y, 0, 0);
-        OnCellEdited(x, y);
+
+        // 파급: 주변 물 연쇄
+        EnqTickPlus4(x, y);
+
         return removed;
     }
 
@@ -614,19 +678,22 @@ public class WorldManager : MonoBehaviour
         if (removed == 0) return 0;
 
         SetBGInternal(x, y, 0);
-        OnCellEdited(x, y);
+
+        // 파급: 주변 시뮬 + 자연광(BG 감쇠 반영)
+        EnqTickPlus4(x, y);
+        if (y != H - 1) RecalculateLightAt(x, y);
+
         return removed;
     }
 
-    // ───────── Simulation: Place/Break (부작용 없음) ─────────
+    // ───────── Simulation: Place/Break (데이터만) ─────────
     public bool PlaceSolid_Simulation(int x, int y, ushort id, ushort meta = 0)
     {
         if (!InBounds(x, y)) return false;
         if (id == 0) return false;
         if (worldMap.solid[x, y].id != 0) return false;
 
-        SetSolidInternal(x, y, id, meta); // collidable이면 fluid 제거 포함
-        OnCellEdited(x, y);
+        SetSolidInternal(x, y, id, meta);
         return true;
     }
 
@@ -645,7 +712,6 @@ public class WorldManager : MonoBehaviour
 
         int insert = Mathf.Min((int)amount, cap);
         SetFluidInternal(x, y, fluidId, curAmt + insert);
-        OnCellEdited(x, y);
         return insert > 0;
     }
 
@@ -656,7 +722,6 @@ public class WorldManager : MonoBehaviour
         if (worldMap.bg[x, y] == id) return false;
 
         SetBGInternal(x, y, id);
-        OnCellEdited(x, y);
         return true;
     }
 
@@ -668,7 +733,6 @@ public class WorldManager : MonoBehaviour
         if (removed == 0) return 0;
 
         SetSolidInternal(x, y, 0, 0);
-        OnCellEdited(x, y);
         return removed;
     }
 
@@ -680,7 +744,6 @@ public class WorldManager : MonoBehaviour
         if (removed.id == 0 || removed.amount == 0) return removed;
 
         SetFluidInternal(x, y, 0, 0);
-        OnCellEdited(x, y);
         return removed;
     }
 
@@ -692,7 +755,6 @@ public class WorldManager : MonoBehaviour
         if (removed == 0) return 0;
 
         SetBGInternal(x, y, 0);
-        OnCellEdited(x, y);
         return removed;
     }
 
