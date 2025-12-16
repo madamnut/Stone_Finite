@@ -1,5 +1,0 @@
-{
-  "None":  { "id": 0, "brightness": 0 },
-  "Water": { "id": 1 },
-  "Lava":  { "id": 2, "brightness": 15 }
-}

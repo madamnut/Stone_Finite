@@ -128,54 +128,13 @@ public class WorldManager : MonoBehaviour
     private readonly List<Vector2Int> _lightChangedList = new();
 
     /*────────────────────────────────────────────────────────────
-     * WorldData 접근 규칙(중요)
-     * - WorldData는 "순수 데이터 + InBounds"만 제공
-     * - 읽기/쓰기/규칙 적용/더티/라이트 갱신은 WorldManager가 전담
+     * Read-only Query (외부 조회는 여기로만)
      *────────────────────────────────────────────────────────────*/
-
-    // ───────── Read-only Query(외부 공개는 최소) ─────────
-    public bool InBounds(int x, int y) => worldMap != null && worldMap.InBounds(x, y);
-
-    public ushort GetFGId(int x, int y)
-    {
-        if (!InBounds(x, y)) return 0;
-        return worldMap.solid[x, y].id;
-    }
-
-    public ushort GetFGMeta(int x, int y)
-    {
-        if (!InBounds(x, y)) return 0;
-        return worldMap.solid[x, y].meta;
-    }
-
-    public ushort GetBGId(int x, int y)
-    {
-        if (!InBounds(x, y)) return 0;
-        return worldMap.bg[x, y];
-    }
-
-    public ushort GetFluidId(int x, int y, out byte amount)
-    {
-        amount = 0;
-        if (!InBounds(x, y)) return 0;
-        var f = worldMap.fluid[x, y];
-        amount = f.amount;
-        return f.id;
-    }
-
-    public bool IsCollidable(int x, int y)
-    {
-        if (!InBounds(x, y)) return true;
-        ushort sid = worldMap.solid[x, y].id;
-        if (sid == 0) return false;
-        return (cellLibrary.GetSolidFlags(sid) & CellLibrary.SolidFlags.Collidable) != 0;
-    }
-
-    private bool IsSolidCollidableId(ushort solidId)
-    {
-        if (solidId == 0) return false;
-        return (cellLibrary.GetSolidFlags(solidId) & CellLibrary.SolidFlags.Collidable) != 0;
-    }
+    public bool InBounds(int x, int y) => worldMap.InBounds(x, y);
+    public ushort GetFGId(int x, int y) => worldMap.GetSolidId(x, y);
+    public ushort GetBGId(int x, int y) => worldMap.GetBGId(x, y);
+    public ushort GetFluidId(int x, int y, out byte amount) => worldMap.GetLiquidId(x, y, out amount);
+    public bool IsCollidable(int x, int y) => worldMap.IsCollidable(x, y);
 
     /*────────────────────────────────────────────────────────────
      * Tick + Light Recalc (통합)
@@ -184,8 +143,11 @@ public class WorldManager : MonoBehaviour
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
+        // 새로 추가된 셀에 대해서만 라이트 재계산(중복 폭발 방지)
         if (tickNext.Add(new Vector2Int(x, y)))
+        {
             RecalculateLightAt(x, y);
+        }
     }
 
     public void OnCellEdited(int gx, int gy)
@@ -253,7 +215,7 @@ public class WorldManager : MonoBehaviour
             int gx = Random.Range(xMin, xMax);
             int gy = Random.Range(yMin, yMax);
 
-            ushort solidId = worldMap.solid[gx, gy].id;
+            ushort solidId = worldMap.GetSolidId(gx, gy);
             if (solidId != 0)
             {
                 string nm = cellLibrary.GetSolidName(solidId);
@@ -270,44 +232,44 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Fluid Simulation (worldMap.fluid 기반)
+     * Fluid Simulation (WorldData.liquid 기반)
      *────────────────────────────────────────────────────────────*/
     void StepFluidAt(int x, int y)
     {
-        if (!InBounds(x, y)) return;
+        if (!worldMap.InBounds(x, y)) return;
 
-        var f = worldMap.fluid[x, y];
-        ushort fluidId = f.id;
-        int amt = f.amount;
+        var l = worldMap.liquid[x, y];
+        ushort fluidId = l.id;
+        int amt = l.amount;
 
         // 정합성 정리
         if (amt <= 0)
         {
             if (fluidId != 0)
             {
-                SetFluidInternal(x, y, 0, 0);
+                SetLiquidInternal(x, y, 0, 0);
                 OnCellEdited(x, y);
             }
             return;
         }
         if (fluidId == 0)
         {
-            SetFluidInternal(x, y, 0, 0);
+            SetLiquidInternal(x, y, 0, 0);
             OnCellEdited(x, y);
             return;
         }
 
         bool Blocked(int gx, int gy)
         {
-            if (!InBounds(gx, gy)) return true;
-            return IsCollidable(gx, gy);
+            if (!worldMap.InBounds(gx, gy)) return true;
+            return worldMap.IsCollidable(gx, gy);
         }
 
         // 1) 아래로
         int dy = y - 1;
         if (dy >= 0 && !Blocked(x, dy))
         {
-            var below = worldMap.fluid[x, dy];
+            var below = worldMap.liquid[x, dy];
 
             // 다른 유체 혼합 금지
             if (below.amount > 0 && below.id != 0 && below.id != fluidId)
@@ -318,7 +280,7 @@ public class WorldManager : MonoBehaviour
             if (cap > 0)
             {
                 int move = Mathf.Min(amt, cap);
-                MoveFluidInternal(x, y, x, dy, fluidId, move);
+                MoveLiquidInternal(x, y, x, dy, fluidId, move);
                 OnCellEdited(x, y);
                 OnCellEdited(x, dy);
                 return;
@@ -334,13 +296,13 @@ public class WorldManager : MonoBehaviour
 
         if (canL)
         {
-            var c = worldMap.fluid[xl, y];
+            var c = worldMap.liquid[xl, y];
             if (c.amount > 0 && c.id != 0 && c.id != fluidId) canL = false;
             else Al = c.amount;
         }
         if (canR)
         {
-            var c = worldMap.fluid[xr, y];
+            var c = worldMap.liquid[xr, y];
             if (c.amount > 0 && c.id != 0 && c.id != fluidId) canR = false;
             else Ar = c.amount;
         }
@@ -386,41 +348,47 @@ public class WorldManager : MonoBehaviour
         else if (flowL > 0) takeL = Mathf.Min(total, flowL);
         else takeR = Mathf.Min(total, flowR);
 
-        if (takeL > 0) MoveFluidInternal(x, y, xl, y, fluidId, takeL);
-        if (takeR > 0) MoveFluidInternal(x, y, xr, y, fluidId, takeR);
+        if (takeL > 0) MoveLiquidInternal(x, y, xl, y, fluidId, takeL);
+        if (takeR > 0) MoveLiquidInternal(x, y, xr, y, fluidId, takeR);
 
         OnCellEdited(x, y);
         if (takeL > 0) OnCellEdited(xl, y);
         if (takeR > 0) OnCellEdited(xr, y);
     }
 
-    // WorldData 직접 편집(유일 진입점)
-    void SetFluidInternal(int x, int y, ushort id, int newAmount)
+    void SetLiquidInternal(int x, int y, ushort id, int newAmount)
     {
-        ushort oldSolidId = worldMap.solid[x, y].id;
-        ushort oldFluidId = worldMap.fluid[x, y].id;
+        // (요구사항) 액체 밝기도 광원으로 취급: 변경 시 artificial 파동 갱신
+        ushort oldSolidId = worldMap.GetSolidId(x, y);
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
         newAmount = Mathf.Clamp(newAmount, 0, WorldData.MaxFluid);
 
-        if (newAmount == 0 || id == 0)
+        if (newAmount == 0)
         {
-            worldMap.fluid[x, y] = new FluidCell { id = 0, amount = 0 };
+            worldMap.ForceLiquid(x, y, new LiquidCell { id = 0, amount = 0, brightness = 0 });
         }
         else
         {
-            worldMap.fluid[x, y] = new FluidCell { id = id, amount = (byte)newAmount };
+            byte b = cellLibrary.GetLiquidBrightness(id);
+            worldMap.ForceLiquid(x, y, new LiquidCell
+            {
+                id = id,
+                amount = (byte)newAmount,
+                brightness = b
+            });
         }
 
-        MarkChunkDirty(x, y, markSolid: false, markBG: false, markFluid: true);
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
     }
 
-    void MoveFluidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
+    void MoveLiquidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
     {
         if (amount <= 0) return;
 
-        var from = worldMap.fluid[fx, fy];
-        var to = worldMap.fluid[tx, ty];
+        var from = worldMap.liquid[fx, fy];
+        var to = worldMap.liquid[tx, ty];
 
         if (from.amount <= 0 || from.id != id) return;
         if (to.amount > 0 && to.id != 0 && to.id != id) return;
@@ -432,116 +400,106 @@ public class WorldManager : MonoBehaviour
         move = Mathf.Min(move, WorldData.MaxFluid - toAmt);
         if (move <= 0) return;
 
-        SetFluidInternal(fx, fy, id, fromAmt - move);
-        SetFluidInternal(tx, ty, id, toAmt + move);
+        SetLiquidInternal(fx, fy, id, fromAmt - move);
+        SetLiquidInternal(tx, ty, id, toAmt + move);
     }
 
     /*────────────────────────────────────────────────────────────
-     * Gravity (worldMap.solid 기반)
+     * Gravity (WorldData.solid 기반)
      *────────────────────────────────────────────────────────────*/
     void StepGravityAt(int x, int y)
     {
-        if (!InBounds(x, y)) return;
+        if (!worldMap.InBounds(x, y)) return;
 
         var s = worldMap.solid[x, y];
         ushort id = s.id;
         if (id == 0) return;
 
-        var flags = cellLibrary.GetSolidFlags(id);
-        bool hasGravity = (flags & CellLibrary.SolidFlags.HasGravity) != 0;
+        bool hasGravity = (s.flags & SolidFlags.HasGravity) != 0;
         if (!hasGravity) return;
 
         int by = y - 1;
         if (by < 0) return;
 
-        if (worldMap.solid[x, by].id != 0) return;
+        if (worldMap.GetSolidId(x, by) != 0) return;
 
-        ushort oldFluidId = worldMap.fluid[x, y].id;
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
-        // remove solid
-        worldMap.solid[x, y] = new SolidCell { id = 0, meta = 0 };
+        ushort removedId = worldMap.RemoveSolid(x, y);
+        if (removedId == 0) return;
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
         var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
-        var spr = cellLibrary.GetSolidSprite(id, s.meta);
+        var spr = cellLibrary.GetSolidSprite(id);
 
         var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
         fb.Init(id, this, spr);
 
         entityManager.Register(fb);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldFluidId: oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldLiquidId: oldLiquidId);
     }
 
     /*────────────────────────────────────────────────────────────
-     * World Edit API (WorldManager 전담)
+     * World Edit API
      *────────────────────────────────────────────────────────────*/
 
     // ───────── 설치(Solid) ─────────
-    public bool PlaceFG(int x, int y, ushort id, ushort meta = 0)
+    public bool PlaceFG(int x, int y, ushort id)
     {
-        if (!InBounds(x, y)) return false;
+        if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        // 기본 정책: 이미 solid가 있으면 설치 불가(필요하면 여기만 정책 변경)
-        if (worldMap.solid[x, y].id != 0) return false;
+        ushort oldSolidId = worldMap.GetSolidId(x, y);
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
-        ushort oldSolidId = 0;
-        ushort oldFluidId = worldMap.fluid[x, y].id;
-
-        worldMap.solid[x, y] = new SolidCell { id = id, meta = meta };
+        SolidCell src = cellLibrary.MakeSolidCell(id);
+        bool ok = worldMap.TryPlaceSolid(x, y, in src);
+        if (!ok) return false;
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
         return true;
     }
 
-    // ───────── 설치(Fluid) ─────────
+    // ───────── 설치(Liquid) ─────────
     public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
     {
-        if (!InBounds(x, y)) return false;
+        if (!worldMap.InBounds(x, y)) return false;
         if (fluidId == 0 || amount == 0) return false;
 
-        // collidable solid 위에는 유체 불가
-        ushort sid = worldMap.solid[x, y].id;
-        if (IsSolidCollidableId(sid)) return false;
+        ushort oldSolidId = worldMap.GetSolidId(x, y);
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
-        ushort oldSolidId = sid;
-        ushort oldFluidId = worldMap.fluid[x, y].id;
+        LiquidCell src = cellLibrary.MakeLiquidCell(fluidId, amount);
+        bool ok = worldMap.TryPlaceLiquid(x, y, in src, out byte leftover);
 
-        var cur = worldMap.fluid[x, y];
-        if (cur.amount > 0 && cur.id != 0 && cur.id != fluidId)
-            return false; // 혼합 금지
+        int inserted = amount - leftover;
+        if (inserted <= 0) return false;
 
-        int curAmt = cur.amount;
-        int cap = WorldData.MaxFluid - curAmt;
-        if (cap <= 0) return false;
-
-        int insert = Mathf.Min((int)amount, cap);
-        SetFluidInternal(x, y, fluidId, curAmt + insert);
-
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
-        return insert > 0;
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
+        return ok;
     }
 
     // ───────── 설치(BG) ─────────
     public bool PlaceBG(int x, int y, ushort id)
     {
-        if (!InBounds(x, y)) return false;
+        if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
         ushort oldId = worldMap.bg[x, y];
         if (oldId == id) return false;
 
-        worldMap.bg[x, y] = id;
+        worldMap.ForceBG(x, y, id);
 
-        MarkChunkDirty(x, y, markSolid: false, markBG: true, markFluid: false);
+        MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
         return true;
     }
@@ -549,22 +507,23 @@ public class WorldManager : MonoBehaviour
     // ───────── 파괴(Solid) ─────────
     public ushort BreakFG(int x, int y)
     {
-        if (!InBounds(x, y)) return 0;
+        if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
 
-        var s = worldMap.solid[x, y];
-        ushort oldSolidId = s.id;
+        ushort oldSolidId = worldMap.GetSolidId(x, y);
         if (oldSolidId == 0) return 0;
 
-        ushort oldFluidId = worldMap.fluid[x, y].id;
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
-        worldMap.solid[x, y] = new SolidCell { id = 0, meta = 0 };
+        ushort removed = worldMap.RemoveSolid(x, y);
+        if (removed == 0) return 0;
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
 
-        string key = cellLibrary.GetSolidName(oldSolidId);
+        // (수정) GetSolidKey -> GetSolidName
+        string key = cellLibrary.GetSolidName(removed);
         if (!string.IsNullOrEmpty(key))
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
@@ -572,46 +531,42 @@ public class WorldManager : MonoBehaviour
             itemDropper.SpawnDroppedItems(key, pos3);
         }
 
-        return oldSolidId;
+        return removed;
     }
 
-    // ───────── 파괴(Fluid) ─────────
-    public FluidCell BreakFluid(int x, int y)
+    // ───────── 파괴(Liquid) ─────────
+    public LiquidCell BreakFluid(int x, int y)
     {
-        if (!InBounds(x, y)) return default;
+        if ((uint)x >= (uint)W || (uint)y >= (uint)H) return default;
 
-        ushort oldSolidId = worldMap.solid[x, y].id;
-        ushort oldFluidId = worldMap.fluid[x, y].id;
+        ushort oldSolidId = worldMap.GetSolidId(x, y);
+        ushort oldLiquidId = worldMap.liquid[x, y].id;
 
-        var removed = worldMap.fluid[x, y];
+        var removed = worldMap.RemoveLiquid(x, y);
         if (removed.id == 0 || removed.amount == 0) return removed;
 
-        worldMap.fluid[x, y] = new FluidCell { id = 0, amount = 0 };
-
-        MarkChunkDirty(x, y, markSolid: false, markBG: false, markFluid: true);
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
         return removed;
     }
 
     // ───────── 파괴(BG) ─────────
     public ushort BreakBG(int x, int y)
     {
-        if (!InBounds(x, y)) return 0;
+        if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
 
-        ushort removed = worldMap.bg[x, y];
+        ushort removed = worldMap.RemoveBG(x, y);
         if (removed == 0) return 0;
 
-        worldMap.bg[x, y] = 0;
-
-        MarkChunkDirty(x, y, markSolid: false, markBG: true, markFluid: false);
+        MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
         return removed;
     }
 
     // ───────── 기존 API 유지(호환용) ─────────
-    public bool PlaceCell(int x, int y, ushort id) => PlaceFG(x, y, id, 0);
+    public bool PlaceCell(int x, int y, ushort id) => PlaceFG(x, y, id);
     public bool PlaceBgCell(int x, int y, ushort id) => PlaceBG(x, y, id);
 
     public ushort BreakCell(int x, int y, CellLayer layer)
@@ -658,10 +613,11 @@ public class WorldManager : MonoBehaviour
 
                     for (int y = H - 1; y >= 0; y--)
                     {
-                        var f = worldMap.fluid[x, y];
-                        if (f.amount > 0) break;
+                        ushort solidId = worldMap.GetSolidId(x, y);
+                        worldMap.GetLiquidId(x, y, out byte waterAmount);
 
-                        ushort solidId = worldMap.solid[x, y].id;
+                        if (waterAmount > 0) break;
+
                         if (solidId != 0)
                         {
                             int ySpawn = Mathf.Min(y + 5, H - 1);
@@ -875,7 +831,7 @@ public class WorldManager : MonoBehaviour
 
             int attenHere = 0;
             if (worldMap.bg[x, y] != 0) attenHere += 1;
-            if (IsCollidable(x, y)) attenHere += 2;
+            if (worldMap.IsCollidable(x, y)) attenHere += 2;
 
             byte best = 0;
             foreach (var (dx, dy) in dirs)
@@ -908,28 +864,35 @@ public class WorldManager : MonoBehaviour
     /*────────────────────────────────────────────────────────────
      * Chunk Dirty
      *────────────────────────────────────────────────────────────*/
-    public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markFluid = false)
+    public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false)
     {
-        // WorldChunkSystem 쪽도 동일 시그니처로 맞춘다는 전제(리팩토링 진행 중)
-        chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markFluid);
+        chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markLiquid);
     }
 
-    public void MarkLightDirtyCell(int x, int y) => chunkSystem.MarkLightDirtyCell(x, y);
-    public void MarkLightDirtyCells(List<Vector2Int> cells) => chunkSystem.MarkLightDirtyCells(cells);
-    private void MarkLightDirtyRect(int x, int y, int w, int h) => chunkSystem.MarkLightDirtyRect(x, y, w, h);
+    public void MarkLightDirtyCell(int x, int y)
+    {
+        chunkSystem.MarkLightDirtyCell(x, y);
+    }
+
+    public void MarkLightDirtyCells(List<Vector2Int> cells)
+    {
+        chunkSystem.MarkLightDirtyCells(cells);
+    }
+
+    private void MarkLightDirtyRect(int x, int y, int w, int h)
+    {
+        chunkSystem.MarkLightDirtyRect(x, y, w, h);
+    }
 
     /*────────────────────────────────────────────────────────────
      * Artificial Light (Increase / Decrease)
-     * └ 광원값 = max(솔리드 brightness, 유체 brightness)
+     * └ 광원값 = max(솔리드 brightness, 리퀴드 brightness)
      *────────────────────────────────────────────────────────────*/
     private int GetArtCost(int nx, int ny)
     {
         int cost = ATT_AIR;
-
-        ushort sid = worldMap.solid[nx, ny].id;
-        if (IsSolidCollidableId(sid)) cost = ATT_FG;
+        if (worldMap.IsCollidable(nx, ny)) cost = ATT_FG;
         else if (worldMap.bg[nx, ny] != 0) cost = ATT_BG;
-
         return cost;
     }
 
@@ -1146,22 +1109,23 @@ public class WorldManager : MonoBehaviour
             MarkLightDirtyCells(_lightChangedList);
     }
 
-    private byte GetSourceBrightness(ushort solidId, ushort fluidId)
+    private byte GetSourceBrightness(ushort solidId, ushort liquidId)
     {
         byte sb = cellLibrary.GetSolidBrightness(solidId);
-        byte fb = cellLibrary.GetFluidBrightness(fluidId);
-        return (sb >= fb) ? sb : fb;
+        byte lb = cellLibrary.GetLiquidBrightness(liquidId);
+        return (sb >= lb) ? sb : lb;
     }
 
-    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldFluidId)
+    // old(솔리드/리퀴드) -> now(솔리드/리퀴드) 의 max 밝기 변화로 artificial 파동 갱신
+    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldLiquidId)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
-        ushort newSolidId = worldMap.solid[x, y].id;
-        ushort newFluidId = worldMap.fluid[x, y].id;
+        ushort newSolidId = worldMap.GetSolidId(x, y);
+        ushort newLiquidId = worldMap.liquid[x, y].id;
 
-        byte oldB = GetSourceBrightness(oldSolidId, oldFluidId);
-        byte newB = GetSourceBrightness(newSolidId, newFluidId);
+        byte oldB = GetSourceBrightness(oldSolidId, oldLiquidId);
+        byte newB = GetSourceBrightness(newSolidId, newLiquidId);
 
         if (oldB == 0 && newB == 0) return;
 
