@@ -10500,9 +10500,9 @@ MonoBehaviour:
   multiblockManager: {fileID: 143361366}
   worldCamera: {fileID: 137679049}
   cellSize: 1
-  HighLight_FG: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
-  HighLight_FG_CAN: {fileID: 21300000, guid: 726de4ee5a6213e4895742dc48fca92a, type: 3}
-  HighLight_FG_CANNOT: {fileID: 21300000, guid: d0c1dd5cb6976304991edf9f990fef4b, type: 3}
+  HighLight_Solid: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
+  HighLight_Solid_CAN: {fileID: 21300000, guid: 726de4ee5a6213e4895742dc48fca92a, type: 3}
+  HighLight_Solid_CANNOT: {fileID: 21300000, guid: d0c1dd5cb6976304991edf9f990fef4b, type: 3}
   HighLight_BG: {fileID: 21300000, guid: 90218ddedcc54114e9493216eb80d854, type: 3}
   HighLight_BG_CAN: {fileID: 21300000, guid: ae1becb1c722c5444801d4823ccf9d25, type: 3}
   HighLight_BG_CANNOT: {fileID: 21300000, guid: 98b5cfd29f400ec4c91843b6031c778c, type: 3}
@@ -12533,7 +12533,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   solidJson: {fileID: 4900000, guid: 57be3d6a3243fae4292a15d60c73b6bb, type: 3}
-  liquidJson: {fileID: 4900000, guid: 72159f13681dc4b48b792fe70adbfb9e, type: 3}
+  fluidJson: {fileID: 0}
   atlas: {fileID: 100100200, guid: 5715605989584c24ca8824127f00ef23, type: 3}
 --- !u!1 &2072805834
 GameObject:

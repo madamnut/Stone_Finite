@@ -2,16 +2,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Newtonsoft.Json.Linq;
 
 public class InteractionController : MonoBehaviour
 {
     public enum GameState { Ingame, Inpanel, Inmenu }
-    enum LayerMode { FG, BG }
+    enum LayerMode { Solid, BG }
 
     const string LOG_MB = "[MBUILD]";
 
@@ -31,8 +31,8 @@ public class InteractionController : MonoBehaviour
     public KeyCode toggleBreakModeKey = KeyCode.V;
 
     [Header("Player/Hotbar/Cursor")]
-    public Player   player;
-    public Hotbar   hotbar;
+    public Player player;
+    public Hotbar hotbar;
     public ItemSlot cursorSlot;
     [Tooltip("파괴 모드 기본 커서 텍스처")]
     public Texture2D breakCursorTex;
@@ -40,15 +40,15 @@ public class InteractionController : MonoBehaviour
     public Texture2D combatCursorTex;
 
     [Header("World References")]
-    public WorldManager      worldManager;
+    public WorldManager worldManager;
     public MultiblockManager multiblockManager;
-    public Camera            worldCamera;
-    public int               cellSize = 1;
+    public Camera worldCamera;
+    public int cellSize = 1;
 
     [Header("Highlight Sprites")]
-    public Sprite HighLight_FG;
-    public Sprite HighLight_FG_CAN;
-    public Sprite HighLight_FG_CANNOT;
+    public Sprite HighLight_Solid;
+    public Sprite HighLight_Solid_CAN;
+    public Sprite HighLight_Solid_CANNOT;
     public Sprite HighLight_BG;
     public Sprite HighLight_BG_CAN;
     public Sprite HighLight_BG_CANNOT;
@@ -60,11 +60,12 @@ public class InteractionController : MonoBehaviour
 
     [Header("Libraries")]
     public RecipeLibrary recipeLibrary;
-    public ItemLibrary   itemLibrary;
+    public ItemLibrary itemLibrary;
     public CorpseLibrary corpseLibrary;
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
+
     [Header("Interact Prefabs")]
     public GameObject primalcraftModule;
 
@@ -91,16 +92,16 @@ public class InteractionController : MonoBehaviour
     HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
     int _currentAttackDamage = 1;
 
-    GameState  _state     = GameState.Ingame;
-    LayerMode  _layerMode = LayerMode.FG;
+    GameState _state = GameState.Ingame;
+    LayerMode _layerMode = LayerMode.Solid;
     GameObject _hlGO;
     SpriteRenderer _hlSR;
     float _timer;
-    int   _hotbarScope = 0;
+    int _hotbarScope = 0;
 
-    bool    _combatMode     = false;
-    Vector2 _breakHotspot   = new Vector2(7, 6);
-    Vector2 _combatHotspot  = new Vector2(5, 4);
+    bool _combatMode = false;
+    Vector2 _breakHotspot = new Vector2(7, 6);
+    Vector2 _combatHotspot = new Vector2(5, 4);
 
     Coroutine _attackCo;
 
@@ -115,7 +116,7 @@ public class InteractionController : MonoBehaviour
 
         _hlGO = new GameObject("CellHighlight");
         _hlSR = _hlGO.AddComponent<SpriteRenderer>();
-        _hlSR.sprite       = HighLight_FG;
+        _hlSR.sprite = HighLight_Solid;
         _hlSR.sortingOrder = 1000;
         _hlGO.SetActive(false);
 
@@ -126,10 +127,12 @@ public class InteractionController : MonoBehaviour
         resumeButton.onClick.AddListener(OnClickResume);
         exitButton.onClick.AddListener(OnClickQuitToLobby);
 
+        // ✅ Cursor 이름 충돌 방지: UnityEngine.Cursor로 고정
         if (breakCursorTex != null)
             UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
 
-        meleeRoot.gameObject.SetActive(false);
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
     }
 
     void Update()
@@ -141,21 +144,7 @@ public class InteractionController : MonoBehaviour
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
             hotbar.SetScope(_hotbarScope);
 
-            var items = player.Inventory.items;
-            ItemData held = null;
-            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                held = items[_hotbarScope];
-
-            if (held != null && held.Count > 0 && held.Icon != null)
-            {
-                player.rightHandItemRenderer.enabled = true;
-                player.rightHandItemRenderer.sprite  = held.Icon;
-            }
-            else
-            {
-                player.rightHandItemRenderer.enabled = false;
-                player.rightHandItemRenderer.sprite  = null;
-            }
+            RefreshHeldHandSprite();
         }
 
         // ───────── 핫바 스코프: 숫자키 1~0 (인게임 상태에서만) ─────────
@@ -177,33 +166,12 @@ public class InteractionController : MonoBehaviour
             if (_hotbarScope != prevScope)
             {
                 hotbar.SetScope(_hotbarScope);
-
-                var items = player.Inventory.items;
-                ItemData held = null;
-                if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                    held = items[_hotbarScope];
-
-                if (held != null && held.Count > 0 && held.Icon != null)
-                {
-                    player.rightHandItemRenderer.enabled = true;
-                    player.rightHandItemRenderer.sprite  = held.Icon;
-                }
-                else
-                {
-                    player.rightHandItemRenderer.enabled = false;
-                    player.rightHandItemRenderer.sprite  = null;
-                }
+                RefreshHeldHandSprite();
             }
         }
 
         // ───────── 현재 들고 있는 아이템 기준 전투/파괴 모드 및 커서 전환 ─────────
-        ItemData scopeHeld = null;
-        {
-            var items = player.Inventory.items;
-            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                scopeHeld = items[_hotbarScope];
-        }
-
+        ItemData scopeHeld = GetHeldItem();
         bool hasWeapon = (scopeHeld != null && scopeHeld.HasTag("Weapon"));
 
         if (hasWeapon && !_combatMode)
@@ -238,30 +206,13 @@ public class InteractionController : MonoBehaviour
                     foreach (var c in crafts)
                     {
                         c.recipeLibrary = recipeLibrary;
-                        c.player        = player;
+                        c.player = player;
                     }
                 }
             }
             else if (_state == GameState.Inpanel)
             {
-                if (cursorSlot.Item != null)
-                {
-                    int left = player.Inventory.AddItem(cursorSlot.Item);
-                    if (left == 0) cursorSlot.Set(null);
-                    else
-                    {
-                        cursorSlot.Item.Count = left;
-                        cursorSlot.Refresh();
-                    }
-                }
-
-                if (_moduleInstance != null)
-                {
-                    Destroy(_moduleInstance);
-                    _moduleInstance = null;
-                }
-                _state = GameState.Ingame;
-                inventoryPanel.SetActive(false);
+                CloseInventoryPanelToIngame();
             }
         }
 
@@ -269,24 +220,7 @@ public class InteractionController : MonoBehaviour
         {
             if (_state == GameState.Inpanel)
             {
-                if (cursorSlot.Item != null)
-                {
-                    int left = player.Inventory.AddItem(cursorSlot.Item);
-                    if (left == 0) cursorSlot.Set(null);
-                    else
-                    {
-                        cursorSlot.Item.Count = left;
-                        cursorSlot.Refresh();
-                    }
-                }
-
-                if (_moduleInstance != null)
-                {
-                    Destroy(_moduleInstance);
-                    _moduleInstance = null;
-                }
-                _state = GameState.Ingame;
-                inventoryPanel.SetActive(false);
+                CloseInventoryPanelToIngame();
             }
             else if (_state == GameState.Inmenu)
             {
@@ -311,8 +245,8 @@ public class InteractionController : MonoBehaviour
 
         if (Input.GetKeyDown(toggleBreakModeKey) && _state == GameState.Ingame)
         {
-            _layerMode = (_layerMode == LayerMode.FG) ? LayerMode.BG : LayerMode.FG;
-            _hlSR.sprite = (_layerMode == LayerMode.FG) ? HighLight_FG : HighLight_BG;
+            _layerMode = (_layerMode == LayerMode.Solid) ? LayerMode.BG : LayerMode.Solid;
+            _hlSR.sprite = (_layerMode == LayerMode.Solid) ? HighLight_Solid : HighLight_BG;
         }
 
         if (_state != GameState.Ingame)
@@ -346,7 +280,7 @@ public class InteractionController : MonoBehaviour
         if (corpseLayerMask.value != 0)
         {
             Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 mousePos2   = new Vector2(mouseWorld3.x, mouseWorld3.y);
+            Vector2 mousePos2 = new Vector2(mouseWorld3.x, mouseWorld3.y);
 
             var hits = Physics2D.OverlapPointAll(mousePos2, corpseLayerMask);
             int bestOrder = int.MinValue;
@@ -366,7 +300,7 @@ public class InteractionController : MonoBehaviour
                 if (newHoverCorpse == null || order > bestOrder)
                 {
                     newHoverCorpse = corpse;
-                    bestOrder      = order;
+                    bestOrder = order;
                 }
             }
         }
@@ -397,30 +331,30 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
 
-        bool hasBody = fgId != 0;
-        bool hasBg   = bgId != 0;
+        bool hasSolid = solidId != 0;
+        bool hasBg = bgId != 0;
 
-        if (_layerMode == LayerMode.FG)
+        if (_layerMode == LayerMode.Solid)
         {
-            bool canBreak = hasBody;
-            _hlSR.sprite = canBreak ? HighLight_FG_CAN : HighLight_FG;
+            bool canBreak = hasSolid;
+            _hlSR.sprite = canBreak ? HighLight_Solid_CAN : HighLight_Solid;
         }
         else
         {
-            bool blocked = hasBody;
-            if (hasBg && blocked)      _hlSR.sprite = HighLight_BG_CANNOT;
-            else if (hasBg)            _hlSR.sprite = HighLight_BG_CAN;
-            else                       _hlSR.sprite = HighLight_BG;
+            bool blocked = hasSolid;
+            if (hasBg && blocked) _hlSR.sprite = HighLight_BG_CANNOT;
+            else if (hasBg) _hlSR.sprite = HighLight_BG_CAN;
+            else _hlSR.sprite = HighLight_BG;
         }
 
         _hlGO.SetActive(true);
         _timer += Time.deltaTime;
-        float t   = (_timer / period) % 1f;
+        float t = (_timer / period) % 1f;
         float sin = Mathf.Sin(t * Mathf.PI * 2f) * 0.5f + 0.5f;
-        float s   = Mathf.Lerp(minScale, maxScale, sin);
+        float s = Mathf.Lerp(minScale, maxScale, sin);
         _hlGO.transform.localScale = Vector3.one * s;
     }
 
@@ -460,22 +394,22 @@ public class InteractionController : MonoBehaviour
     {
         if (!GetMouseCell(out int cx, out int cy)) return;
 
-        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
 
-        bool hasBody = fgId != 0;
-        bool hasBg   = bgId != 0;
+        bool hasSolid = solidId != 0;
+        bool hasBg = bgId != 0;
 
-        if (_layerMode == LayerMode.FG)
+        if (_layerMode == LayerMode.Solid)
         {
-            if (!hasBody) return;
-            worldManager.BreakFG(cx, cy);
+            if (!hasSolid) return;
+            worldManager.BreakSolid(cx, cy);
             if (sound != null) sound.PlayDig();
         }
         else
         {
             if (!hasBg) return;
-            if (hasBody) return; // BG는 FG가 있으면 못 부숨(기존 정책 유지)
+            if (hasSolid) return; // BG는 Solid가 있으면 못 부숨(기존 정책 유지)
             worldManager.BreakBG(cx, cy);
             if (sound != null) sound.PlayDig();
         }
@@ -503,7 +437,7 @@ public class InteractionController : MonoBehaviour
         foreach (var kv in held.WeaponActions)
         {
             actionName = kv.Key;
-            paramDict  = kv.Value;
+            paramDict = kv.Value;
             break;
         }
 
@@ -514,15 +448,15 @@ public class InteractionController : MonoBehaviour
             paramDict = new Dictionary<string, object>();
 
         float staminaCost = 0f;
-        float cooldown    = 0f;
-        float damage      = 1f;
+        float cooldown = 0f;
+        float damage = 1f;
 
         if (paramDict.TryGetValue("staminaCost", out var scObj) && scObj != null)
         {
-            if      (scObj is float f)   staminaCost = f;
-            else if (scObj is double d)  staminaCost = (float)d;
-            else if (scObj is int i)     staminaCost = i;
-            else if (scObj is long l)    staminaCost = l;
+            if (scObj is float f) staminaCost = f;
+            else if (scObj is double d) staminaCost = (float)d;
+            else if (scObj is int i) staminaCost = i;
+            else if (scObj is long l) staminaCost = l;
             else
             {
                 float tmp;
@@ -533,11 +467,11 @@ public class InteractionController : MonoBehaviour
 
         if (paramDict.TryGetValue("cooldown", out var cdObj) && cdObj != null)
         {
-            if      (cdObj is float f)   cooldown = f;
-            else if (cdObj is double d)  cooldown = (float)d;
-            else if (cdObj is int i)     cooldown = i;
-            else if (cdObj is long l)    cooldown = l;
-           	else
+            if (cdObj is float f) cooldown = f;
+            else if (cdObj is double d) cooldown = (float)d;
+            else if (cdObj is int i) cooldown = i;
+            else if (cdObj is long l) cooldown = l;
+            else
             {
                 float tmp;
                 if (float.TryParse(cdObj.ToString(), out tmp))
@@ -547,10 +481,10 @@ public class InteractionController : MonoBehaviour
 
         if (paramDict.TryGetValue("damage", out var dmgObj) && dmgObj != null)
         {
-            if      (dmgObj is float f)   damage = f;
-            else if (dmgObj is double d)  damage = (float)d;
-           	else if (dmgObj is int i)     damage = i;
-            else if (dmgObj is long l)    damage = l;
+            if (dmgObj is float f) damage = f;
+            else if (dmgObj is double d) damage = (float)d;
+            else if (dmgObj is int i) damage = i;
+            else if (dmgObj is long l) damage = l;
             else
             {
                 float tmp;
@@ -568,8 +502,8 @@ public class InteractionController : MonoBehaviour
             return;
 
         Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 mouseWorld  = new Vector2(mouseWorld3.x, mouseWorld3.y);
-        Vector2 origin      = meleeAngle.position;
+        Vector2 mouseWorld = new Vector2(mouseWorld3.x, mouseWorld3.y);
+        Vector2 origin = meleeAngle.position;
 
         Vector2 dir = mouseWorld - origin;
         if (dir.sqrMagnitude < 0.0001f)
@@ -578,7 +512,8 @@ public class InteractionController : MonoBehaviour
         float angleFromUp = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
         bool isLeftSide = (mouseWorld.x < origin.x);
 
-        meleeRoot.gameObject.SetActive(true);
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(true);
 
         if (meleeSprite != null)
         {
@@ -620,8 +555,8 @@ public class InteractionController : MonoBehaviour
             yield break;
         }
 
-        float duration   = 0.25f;
-        float halfRange  = 60f;
+        float duration = 0.25f;
+        float halfRange = 60f;
 
         float startAngle;
         float endAngle;
@@ -629,19 +564,19 @@ public class InteractionController : MonoBehaviour
         if (isLeftSide)
         {
             startAngle = centerAngle - halfRange;
-            endAngle   = centerAngle + halfRange;
+            endAngle = centerAngle + halfRange;
         }
         else
         {
             startAngle = centerAngle + halfRange;
-            endAngle   = centerAngle - halfRange;
+            endAngle = centerAngle - halfRange;
         }
 
         float t = 0f;
         while (t < duration)
         {
             t += Time.deltaTime;
-            float u   = Mathf.Clamp01(t / duration);
+            float u = Mathf.Clamp01(t / duration);
             float ang = Mathf.Lerp(startAngle, endAngle, u);
             meleeAngle.rotation = Quaternion.Euler(0f, 0f, ang);
             yield return null;
@@ -649,7 +584,8 @@ public class InteractionController : MonoBehaviour
 
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
-        meleeRoot.gameObject.SetActive(false);
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
 
         _attackActive = false;
         _hitMobsThisAttack.Clear();
@@ -669,8 +605,8 @@ public class InteractionController : MonoBehaviour
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
         float duration = 0.5f;
-        float startY   = -0.5f;
-        float endY     =  0.5f;
+        float startY = -0.5f;
+        float endY = 0.5f;
 
         Vector3 basePos = meleeOffset.localPosition;
         float baseX = basePos.x;
@@ -700,7 +636,8 @@ public class InteractionController : MonoBehaviour
 
         meleeOffset.localPosition = new Vector3(baseX, 0f, baseZ);
 
-        meleeRoot.gameObject.SetActive(false);
+        if (meleeRoot != null)
+            meleeRoot.gameObject.SetActive(false);
 
         _attackActive = false;
         _hitMobsThisAttack.Clear();
@@ -711,7 +648,7 @@ public class InteractionController : MonoBehaviour
     bool TryCorpseInteraction()
     {
         if (_state != GameState.Ingame) return false;
-        if (_hoverCorpse == null)       return false;
+        if (_hoverCorpse == null) return false;
 
         var items = player.Inventory.items;
         if (_hotbarScope < 0 || _hotbarScope >= items.Count)
@@ -746,11 +683,11 @@ public class InteractionController : MonoBehaviour
         if (_state != GameState.Ingame) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        ushort id = worldManager.GetFGId(cx, cy);
+        ushort id = worldManager.GetSolidId(cx, cy);
         if (id == 0) return false;
 
-        // ✅ 인스턴스 CellLibrary 사용
-        string interaction = worldManager.cellLibrary.GetSolidInteraction(id);
+        // ✅ CellLibrary API 변화 대응: reflection으로 있으면 호출, 없으면 null
+        string interaction = GetSolidInteractionSafe(worldManager.cellLibrary, id);
         if (string.IsNullOrEmpty(interaction)) return false;
 
         if (interaction == "primalcraftModule")
@@ -772,7 +709,7 @@ public class InteractionController : MonoBehaviour
                 foreach (var c in crafts)
                 {
                     c.recipeLibrary = recipeLibrary;
-                    c.player        = player;
+                    c.player = player;
                 }
             }
             _hlGO.SetActive(false);
@@ -812,7 +749,7 @@ public class InteractionController : MonoBehaviour
         foreach (var kv in held.ToolActions)
         {
             string actionName = kv.Key;
-            var    param      = kv.Value ?? new Dictionary<string, object>();
+            var param = kv.Value ?? new Dictionary<string, object>();
 
             bool ok = false;
 
@@ -832,44 +769,48 @@ public class InteractionController : MonoBehaviour
         if (placeParam == null) return false;
 
         string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
-        string cellName = placeParam.TryGetValue("cell",  out var cellObj ) ? cellObj?.ToString()  : null;
+        string cellName = placeParam.TryGetValue("cell", out var cellObj) ? cellObj?.ToString() : null;
         if (string.IsNullOrEmpty(cellName)) return false;
 
-        ushort fgId = worldManager.GetFGId(cx, cy);
+        ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
 
-        bool hasBody = fgId != 0;
-        bool hasBg   = bgId != 0;
+        bool hasSolid = solidId != 0;
+        bool hasBg = bgId != 0;
 
         WorldManager.CellLayer targetLayer;
-        if (layerStr == "Dynamic")
+
+        if (string.Equals(layerStr, "Dynamic", StringComparison.OrdinalIgnoreCase))
         {
             targetLayer = (_layerMode == LayerMode.BG)
                 ? WorldManager.CellLayer.BG
-                : WorldManager.CellLayer.FG;
+                : WorldManager.CellLayer.Solid;
+        }
+        else if (string.Equals(layerStr, "BG", StringComparison.OrdinalIgnoreCase))
+        {
+            targetLayer = WorldManager.CellLayer.BG;
         }
         else
         {
-            targetLayer = WorldManager.CellLayer.FG;
+            targetLayer = WorldManager.CellLayer.Solid;
         }
 
-        if (targetLayer == WorldManager.CellLayer.FG)
+        if (targetLayer == WorldManager.CellLayer.Solid)
         {
-            if (hasBody) return false;
+            if (hasSolid) return false;
         }
         else
         {
-            if (hasBody) return false;
-            if (hasBg)   return false;
+            if (hasSolid) return false;
+            if (hasBg) return false;
         }
 
-        // ✅ 이름->ID 역조회는 CellLibrary에 위임
         if (!worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId))
             return false;
 
         bool placed;
-        if (targetLayer == WorldManager.CellLayer.FG)
-            placed = worldManager.PlaceFG(cx, cy, placeId);
+        if (targetLayer == WorldManager.CellLayer.Solid)
+            placed = worldManager.PlaceSolid(cx, cy, placeId);
         else
             placed = worldManager.PlaceBG(cx, cy, placeId);
 
@@ -881,23 +822,7 @@ public class InteractionController : MonoBehaviour
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
-        {
-            var items = player.Inventory.items;
-            ItemData newHeld = null;
-            if (_hotbarScope >= 0 && _hotbarScope < items.Count)
-                newHeld = items[_hotbarScope];
-
-            if (newHeld != null && newHeld.Count > 0 && newHeld.Icon != null)
-            {
-                player.rightHandItemRenderer.enabled = true;
-                player.rightHandItemRenderer.sprite  = newHeld.Icon;
-            }
-            else
-            {
-                player.rightHandItemRenderer.enabled = false;
-                player.rightHandItemRenderer.sprite  = null;
-            }
-        }
+        RefreshHeldHandSprite();
 
         return true;
     }
@@ -906,20 +831,19 @@ public class InteractionController : MonoBehaviour
     {
         Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
 
-        ushort fgId = worldManager.GetFGId(cx, cy);
-        if (fgId == 0)
+        ushort solidId = worldManager.GetSolidId(cx, cy);
+        if (solidId == 0)
         {
             Debug.Log($"{LOG_MB} 대상 셀이 비어있음(id=0). 취소.");
             return false;
         }
 
-        // ✅ 인스턴스 CellLibrary 사용
-        string clickedKey = worldManager.cellLibrary.GetSolidName(fgId);
-        Debug.Log($"{LOG_MB} 대상 셀 id={fgId}, key='{clickedKey}'");
+        string clickedKey = worldManager.cellLibrary.GetSolidName(solidId);
+        Debug.Log($"{LOG_MB} 대상 셀 id={solidId}, key='{clickedKey}'");
 
         if (string.IsNullOrEmpty(clickedKey))
         {
-            Debug.LogWarning($"{LOG_MB} GetSolidName({fgId}) 결과가 비어있음. 취소.");
+            Debug.LogWarning($"{LOG_MB} GetSolidName({solidId}) 결과가 비어있음. 취소.");
             return false;
         }
 
@@ -946,7 +870,7 @@ public class InteractionController : MonoBehaviour
         {
             Debug.Log($"{LOG_MB} === def='{def.key}' 패턴 매칭 시도 시작 ===");
 
-            int patternWidth  = def.width;
+            int patternWidth = def.width;
             int patternHeight = def.height;
 
             bool defMatched = false;
@@ -968,7 +892,7 @@ public class InteractionController : MonoBehaviour
                     );
 
                     if (originX < 0 || originY < 0 ||
-                        originX + patternWidth  > worldW ||
+                        originX + patternWidth > worldW ||
                         originY + patternHeight > worldH)
                     {
                         Debug.Log($"{LOG_MB} def='{def.key}' origin=({originX},{originY}) → 월드 범위 밖, 스킵");
@@ -988,9 +912,7 @@ public class InteractionController : MonoBehaviour
                             int wx = originX + lx;
                             int wy = originY + ly;
 
-                            ushort wid = worldManager.GetFGId(wx, wy);
-
-                            // ✅ 인스턴스 CellLibrary 사용
+                            ushort wid = worldManager.GetSolidId(wx, wy);
                             string worldKey = worldManager.cellLibrary.GetSolidName(wid);
 
                             if (worldKey != expectedKey)
@@ -1013,7 +935,7 @@ public class InteractionController : MonoBehaviour
                             $"origin=({originX},{originY}), 클릭 셀 대응 위치=({px},{py})"
                         );
                         defMatched = true;
-                        anyMatch   = true;
+                        anyMatch = true;
 
                         var kiln = multiblockManager.CreateClayKiln(def, originX, originY);
                         Debug.Log($"{LOG_MB} ClayKiln 생성 완료: instId={kiln.InstId}, occupied={kiln.OccupiedCells.Count}");
@@ -1044,7 +966,8 @@ public class InteractionController : MonoBehaviour
         Vector3 wp = worldCamera.ScreenToWorldPoint(Input.mousePosition);
         x = Mathf.FloorToInt(wp.x / cellSize);
         y = Mathf.FloorToInt(wp.y / cellSize);
-        if (x < 0 || y < 0 || x >= worldManager.settings.width || y >= worldManager.settings.height)
+
+        if (!worldManager.InBounds(x, y))
         {
             x = y = 0;
             return false;
@@ -1081,5 +1004,81 @@ public class InteractionController : MonoBehaviour
         Time.timeScale = 1f;
         worldManager.SaveWorld();
         SceneManager.LoadScene("Loby");
+    }
+
+    private void CloseInventoryPanelToIngame()
+    {
+        if (cursorSlot.Item != null)
+        {
+            int left = player.Inventory.AddItem(cursorSlot.Item);
+            if (left == 0) cursorSlot.Set(null);
+            else
+            {
+                cursorSlot.Item.Count = left;
+                cursorSlot.Refresh();
+            }
+        }
+
+        if (_moduleInstance != null)
+        {
+            Destroy(_moduleInstance);
+            _moduleInstance = null;
+        }
+
+        _state = GameState.Ingame;
+        inventoryPanel.SetActive(false);
+    }
+
+    private void RefreshHeldHandSprite()
+    {
+        var items = player.Inventory.items;
+        ItemData held = null;
+        if (_hotbarScope >= 0 && _hotbarScope < items.Count)
+            held = items[_hotbarScope];
+
+        if (held != null && held.Count > 0 && held.Icon != null)
+        {
+            player.rightHandItemRenderer.enabled = true;
+            player.rightHandItemRenderer.sprite = held.Icon;
+        }
+        else
+        {
+            player.rightHandItemRenderer.enabled = false;
+            player.rightHandItemRenderer.sprite = null;
+        }
+    }
+
+    private ItemData GetHeldItem()
+    {
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+            return null;
+
+        return items[_hotbarScope];
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // CellLibrary API 변경 대응: GetSolidInteraction이 없으면 null 반환
+    // ─────────────────────────────────────────────────────────
+    private static string GetSolidInteractionSafe(object cellLibrary, ushort solidId)
+    {
+        if (cellLibrary == null) return null;
+
+        // 1) GetSolidInteraction(ushort)
+        var t = cellLibrary.GetType();
+        var mi = t.GetMethod("GetSolidInteraction", BindingFlags.Public | BindingFlags.Instance, null,
+            new[] { typeof(ushort) }, null);
+
+        if (mi != null)
+            return mi.Invoke(cellLibrary, new object[] { solidId }) as string;
+
+        // 2) (대체 이름 가능성) GetInteraction(ushort)
+        mi = t.GetMethod("GetInteraction", BindingFlags.Public | BindingFlags.Instance, null,
+            new[] { typeof(ushort) }, null);
+
+        if (mi != null)
+            return mi.Invoke(cellLibrary, new object[] { solidId }) as string;
+
+        return null;
     }
 }

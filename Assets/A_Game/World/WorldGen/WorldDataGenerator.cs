@@ -5,47 +5,50 @@ using UnityEngine;
 
 public static class WorldDataGenerator
 {
-    // ── Solid Cell IDs (ATT_Solid.json과 일치) ──
-    private const ushort ID_AIR                 = 0;
-    private const ushort ID_ROCK                = 1;
+    // ── Solid IDs (ATT_Solid.json과 일치) ──
+    private const ushort ID_AIR          = 0;
+    private const ushort ID_ROCK         = 1;
+    private const ushort ID_DIRT         = 2;
+    private const ushort ID_GRASS        = 3;   // ✅ Grass는 id=3 고정, meta로 변형
+    private const ushort ID_CLAY         = 4;
+    private const ushort ID_MUD          = 5;
 
-    private const ushort ID_DIRT                = 2;
-    private const ushort ID_GRASS_LEFT          = 3;
-    private const ushort ID_GRASS_TOP           = 4;
-    private const ushort ID_GRASS_RIGHT         = 5;
-    private const ushort ID_GRASS_TOPLEFT       = 6;
-    private const ushort ID_GRASS_TOPRIGHT      = 7;
-    private const ushort ID_GRASS_LEFTRIGHT     = 8;
-    private const ushort ID_GRASS_TOPLEFTRIGHT  = 9;
+    private const ushort ID_SAND         = 1000;
+    private const ushort ID_GRAVEL       = 1001;
 
-    private const ushort ID_CLAY                = 10;
+    private const ushort ID_TRUNK        = 2000;
+    private const ushort ID_LEAF         = 2001;
+    private const ushort ID_PLANT        = 2002;
+    private const ushort ID_BUSH         = 2003;
+    private const ushort ID_STONE_PILE   = 2004;
+    private const ushort ID_SMALL_STONE_PILE = 2005;
 
-    private const ushort ID_SAND                = 1000;
-    private const ushort ID_GRAVEL              = 1001;
+    private const ushort ID_ORE_COAL     = 3000;
+    private const ushort ID_ORE_COPPER   = 3001;
+    private const ushort ID_ORE_IRON     = 3002;
+    private const ushort ID_ORE_TIN      = 3003;
 
-    private const ushort ID_TRUNK               = 2000;
-    private const ushort ID_LEAF                = 2001;
-    private const ushort ID_PLANT               = 2002;
-    private const ushort ID_BUSH                = 2003;
-    private const ushort ID_STONE_PILE          = 2004;
-    private const ushort ID_SMALL_STONE_PILE    = 2005;
+    private const ushort ID_GRANITE      = 4000;
+    private const ushort ID_AMPHIBOLITE  = 4001;
 
-    private const ushort ID_ORE_COAL            = 3000;
-    private const ushort ID_ORE_COPPER          = 3001;
-    private const ushort ID_ORE_IRON            = 3002;
-    private const ushort ID_ORE_TIN             = 3003;
+    // ── Fluid IDs (ATT_Fluid.json과 일치) ──
+    private const ushort FLUID_NONE  = 0;
+    private const ushort FLUID_WATER = 1;
 
-    private const ushort ID_GRANITE             = 4000;
-    private const ushort ID_AMPHIBOLITE         = 4001;
-
-    // ── Liquid IDs (ATT_Liquid.json과 일치) ──
-    private const ushort LIQ_NONE  = 0;
-    private const ushort LIQ_WATER = 1; // 물 id = 1 (확정)
-
-    // ── 라이트 파라미터 ──
+    // ── Light ──
     private const byte NATURAL_MAX = 15;
 
-    // 로그 유틸 (단계별 ms + 누적 ms)
+    // ── Grass meta (ATT_Solid.json variants.meta) ──
+    // 0: Top, 1: Left, 2: Right, 3: TopLeft, 4: TopRight, 5: LeftRight, 6: TopLeftRight
+    private const ushort GRASS_META_TOP              = 0;
+    private const ushort GRASS_META_LEFT             = 1;
+    private const ushort GRASS_META_RIGHT            = 2;
+    private const ushort GRASS_META_TOPLEFT          = 3;
+    private const ushort GRASS_META_TOPRIGHT         = 4;
+    private const ushort GRASS_META_LEFTRIGHT        = 5;
+    private const ushort GRASS_META_TOPLEFTRIGHT     = 6;
+
+    // 로그 유틸
     private static void StepLog(string label, float stepStart, float totalStart)
     {
         float now = Time.realtimeSinceStartup;
@@ -64,8 +67,8 @@ public static class WorldDataGenerator
 
         Debug.Log($"[WorldGen] START Generate w={w} h={h} seed={seed} waterHeight={s.waterHeight}");
 
-        // 공통 파이프라인 1회 실행 → commonSolid, bg, commonLiquid 획득
-        BuildCommonAndBg(s, seed, out var commonSolid, out var bg, out var commonLiquid);
+        // 공통 파이프라인 1회 실행 → commonSolid/commonMeta/bg/commonFluid 획득
+        BuildCommonAndBg(s, seed, out var commonSolid, out var commonMeta, out var bg, out var commonFluid);
         StepLog("BuildCommonAndBg", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
@@ -80,40 +83,38 @@ public static class WorldDataGenerator
         {
             ushort bgId = bg[x, y];
             if (bgId != ID_AIR)
-                world.ForceBG(x, y, bgId);
+                world.SetBG(x, y, bgId);
         }
         StepLog("Inject BG", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Solid 주입
+        // Solid 주입 (id + meta)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
             ushort id = commonSolid[x, y];
             if (id == ID_AIR) continue;
 
-            // 인스펙터 신뢰 전제: cellLibrary는 정상 주입되어 있어야 함
-            var cell = cellLibrary.MakeSolidCell(id);
-            world.ForceSolid(x, y, in cell);
+            ushort meta = commonMeta[x, y];
+            world.SetSolid(x, y, id, meta);
         }
         StepLog("Inject Solid", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Liquid 주입 (맵 생성 시 유체는 기본 MaxFluid로 가득)
+        // Fluid 주입 (맵 생성 시 유체는 기본 MaxFluid로 가득)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
-            ushort lid = commonLiquid[x, y];
-            if (lid == LIQ_NONE) continue;
+            ushort fid = commonFluid[x, y];
+            if (fid == FLUID_NONE) continue;
 
-            var lc = cellLibrary.MakeLiquidCell(lid); // default = 128
-            world.ForceLiquid(x, y, in lc);
+            world.SetFluid(x, y, fid, WorldData.MaxFluid);
         }
-        StepLog("Inject Liquid", t0, totalStart);
+        StepLog("Inject Fluid", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // 자연광
-        PropagateNaturalLight(world);
+        PropagateNaturalLight(world, cellLibrary);
         StepLog("PropagateNaturalLight", t0, totalStart);
 
         float totalEnd = Time.realtimeSinceStartup;
@@ -123,22 +124,23 @@ public static class WorldDataGenerator
     }
 
     /// <summary>
-    /// 프리뷰용: commonSolid만. 시드 별도 인자.
+    /// 프리뷰용: commonSolid만. (BG/Fluid도 함께)
     /// </summary>
-    public static ushort[,] GenerateCommonSolid(WorldGenSettings s, int seed, out ushort[,] bg, out ushort[,] commonLiquid)
+    public static ushort[,] GenerateCommonSolid(WorldGenSettings s, int seed, out ushort[,] bg, out ushort[,] commonFluid)
     {
-        BuildCommonAndBg(s, seed, out var commonSolid, out bg, out commonLiquid);
+        BuildCommonAndBg(s, seed, out var commonSolid, out _, out bg, out commonFluid);
         return commonSolid;
     }
 
     /// <summary>
-    /// 내부 파이프라인: commonSolid/bg/commonLiquid 구성 단계.
+    /// 내부 파이프라인: commonSolid/commonMeta/bg/commonFluid 구성 단계.
     /// </summary>
     private static void BuildCommonAndBg(
         WorldGenSettings s, int seed,
         out ushort[,] commonSolid,
+        out ushort[,] commonMeta,
         out ushort[,] bg,
-        out ushort[,] commonLiquid
+        out ushort[,] commonFluid
     )
     {
         int w = s.width, h = s.height;
@@ -146,11 +148,12 @@ public static class WorldDataGenerator
         float totalStart = Time.realtimeSinceStartup;
         float t0 = totalStart;
 
-        commonSolid  = new ushort[w, h];
-        bg           = new ushort[w, h];
-        commonLiquid = new ushort[w, h];
+        commonSolid = new ushort[w, h];
+        commonMeta  = new ushort[w, h]; // ✅ meta 병행
+        bg          = new ushort[w, h];
+        commonFluid = new ushort[w, h];
 
-        int seaLevel = s.waterHeight; // 요구사항: 세팅 그대로 사용
+        int seaLevel = s.waterHeight;
 
         Debug.Log($"[WorldGen] BuildCommonAndBg START w={w} h={h} seed={seed} seaLevel(waterHeight)={seaLevel}");
 
@@ -201,29 +204,28 @@ public static class WorldDataGenerator
             if (id != 0)
             {
                 commonSolid[x, y] = id;
+                commonMeta[x, y]  = 0;
                 bg[x, y]          = id;
 
-                // solid 확정된 칸은 유체 없음
-                commonLiquid[x, y] = LIQ_NONE;
+                commonFluid[x, y] = FLUID_NONE;
             }
         }
 
         StepLog("Step 2 - Layer fill & BG", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Step 3) SeaColumnFill (seaLevel부터 아래로, AIR인 동안만 채우다가, Air 아닌거 만나면 해당 x는 끝)
-        SeaColumnFill(commonSolid, commonLiquid, w, h, seaLevel, LIQ_WATER);
-
+        // Step 3) SeaColumnFill
+        SeaColumnFill(commonSolid, commonFluid, w, h, seaLevel, FLUID_WATER);
         StepLog($"Step 3 - SeaColumnFill (seaLevel={seaLevel})", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 4) Ores
-        ApplyOreClusters(s, seed, commonSolid);
+        ApplyOreClusters(s, seed, commonSolid, commonMeta);
         StepLog("Step 4 - Ore clusters", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 5) Clay clusters
-        ApplyClayClusters(s, seed, commonSolid);
+        ApplyClayClusters(s, seed, commonSolid, commonMeta);
         StepLog("Step 5 - Clay clusters", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
@@ -235,42 +237,47 @@ public static class WorldDataGenerator
         {
             if (!cave[x, y]) continue;
 
-            // solid 공기화 + 유체 초기화(침투는 다음 단계에서)
-            commonSolid[x, y]  = ID_AIR;
-            commonLiquid[x, y] = LIQ_NONE;
+            commonSolid[x, y] = ID_AIR;
+            commonMeta[x, y]  = 0;
+            commonFluid[x, y] = FLUID_NONE;
         }
 
         StepLog("Step 6 - Caves carve (noise)", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Step 7) Liquid infiltration flood fill (sea와 연결된 공간만)
-        // ★ 수정: seaLevel 위로는 절대 확장하지 않음
-        FloodFillLiquidFromSeaSurface(commonSolid, commonLiquid, w, h, seaLevel, LIQ_WATER);
-
-        StepLog("Step 7 - Liquid flood fill (no upward)", t0, totalStart);
+        // Step 7) Fluid infiltration flood fill (sea와 연결된 공간만, seaLevel 위로 금지)
+        FloodFillFluidFromSeaSurface(commonSolid, commonFluid, w, h, seaLevel, FLUID_WATER);
+        StepLog("Step 7 - Fluid flood fill (no upward)", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 8) Sand/Gravel/Clay conversion (water dist-map)
-        ApplySandAndGravelAndClay(s, seed, commonSolid, commonLiquid);
+        ApplySandAndGravelAndClay(s, seed, commonSolid, commonMeta, commonFluid);
         StepLog("Step 8 - Sand/Gravel/Clay", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Step 9) Grass variants
+        // Step 9) Grass variants (id=GRASS, meta=0..6)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
-            if (commonSolid[x, y] == ID_DIRT)
-                commonSolid[x, y] = GetGrassVariant(x, y, commonSolid);
+        {
+            if (commonSolid[x, y] != ID_DIRT) continue;
 
-        StepLog("Step 9 - Grass variants", t0, totalStart);
+            if (TryComputeGrassMeta(x, y, commonSolid, out ushort meta))
+            {
+                commonSolid[x, y] = ID_GRASS;
+                commonMeta[x, y]  = meta;
+            }
+        }
+
+        StepLog("Step 9 - Grass variants (meta)", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 10) Trees
-        PlaceTrees(s, seed, commonSolid);
+        PlaceTrees(s, seed, commonSolid, commonMeta);
         StepLog("Step 10 - Trees", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 11) Decor
-        PlaceDecorAfterTrees(s, seed, commonSolid);
+        PlaceDecorAfterTrees(s, seed, commonSolid, commonMeta);
         StepLog("Step 11 - Decor", t0, totalStart);
 
         float end = Time.realtimeSinceStartup;
@@ -279,11 +286,8 @@ public static class WorldDataGenerator
 
     // ─────────────────────────────────────────────────────────
     // Step 3: 해수면 컬럼 채우기
-    // seaLevel에서 아래(0)로 내려가며 AIR인 동안만 liquidId 채움.
-    // AIR가 아닌 걸 만나면 해당 x는 종료 (다음 x로).
-    // seaLevel은 waterHeight "그대로" 사용.
     // ─────────────────────────────────────────────────────────
-    private static void SeaColumnFill(ushort[,] commonSolid, ushort[,] commonLiquid, int w, int h, int seaLevel, ushort liquidId)
+    private static void SeaColumnFill(ushort[,] commonSolid, ushort[,] commonFluid, int w, int h, int seaLevel, ushort fluidId)
     {
         int y0 = seaLevel;
 
@@ -294,32 +298,27 @@ public static class WorldDataGenerator
                 if (commonSolid[x, y] != ID_AIR)
                     break;
 
-                commonLiquid[x, y] = liquidId;
+                commonFluid[x, y] = fluidId;
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────
-    // Step 7: 바닷물 침투 FloodFill
-    // seaLevel 라인에서 시작해서, solid가 AIR인 공간만 확장하며 liquid를 채움.
-    // ★ seaLevel 위(y > seaLevel)로는 절대 확장하지 않음.
-    // seaLevel은 waterHeight "그대로" 사용.
+    // Step 7: 바닷물 침투 FloodFill (seaLevel 위 금지)
     // ─────────────────────────────────────────────────────────
-    private static void FloodFillLiquidFromSeaSurface(ushort[,] commonSolid, ushort[,] commonLiquid, int w, int h, int seaLevel, ushort liquidId)
+    private static void FloodFillFluidFromSeaSurface(ushort[,] commonSolid, ushort[,] commonFluid, int w, int h, int seaLevel, ushort fluidId)
     {
         int ySeed = seaLevel;
 
-        // 4방
         int[] dx = { 1, -1, 0, 0 };
         int[] dy = { 0, 0, 1, -1 };
 
         var visited = new bool[w, h];
         var q = new Queue<(int x, int y)>();
 
-        // seaLevel 라인에서 "이미 물인 칸"만 시드로
         for (int x = 0; x < w; x++)
         {
-            if (commonLiquid[x, ySeed] == liquidId && commonSolid[x, ySeed] == ID_AIR)
+            if (commonFluid[x, ySeed] == fluidId && commonSolid[x, ySeed] == ID_AIR)
             {
                 visited[x, ySeed] = true;
                 q.Enqueue((x, ySeed));
@@ -336,8 +335,6 @@ public static class WorldDataGenerator
                 int ny = cy + dy[dir];
 
                 if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
-
-                // ★ 핵심: 위로는 절대 안 감 (seaLevel 초과 금지)
                 if (ny > seaLevel) continue;
 
                 if (visited[nx, ny]) continue;
@@ -345,19 +342,19 @@ public static class WorldDataGenerator
 
                 if (commonSolid[nx, ny] != ID_AIR) continue;
 
-                if (commonLiquid[nx, ny] == LIQ_NONE)
-                    commonLiquid[nx, ny] = liquidId;
+                if (commonFluid[nx, ny] == FLUID_NONE)
+                    commonFluid[nx, ny] = fluidId;
 
-                if (commonLiquid[nx, ny] == liquidId)
+                if (commonFluid[nx, ny] == fluidId)
                     q.Enqueue((nx, ny));
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────
-    // 모래/자갈/점토 변환 (BFS 기반 거리맵) - 물 소스가 commonLiquid 기준
+    // 모래/자갈/점토 변환 (BFS 기반 거리맵)
     // ─────────────────────────────────────────────────────────
-    private static void ApplySandAndGravelAndClay(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonLiquid)
+    private static void ApplySandAndGravelAndClay(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta, ushort[,] commonFluid)
     {
         float tStart = Time.realtimeSinceStartup;
 
@@ -366,13 +363,12 @@ public static class WorldDataGenerator
 
         const int INF = 1_000_000;
 
-        // Chebyshev 거리용 8방향 (대각 포함)
         int[] dx8 = { 1,  1,  0, -1, -1, -1,  0,  1 };
         int[] dy8 = { 0,  1,  1,  1,  0, -1, -1, -1 };
 
         var q = new Queue<(int x, int y)>();
 
-        // ───────────────── 1) Water 거리 맵 (반경 3) ─────────────────
+        // 1) Water(Fluid) 거리 맵 (반경 3)
         int[,] distWater = new int[w, h];
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
@@ -382,7 +378,7 @@ public static class WorldDataGenerator
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
-            if (commonLiquid[x, y] == LIQ_WATER)
+            if (commonFluid[x, y] == FLUID_WATER)
             {
                 distWater[x, y] = 0;
                 q.Enqueue((x, y));
@@ -411,7 +407,7 @@ public static class WorldDataGenerator
             }
         }
 
-        // 1단계: Dirt → Sand (반경3 내 Water)
+        // Dirt → Sand
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -419,11 +415,14 @@ public static class WorldDataGenerator
             {
                 int d = distWater[x, y];
                 if (d > 0 && d <= maxWaterR)
+                {
                     commonSolid[x, y] = ID_SAND;
+                    commonMeta[x, y]  = 0;
+                }
             }
         }
 
-        // 2단계 A: Rock → Gravel (반경3 내 Water)
+        // Rock → Gravel
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -431,11 +430,14 @@ public static class WorldDataGenerator
             {
                 int d = distWater[x, y];
                 if (d > 0 && d <= maxWaterR)
+                {
                     commonSolid[x, y] = ID_GRAVEL;
+                    commonMeta[x, y]  = 0;
+                }
             }
         }
 
-        // ───────────────── 2) Dirt 거리 맵 (반경 2) ─────────────────
+        // 2) Dirt 거리 맵 (반경 2)
         int[,] distDirt = new int[w, h];
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
@@ -474,7 +476,7 @@ public static class WorldDataGenerator
             }
         }
 
-        // 2단계 B: Rock → Gravel (반경2 내 Dirt, 30%)
+        // Rock → Gravel (반경2 내 Dirt, 30%)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -484,12 +486,15 @@ public static class WorldDataGenerator
                 if (d > 0 && d <= maxDirtR)
                 {
                     if (rand.NextDouble() < 0.30)
+                    {
                         commonSolid[x, y] = ID_GRAVEL;
+                        commonMeta[x, y]  = 0;
+                    }
                 }
             }
         }
 
-        // ───────────────── 3) Sand 거리 맵 (반경 3) ─────────────────
+        // 3) Sand 거리 맵 (반경 3)
         int[,] distSand = new int[w, h];
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
@@ -528,7 +533,7 @@ public static class WorldDataGenerator
             }
         }
 
-        // 3단계: Dirt → Gravel/Clay (반경3 내 Sand → 40%/40%)
+        // Dirt → Gravel/Clay (반경3 내 Sand → 40%/40%)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
@@ -538,8 +543,16 @@ public static class WorldDataGenerator
                 if (d > 0 && d <= maxSandR)
                 {
                     double r = rand.NextDouble();
-                    if      (r < 0.40) commonSolid[x, y] = ID_GRAVEL;
-                    else if (r < 0.80) commonSolid[x, y] = ID_CLAY;
+                    if (r < 0.40)
+                    {
+                        commonSolid[x, y] = ID_GRAVEL;
+                        commonMeta[x, y]  = 0;
+                    }
+                    else if (r < 0.80)
+                    {
+                        commonSolid[x, y] = ID_CLAY;
+                        commonMeta[x, y]  = 0;
+                    }
                 }
             }
         }
@@ -551,7 +564,7 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 점토 클러스터 (Dirt에만 부여)
     // ─────────────────────────────────────────────────────────
-    private static void ApplyClayClusters(WorldGenSettings s, int seed, ushort[,] commonSolid)
+    private static void ApplyClayClusters(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
     {
         int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
 
@@ -567,14 +580,19 @@ public static class WorldDataGenerator
 
         foreach (var cl in clusters)
         foreach (var p in cl)
+        {
             if ((uint)p.x < w && (uint)p.y < h && commonSolid[p.x, p.y] == ID_DIRT)
+            {
                 commonSolid[p.x, p.y] = ID_CLAY;
+                commonMeta[p.x, p.y]  = 0;
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────
     // 내부: 광물 클러스터
     // ─────────────────────────────────────────────────────────
-    private static void ApplyOreClusters(WorldGenSettings s, int seed, ushort[,] commonSolid)
+    private static void ApplyOreClusters(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
     {
         int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
 
@@ -590,8 +608,13 @@ public static class WorldDataGenerator
 
             foreach (var cl in clusters)
             foreach (var p in cl)
+            {
                 if ((uint)p.x < w && (uint)p.y < h && commonSolid[p.x, p.y] == ID_ROCK)
+                {
                     commonSolid[p.x, p.y] = oreId;
+                    commonMeta[p.x, p.y]  = 0;
+                }
+            }
         }
 
         apply(s.coalMinHeight,   s.coalMaxHeight,   s.coalClusterSizeMean,   s.coalClusterSizeStdDev,
@@ -608,44 +631,56 @@ public static class WorldDataGenerator
     }
 
     // ─────────────────────────────────────────────────────────
-    // 내부: 잔디 변형
+    // 내부: Grass meta 계산 (Dirt인 셀을 Grass로 바꿀지 + meta)
+    // 기존 로직 유지: "위로 어떤 솔리드라도 있으면" grass 안 됨.
     // ─────────────────────────────────────────────────────────
-    private static ushort GetGrassVariant(int x, int y, ushort[,] commonSolid)
+    private static bool TryComputeGrassMeta(int x, int y, ushort[,] commonSolid, out ushort meta)
     {
-        int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
+        int w = commonSolid.GetLength(0);
+        int h = commonSolid.GetLength(1);
 
+        // 위로 뭔가 있으면(공기 아닌 솔리드) 지하 → grass 금지
         for (int yy = y + 1; yy < h; yy++)
+        {
             if (commonSolid[x, yy] != ID_AIR)
-                return ID_DIRT;
+            {
+                meta = 0;
+                return false;
+            }
+        }
 
-        bool up    = (y + 1 < h && (commonSolid[x, y + 1] == ID_AIR));
-        bool left  = (x - 1 >= 0 && (commonSolid[x - 1, y] == ID_AIR));
-        bool right = (x + 1 < w && (commonSolid[x + 1, y] == ID_AIR));
+        bool up    = (y + 1 < h && commonSolid[x, y + 1] == ID_AIR);
+        bool left  = (x - 1 >= 0 && commonSolid[x - 1, y] == ID_AIR);
+        bool right = (x + 1 < w && commonSolid[x + 1, y] == ID_AIR);
 
         int mask = (up ? 1 : 0) | (left ? 2 : 0) | (right ? 4 : 0);
+
         switch (mask)
         {
-            case 1: return ID_GRASS_TOP;
-            case 2: return ID_GRASS_LEFT;
-            case 3: return ID_GRASS_TOPLEFT;
-            case 4: return ID_GRASS_RIGHT;
-            case 5: return ID_GRASS_TOPRIGHT;
-            case 6: return ID_GRASS_LEFTRIGHT;
-            case 7: return ID_GRASS_TOPLEFTRIGHT;
-            default: return ID_DIRT;
+            case 1: meta = GRASS_META_TOP;          return true;
+            case 2: meta = GRASS_META_LEFT;         return true;
+            case 3: meta = GRASS_META_TOPLEFT;      return true;
+            case 4: meta = GRASS_META_RIGHT;        return true;
+            case 5: meta = GRASS_META_TOPRIGHT;     return true;
+            case 6: meta = GRASS_META_LEFTRIGHT;    return true;
+            case 7: meta = GRASS_META_TOPLEFTRIGHT; return true;
+            default:
+                meta = 0;
+                return false; // 기존 로직: 아무 조건도 아니면 Dirt 유지
         }
     }
 
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 배치
     // ─────────────────────────────────────────────────────────
-    private static void PlaceTrees(WorldGenSettings s, int seed, ushort[,] commonSolid)
+    private static void PlaceTrees(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
     {
         int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
         var rand = new System.Random(seed);
 
         var tpl = StructureLoader.Load("Tree");
         if (tpl == null || tpl.layers == null || tpl.layers.deco == null) return;
+
         var deco = tpl.layers.deco;
         int tplH = deco.Length; if (tplH == 0) return;
         int tplW = deco[0].Length;
@@ -658,7 +693,9 @@ public static class WorldDataGenerator
             // 지면 찾기
             int y = h - 1;
             while (y > 0 && commonSolid[x, y] == ID_AIR) y--;
-            if (commonSolid[x, y] != GetGrassVariant(x, y, commonSolid)) continue;
+
+            // ✅ 기존: grass variant id 비교 → 이제 grass id=3이면 통과
+            if (commonSolid[x, y] != ID_GRASS) continue;
 
             int seedY = y + 1;
             int worldOx = x - ax;
@@ -683,14 +720,20 @@ public static class WorldDataGenerator
                     if (tpl.writeRules != null && tpl.writeRules.TryGetValue(id, out var rule) && rule?.targets != null)
                     {
                         for (int k = 0; k < rule.targets.Length; k++)
+                        {
                             if (curr == rule.targets[k]) { canWrite = true; break; }
+                        }
                     }
                     else
                     {
                         canWrite = (curr == ID_AIR);
                     }
 
-                    if (canWrite) commonSolid[wx, wy] = (ushort)id;
+                    if (canWrite)
+                    {
+                        commonSolid[wx, wy] = (ushort)id;
+                        commonMeta[wx, wy]  = 0;
+                    }
                 }
             }
         }
@@ -699,7 +742,7 @@ public static class WorldDataGenerator
     // ─────────────────────────────────────────────────────────
     // 내부: 트리 이후 데코
     // ─────────────────────────────────────────────────────────
-    private static void PlaceDecorAfterTrees(WorldGenSettings s, int seed, ushort[,] commonSolid)
+    private static void PlaceDecorAfterTrees(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
     {
         int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
         var rand = new System.Random(seed ^ 0xDEC0);
@@ -711,32 +754,43 @@ public static class WorldDataGenerator
             int ya = y + 1;
             if (commonSolid[x, ya] != ID_AIR) continue;
 
-            bool isGrass =
-                here == ID_GRASS_LEFT || here == ID_GRASS_TOP || here == ID_GRASS_RIGHT ||
-                here == ID_GRASS_TOPLEFT || here == ID_GRASS_TOPRIGHT ||
-                here == ID_GRASS_LEFTRIGHT || here == ID_GRASS_TOPLEFTRIGHT;
-
-            if (isGrass)
+            if (here == ID_GRASS)
             {
                 double r = rand.NextDouble();
-                if      (r < 0.60) commonSolid[x, ya] = ID_PLANT;
-                else if (r < 0.75) commonSolid[x, ya] = ID_BUSH;
-                else if (r < 0.85) commonSolid[x, ya] = ID_SMALL_STONE_PILE;
+                if (r < 0.60)
+                {
+                    commonSolid[x, ya] = ID_PLANT;
+                    commonMeta[x, ya]  = 0;
+                }
+                else if (r < 0.75)
+                {
+                    commonSolid[x, ya] = ID_BUSH;
+                    commonMeta[x, ya]  = 0;
+                }
+                else if (r < 0.85)
+                {
+                    commonSolid[x, ya] = ID_SMALL_STONE_PILE;
+                    commonMeta[x, ya]  = 0;
+                }
                 continue;
             }
 
             if (here == ID_ROCK)
             {
                 if (rand.NextDouble() < 0.20)
+                {
                     commonSolid[x, ya] = ID_STONE_PILE;
+                    commonMeta[x, ya]  = 0;
+                }
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────
     // 내부: 자연광 전파 (버킷 기반 Wavefront BFS)
+    // WorldData는 Set/Get 메서드만 사용
     // ─────────────────────────────────────────────────────────
-    private static void PropagateNaturalLight(WorldData world)
+    private static void PropagateNaturalLight(WorldData world, CellLibrary cellLibrary)
     {
         int w = world.bg.GetLength(0);
         int h = world.bg.GetLength(1);
@@ -744,7 +798,10 @@ public static class WorldDataGenerator
         // 1) 라이트 초기화
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
-            world.light[x, y] = new LightCell { natural = 0, artificial = 0 };
+        {
+            world.SetNaturalLight(x, y, 0);
+            world.SetArtificialLight(x, y, 0);
+        }
 
         // 2) 감쇠량 캐싱 (bg / collidable 기반)
         byte[,] atten = new byte[w, h];
@@ -752,8 +809,17 @@ public static class WorldDataGenerator
         for (int y = 0; y < h; y++)
         {
             byte a = 0;
-            if (world.bg[x, y] != ID_AIR) a += 1;
-            if (world.IsCollidable(x, y)) a += 2;
+
+            if (world.GetBG(x, y) != ID_AIR) a += 1;
+
+            ushort sid = world.GetSolid(x, y).id;
+            if (sid != 0)
+            {
+                var flags = cellLibrary.GetSolidFlags(sid);
+                if ((flags & CellLibrary.SolidFlags.Collidable) != 0)
+                    a += 2;
+            }
+
             atten[x, y] = a;
         }
 
@@ -811,17 +877,15 @@ public static class WorldDataGenerator
             bucket.Clear();
         }
 
-        // 7) dist -> natural
+        // 7) dist -> naturalLight
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
             byte d = dist[x, y];
             if (d <= NATURAL_MAX)
             {
-                byte val = (byte)(NATURAL_MAX - d);
-                var lc = world.light[x, y];
-                lc.natural = val;
-                world.light[x, y] = lc;
+                ushort val = (ushort)(NATURAL_MAX - d);
+                world.SetNaturalLight(x, y, val);
             }
         }
     }

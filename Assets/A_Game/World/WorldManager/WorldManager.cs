@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class WorldManager : MonoBehaviour
 {
-    public enum CellLayer { FG, BG }
+    public enum CellLayer { Solid, BG }
 
     [Header("월드 생성 설정")]
     public WorldGenSettings settings;
@@ -70,13 +70,11 @@ public class WorldManager : MonoBehaviour
 
     private const int ATT_AIR = 1;
     private const int ATT_BG = 2;
-    private const int ATT_FG = 3;
+    private const int ATT_SOLID = 3;
 
     private int W, H;
 
-    // 외부에서 직접 만지지 않도록 숨김
     private WorldData worldMap;
-
     private WorldChunkSystem chunkSystem;
 
     public long worldTick;
@@ -101,9 +99,6 @@ public class WorldManager : MonoBehaviour
     [Tooltip("FixedUpdate 1회당 인공빛 큐에서 처리할 최대 노드 수(감소+증가 합산)")]
     public int artificialLightOpsPerTick = 8000;
 
-    // ────────────────────────────────────────────────
-    // Artificial Light: Increase / Decrease Queues
-    // ────────────────────────────────────────────────
     private struct IncNode
     {
         public int x, y;
@@ -128,13 +123,42 @@ public class WorldManager : MonoBehaviour
     private readonly List<Vector2Int> _lightChangedList = new();
 
     /*────────────────────────────────────────────────────────────
-     * Read-only Query (외부 조회는 여기로만)
+     * Read-only Query
      *────────────────────────────────────────────────────────────*/
     public bool InBounds(int x, int y) => worldMap.InBounds(x, y);
-    public ushort GetFGId(int x, int y) => worldMap.GetSolidId(x, y);
-    public ushort GetBGId(int x, int y) => worldMap.GetBGId(x, y);
-    public ushort GetFluidId(int x, int y, out byte amount) => worldMap.GetLiquidId(x, y, out amount);
-    public bool IsCollidable(int x, int y) => worldMap.IsCollidable(x, y);
+
+    public ushort GetSolidId(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return 0;
+        return worldMap.GetSolid(x, y).id;
+    }
+
+    public ushort GetBGId(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return 0;
+        return worldMap.GetBG(x, y);
+    }
+
+    public ushort GetFluidId(int x, int y, out byte amount)
+    {
+        if (!worldMap.InBounds(x, y)) { amount = 0; return 0; }
+        var f = worldMap.GetFluid(x, y);
+        amount = f.amount;
+        return f.id;
+    }
+
+    public bool IsCollidable(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return true;
+        var s = worldMap.GetSolid(x, y);
+        if (s.id == 0) return false;
+        return (cellLibrary.GetSolidFlags(s.id) & CellLibrary.SolidFlags.Collidable) != 0;
+    }
+
+    private bool HasGravity(ushort solidId)
+    {
+        return (cellLibrary.GetSolidFlags(solidId) & CellLibrary.SolidFlags.HasGravity) != 0;
+    }
 
     /*────────────────────────────────────────────────────────────
      * Tick + Light Recalc (통합)
@@ -143,7 +167,6 @@ public class WorldManager : MonoBehaviour
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
-        // 새로 추가된 셀에 대해서만 라이트 재계산(중복 폭발 방지)
         if (tickNext.Add(new Vector2Int(x, y)))
         {
             RecalculateLightAt(x, y);
@@ -215,7 +238,7 @@ public class WorldManager : MonoBehaviour
             int gx = Random.Range(xMin, xMax);
             int gy = Random.Range(yMin, yMax);
 
-            ushort solidId = worldMap.GetSolidId(gx, gy);
+            ushort solidId = worldMap.GetSolid(gx, gy).id;
             if (solidId != 0)
             {
                 string nm = cellLibrary.GetSolidName(solidId);
@@ -232,29 +255,28 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Fluid Simulation (WorldData.liquid 기반)
+     * Fluid Simulation
      *────────────────────────────────────────────────────────────*/
     void StepFluidAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
 
-        var l = worldMap.liquid[x, y];
+        var l = worldMap.GetFluid(x, y);
         ushort fluidId = l.id;
         int amt = l.amount;
 
-        // 정합성 정리
         if (amt <= 0)
         {
             if (fluidId != 0)
             {
-                SetLiquidInternal(x, y, 0, 0);
+                SetFluidInternal(x, y, 0, 0);
                 OnCellEdited(x, y);
             }
             return;
         }
         if (fluidId == 0)
         {
-            SetLiquidInternal(x, y, 0, 0);
+            SetFluidInternal(x, y, 0, 0);
             OnCellEdited(x, y);
             return;
         }
@@ -262,16 +284,13 @@ public class WorldManager : MonoBehaviour
         bool Blocked(int gx, int gy)
         {
             if (!worldMap.InBounds(gx, gy)) return true;
-            return worldMap.IsCollidable(gx, gy);
+            return IsCollidable(gx, gy);
         }
 
-        // 1) 아래로
         int dy = y - 1;
         if (dy >= 0 && !Blocked(x, dy))
         {
-            var below = worldMap.liquid[x, dy];
-
-            // 다른 유체 혼합 금지
+            var below = worldMap.GetFluid(x, dy);
             if (below.amount > 0 && below.id != 0 && below.id != fluidId)
                 return;
 
@@ -280,14 +299,13 @@ public class WorldManager : MonoBehaviour
             if (cap > 0)
             {
                 int move = Mathf.Min(amt, cap);
-                MoveLiquidInternal(x, y, x, dy, fluidId, move);
+                MoveFluidInternal(x, y, x, dy, fluidId, move);
                 OnCellEdited(x, y);
                 OnCellEdited(x, dy);
                 return;
             }
         }
 
-        // 2) 좌우
         int xl = x - 1, xr = x + 1;
         bool canL = xl >= 0 && !Blocked(xl, y);
         bool canR = xr < W && !Blocked(xr, y);
@@ -296,13 +314,13 @@ public class WorldManager : MonoBehaviour
 
         if (canL)
         {
-            var c = worldMap.liquid[xl, y];
+            var c = worldMap.GetFluid(xl, y);
             if (c.amount > 0 && c.id != 0 && c.id != fluidId) canL = false;
             else Al = c.amount;
         }
         if (canR)
         {
-            var c = worldMap.liquid[xr, y];
+            var c = worldMap.GetFluid(xr, y);
             if (c.amount > 0 && c.id != 0 && c.id != fluidId) canR = false;
             else Ar = c.amount;
         }
@@ -348,47 +366,40 @@ public class WorldManager : MonoBehaviour
         else if (flowL > 0) takeL = Mathf.Min(total, flowL);
         else takeR = Mathf.Min(total, flowR);
 
-        if (takeL > 0) MoveLiquidInternal(x, y, xl, y, fluidId, takeL);
-        if (takeR > 0) MoveLiquidInternal(x, y, xr, y, fluidId, takeR);
+        if (takeL > 0) MoveFluidInternal(x, y, xl, y, fluidId, takeL);
+        if (takeR > 0) MoveFluidInternal(x, y, xr, y, fluidId, takeR);
 
         OnCellEdited(x, y);
         if (takeL > 0) OnCellEdited(xl, y);
         if (takeR > 0) OnCellEdited(xr, y);
     }
 
-    void SetLiquidInternal(int x, int y, ushort id, int newAmount)
+    void SetFluidInternal(int x, int y, ushort id, int newAmount)
     {
-        // (요구사항) 액체 밝기도 광원으로 취급: 변경 시 artificial 파동 갱신
-        ushort oldSolidId = worldMap.GetSolidId(x, y);
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         newAmount = Mathf.Clamp(newAmount, 0, WorldData.MaxFluid);
 
-        if (newAmount == 0)
+        if (IsCollidable(x, y) || id == 0 || newAmount == 0)
         {
-            worldMap.ForceLiquid(x, y, new LiquidCell { id = 0, amount = 0, brightness = 0 });
+            worldMap.SetFluid(x, y, 0, 0);
         }
         else
         {
-            byte b = cellLibrary.GetLiquidBrightness(id);
-            worldMap.ForceLiquid(x, y, new LiquidCell
-            {
-                id = id,
-                amount = (byte)newAmount,
-                brightness = b
-            });
+            worldMap.SetFluid(x, y, id, (byte)newAmount);
         }
 
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
     }
 
-    void MoveLiquidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
+    void MoveFluidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
     {
         if (amount <= 0) return;
 
-        var from = worldMap.liquid[fx, fy];
-        var to = worldMap.liquid[tx, ty];
+        var from = worldMap.GetFluid(fx, fy);
+        var to = worldMap.GetFluid(tx, ty);
 
         if (from.amount <= 0 || from.id != id) return;
         if (to.amount > 0 && to.id != 0 && to.id != id) return;
@@ -400,130 +411,137 @@ public class WorldManager : MonoBehaviour
         move = Mathf.Min(move, WorldData.MaxFluid - toAmt);
         if (move <= 0) return;
 
-        SetLiquidInternal(fx, fy, id, fromAmt - move);
-        SetLiquidInternal(tx, ty, id, toAmt + move);
+        SetFluidInternal(fx, fy, id, fromAmt - move);
+        SetFluidInternal(tx, ty, id, toAmt + move);
     }
 
     /*────────────────────────────────────────────────────────────
-     * Gravity (WorldData.solid 기반)
+     * Gravity
      *────────────────────────────────────────────────────────────*/
     void StepGravityAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
 
-        var s = worldMap.solid[x, y];
+        var s = worldMap.GetSolid(x, y);
         ushort id = s.id;
         if (id == 0) return;
 
-        bool hasGravity = (s.flags & SolidFlags.HasGravity) != 0;
-        if (!hasGravity) return;
+        if (!HasGravity(id)) return;
 
         int by = y - 1;
         if (by < 0) return;
 
-        if (worldMap.GetSolidId(x, by) != 0) return;
+        if (worldMap.GetSolid(x, by).id != 0) return;
 
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
-        ushort removedId = worldMap.RemoveSolid(x, y);
-        if (removedId == 0) return;
+        worldMap.SetSolid(x, y, 0, 0);
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
         var pos = new Vector3(x + 0.5f, y + 0.5f, 0f);
-        var spr = cellLibrary.GetSolidSprite(id);
+        var spr = cellLibrary.GetSolidSprite(id, s.meta);
 
         var fb = Instantiate(fallingBlockPrefab, pos, Quaternion.identity);
         fb.Init(id, this, spr);
 
         entityManager.Register(fb);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldLiquidId: oldLiquidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldFluidId: oldFluidId);
     }
 
     /*────────────────────────────────────────────────────────────
      * World Edit API
      *────────────────────────────────────────────────────────────*/
 
-    // ───────── 설치(Solid) ─────────
-    public bool PlaceFG(int x, int y, ushort id)
+    public bool PlaceSolid(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        ushort oldSolidId = worldMap.GetSolidId(x, y);
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        var curS = worldMap.GetSolid(x, y);
+        if (curS.id != 0) return false;
 
-        SolidCell src = cellLibrary.MakeSolidCell(id);
-        bool ok = worldMap.TryPlaceSolid(x, y, in src);
-        if (!ok) return false;
+        ushort oldSolidId = 0;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
+
+        worldMap.SetSolid(x, y, id, 0);
+
+        if ((cellLibrary.GetSolidFlags(id) & CellLibrary.SolidFlags.Collidable) != 0)
+            worldMap.SetFluid(x, y, 0, 0);
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
         return true;
     }
 
-    // ───────── 설치(Liquid) ─────────
     public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (fluidId == 0 || amount == 0) return false;
 
-        ushort oldSolidId = worldMap.GetSolidId(x, y);
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
-        LiquidCell src = cellLibrary.MakeLiquidCell(fluidId, amount);
-        bool ok = worldMap.TryPlaceLiquid(x, y, in src, out byte leftover);
+        if (IsCollidable(x, y)) return false;
 
-        int inserted = amount - leftover;
-        if (inserted <= 0) return false;
+        var cur = worldMap.GetFluid(x, y);
+
+        if (cur.id != 0 && cur.amount > 0 && cur.id != fluidId)
+            return false;
+
+        int current = cur.amount;
+        int space = WorldData.MaxFluid - current;
+        if (space <= 0) return false;
+
+        int insert = (amount <= space) ? amount : space;
+        int newAmt = current + insert;
+
+        worldMap.SetFluid(x, y, fluidId, (byte)newAmt);
 
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
-        return ok;
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        return insert > 0;
     }
 
-    // ───────── 설치(BG) ─────────
     public bool PlaceBG(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        ushort oldId = worldMap.bg[x, y];
+        ushort oldId = worldMap.GetBG(x, y);
         if (oldId == id) return false;
 
-        worldMap.ForceBG(x, y, id);
+        worldMap.SetBG(x, y, id);
 
         MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
         return true;
     }
 
-    // ───────── 파괴(Solid) ─────────
-    public ushort BreakFG(int x, int y)
+    public ushort BreakSolid(int x, int y)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
 
-        ushort oldSolidId = worldMap.GetSolidId(x, y);
+        var s = worldMap.GetSolid(x, y);
+        ushort oldSolidId = s.id;
         if (oldSolidId == 0) return 0;
 
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
-        ushort removed = worldMap.RemoveSolid(x, y);
-        if (removed == 0) return 0;
+        worldMap.SetSolid(x, y, 0, 0);
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
 
-        // (수정) GetSolidKey -> GetSolidName
-        string key = cellLibrary.GetSolidName(removed);
+        string key = cellLibrary.GetSolidName(oldSolidId);
         if (!string.IsNullOrEmpty(key))
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
@@ -531,51 +549,52 @@ public class WorldManager : MonoBehaviour
             itemDropper.SpawnDroppedItems(key, pos3);
         }
 
-        return removed;
+        return oldSolidId;
     }
 
-    // ───────── 파괴(Liquid) ─────────
-    public LiquidCell BreakFluid(int x, int y)
+    public FluidCell BreakFluid(int x, int y)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return default;
 
-        ushort oldSolidId = worldMap.GetSolidId(x, y);
-        ushort oldLiquidId = worldMap.liquid[x, y].id;
+        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        var removed = worldMap.GetFluid(x, y);
+        ushort oldFluidId = removed.id;
 
-        var removed = worldMap.RemoveLiquid(x, y);
         if (removed.id == 0 || removed.amount == 0) return removed;
+
+        worldMap.SetFluid(x, y, 0, 0);
 
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldLiquidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
         return removed;
     }
 
-    // ───────── 파괴(BG) ─────────
     public ushort BreakBG(int x, int y)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
 
-        ushort removed = worldMap.RemoveBG(x, y);
+        ushort removed = worldMap.GetBG(x, y);
         if (removed == 0) return 0;
+
+        worldMap.SetBG(x, y, 0);
 
         MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
         return removed;
     }
 
-    // ───────── 기존 API 유지(호환용) ─────────
-    public bool PlaceCell(int x, int y, ushort id) => PlaceFG(x, y, id);
+    public bool PlaceCell(int x, int y, ushort id) => PlaceSolid(x, y, id);
     public bool PlaceBgCell(int x, int y, ushort id) => PlaceBG(x, y, id);
 
     public ushort BreakCell(int x, int y, CellLayer layer)
     {
-        return layer == CellLayer.FG ? BreakFG(x, y) : BreakBG(x, y);
+        return layer == CellLayer.Solid ? BreakSolid(x, y) : BreakBG(x, y);
     }
 
     /*────────────────────────────────────────────────────────────
-     * Lifecycle
+     * Lifecycle (이하 동일)
      *────────────────────────────────────────────────────────────*/
     void Awake()
     {
@@ -613,8 +632,9 @@ public class WorldManager : MonoBehaviour
 
                     for (int y = H - 1; y >= 0; y--)
                     {
-                        ushort solidId = worldMap.GetSolidId(x, y);
-                        worldMap.GetLiquidId(x, y, out byte waterAmount);
+                        ushort solidId = worldMap.GetSolid(x, y).id;
+                        var f = worldMap.GetFluid(x, y);
+                        byte waterAmount = f.amount;
 
                         if (waterAmount > 0) break;
 
@@ -812,9 +832,6 @@ public class WorldManager : MonoBehaviour
         return TimeBand.Night;
     }
 
-    /*────────────────────────────────────────────────────────────
-     * Light (Natural)
-     *────────────────────────────────────────────────────────────*/
     public void RecalculateLightAt(int x0, int y0)
     {
         if ((uint)x0 >= (uint)W || (uint)y0 >= (uint)H) return;
@@ -827,11 +844,13 @@ public class WorldManager : MonoBehaviour
         while (q.Count > 0)
         {
             var (x, y) = q.Dequeue();
-            byte oldN = worldMap.light[x, y].natural;
+
+            ushort oldN16 = worldMap.GetNaturalLight(x, y);
+            byte oldN = (byte)Mathf.Clamp((int)oldN16, 0, NAT_MAX);
 
             int attenHere = 0;
-            if (worldMap.bg[x, y] != 0) attenHere += 1;
-            if (worldMap.IsCollidable(x, y)) attenHere += 2;
+            if (worldMap.GetBG(x, y) != 0) attenHere += 1;
+            if (IsCollidable(x, y)) attenHere += 2;
 
             byte best = 0;
             foreach (var (dx, dy) in dirs)
@@ -839,15 +858,14 @@ public class WorldManager : MonoBehaviour
                 int nx = x + dx, ny = y + dy;
                 if ((uint)nx >= (uint)W || (uint)ny >= (uint)H) continue;
 
-                int cand = worldMap.light[nx, ny].natural - attenHere;
+                int nNat = (int)worldMap.GetNaturalLight(nx, ny);
+                int cand = nNat - attenHere;
                 if (cand > best) best = (byte)Mathf.Clamp(cand, 0, NAT_MAX);
             }
 
             if (best != oldN)
             {
-                var lc = worldMap.light[x, y];
-                lc.natural = best;
-                worldMap.light[x, y] = lc;
+                worldMap.SetNaturalLight(x, y, best);
 
                 foreach (var (dx, dy) in dirs)
                 {
@@ -861,9 +879,6 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /*────────────────────────────────────────────────────────────
-     * Chunk Dirty
-     *────────────────────────────────────────────────────────────*/
     public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false)
     {
         chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markLiquid);
@@ -884,15 +899,11 @@ public class WorldManager : MonoBehaviour
         chunkSystem.MarkLightDirtyRect(x, y, w, h);
     }
 
-    /*────────────────────────────────────────────────────────────
-     * Artificial Light (Increase / Decrease)
-     * └ 광원값 = max(솔리드 brightness, 리퀴드 brightness)
-     *────────────────────────────────────────────────────────────*/
     private int GetArtCost(int nx, int ny)
     {
         int cost = ATT_AIR;
-        if (worldMap.IsCollidable(nx, ny)) cost = ATT_FG;
-        else if (worldMap.bg[nx, ny] != 0) cost = ATT_BG;
+        if (IsCollidable(nx, ny)) cost = ATT_SOLID;
+        else if (worldMap.GetBG(nx, ny) != 0) cost = ATT_BG;
         return cost;
     }
 
@@ -923,11 +934,10 @@ public class WorldManager : MonoBehaviour
         if (oldV == 0) return;
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
-        var lc = worldMap.light[x, y];
-        if (lc.artificial != 0)
+        ushort cur = worldMap.GetArtificialLight(x, y);
+        if (cur != 0)
         {
-            lc.artificial = 0;
-            worldMap.light[x, y] = lc;
+            worldMap.SetArtificialLight(x, y, 0);
             RecordLightChanged(x, y);
         }
 
@@ -944,7 +954,6 @@ public class WorldManager : MonoBehaviour
 
         int ops = artificialLightOpsPerTick;
 
-        // 1) Decrease
         while (ops > 0 && _decQ.Count > 0)
         {
             ops--;
@@ -959,14 +968,12 @@ public class WorldManager : MonoBehaviour
             nx = x + 1; ny = y;
             if ((uint)nx < (uint)W)
             {
-                cur = worldMap.light[nx, ny].artificial;
+                cur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
                 if (cur != 0)
                 {
                     if (cur < v)
                     {
-                        var lc = worldMap.light[nx, ny];
-                        lc.artificial = 0;
-                        worldMap.light[nx, ny] = lc;
+                        worldMap.SetArtificialLight(nx, ny, 0);
                         RecordLightChanged(nx, ny);
                         _decQ.Enqueue(new DecNode(nx, ny, cur));
                     }
@@ -977,14 +984,12 @@ public class WorldManager : MonoBehaviour
             nx = x - 1; ny = y;
             if (nx >= 0)
             {
-                cur = worldMap.light[nx, ny].artificial;
+                cur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
                 if (cur != 0)
                 {
                     if (cur < v)
                     {
-                        var lc = worldMap.light[nx, ny];
-                        lc.artificial = 0;
-                        worldMap.light[nx, ny] = lc;
+                        worldMap.SetArtificialLight(nx, ny, 0);
                         RecordLightChanged(nx, ny);
                         _decQ.Enqueue(new DecNode(nx, ny, cur));
                     }
@@ -995,14 +1000,12 @@ public class WorldManager : MonoBehaviour
             nx = x; ny = y + 1;
             if ((uint)ny < (uint)H)
             {
-                cur = worldMap.light[nx, ny].artificial;
+                cur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
                 if (cur != 0)
                 {
                     if (cur < v)
                     {
-                        var lc = worldMap.light[nx, ny];
-                        lc.artificial = 0;
-                        worldMap.light[nx, ny] = lc;
+                        worldMap.SetArtificialLight(nx, ny, 0);
                         RecordLightChanged(nx, ny);
                         _decQ.Enqueue(new DecNode(nx, ny, cur));
                     }
@@ -1013,14 +1016,12 @@ public class WorldManager : MonoBehaviour
             nx = x; ny = y - 1;
             if (ny >= 0)
             {
-                cur = worldMap.light[nx, ny].artificial;
+                cur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
                 if (cur != 0)
                 {
                     if (cur < v)
                     {
-                        var lc = worldMap.light[nx, ny];
-                        lc.artificial = 0;
-                        worldMap.light[nx, ny] = lc;
+                        worldMap.SetArtificialLight(nx, ny, 0);
                         RecordLightChanged(nx, ny);
                         _decQ.Enqueue(new DecNode(nx, ny, cur));
                     }
@@ -1029,7 +1030,6 @@ public class WorldManager : MonoBehaviour
             }
         }
 
-        // 2) seed -> Increase
         if (_decQ.Count == 0 && _seedList.Count > 0)
         {
             for (int i = 0; i < _seedList.Count; i++)
@@ -1037,14 +1037,13 @@ public class WorldManager : MonoBehaviour
                 var p = _seedList[i];
                 if ((uint)p.x >= (uint)W || (uint)p.y >= (uint)H) continue;
 
-                byte cur = worldMap.light[p.x, p.y].artificial;
+                byte cur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(p.x, p.y), 0, ART_MAX);
                 if (cur > 0) EnqueueIncrease(p.x, p.y, cur);
             }
             _seedSet.Clear();
             _seedList.Clear();
         }
 
-        // 3) Increase
         while (ops > 0 && _decQ.Count == 0 && _incQ.Count > 0)
         {
             ops--;
@@ -1055,11 +1054,10 @@ public class WorldManager : MonoBehaviour
 
             if ((uint)x >= (uint)W || (uint)y >= (uint)H) continue;
 
-            var lc = worldMap.light[x, y];
-            if (v <= lc.artificial) continue;
+            byte curA = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(x, y), 0, ART_MAX);
+            if (v <= curA) continue;
 
-            lc.artificial = v;
-            worldMap.light[x, y] = lc;
+            worldMap.SetArtificialLight(x, y, v);
             RecordLightChanged(x, y);
 
             if (v <= 1) continue;
@@ -1073,7 +1071,8 @@ public class WorldManager : MonoBehaviour
             {
                 cost = GetArtCost(nx, ny);
                 nv = v - cost;
-                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                byte nCur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
+                if (nv > 0 && nv > nCur)
                     _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
             }
 
@@ -1082,7 +1081,8 @@ public class WorldManager : MonoBehaviour
             {
                 cost = GetArtCost(nx, ny);
                 nv = v - cost;
-                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                byte nCur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
+                if (nv > 0 && nv > nCur)
                     _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
             }
 
@@ -1091,7 +1091,8 @@ public class WorldManager : MonoBehaviour
             {
                 cost = GetArtCost(nx, ny);
                 nv = v - cost;
-                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                byte nCur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
+                if (nv > 0 && nv > nCur)
                     _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
             }
 
@@ -1100,7 +1101,8 @@ public class WorldManager : MonoBehaviour
             {
                 cost = GetArtCost(nx, ny);
                 nv = v - cost;
-                if (nv > 0 && nv > worldMap.light[nx, ny].artificial)
+                byte nCur = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(nx, ny), 0, ART_MAX);
+                if (nv > 0 && nv > nCur)
                     _incQ.Enqueue(new IncNode(nx, ny, (byte)nv));
             }
         }
@@ -1109,27 +1111,26 @@ public class WorldManager : MonoBehaviour
             MarkLightDirtyCells(_lightChangedList);
     }
 
-    private byte GetSourceBrightness(ushort solidId, ushort liquidId)
+    private byte GetSourceBrightness(ushort solidId, ushort fluidId)
     {
         byte sb = cellLibrary.GetSolidBrightness(solidId);
-        byte lb = cellLibrary.GetLiquidBrightness(liquidId);
+        byte lb = cellLibrary.GetFluidBrightness(fluidId);
         return (sb >= lb) ? sb : lb;
     }
 
-    // old(솔리드/리퀴드) -> now(솔리드/리퀴드) 의 max 밝기 변화로 artificial 파동 갱신
-    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldLiquidId)
+    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldFluidId)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
-        ushort newSolidId = worldMap.GetSolidId(x, y);
-        ushort newLiquidId = worldMap.liquid[x, y].id;
+        ushort newSolidId = worldMap.GetSolid(x, y).id;
+        ushort newFluidId = worldMap.GetFluid(x, y).id;
 
-        byte oldB = GetSourceBrightness(oldSolidId, oldLiquidId);
-        byte newB = GetSourceBrightness(newSolidId, newLiquidId);
+        byte oldB = GetSourceBrightness(oldSolidId, oldFluidId);
+        byte newB = GetSourceBrightness(newSolidId, newFluidId);
 
         if (oldB == 0 && newB == 0) return;
 
-        byte oldV = worldMap.light[x, y].artificial;
+        byte oldV = (byte)Mathf.Clamp((int)worldMap.GetArtificialLight(x, y), 0, ART_MAX);
 
         if (oldB > 0 && oldB >= newB)
         {
@@ -1142,9 +1143,6 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    /*────────────────────────────────────────────────────────────
-     * Save/Load (호출부는 유지)
-     *────────────────────────────────────────────────────────────*/
     public void SaveWorld()
     {
         WorldSaveSystem.SaveWorld(

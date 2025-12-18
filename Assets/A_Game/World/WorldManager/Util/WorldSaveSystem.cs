@@ -6,8 +6,8 @@ using Newtonsoft.Json;
 /// <summary>
 /// 월드 / 플레이어 / 엔티티 저장/로드 전담 시스템
 /// ⚠ 호환성 전혀 고려 안 함 (신규 포맷 고정)
-/// WorldData 구조:
-///   bg / solid / liquid / light
+/// WorldData 구조(신규):
+///   bg / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
 /// </summary>
 public static class WorldSaveSystem
 {
@@ -76,32 +76,30 @@ public static class WorldSaveSystem
                     bw.Write(worldMap.bg[x, y]);
                 }
 
-                // solid
+                // solid (id + meta)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
                     var s = worldMap.solid[x, y];
                     bw.Write(s.id);
-                    bw.Write(s.brightness);
-                    bw.Write((ushort)s.flags);
+                    bw.Write(s.meta);
                 }
 
-                // liquid
+                // fluid (id + amount)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
-                    var l = worldMap.liquid[x, y];
-                    bw.Write(l.id);
-                    bw.Write(l.amount);
-                    bw.Write(l.brightness);
+                    var f = worldMap.fluid[x, y];
+                    bw.Write(f.id);
+                    bw.Write(f.amount);
                 }
 
-                // light
+                // light (natural / artificial) : ushort
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                 {
-                    bw.Write(worldMap.light[x, y].natural);
-                    bw.Write(worldMap.light[x, y].artificial);
+                    bw.Write(worldMap.naturalLight[x, y]);
+                    bw.Write(worldMap.artificialLight[x, y]);
                 }
 
                 // tick buffers (전제: null 아님)
@@ -174,32 +172,30 @@ public static class WorldSaveSystem
             for (int x = 0; x < width; x++)
                 data.bg[x, y] = br.ReadUInt16();
 
-            // solid
+            // solid (id + meta)
             for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
             {
                 ref var s = ref data.solid[x, y];
-                s.id         = br.ReadUInt16();
-                s.brightness = br.ReadByte();
-                s.flags      = (SolidFlags)br.ReadUInt16();
+                s.id   = br.ReadUInt16();
+                s.meta = br.ReadUInt16();
             }
 
-            // liquid
+            // fluid (id + amount)
             for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
             {
-                ref var l = ref data.liquid[x, y];
-                l.id         = br.ReadUInt16();
-                l.amount     = br.ReadByte();
-                l.brightness = br.ReadByte();
+                ref var f = ref data.fluid[x, y];
+                f.id     = br.ReadUInt16();
+                f.amount = br.ReadByte();
             }
 
-            // light
+            // light (natural / artificial) : ushort
             for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
             {
-                data.light[x, y].natural    = br.ReadByte();
-                data.light[x, y].artificial = br.ReadByte();
+                data.naturalLight[x, y]    = br.ReadUInt16();
+                data.artificialLight[x, y] = br.ReadUInt16();
             }
 
             // tick (전제: null 아님)

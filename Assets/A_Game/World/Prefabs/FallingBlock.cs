@@ -17,7 +17,6 @@ public class FallingBlock : Entity
     //────────────────────────────────────────────
     // Save / Load
     //────────────────────────────────────────────
-
     public override EntitySaveData ToSaveData()
     {
         // 이미 셀로 박힌 상태면 저장 의미 없음
@@ -54,7 +53,6 @@ public class FallingBlock : Entity
     //────────────────────────────────────────────
     // Init
     //────────────────────────────────────────────
-
     public void Init(ushort id, WorldManager wm, Sprite overrideSprite = null)
     {
         cellId = id;
@@ -63,14 +61,8 @@ public class FallingBlock : Entity
         if (!sr)
             sr = GetComponent<SpriteRenderer>();
 
-        if (overrideSprite != null)
-        {
-            sr.sprite = overrideSprite;
-        }
-        else
-        {
-            ApplySprite();
-        }
+        if (overrideSprite != null) sr.sprite = overrideSprite;
+        else ApplySprite();
     }
 
     private void ApplySprite()
@@ -87,7 +79,6 @@ public class FallingBlock : Entity
     //────────────────────────────────────────────
     // Collision → Cell placement
     //────────────────────────────────────────────
-
     void OnTriggerEnter2D(Collider2D other)
     {
         if (placed) return;
@@ -99,7 +90,8 @@ public class FallingBlock : Entity
         int gx = Mathf.FloorToInt(transform.position.x);
         int gy = Mathf.FloorToInt(transform.position.y);
 
-        if (world.PlaceFG(gx, gy, cellId))
+        // ✅ 용어 변경: PlaceFG -> PlaceSolid
+        if (world.PlaceSolid(gx, gy, cellId))
         {
             placed = true;
             Destroy(gameObject);
@@ -109,7 +101,6 @@ public class FallingBlock : Entity
     //────────────────────────────────────────────
     // Payload
     //────────────────────────────────────────────
-
     [System.Serializable]
     private class FallingBlockPayload
     {

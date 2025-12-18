@@ -7,13 +7,13 @@ using UnityEngine.Tilemaps;
 /// 청크 풀 / 로드 / 언로드 / 타일맵 리프레시 / 라이트 메쉬까지 담당하는 시스템
 /// (WorldManager에서 의존성만 주입해서 사용)
 ///
-/// WorldData 구조 전제:
-///   bg / solid / liquid / light
+/// WorldData 구조(신규):
+///   bg / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
 ///
 /// Chunk 컴포넌트 전제(필드명):
 ///   - Tilemap bgTilemap;
 ///   - Tilemap solidTilemap;
-///   - Tilemap liquidTilemap;
+///   - Tilemap liquidTilemap;  (필드명 유지)
 ///   - TileBase[] bgBuffer, solidBuffer, liquidBuffer;
 ///   - bool bgDirty, solidDirty, liquidDirty, lightDirty;
 ///   - lightMeshFilter/lightColors 등은 기존과 동일
@@ -24,8 +24,10 @@ using UnityEngine.Tilemaps;
 ///   - MaterialPropertyBlock liquidMpb
 ///   - TilemapRenderer liquidRenderer
 ///
-/// Liquid 스프라이트 전제:
-///   Water_1 ~ Water_16 (amount 1..128 → 1..16, 8단위)
+/// Tile 정책:
+/// - BG 타일: CellLibrary.GetBgTile(id)
+/// - Solid 타일: CellLibrary.GetSolidTile(id, meta)
+/// - Fluid 타일: CellLibrary.GetFluidTile(fluidId, amount)
 /// </summary>
 public class WorldChunkSystem
 {
@@ -45,12 +47,8 @@ public class WorldChunkSystem
     // (현재 스크립트 내에선 직접 호출하진 않지만, 외부 정책상 유지)
     private readonly System.Action<int, int> recalcLightAt;
 
-    // 라이트 메쉬 계산용 상수 (0~15)
-    private const byte NAT_MAX = 15;
-    private const byte ART_MAX = 15;
-
     // 시간에 따라 바뀌는 전역 밝기 오프셋 (0~15)
-    private byte globalBrightnessOffset = 0;
+    private ushort globalBrightnessOffset = 0;
 
     // ───────── 풀 / 로드 큐 / 활성 청크 ─────────
     private readonly Queue<GameObject> chunkPool = new();
@@ -70,9 +68,6 @@ public class WorldChunkSystem
     private Vector2Int lastPlayerChunk = Vector2Int.zero;
 
     public IReadOnlyDictionary<Vector2Int, GameObject> ActiveChunks => activeChunks;
-
-    // ───────── 타일 캐시(인스턴스) ─────────
-    private readonly TileCache tileCache;
 
     // ───────── 생성자 ─────────
     public WorldChunkSystem(
@@ -100,8 +95,6 @@ public class WorldChunkSystem
 
         this.cellLibrary = cellLibrary;
         this.recalcLightAt = recalcLightAt;
-
-        tileCache = new TileCache(cellLibrary);
     }
 
     // ───────── 외부에서 세팅/호출할 API ─────────
@@ -124,7 +117,7 @@ public class WorldChunkSystem
     }
 
     /// <summary>시간에 따른 전역 밝기 오프셋(WorldManager에서 계산) 값을 반영</summary>
-    public void SetGlobalBrightnessOffset(byte offset)
+    public void SetGlobalBrightnessOffset(ushort offset)
     {
         globalBrightnessOffset = offset;
     }
@@ -472,27 +465,19 @@ public class WorldChunkSystem
                 continue;
 
             // BG
-            bgBuf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
+            bgBuf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
 
             // Solid
             var s = worldMap.solid[wx, wy];
-            if (s.id != 0)
-                solidBuf[idx] = tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0);
-            else
-                solidBuf[idx] = null;
+            solidBuf[idx] = (s.id != 0)
+                ? cellLibrary.GetSolidTile(s.id, s.meta)
+                : null;
 
-            // Liquid (Collidable solid이면 표시 안 함)
-            if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
-            {
-                liqBuf[idx] = null;
-            }
-            else
-            {
-                var l = worldMap.liquid[wx, wy];
-                liqBuf[idx] = (l.id != 0 && l.amount > 0)
-                    ? tileCache.GetLiquidTile(l.id, l.amount)
-                    : null;
-            }
+            // Liquid/Fluid (표시 정책: 외부에서 결정. 여기서는 단순 표시)
+            var f = worldMap.fluid[wx, wy];
+            liqBuf[idx] = (f.id != 0 && f.amount > 0)
+                ? cellLibrary.GetFluidTile(f.id, f.amount)
+                : null;
         }
 
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
@@ -514,17 +499,9 @@ public class WorldChunkSystem
                 continue;
             }
 
-            var s2 = worldMap.solid[wx, wy];
-            if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
-            {
-                c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
-                continue;
-            }
-
-            var l2 = worldMap.liquid[wx, wy];
-            byte type = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0); // liquidId == typeIndex
-            byte amt  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+            var f2 = worldMap.fluid[wx, wy];
+            byte type = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0);
+            byte amt  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
             c.liquidTypePixels[idx] = new Color32(type, 0, 0, 255);
             c.liquidAmtPixels[idx]  = new Color32(amt, 0, 0, 255);
@@ -584,7 +561,7 @@ public class WorldChunkSystem
                     int wy = coord.y * chunkSize + y;
                     int idx = y * chunkSize + x;
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
-                    buf[idx] = tileCache.GetBgTile(worldMap.bg[wx, wy]);
+                    buf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
                 }
                 c.bgTilemap.SetTilesBlock(bounds, buf);
                 break;
@@ -603,7 +580,7 @@ public class WorldChunkSystem
 
                     var s = worldMap.solid[wx, wy];
                     buf[idx] = (s.id != 0)
-                        ? tileCache.GetSolidTile(s.id, (s.flags & SolidFlags.Collidable) != 0)
+                        ? cellLibrary.GetSolidTile(s.id, s.meta)
                         : null;
                 }
 
@@ -630,16 +607,9 @@ public class WorldChunkSystem
                     int idx = y * chunkSize + x;
                     if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
 
-                    var s = worldMap.solid[wx, wy];
-                    if (s.id != 0 && (s.flags & SolidFlags.Collidable) != 0)
-                    {
-                        buf[idx] = null;
-                        continue;
-                    }
-
-                    var l = worldMap.liquid[wx, wy];
-                    buf[idx] = (l.id != 0 && l.amount > 0)
-                        ? tileCache.GetLiquidTile(l.id, l.amount)
+                    var f = worldMap.fluid[wx, wy];
+                    buf[idx] = (f.id != 0 && f.amount > 0)
+                        ? cellLibrary.GetFluidTile(f.id, f.amount)
                         : null;
                 }
 
@@ -660,17 +630,9 @@ public class WorldChunkSystem
                         continue;
                     }
 
-                    var s2 = worldMap.solid[wx, wy];
-                    if (s2.id != 0 && (s2.flags & SolidFlags.Collidable) != 0)
-                    {
-                        c.liquidTypePixels[idx] = new Color32(0, 0, 0, 255);
-                        c.liquidAmtPixels[idx] = new Color32(0, 0, 0, 255);
-                        continue;
-                    }
-
-                    var l2 = worldMap.liquid[wx, wy];
-                    byte type2 = (byte)((l2.id != 0 && l2.amount > 0) ? Mathf.Min((int)l2.id, 255) : 0);
-                    byte amt2  = (byte)((l2.id != 0 && l2.amount > 0) ? l2.amount : 0);
+                    var f2 = worldMap.fluid[wx, wy];
+                    byte type2 = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0);
+                    byte amt2  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
                     c.liquidTypePixels[idx] = new Color32(type2, 0, 0, 255);
                     c.liquidAmtPixels[idx]  = new Color32(amt2, 0, 0, 255);
@@ -727,13 +689,14 @@ public class WorldChunkSystem
                     int x = Mathf.Clamp(gx + ox, 0, worldWidth - 1);
                     int y = Mathf.Clamp(gy + oy, 0, worldHeight - 1);
 
-                    var L = worldMap.light[x, y];
+                    ushort nat = worldMap.naturalLight[x, y];
+                    ushort art = worldMap.artificialLight[x, y];
 
-                    int ns = L.natural - globalBrightnessOffset;
+                    int ns = (int)nat - (int)globalBrightnessOffset;
                     if (ns < 0) ns = 0;
 
-                    float n01 = ns / (float)NAT_MAX;
-                    float a01 = L.artificial / (float)ART_MAX;
+                    float n01 = ns / 15f;
+                    float a01 = art / 15f;
 
                     sum += Mathf.Max(n01, a01);
                     samples++;
@@ -751,70 +714,5 @@ public class WorldChunkSystem
 
         c.lightColors = cols;
         mesh.colors32 = cols;
-    }
-
-    // ───────── 타일 캐시(인스턴스) ─────────
-    private sealed class TileCache
-    {
-        private readonly CellLibrary lib;
-
-        private readonly Dictionary<ushort, Tile> bgTiles = new();
-        private readonly Dictionary<ushort, Tile> solidTiles = new();
-
-        // ✅ amount 기준 캐시
-        private readonly Dictionary<(ushort liquidId, byte amount), Tile> liquidTiles = new();
-
-        public TileCache(CellLibrary lib)
-        {
-            this.lib = lib;
-        }
-
-        public TileBase GetBgTile(ushort id)
-        {
-            if (id == 0) return null;
-            if (bgTiles.TryGetValue(id, out var t)) return t;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = lib.GetSolidSprite(id);
-            tile.name = lib.GetSolidName(id);
-            tile.colliderType = Tile.ColliderType.None;
-
-            bgTiles[id] = tile;
-            return tile;
-        }
-
-        public TileBase GetSolidTile(ushort id, bool collidable)
-        {
-            if (id == 0) return null;
-            if (solidTiles.TryGetValue(id, out var t)) return t;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = lib.GetSolidSprite(id);
-            tile.name = lib.GetSolidName(id);
-            tile.colliderType = collidable ? Tile.ColliderType.Sprite : Tile.ColliderType.None;
-
-            solidTiles[id] = tile;
-            return tile;
-        }
-
-        public TileBase GetLiquidTile(ushort liquidId, byte amount)
-        {
-            if (liquidId == 0 || amount == 0) return null;
-
-            // amount 단위로 캐시 (CellLibrary가 amount->level 매핑까지 처리)
-            var key = (liquidId, amount);
-            if (liquidTiles.TryGetValue(key, out var t)) return t;
-
-            var sp = lib.GetLiquidSpriteByAmount(liquidId, amount);
-            if (sp == null) return null;
-
-            var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = sp;
-            tile.name = sp.name; // 보통 "Water_1" 같은 스프라이트 이름
-            tile.colliderType = Tile.ColliderType.None;
-
-            liquidTiles[key] = tile;
-            return tile;
-        }
     }
 }
