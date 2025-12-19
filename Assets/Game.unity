@@ -12533,7 +12533,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   solidJson: {fileID: 4900000, guid: 57be3d6a3243fae4292a15d60c73b6bb, type: 3}
-  fluidJson: {fileID: 0}
+  fluidJson: {fileID: 4900000, guid: 72159f13681dc4b48b792fe70adbfb9e, type: 3}
   atlas: {fileID: 100100200, guid: 5715605989584c24ca8824127f00ef23, type: 3}
 --- !u!1 &2072805834
 GameObject:

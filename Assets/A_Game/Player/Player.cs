@@ -77,7 +77,7 @@ public class Player : MonoBehaviour
 
     // 공격 쿨다운
     float _attackCooldownTimer = 0f;  // 0 이하일 때 공격 가능
-    bool  _isAttacking         = false; // 모션 단계에서 사용 예정
+    // bool  _isAttacking         = false; // 모션 단계에서 사용 예정
 
     // 인벤토리
     private const int InventoryCapacity = 50;
@@ -218,8 +218,6 @@ public class Player : MonoBehaviour
             lastFallDistance = currentFallDistance;
             _isFalling = false;
 
-            Debug.Log($"[FALL] lastFallDistance = {lastFallDistance:F3}");
-
             // ───── 낙하 데미지 적용 ─────
             // FallingDistance 4까지는 데미지 없음
             // 이후 1 블럭마다 2씩
@@ -230,7 +228,6 @@ public class Player : MonoBehaviour
 
             if (fallDamage > 0)
             {
-                Debug.Log($"[FALL DAMAGE] distanceBlocks={fallBlocks}, damage={fallDamage}");
                 TakeDamage(fallDamage);
             }
         }

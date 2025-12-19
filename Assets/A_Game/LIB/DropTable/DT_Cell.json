@@ -3,7 +3,7 @@
     { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 }
   ],
 
-  "Grass_Top": [
+  "Grass": [
     { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
     { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
   ],
@@ -52,8 +52,7 @@
     { "itemId": "Leaf", "probability": 1, "min": 4, "max": 8 },
     { "itemId": "Plant", "probability": 1, "min": 2, "max": 4 },
     { "itemId": "Twig", "probability": 1, "min": 3, "max": 6 },
-    { "itemId": "Branch", "probability": 1, "min": 2, "max": 4 },
-    { "itemId": "Seed", "probability": 1, "min": 2, "max": 4 }
+    { "itemId": "Branch", "probability": 1, "min": 2, "max": 4 }
   ],
   "Stone_Pile": [
     { "itemId": "Stone Shard", "probability": 1, "min": 2, "max": 3 },

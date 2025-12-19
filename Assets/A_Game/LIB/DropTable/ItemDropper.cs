@@ -10,44 +10,37 @@ public class ItemDropper : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     [Header("Drop Table Jsons")]
-    public TextAsset dropTableJson;        // 셀 드랍 테이블 (DT_Cell.json)
-    public TextAsset corpseDropTableJson;  // 시체/몹 드랍 테이블 (DT_Mob.json 또는 시체용 JSON)
+    public TextAsset dropTableJson;
+    public TextAsset corpseDropTableJson;
     public GameObject droppedItemPrefab;
 
     [Header("Entity System")]
-    public EntityManager entityManager;   // WorldManager 등에서 주입
-    public Transform     dropRoot;        // 드랍 아이템 부모(선택)
+    public EntityManager entityManager;
+    public Transform dropRoot;
 
     [Min(0)] public float spawnRadius = 0.4f;
 
     Dictionary<string, List<DropEntry>> _dropTable;
 
-    //────────────────────────────────────────────
-    // Drop Table 로드
-    //────────────────────────────────────────────
     void Awake()
     {
         LoadDropTable();
     }
 
+    //────────────────────────────────────────────
+    // Drop Table 로드
+    //────────────────────────────────────────────
     void LoadDropTable()
     {
         _dropTable = new Dictionary<string, List<DropEntry>>();
-
         bool any = false;
 
-        // 셀 드랍 테이블
         if (dropTableJson != null && !string.IsNullOrEmpty(dropTableJson.text))
         {
             MergeDropTable(dropTableJson);
             any = true;
         }
-        else
-        {
-            Debug.LogWarning("[ItemDropper] dropTableJson(셀용)이 비어 있습니다.");
-        }
 
-        // 시체/몹 드랍 테이블
         if (corpseDropTableJson != null && !string.IsNullOrEmpty(corpseDropTableJson.text))
         {
             MergeDropTable(corpseDropTableJson);
@@ -55,9 +48,7 @@ public class ItemDropper : MonoBehaviour
         }
 
         if (!any)
-        {
             Debug.LogError("[ItemDropper] 어떤 드랍 테이블 JSON도 설정되지 않았습니다.");
-        }
     }
 
     void MergeDropTable(TextAsset json)
@@ -70,14 +61,9 @@ public class ItemDropper : MonoBehaviour
             foreach (var kv in dict)
             {
                 if (_dropTable.TryGetValue(kv.Key, out var list))
-                {
-                    // 같은 키가 이미 있으면 엔트리만 이어붙임
                     list.AddRange(kv.Value);
-                }
                 else
-                {
                     _dropTable[kv.Key] = new List<DropEntry>(kv.Value);
-                }
             }
         }
         catch (Exception ex)
@@ -87,7 +73,7 @@ public class ItemDropper : MonoBehaviour
     }
 
     //────────────────────────────────────────────
-    // 특정 키(셀/시체/몹) 드랍 스폰
+    // (1) itemId 기반 드랍
     //────────────────────────────────────────────
     public void SpawnDroppedItems(string key, Vector3 origin)
     {
@@ -96,7 +82,6 @@ public class ItemDropper : MonoBehaviour
 
         var totals = new Dictionary<string, int>();
 
-        // 동종 아이템 개수 합산
         foreach (var e in list)
         {
             if (UnityEngine.Random.value > e.probability)
@@ -115,56 +100,65 @@ public class ItemDropper : MonoBehaviour
             SpawnSingle(kv.Key, origin, kv.Value);
     }
 
-    //────────────────────────────────────────────
-    // 실제 드랍 생성
-    //────────────────────────────────────────────
-    private void SpawnSingle(string itemId, Vector3 origin, int count)
+    void SpawnSingle(string itemId, Vector3 origin, int count)
     {
-        if (itemLibrary == null || droppedItemPrefab == null)
-            return;
+        if (itemLibrary == null) return;
 
-        if (entityManager == null)
-        {
-            Debug.LogWarning("[ItemDropper] EntityManager가 없어 드랍 아이템을 엔티티로 등록할 수 없습니다.");
-            return;
-        }
-
-        // ItemData 생성
         ItemData data = itemLibrary.Create(itemId, count);
         if (data == null) return;
 
-        // 위치 랜덤 오프셋
-        Vector3 pos = origin + (Vector3)(UnityEngine.Random.insideUnitCircle * spawnRadius);
+        SpawnDroppedItem(data, origin);
+    }
 
-        // 부모 설정
+    //────────────────────────────────────────────
+    // (2) ItemData 그대로 드랍
+    //────────────────────────────────────────────
+    public DroppedItem SpawnDroppedItem(ItemData data, Vector3 origin)
+    {
+        if (data == null) return null;
+
+        Vector3 pos = origin + (Vector3)(UnityEngine.Random.insideUnitCircle * spawnRadius);
         Transform parent = dropRoot != null ? dropRoot : transform;
 
-        // 프리팹 생성
-        GameObject go = Instantiate(droppedItemPrefab, pos, Quaternion.identity, parent);
+        return SpawnDroppedItemInternal(data, pos, parent);
+    }
 
-        // DroppedItem 컴포넌트 확인
+    public DroppedItem SpawnDroppedItemAt(ItemData data, Vector3 position, Transform parent)
+    {
+        if (data == null) return null;
+        return SpawnDroppedItemInternal(data, position, parent);
+    }
+
+    //────────────────────────────────────────────
+    // 내부 실제 생성 함수 (단일)
+    //────────────────────────────────────────────
+    DroppedItem SpawnDroppedItemInternal(ItemData data, Vector3 position, Transform parent)
+    {
+        if (droppedItemPrefab == null || entityManager == null)
+            return null;
+
+        GameObject go = Instantiate(droppedItemPrefab, position, Quaternion.identity, parent);
+
         var comp = go.GetComponent<DroppedItem>();
         if (comp == null)
         {
             Debug.LogError("[ItemDropper] droppedItemPrefab에 DroppedItem 컴포넌트가 없습니다.");
             Destroy(go);
-            return;
+            return null;
         }
 
-        // 초기화 + 등록
         comp.Initialize(data);
         entityManager.Register(comp);
+        return comp;
     }
 }
 
-//────────────────────────────────────────────
-// Drop Table Entry
 //────────────────────────────────────────────
 [Serializable]
 public struct DropEntry
 {
     public string itemId;
-    public float  probability;
-    public int    min;
-    public int    max;
+    public float probability;
+    public int min;
+    public int max;
 }

@@ -199,10 +199,53 @@ public class WorldManager : MonoBehaviour
 
         foreach (var p in tickCurr)
         {
+            StepAttachmentAt(p.x, p.y); // ✅ 부착 연쇄 파괴
             StepGravityAt(p.x, p.y);
             StepFluidAt(p.x, p.y);
         }
         tickCurr.Clear();
+    }
+
+    //────────────────────────────────────────────
+    // Attachment (연쇄 파괴)
+    // - 셀이 "attachedAt" 규칙을 가지면 지지 셀을 검사하고,
+    //   지지가 없으면 BreakSolid로 파괴(연쇄는 OnCellEdited -> Tick으로 자동 확산)
+    //────────────────────────────────────────────
+    void StepAttachmentAt(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return;
+
+        var s = worldMap.GetSolid(x, y);
+        if (s.id == 0) return;
+
+        if (!cellLibrary.GetAttachedAt(s.id, s.meta, out string attachedAt))
+            return;
+
+        int sx = x;
+        int sy = y;
+
+        switch (attachedAt)
+        {
+            case "Down":  sy = y - 1; break;
+            case "Up":    sy = y + 1; break;
+            case "Left":  sx = x - 1; break;
+            case "Right": sx = x + 1; break;
+            default:
+                throw new System.Exception($"[Attachment] Unknown attachedAt='{attachedAt}' (solidId={s.id}, meta={s.meta})");
+        }
+
+        // 지지 좌표가 월드 밖이면 지지 없음
+        if (!worldMap.InBounds(sx, sy))
+        {
+            BreakSolid(x, y);
+            return;
+        }
+
+        // 지지 셀이 비어있으면 파괴
+        if (worldMap.GetSolid(sx, sy).id == 0)
+        {
+            BreakSolid(x, y);
+        }
     }
 
     void DoRandomTicks()
@@ -530,6 +573,7 @@ public class WorldManager : MonoBehaviour
 
         var s = worldMap.GetSolid(x, y);
         ushort oldSolidId = s.id;
+        ushort oldMeta = s.meta;
         if (oldSolidId == 0) return 0;
 
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
@@ -541,11 +585,17 @@ public class WorldManager : MonoBehaviour
 
         HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
 
+        // 드랍은 기존 규칙 유지 (id -> name)
         string key = cellLibrary.GetSolidName(oldSolidId);
+
         if (!string.IsNullOrEmpty(key))
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
-            vfx.EmitBlockAtCell(key, x, y, 1, grid: 3, count: -1);
+
+            // VFX는 meta-variant 스프라이트로
+            var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
+            vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+
             itemDropper.SpawnDroppedItems(key, pos3);
         }
 
