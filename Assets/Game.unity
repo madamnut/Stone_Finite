@@ -651,7 +651,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 722952887055051538, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 920889187}
   m_SourcePrefab: {fileID: 100100000, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
 --- !u!4 &90637825 stripped
 Transform:
@@ -4216,7 +4219,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8439849bd7461354c95e131b95f42aeb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  atlas: {fileID: 100100200, guid: 5715605989584c24ca8824127f00ef23, type: 3}
   material: {fileID: 2100000, guid: 5358ad9990888484796b5120fb6f2d41, type: 2}
   psPrefab: {fileID: 8503514865183458434, guid: ebae7067911745d4fbf25b4b244715df, type: 3}
 --- !u!4 &672136423
@@ -5459,7 +5461,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 160, y: -150}
-  m_SizeDelta: {x: 320, y: 60}
+  m_SizeDelta: {x: 296, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &842289406
 MonoBehaviour:
@@ -5525,8 +5527,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: fdeeb138c23b68a4e8c1e0e589f2080d, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -6135,6 +6137,56 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!1 &920889186 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 722952887055051538, guid: 5815285b8b542c24dbde5ac5ffcf04ca, type: 3}
+  m_PrefabInstance: {fileID: 90637824}
+  m_PrefabAsset: {fileID: 0}
+--- !u!61 &920889187
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920889186}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: -0.28}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.7, y: 1.97}
+  m_EdgeRadius: 0
 --- !u!1 &924251401
 GameObject:
   m_ObjectHideFlags: 0
@@ -7515,8 +7567,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -9605,8 +9657,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -10512,6 +10564,7 @@ MonoBehaviour:
   recipeLibrary: {fileID: 1177056459}
   itemLibrary: {fileID: 236639235}
   corpseLibrary: {fileID: 867055871}
+  cellLibrary: {fileID: 2047849824}
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
   primalcraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   sound: {fileID: 2008242133}
@@ -12169,6 +12222,8 @@ MonoBehaviour:
   placeClip: {fileID: 8300000, guid: 6571d299c0ee7d34abf1f97b07deed5f, type: 3}
   multiblockCompleteClip: {fileID: 8300000, guid: b4d2adc4c98dd6c49ac28f35af2f82a8, type: 3}
   playerTookDamageClip: {fileID: 8300000, guid: 6d6eedc87f966fa48b1a7da3bd236931, type: 3}
+  popClip: {fileID: 8300000, guid: 3290c01a54d02014dbadd06e3bca44c8, type: 3}
+  buttonClickClip: {fileID: 8300000, guid: 96474e60ef9bf2846a99312aa18ab8fc, type: 3}
   swingClips:
   - {fileID: 8300000, guid: c17368906c92b7b4aa6e8000b682d793, type: 3}
   - {fileID: 8300000, guid: d22d2c3dfc036324dacb91959bde559b, type: 3}
@@ -12904,7 +12959,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 160, y: -50}
-  m_SizeDelta: {x: 320, y: 60}
+  m_SizeDelta: {x: 296, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2108333214
 MonoBehaviour:
@@ -12982,8 +13037,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: fdeeb138c23b68a4e8c1e0e589f2080d, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4

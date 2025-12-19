@@ -285,7 +285,13 @@ public class Player : MonoBehaviour
         var drop = other.GetComponent<DroppedItem>();
         if (drop == null || drop.ItemData == null) return;
 
+        int before = drop.ItemData.Count;
+
         int left = Inventory.AddItem(drop.ItemData);
+
+        int picked = before - left;
+        if (picked > 0 && audioManager != null)
+            audioManager.PlayPop();
 
         if (left == 0)
             Destroy(other.gameObject);
@@ -452,8 +458,6 @@ public class Player : MonoBehaviour
         health -= damage;
         if (health < 0)  health = 0;
         if (health > 40) health = 40;
-
-        Debug.Log($"[DAMAGE] took {damage}, health = {health}");
 
         UpdateHeartsUI();
 

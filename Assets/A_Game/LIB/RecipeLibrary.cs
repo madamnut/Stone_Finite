@@ -44,6 +44,17 @@ public class RecipeLibrary : MonoBehaviour
     ///     [ {..} ]          // outputs[1] 에 대한 액션
     ///   ]
     /// }
+    ///
+    /// 액션 타입(신규 고정):
+    /// - consume
+    /// - set
+    /// - copy
+    /// - sum
+    /// - delete
+    ///
+    /// 필드 루트(신규 고정, 대소문자 포함):
+    /// name, spriteName, itemId, durability, maxDurability, tags,
+    /// details, ToolActions, WeaponActions, BreakActions
     /// </summary>
     public bool TryCraft(
         List<ItemData> slots,
@@ -61,7 +72,6 @@ public class RecipeLibrary : MonoBehaviour
         // ───────── 4슬롯 테이블 (Primal 등) ─────────
         if (n == 4)
         {
-            // 1) 4슬롯 레시피 중 inputs.Count == 4
             if (_r4 != null)
             {
                 var r4_4 = FilterByInputCount(_r4, 4);
@@ -70,14 +80,12 @@ public class RecipeLibrary : MonoBehaviour
                                 out resultItems, out remappedInputActions, out matchedRecipe))
                     return true;
 
-                // 2) 4슬롯 레시피 중 inputs.Count == 3
                 var r4_3 = FilterByInputCount(_r4, 3);
                 if (r4_3.Count > 0 &&
                     TryMatchSet(r4_3, slots, fourContext: true,
                                 out resultItems, out remappedInputActions, out matchedRecipe))
                     return true;
 
-                // 3) 4슬롯 레시피 중 inputs.Count == 2 → 2x2 윈도우 매칭
                 var r4_2 = FilterByInputCount(_r4, 2);
                 if (r4_2.Count > 0 &&
                     TryMatch2InFourContext(r4_2, slots,
@@ -85,7 +93,6 @@ public class RecipeLibrary : MonoBehaviour
                     return true;
             }
 
-            // 4) 2슬롯 레시피 세트를 4슬롯 테이블에서 사용
             if (_r2 != null &&
                 TryMatch2InFourContext(_r2, slots,
                                        out resultItems, out remappedInputActions, out matchedRecipe))
@@ -97,13 +104,11 @@ public class RecipeLibrary : MonoBehaviour
         // ───────── 2슬롯 테이블 (Hand 등) ─────────
         if (n == 2)
         {
-            // 1) 2슬롯 레시피(Hand 기본)
             if (_r2 != null &&
                 TryMatchSet(_r2, slots, fourContext: false,
                             out resultItems, out remappedInputActions, out matchedRecipe))
                 return true;
 
-            // 2) 4슬롯 레시피 중 inputs.Count == 2 를 2슬롯 테이블에서 재사용
             if (_r4 != null &&
                 TryMatchSet(FilterByInputCount(_r4, 2), slots, fourContext: false,
                             out resultItems, out remappedInputActions, out matchedRecipe))
@@ -141,14 +146,12 @@ public class RecipeLibrary : MonoBehaviour
 
             bool isOrdered = r.Value<bool?>("isOrdered") ?? false;
 
-            // 새 스키마: outputs 필수
             var outputsArray = r["outputs"] as JArray;
             if (outputsArray == null || outputsArray.Count == 0) continue;
 
             var inActs = r["inputActions"] as JArray;
             var oaRoot = r["outputActions"] as JArray; // null 가능
 
-            // 빈 슬롯 처리: "레시피 인풋들만" 존재해야 함
             int filledCount = presentIdx.Count;
             if (filledCount != inputs.Count)
                 continue;
@@ -216,14 +219,14 @@ public class RecipeLibrary : MonoBehaviour
                 var outSpec = outputsArray[oi] as JObject;
                 if (outSpec == null) continue;
 
-                string outId  = outSpec.Value<string>("itemId");
-                int    outCnt = outSpec.Value<int?>("count") ?? 1;
+                string outId = outSpec.Value<string>("itemId");
+                int outCnt = outSpec.Value<int?>("count") ?? 1;
                 if (string.IsNullOrEmpty(outId) || outCnt <= 0) continue;
 
                 var baseItem = itemLibrary.Create(outId, outCnt);
                 if (baseItem == null) continue;
 
-                // outputActions[oi] 는 JArray(액션 리스트) 라고 가정
+                // outputActions[oi] 는 JArray(액션 리스트)
                 JArray perActs = null;
                 if (oaRoot != null && oi < oaRoot.Count && oaRoot[oi] is JArray ja)
                     perActs = ja;
@@ -239,7 +242,7 @@ public class RecipeLibrary : MonoBehaviour
                 continue;
             }
 
-            resultItems   = results;
+            resultItems = results;
             matchedRecipe = r;
             return true;
         }
@@ -261,14 +264,12 @@ public class RecipeLibrary : MonoBehaviour
 
         if (recipeSet2 == null || slots.Count != 4) return false;
 
-        // 1) inputs.Count == 2 레시피 먼저
         var cnt2 = FilterByInputCount(recipeSet2, 2);
         if (cnt2.Count > 0 &&
             TryMatchSet(cnt2, slots, fourContext: true,
                         out resultItems, out remappedInputActions, out matchedRecipe))
             return true;
 
-        // 2) 그 다음 inputs.Count == 1 레시피
         var cnt1 = FilterByInputCount(recipeSet2, 1);
         if (cnt1.Count > 0 &&
             TryMatchSet(cnt1, slots, fourContext: true,
@@ -301,7 +302,7 @@ public class RecipeLibrary : MonoBehaviour
         for (int i = 0; i < inputs.Count; i++)
         {
             var spec = inputs[i] as JObject;
-            var it   = slots[i];
+            var it = slots[i];
             if (!MatchSpec(it, spec)) return false;
 
             int need = spec?.Value<int?>("count") ?? 1;
@@ -318,8 +319,8 @@ public class RecipeLibrary : MonoBehaviour
 
         for (int k = 0; k < win.Length; k++)
         {
-            int si   = win[k];
-            var it   = slots[si];
+            int si = win[k];
+            var it = slots[si];
             var spec = inputs[k] as JObject;
             if (!MatchSpec(it, spec)) return false;
 
@@ -335,7 +336,7 @@ public class RecipeLibrary : MonoBehaviour
     int[] TryUnordered(JArray inputs, List<ItemData> slots, List<int> presentIdx)
     {
         var used = new HashSet<int>();
-        var res  = new int[inputs.Count];
+        var res = new int[inputs.Count];
 
         bool Dfs(int idx)
         {
@@ -367,13 +368,13 @@ public class RecipeLibrary : MonoBehaviour
     {
         assign = null;
         var present = allowed.Where(i => i >= 0 && i < slots.Count && slots[i] != null).ToList();
-        var res     = TryUnordered(inputs, slots, present);
+        var res = TryUnordered(inputs, slots, present);
         if (res == null) return false;
         assign = res;
         return true;
     }
 
-    // 스펙 매칭(itemId/name/hasTag/toolActions 조건)
+    // 스펙 매칭(itemId/name/hasTag/ToolActions 조건)
     bool MatchSpec(ItemData it, JObject spec)
     {
         if (spec == null) return false;
@@ -390,7 +391,7 @@ public class RecipeLibrary : MonoBehaviour
         {
             if (it == null) return false;
             if (!string.Equals(it.ItemId, wantId, StringComparison.Ordinal) &&
-                !string.Equals(it.Name,   wantId, StringComparison.Ordinal))
+                !string.Equals(it.Name, wantId, StringComparison.Ordinal))
                 return false;
         }
 
@@ -415,8 +416,8 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
-        // toolActions 매칭 (JObject / JArray / 단일 값 모두 지원)
-        var toolSpec = spec["toolActions"];
+        // ✅ 신규 고정 키: ToolActions
+        var toolSpec = spec["ToolActions"];
         if (toolSpec != null && toolSpec.Type != JTokenType.Null)
         {
             constraints++;
@@ -429,22 +430,17 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// toolActions 스펙 매칭.
+    /// ToolActions 스펙 매칭.
     /// - spec 예시:
-    ///   { "toolActions": { "PercussionFlaking": {}, "X": { "foo": "bar" } } }
-    ///   { "toolActions": ["PercussionFlaking", "X"] }
-    ///   { "toolActions": "PercussionFlaking" }
-    ///
-    /// ItemData.ToolActions:
-    ///   Dictionary&lt;string, Dictionary&lt;string, object&gt;&gt;
-    ///   (키 = 액션명, 값 = 파라미터 딕셔너리)
+    ///   { "ToolActions": { "PercussionFlaking": {}, "X": { "foo": "bar" } } }
+    ///   { "ToolActions": ["PercussionFlaking", "X"] }
+    ///   { "ToolActions": "PercussionFlaking" }
     /// </summary>
     bool MatchToolActions(ItemData it, JToken toolSpec)
     {
         if (it.ToolActions == null || it.ToolActions.Count == 0)
             return false;
 
-        // 배열: ["A","B"] → 이름만 검사
         if (toolSpec is JArray arr)
         {
             var required = arr.Select(x => x.ToString()).ToList();
@@ -457,7 +453,6 @@ public class RecipeLibrary : MonoBehaviour
             return true;
         }
 
-        // 단일 값: "A"
         if (toolSpec is not JObject obj)
         {
             string single = toolSpec.ToString();
@@ -465,7 +460,6 @@ public class RecipeLibrary : MonoBehaviour
             return it.ToolActions.ContainsKey(single);
         }
 
-        // 정식 JObject: { "A": { ... }, "B": { ... } }
         foreach (var prop in obj.Properties())
         {
             string toolName = prop.Name;
@@ -476,12 +470,11 @@ public class RecipeLibrary : MonoBehaviour
                 return false;
 
             if (prop.Value is not JObject wantCfg)
-                continue; // 빈 오브젝트면 이름만 체크하는 셈
+                continue;
 
-            // wantCfg 내부 필드 전부 일치 검사 (부분집합 조건)
             foreach (var cfgProp in wantCfg.Properties())
             {
-                string key     = cfgProp.Name;
+                string key = cfgProp.Name;
                 string wantVal = cfgProp.Value.ToString();
 
                 if (!cfgDict.TryGetValue(key, out var haveObj))
@@ -496,24 +489,7 @@ public class RecipeLibrary : MonoBehaviour
         return true;
     }
 
-    List<string> ToStringList(object v)
-    {
-        if (v == null) return new List<string>();
-        if (v is JArray ja) return ja.Select(x => x.ToString()).ToList();
-        if (v is System.Collections.IEnumerable ien && v is not string)
-        {
-            var list = new List<string>();
-            foreach (var x in ien) list.Add(x?.ToString() ?? "");
-            return list;
-        }
-        return new List<string> { v.ToString() };
-    }
-
-    // 액션 딕셔너리 변환:
-    // - null → null
-    // - Dictionary<string, Dictionary<string, object>> 그대로 복사
-    // - Dictionary<string, object> → 내부를 Dictionary<string, object>로 캐스팅/래핑
-    // - 리스트/배열/단일 문자열 → 이름만 키로 두고 빈 파라미터 딕셔너리
+    // 액션 딕셔너리 변환
     Dictionary<string, Dictionary<string, object>> ToActionDict(object v)
     {
         if (v == null)
@@ -566,7 +542,6 @@ public class RecipeLibrary : MonoBehaviour
             return res;
         }
 
-        // 단일 값
         string single = v.ToString();
         if (string.IsNullOrEmpty(single))
             return null;
@@ -577,205 +552,162 @@ public class RecipeLibrary : MonoBehaviour
         };
     }
 
-    // 출력액션 적용 (name/spriteName/itemId/durability/maxDurability/액션 딕셔너리 + Details 조작)
+    // 출력액션 적용 (신규 스키마: consume/set/copy/sum/delete)
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign)
     {
         if (dst == null) return null;
         if (outActs == null || outActs.Count == 0) return dst;
 
-        string       overrideName       = null;
-        string       overrideSprite     = null;
-        string       overrideItemId     = null;
-        int?         overrideDurability = null;
-        int?         overrideMaxDur     = null;
+        string overrideName = null;
+        string overrideSprite = null;
+        string overrideItemId = null;
+        int? overrideDurability = null;
+        int? overrideMaxDur = null;
 
-        Dictionary<string, Dictionary<string, object>> overrideTool   = null;
+        Dictionary<string, Dictionary<string, object>> overrideTool = null;
         Dictionary<string, Dictionary<string, object>> overrideWeapon = null;
-        Dictionary<string, Dictionary<string, object>> overrideBreak  = null;
+        Dictionary<string, Dictionary<string, object>> overrideBreak = null;
 
         for (int i = 0; i < outActs.Count; i++)
         {
             var act = outActs[i] as JObject; if (act == null) continue;
             string type = act.Value<string>("type");
+            if (string.IsNullOrEmpty(type)) continue;
 
-            if (type == "setValue")
+            if (type == "set")
             {
                 string field = act.Value<string>("field");
+                if (string.IsNullOrEmpty(field)) continue;
 
-                // direct value
+                object val = null;
+                bool hasVal = false;
+
+                // 1) value
                 if (act.TryGetValue("value", out var jv))
                 {
-                    object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
+                    hasVal = true;
+                    if (jv.Type == JTokenType.Null) val = null;
+                    else if (jv is JValue jvv) val = jvv.Value;
+                    else val = jv.ToString();
+
                     if (val is string sv) val = ExpandTokens(sv);
-
-                    // 액션 딕셔너리 직접 세팅
-                    if (field == "toolActions" ||
-                        field == "weaponActions" ||
-                        field == "breakActions")
-                    {
-                        var dict = ToActionDict(val);
-                        if (field == "toolActions")        overrideTool   = dict;
-                        else if (field == "weaponActions") overrideWeapon = dict;
-                        else                               overrideBreak  = dict;
-                        continue;
-                    }
-
-                    // 특수 필드
-                    if (field == "name")       { overrideName   = val?.ToString(); continue; }
-                    if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
-                    if (field == "itemId")     { overrideItemId = val?.ToString(); continue; }
-
-                    if (field == "durability")
-                    {
-                        if (val != null && int.TryParse(val.ToString(), out int iv))
-                            overrideDurability = iv;
-                        continue;
-                    }
-                    if (field == "maxDurability")
-                    {
-                        if (val != null && int.TryParse(val.ToString(), out int iv))
-                            overrideMaxDur = iv;
-                        continue;
-                    }
-
-                    // 나머지는 Details
-                    if (field.StartsWith("details.", StringComparison.Ordinal))
-                        dst.SetDetailPath(field.Substring("details.".Length), val);
-                    else
-                        dst.SetDetailPath(field, val);
-
-                    continue;
                 }
-
-                // fromInput (+ stripSuffix)
-                int?   from       = act.Value<int?>("fromInput");
-                string inputField = act.Value<string>("inputField");
-                if (from.HasValue && !string.IsNullOrEmpty(inputField))
+                // 2) fromInput + inputField
+                else if (act.TryGetValue("fromInput", out var jf) && act.TryGetValue("inputField", out var jif))
                 {
-                    int si  = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
-                    var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                    var val = ReadField(src, inputField);
+                    int? from = jf.Type == JTokenType.Null ? (int?)null : jf.Value<int?>();
+                    string inputField = jif.Type == JTokenType.Null ? null : jif.ToString();
 
-                    string strip = act.Value<string>("stripSuffix");
-                    if (!string.IsNullOrEmpty(strip) && val is string svFrom && svFrom.EndsWith(strip))
-                        val = svFrom.Substring(0, svFrom.Length - strip.Length);
-
-                    if (field == "toolActions" ||
-                        field == "weaponActions" ||
-                        field == "breakActions")
+                    if (from.HasValue && !string.IsNullOrEmpty(inputField))
                     {
-                        var dict = ToActionDict(val);
-                        if (field == "toolActions")        overrideTool   = dict;
-                        else if (field == "weaponActions") overrideWeapon = dict;
-                        else                               overrideBreak  = dict;
-                        continue;
+                        int si = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
+                        var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
+
+                        val = ReadField(src, inputField);
+                        hasVal = true;
+
+                        string strip = act.Value<string>("stripSuffix");
+                        if (!string.IsNullOrEmpty(strip) && val is string s0 && s0.EndsWith(strip, StringComparison.Ordinal))
+                            val = s0.Substring(0, s0.Length - strip.Length);
                     }
-
-                    string sVal = val?.ToString();
-
-                    if (field == "name")       { overrideName   = sVal; continue; }
-                    if (field == "spriteName") { overrideSprite = sVal; continue; }
-                    if (field == "itemId")     { overrideItemId = sVal; continue; }
-
-                    if (field == "durability")
-                    {
-                        if (val != null && int.TryParse(val.ToString(), out int iv))
-                            overrideDurability = iv;
-                        continue;
-                    }
-                    if (field == "maxDurability")
-                    {
-                        if (val != null && int.TryParse(val.ToString(), out int iv))
-                            overrideMaxDur = iv;
-                        continue;
-                    }
-
-                    if (field.StartsWith("details.", StringComparison.Ordinal))
-                        dst.SetDetailPath(field.Substring("details.".Length), val);
-                    else
-                        dst.SetDetailPath(field, val);
-
-                    continue;
                 }
-
-                // valueFromFields (join)
-                var vff = act["valueFromFields"] as JArray;
-                if (vff != null)
+                // 3) valueFromFields (join)
+                else if (act["valueFromFields"] is JArray vff)
                 {
                     string sep = act.Value<string>("separator") ?? "";
                     string pre = act.Value<string>("prefixEach") ?? "";
-                    var vals   = new List<string>(vff.Count);
+                    var vals = new List<string>(vff.Count);
 
-                    foreach (var jf in vff)
+                    for (int k = 0; k < vff.Count; k++)
                     {
-                        string key = jf.ToString();
-                        object v   = ReadField(dst, key);
-                        if (v != null)
-                        {
-                            string s = v.ToString();
-                            if (!string.IsNullOrEmpty(pre)) s = pre + s;
-                            vals.Add(s);
-                        }
+                        string key = vff[k]?.ToString();
+                        if (string.IsNullOrEmpty(key)) continue;
+
+                        object v = ReadField(dst, key);
+                        if (v == null) continue;
+
+                        string s = v.ToString();
+                        if (!string.IsNullOrEmpty(pre)) s = pre + s;
+                        vals.Add(s);
                     }
-                    string joined = string.Join(sep, vals);
 
-                    if (field == "name")       { overrideName   = joined; continue; }
-                    if (field == "spriteName") { overrideSprite = joined; continue; }
-                    if (field == "itemId")     { overrideItemId = joined; continue; }
+                    val = string.Join(sep, vals);
+                    hasVal = true;
+                }
 
-                    if (field.StartsWith("details.", StringComparison.Ordinal))
-                        dst.SetDetailPath(field.Substring("details.".Length), joined);
-                    else
-                        dst.SetDetailPath(field, joined);
+                if (!hasVal) continue;
 
+                // top-level scalar
+                if (field == "name") { overrideName = val?.ToString(); continue; }
+                if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
+                if (field == "itemId") { overrideItemId = val?.ToString(); continue; }
+
+                if (field == "durability")
+                {
+                    if (val != null && int.TryParse(val.ToString(), out int iv))
+                        overrideDurability = iv;
                     continue;
                 }
-            }
-            else if (type == "copyId")
-            {
-                int    from    = act.Value<int>("fromInput");
-                string toField = act.Value<string>("toField");
-                int si = (assign != null && from >= 0 && from < assign.Length) ? assign[from] : -1;
-                var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                var val = src?.ItemId;
 
-                if (toField == "name")       { overrideName   = val; continue; }
-                if (toField == "spriteName") { overrideSprite = val; continue; }
-                if (toField == "itemId")     { overrideItemId = val; continue; }
+                if (field == "maxDurability")
+                {
+                    if (val != null && int.TryParse(val.ToString(), out int iv))
+                        overrideMaxDur = iv;
+                    continue;
+                }
 
-                if (toField.StartsWith("details.", StringComparison.Ordinal))
-                    dst.SetDetailPath(toField.Substring("details.".Length), val);
-                else
-                    dst.SetDetailPath(toField, val);
+                // top-level dict replace
+                if (field == "ToolActions" || field == "WeaponActions" || field == "BreakActions")
+                {
+                    var dict = ToActionDict(val);
+                    if (field == "ToolActions") overrideTool = dict;
+                    else if (field == "WeaponActions") overrideWeapon = dict;
+                    else overrideBreak = dict;
+                    continue;
+                }
+
+                // nested dict set
+                if (field.StartsWith("details.", StringComparison.Ordinal))
+                {
+                    dst.SetDetailPath(field.Substring("details.".Length), val);
+                    continue;
+                }
+
+                if (field.StartsWith("ToolActions.", StringComparison.Ordinal))
+                {
+                    overrideTool = SetInActionRoot(overrideTool ?? dst.ToolActions, field.Substring("ToolActions.".Length), val);
+                    continue;
+                }
+
+                if (field.StartsWith("WeaponActions.", StringComparison.Ordinal))
+                {
+                    overrideWeapon = SetInActionRoot(overrideWeapon ?? dst.WeaponActions, field.Substring("WeaponActions.".Length), val);
+                    continue;
+                }
+
+                if (field.StartsWith("BreakActions.", StringComparison.Ordinal))
+                {
+                    overrideBreak = SetInActionRoot(overrideBreak ?? dst.BreakActions, field.Substring("BreakActions.".Length), val);
+                    continue;
+                }
+
+                // details 루트 생략 허용 X (고정 스펙)
+                continue;
             }
-            else if (type == "copyField")
+            else if (type == "copy")
             {
-                int    from    = act.Value<int>("fromInput");
+                int from = act.Value<int?>("fromInput") ?? -1;
                 string inField = act.Value<string>("inputField");
                 string toField = act.Value<string>("toField");
+                if (from < 0 || string.IsNullOrEmpty(inField) || string.IsNullOrEmpty(toField)) continue;
+
                 int si = (assign != null && from >= 0 && from < assign.Length) ? assign[from] : -1;
                 var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
                 var val = ReadField(src, inField);
 
-                if (toField == "toolActions" ||
-                    toField == "weaponActions" ||
-                    toField == "breakActions")
-                {
-                    var dict = ToActionDict(val);
-                    if (dict != null)
-                    {
-                        if (toField == "toolActions")        overrideTool   = dict;
-                        else if (toField == "weaponActions") overrideWeapon = dict;
-                        else                                 overrideBreak  = dict;
-                    }
-                    continue;
-                }
-
-                string sVal = val?.ToString();
-
-                if (toField == "name")       { overrideName   = sVal; continue; }
-                if (toField == "spriteName") { overrideSprite = sVal; continue; }
-                if (toField == "itemId")     { overrideItemId = sVal; continue; }
+                if (toField == "name") { overrideName = val?.ToString(); continue; }
+                if (toField == "spriteName") { overrideSprite = val?.ToString(); continue; }
+                if (toField == "itemId") { overrideItemId = val?.ToString(); continue; }
 
                 if (toField == "durability")
                 {
@@ -783,6 +715,7 @@ public class RecipeLibrary : MonoBehaviour
                         overrideDurability = iv;
                     continue;
                 }
+
                 if (toField == "maxDurability")
                 {
                     if (val != null && int.TryParse(val.ToString(), out int iv))
@@ -790,28 +723,58 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                if (toField.StartsWith("details.", StringComparison.Ordinal))
-                    dst.SetDetailPath(toField.Substring("details.".Length), val);
-                else
-                    dst.SetDetailPath(toField, val);
-            }
-            else if (type == "sumFields")
-            {
-                string outField  = act.Value<string>("field");
-                string inField   = act.Value<string>("inputField");
-                var    fromInputs = act["fromInputs"] as JArray;
-                int sum = 0;
-
-                if (fromInputs != null)
+                if (toField == "ToolActions" || toField == "WeaponActions" || toField == "BreakActions")
                 {
-                    foreach (var jf in fromInputs)
-                    {
-                        int fi = jf.Value<int>();
-                        int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
-                        var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                        var v   = ReadField(src, inField);
-                        if (v != null && int.TryParse(v.ToString(), out int iv)) sum += iv;
-                    }
+                    var dict = ToActionDict(val);
+                    if (toField == "ToolActions") overrideTool = dict;
+                    else if (toField == "WeaponActions") overrideWeapon = dict;
+                    else overrideBreak = dict;
+                    continue;
+                }
+
+                if (toField.StartsWith("details.", StringComparison.Ordinal))
+                {
+                    dst.SetDetailPath(toField.Substring("details.".Length), val);
+                    continue;
+                }
+
+                if (toField.StartsWith("ToolActions.", StringComparison.Ordinal))
+                {
+                    overrideTool = SetInActionRoot(overrideTool ?? dst.ToolActions, toField.Substring("ToolActions.".Length), val);
+                    continue;
+                }
+
+                if (toField.StartsWith("WeaponActions.", StringComparison.Ordinal))
+                {
+                    overrideWeapon = SetInActionRoot(overrideWeapon ?? dst.WeaponActions, toField.Substring("WeaponActions.".Length), val);
+                    continue;
+                }
+
+                if (toField.StartsWith("BreakActions.", StringComparison.Ordinal))
+                {
+                    overrideBreak = SetInActionRoot(overrideBreak ?? dst.BreakActions, toField.Substring("BreakActions.".Length), val);
+                    continue;
+                }
+            }
+            else if (type == "sum")
+            {
+                string outField = act.Value<string>("field");
+                string inField = act.Value<string>("inputField");
+                var fromInputs = act["fromInputs"] as JArray;
+
+                if (string.IsNullOrEmpty(outField) || string.IsNullOrEmpty(inField) || fromInputs == null)
+                    continue;
+
+                int sum = 0;
+                for (int k = 0; k < fromInputs.Count; k++)
+                {
+                    int fi = fromInputs[k].Value<int>();
+                    int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
+                    var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
+
+                    var v = ReadField(src, inField);
+                    if (v != null && int.TryParse(v.ToString(), out int iv))
+                        sum += iv;
                 }
 
                 if (outField == "durability")
@@ -819,178 +782,152 @@ public class RecipeLibrary : MonoBehaviour
                     overrideDurability = (overrideDurability ?? 0) + sum;
                     continue;
                 }
+
                 if (outField == "maxDurability")
                 {
                     overrideMaxDur = (overrideMaxDur ?? 0) + sum;
                     continue;
                 }
 
-                if (outField == "name")       { overrideName   = sum.ToString(); continue; }
-                if (outField == "spriteName") { overrideSprite = sum.ToString(); continue; }
-                if (outField == "itemId")     { overrideItemId = sum.ToString(); continue; }
-
                 if (outField.StartsWith("details.", StringComparison.Ordinal))
+                {
                     dst.SetDetailPath(outField.Substring("details.".Length), sum);
-                else
-                    dst.SetDetailPath(outField, sum);
+                    continue;
+                }
             }
-            else if (type == "paramSet")
+            else if (type == "delete")
             {
                 string field = act.Value<string>("field");
+                if (string.IsNullOrEmpty(field)) continue;
 
-                if (act.TryGetValue("value", out var jv))
+                // Combine 제거 같은 용도: ToolActions.Combine
+                if (field == "ToolActions" || field == "WeaponActions" || field == "BreakActions")
                 {
-                    object val = jv.Type == JTokenType.Null ? null : ((JValue)jv).Value;
-
-                    if (field.StartsWith("details.", StringComparison.Ordinal))
-                        dst.SetDetailPath(field.Substring("details.".Length), val);
-                    else
-                        dst.SetDetailPath(field, val);
-
+                    // 전체 삭제는 null 처리(원한다면 빈 dict로 바꿔도 됨)
+                    if (field == "ToolActions") overrideTool = new Dictionary<string, Dictionary<string, object>>();
+                    else if (field == "WeaponActions") overrideWeapon = new Dictionary<string, Dictionary<string, object>>();
+                    else overrideBreak = new Dictionary<string, Dictionary<string, object>>();
                     continue;
-                }
-
-                int?   from       = act.Value<int?>("fromInput");
-                string inputField = act.Value<string>("inputField");
-                if (from.HasValue && !string.IsNullOrEmpty(inputField))
-                {
-                    int si  = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
-                    var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                    var val = ReadField(src, inputField);
-
-                    if (field.StartsWith("details.", StringComparison.Ordinal))
-                        dst.SetDetailPath(field.Substring("details.".Length), val);
-                    else
-                        dst.SetDetailPath(field, val);
-
-                    continue;
-                }
-            }
-            else if (type == "paramSum")
-            {
-                string field     = act.Value<string>("field");
-                string inField   = act.Value<string>("inputField");
-                var    fromInputs = act["fromInputs"] as JArray;
-                int sum = 0;
-
-                if (fromInputs != null)
-                {
-                    foreach (var jf in fromInputs)
-                    {
-                        int fi = jf.Value<int>();
-                        int si = (assign != null && fi >= 0 && fi < assign.Length) ? assign[fi] : -1;
-                        var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
-                        var v   = ReadField(src, inField);
-                        if (v != null && int.TryParse(v.ToString(), out int iv)) sum += iv;
-                    }
                 }
 
                 if (field.StartsWith("details.", StringComparison.Ordinal))
-                    dst.SetDetailPath(field.Substring("details.".Length), sum);
-                else
-                    dst.SetDetailPath(field, sum);
+                {
+                    DeleteFromDetails(dst, field.Substring("details.".Length));
+                    continue;
+                }
+
+                if (field.StartsWith("ToolActions.", StringComparison.Ordinal))
+                {
+                    overrideTool = DeleteFromActionRoot(overrideTool ?? dst.ToolActions, field.Substring("ToolActions.".Length));
+                    continue;
+                }
+
+                if (field.StartsWith("WeaponActions.", StringComparison.Ordinal))
+                {
+                    overrideWeapon = DeleteFromActionRoot(overrideWeapon ?? dst.WeaponActions, field.Substring("WeaponActions.".Length));
+                    continue;
+                }
+
+                if (field.StartsWith("BreakActions.", StringComparison.Ordinal))
+                {
+                    overrideBreak = DeleteFromActionRoot(overrideBreak ?? dst.BreakActions, field.Substring("BreakActions.".Length));
+                    continue;
+                }
             }
         }
 
         bool changed =
-            overrideName       != null ||
-            overrideSprite     != null ||
-            overrideItemId     != null ||
+            overrideName != null ||
+            overrideSprite != null ||
+            overrideItemId != null ||
             overrideDurability.HasValue ||
             overrideMaxDur.HasValue ||
-            overrideTool   != null ||
+            overrideTool != null ||
             overrideWeapon != null ||
-            overrideBreak  != null;
+            overrideBreak != null;
 
         if (!changed)
             return dst;
 
-        string finalName       = overrideName       ?? dst.Name;
-        string finalSprite     = overrideSprite     ?? dst.SpriteName;
-        string finalId         = overrideItemId     ?? dst.ItemId;
-        int    finalMaxDur     = overrideMaxDur     ?? dst.MaxDurability;
-        int    finalDurability = overrideDurability ?? dst.Durability;
+        string finalName = overrideName ?? dst.Name;
+        string finalSprite = overrideSprite ?? dst.SpriteName;
+        string finalId = overrideItemId ?? dst.ItemId;
+        int finalMaxDur = overrideMaxDur ?? dst.MaxDurability;
+        int finalDurability = overrideDurability ?? dst.Durability;
 
-        var finalTool   = overrideTool   ?? dst.ToolActions;
+        var finalTool = overrideTool ?? dst.ToolActions;
         var finalWeapon = overrideWeapon ?? dst.WeaponActions;
-        var finalBreak  = overrideBreak  ?? dst.BreakActions;
+        var finalBreak = overrideBreak ?? dst.BreakActions;
 
-        var finalIcon    = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
+        var finalIcon = itemLibrary != null ? itemLibrary.GetSprite(finalSprite) : dst.Icon;
         var finalDetails = dst.Details;
 
         return new ItemData(
-            itemId:        finalId,
-            name:          finalName,
-            spriteName:    finalSprite,
-            itemType:      dst.ItemType,
-            maxStack:      dst.MaxStack,
+            itemId: finalId,
+            name: finalName,
+            spriteName: finalSprite,
+            itemType: dst.ItemType,
+            maxStack: dst.MaxStack,
             maxDurability: finalMaxDur,
-            durability:    finalDurability,
-            toolActions:   finalTool,
+            durability: finalDurability,
+            toolActions: finalTool,
             weaponActions: finalWeapon,
-            breakActions:  finalBreak,
-            tags:          dst.Tags,
-            details:       finalDetails,
-            icon:          finalIcon,
-            count:         dst.Count
+            breakActions: finalBreak,
+            tags: dst.Tags,
+            details: finalDetails,
+            icon: finalIcon,
+            count: dst.Count
         );
     }
 
+    // ─────────────────────────────────────────────────────────
+    // Field Path (신규 고정 루트)
+    // ─────────────────────────────────────────────────────────
     object ReadField(ItemData src, string field)
     {
         if (src == null || string.IsNullOrEmpty(field)) return null;
 
-        const string prefix = "details.";
+        // top-level scalar
+        if (field == "name") return src.Name;
+        if (field == "spriteName") return src.SpriteName;
+        if (field == "itemId") return src.ItemId;
+        if (field == "durability") return src.Durability;
+        if (field == "maxDurability") return src.MaxDurability;
+        if (field == "tags") return src.Tags;
 
-        // Details.* 경로
-        if (field.StartsWith(prefix, StringComparison.Ordinal))
-        {
-            string inner = field.Substring(prefix.Length);
-            return ReadFromDetails(src, inner);
-        }
+        // top-level dict roots
+        if (field == "details") return src.Details;
+        if (field == "ToolActions") return src.ToolActions;
+        if (field == "WeaponActions") return src.WeaponActions;
+        if (field == "BreakActions") return src.BreakActions;
 
-        // 특수 필드
-        switch (field)
-        {
-            case "name":          return src.Name;
-            case "spriteName":    return src.SpriteName;
-            case "itemId":        return src.ItemId;
-            case "durability":    return src.Durability;
-            case "maxDurability": return src.MaxDurability;
-            case "tags":          return src.Tags;
+        // nested: details.*
+        if (field.StartsWith("details.", StringComparison.Ordinal))
+            return ReadFromDetails(src, field.Substring("details.".Length));
 
-            case "toolActions":
-            {
-                var v = ReadFromDetails(src, "toolActions");
-                return v ?? (object)src.ToolActions;
-            }
-            case "weaponActions":
-            {
-                var v = ReadFromDetails(src, "weaponActions");
-                return v ?? (object)src.WeaponActions;
-            }
-            case "breakActions":
-            {
-                var v = ReadFromDetails(src, "breakActions");
-                return v ?? (object)src.BreakActions;
-            }
-        }
+        // nested: ToolActions.* / WeaponActions.* / BreakActions.*
+        if (field.StartsWith("ToolActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(src.ToolActions, field.Substring("ToolActions.".Length));
 
-        // fallback: Details 루트 기준 경로로 시도
-        return ReadFromDetails(src, field);
+        if (field.StartsWith("WeaponActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(src.WeaponActions, field.Substring("WeaponActions.".Length));
+
+        if (field.StartsWith("BreakActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(src.BreakActions, field.Substring("BreakActions.".Length));
+
+        return null;
     }
 
     object ReadFromDetails(ItemData dst, string path)
     {
         if (dst?.Details == null || string.IsNullOrEmpty(path)) return null;
 
-        var parts   = path.Split('.');
+        var parts = path.Split('.');
         object curr = dst.Details;
 
         for (int i = 0; i < parts.Length; i++)
         {
             string key = parts[i];
-
             if (curr is Dictionary<string, object> dict)
             {
                 if (!dict.TryGetValue(key, out curr))
@@ -1005,10 +942,212 @@ public class RecipeLibrary : MonoBehaviour
         return curr;
     }
 
+    object ReadFromActionRoot(Dictionary<string, Dictionary<string, object>> root, string path)
+    {
+        if (root == null || string.IsNullOrEmpty(path)) return null;
+
+        var parts = path.Split('.');
+        if (parts.Length == 0) return null;
+
+        // 1) action name
+        string actionName = parts[0];
+        if (!root.TryGetValue(actionName, out var paramDict) || paramDict == null)
+            return null;
+
+        if (parts.Length == 1)
+            return paramDict;
+
+        object curr = paramDict;
+
+        // 2) inside param dict (Dictionary<string, object>) chain
+        for (int i = 1; i < parts.Length; i++)
+        {
+            string key = parts[i];
+
+            if (curr is Dictionary<string, object> d)
+            {
+                if (!d.TryGetValue(key, out curr))
+                    return null;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return curr;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Action dict mutation (copy-on-write)
+    // ─────────────────────────────────────────────────────────
+    Dictionary<string, Dictionary<string, object>> SetInActionRoot(
+        Dictionary<string, Dictionary<string, object>> root,
+        string path,
+        object value)
+    {
+        if (root == null) root = new Dictionary<string, Dictionary<string, object>>();
+        if (string.IsNullOrEmpty(path)) return root;
+
+        var newRoot = root.ToDictionary(kv => kv.Key,
+            kv => kv.Value != null ? new Dictionary<string, object>(kv.Value) : new Dictionary<string, object>());
+
+        var parts = path.Split('.');
+        if (parts.Length == 0) return newRoot;
+
+        string actionName = parts[0];
+        if (!newRoot.TryGetValue(actionName, out var param) || param == null)
+            param = new Dictionary<string, object>();
+        else
+            param = new Dictionary<string, object>(param);
+
+        if (parts.Length == 1)
+        {
+            // "ToolActions.Combine"에 value를 넣는 케이스는 보통 안 쓰지만, 지원은 해둠
+            // value가 Dictionary<string, object>면 그것으로 교체, 아니면 빈 param으로
+            if (value is Dictionary<string, object> d)
+                param = new Dictionary<string, object>(d);
+            newRoot[actionName] = param;
+            return newRoot;
+        }
+
+        // param 내부 중첩 딕셔너리 지원
+        object curr = param;
+        for (int i = 1; i < parts.Length - 1; i++)
+        {
+            string key = parts[i];
+
+            if (curr is Dictionary<string, object> dict)
+            {
+                if (!dict.TryGetValue(key, out var next) || next == null)
+                {
+                    var created = new Dictionary<string, object>();
+                    dict[key] = created;
+                    curr = created;
+                }
+                else if (next is Dictionary<string, object> nd)
+                {
+                    var copied = new Dictionary<string, object>(nd);
+                    dict[key] = copied;
+                    curr = copied;
+                }
+                else
+                {
+                    // dict 아닌 값이면 덮어씌워서 dict로 만든다
+                    var created = new Dictionary<string, object>();
+                    dict[key] = created;
+                    curr = created;
+                }
+            }
+            else
+            {
+                return newRoot;
+            }
+        }
+
+        if (curr is Dictionary<string, object> last)
+            last[parts[^1]] = value;
+
+        newRoot[actionName] = param;
+        return newRoot;
+    }
+
+    Dictionary<string, Dictionary<string, object>> DeleteFromActionRoot(
+        Dictionary<string, Dictionary<string, object>> root,
+        string path)
+    {
+        if (root == null || string.IsNullOrEmpty(path)) return root;
+
+        var newRoot = root.ToDictionary(kv => kv.Key,
+            kv => kv.Value != null ? new Dictionary<string, object>(kv.Value) : new Dictionary<string, object>());
+
+        var parts = path.Split('.');
+        if (parts.Length == 0) return newRoot;
+
+        // 1) ToolActions.Combine (액션 자체 제거)
+        if (parts.Length == 1)
+        {
+            newRoot.Remove(parts[0]);
+            return newRoot;
+        }
+
+        // 2) ToolActions.Combine.xxx (param 내부 키 제거)
+        string actionName = parts[0];
+        if (!newRoot.TryGetValue(actionName, out var param) || param == null)
+            return newRoot;
+
+        var newParam = new Dictionary<string, object>(param);
+
+        object curr = newParam;
+        for (int i = 1; i < parts.Length - 1; i++)
+        {
+            string key = parts[i];
+
+            if (curr is Dictionary<string, object> dict)
+            {
+                if (!dict.TryGetValue(key, out var next) || next == null)
+                    return newRoot;
+
+                if (next is Dictionary<string, object> nd)
+                {
+                    var copied = new Dictionary<string, object>(nd);
+                    dict[key] = copied;
+                    curr = copied;
+                }
+                else
+                {
+                    return newRoot;
+                }
+            }
+            else
+            {
+                return newRoot;
+            }
+        }
+
+        if (curr is Dictionary<string, object> lastDict)
+            lastDict.Remove(parts[^1]);
+
+        newRoot[actionName] = newParam;
+
+        // param이 완전히 비면 액션도 지울지? (원하면 지워도 됨)
+        // 여기서는 "Combine 자체 제거"는 레시피에서 ToolActions.Combine로 하니까
+        // 내부 키 삭제만으로는 액션을 유지.
+        return newRoot;
+    }
+
+    void DeleteFromDetails(ItemData dst, string path)
+    {
+        if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
+
+        var parts = path.Split('.');
+        if (parts.Length == 0) return;
+
+        if (parts.Length == 1)
+        {
+            dst.Details.Remove(parts[0]);
+            return;
+        }
+
+        object curr = dst.Details;
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (curr is Dictionary<string, object> d)
+            {
+                if (!d.TryGetValue(parts[i], out curr) || curr == null)
+                    return;
+            }
+            else return;
+        }
+
+        if (curr is Dictionary<string, object> last)
+            last.Remove(parts[^1]);
+    }
+
     string ExpandTokens(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
-        string ts   = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        string ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
         string rand = Guid.NewGuid().ToString("N").Substring(0, 6);
         return s.Replace("$timestamp$", ts).Replace("$rand$", rand);
     }

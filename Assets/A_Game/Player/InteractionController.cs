@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -62,6 +61,7 @@ public class InteractionController : MonoBehaviour
     public RecipeLibrary recipeLibrary;
     public ItemLibrary itemLibrary;
     public CorpseLibrary corpseLibrary;
+    public CellLibrary cellLibrary; // ✅ 추가: 리플렉션 제거, 정식 API 사용
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
@@ -133,6 +133,10 @@ public class InteractionController : MonoBehaviour
 
         if (meleeRoot != null)
             meleeRoot.gameObject.SetActive(false);
+
+        // ✅ CellLibrary 자동 연결 (Inspector 미할당 시 WorldManager에서 가져오기)
+        if (cellLibrary == null && worldManager != null)
+            cellLibrary = worldManager.cellLibrary;
     }
 
     void Update()
@@ -686,8 +690,11 @@ public class InteractionController : MonoBehaviour
         ushort id = worldManager.GetSolidId(cx, cy);
         if (id == 0) return false;
 
-        // ✅ CellLibrary API 변화 대응: reflection으로 있으면 호출, 없으면 null
-        string interaction = GetSolidInteractionSafe(worldManager.cellLibrary, id);
+        if (cellLibrary == null) return false;
+
+        if (!cellLibrary.GetInteraction(id, out string interaction))
+            return false;
+
         if (string.IsNullOrEmpty(interaction)) return false;
 
         if (interaction == "primalcraftModule")
@@ -1055,30 +1062,5 @@ public class InteractionController : MonoBehaviour
             return null;
 
         return items[_hotbarScope];
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // CellLibrary API 변경 대응: GetSolidInteraction이 없으면 null 반환
-    // ─────────────────────────────────────────────────────────
-    private static string GetSolidInteractionSafe(object cellLibrary, ushort solidId)
-    {
-        if (cellLibrary == null) return null;
-
-        // 1) GetSolidInteraction(ushort)
-        var t = cellLibrary.GetType();
-        var mi = t.GetMethod("GetSolidInteraction", BindingFlags.Public | BindingFlags.Instance, null,
-            new[] { typeof(ushort) }, null);
-
-        if (mi != null)
-            return mi.Invoke(cellLibrary, new object[] { solidId }) as string;
-
-        // 2) (대체 이름 가능성) GetInteraction(ushort)
-        mi = t.GetMethod("GetInteraction", BindingFlags.Public | BindingFlags.Instance, null,
-            new[] { typeof(ushort) }, null);
-
-        if (mi != null)
-            return mi.Invoke(cellLibrary, new object[] { solidId }) as string;
-
-        return null;
     }
 }

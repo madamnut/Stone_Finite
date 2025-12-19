@@ -2,9 +2,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "toolActions": { "Combine": { "partType": "Head",    "type": "Heavy"   } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Binding", "type": "Long"       } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Handle",  "type": "Long"       } }, "count": 1 }
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Heavy" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Long" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Long" } }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -16,31 +16,33 @@
     ],
     "outputActions": [
       [
-        { "type": "paramSet", "field": "details.head",    "fromInput": 0, "inputField": "name" },
-        { "type": "paramSet", "field": "details.binding", "fromInput": 1, "inputField": "name" },
-        { "type": "paramSet", "field": "details.handle",  "fromInput": 2, "inputField": "name" },
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
+        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "copyField", "fromInput": 0, "inputField": "breakActions",  "toField": "breakActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "toolActions",   "toField": "toolActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
 
-        { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "toolActions.Combine.potentialName" },
+        { "type": "delete", "field": "ToolActions.Combine" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {
-          "type": "setValue",
+          "type": "set",
           "field": "spriteName",
           "valueFromFields": ["details.binding", "details.head", "details.handle"],
           "separator": " + ",
           "prefixEach": "Module_"
         },
-        { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
       ]
     ]
   },
@@ -48,9 +50,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "toolActions": { "Combine": { "partType": "Head",    "type": "Light"  } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Binding", "type": "Short"      } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Handle",  "type": "Short"      } }, "count": 1 }
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Light" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Short" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Short" } }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -62,31 +64,33 @@
     ],
     "outputActions": [
       [
-        { "type": "paramSet", "field": "details.head",    "fromInput": 0, "inputField": "name" },
-        { "type": "paramSet", "field": "details.binding", "fromInput": 1, "inputField": "name" },
-        { "type": "paramSet", "field": "details.handle",  "fromInput": 2, "inputField": "name" },
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
+        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "copyField", "fromInput": 0, "inputField": "breakActions",  "toField": "breakActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "toolActions",   "toField": "toolActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
 
-        { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "toolActions.Combine.potentialName" },
+        { "type": "delete", "field": "ToolActions.Combine" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {
-          "type": "setValue",
+          "type": "set",
           "field": "spriteName",
           "valueFromFields": ["details.binding", "details.head", "details.handle"],
           "separator": " + ",
           "prefixEach": "Module_"
         },
-        { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
       ]
     ]
   },
@@ -94,9 +98,9 @@
   {
     "isOrdered": false,
     "inputs": [
-      { "toolActions": { "Combine": { "partType": "Head",    "type": "Standard" } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Binding", "type": "Standard"     } }, "count": 1 },
-      { "toolActions": { "Combine": { "partType": "Handle",  "type": "Standard"     } }, "count": 1 }
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Standard" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Standard" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Standard" } }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
@@ -108,31 +112,33 @@
     ],
     "outputActions": [
       [
-        { "type": "paramSet", "field": "details.head",    "fromInput": 0, "inputField": "name" },
-        { "type": "paramSet", "field": "details.binding", "fromInput": 1, "inputField": "name" },
-        { "type": "paramSet", "field": "details.handle",  "fromInput": 2, "inputField": "name" },
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sumFields", "field": "durability",    "fromInputs": [0], "inputField": "durability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "durability",    "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
+        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [1], "inputField": "toolActions.Combine.potentialDurability" },
-        { "type": "sumFields", "field": "maxDurability", "fromInputs": [2], "inputField": "toolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
 
-        { "type": "copyField", "fromInput": 0, "inputField": "breakActions",  "toField": "breakActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "toolActions",   "toField": "toolActions" },
-        { "type": "copyField", "fromInput": 0, "inputField": "weaponActions", "toField": "weaponActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
 
-        { "type": "setValue", "field": "name", "fromInput": 0, "inputField": "toolActions.Combine.potentialName" },
+        { "type": "delete", "field": "ToolActions.Combine" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {
-          "type": "setValue",
+          "type": "set",
           "field": "spriteName",
           "valueFromFields": ["details.binding", "details.head", "details.handle"],
           "separator": " + ",
           "prefixEach": "Module_"
         },
-        { "type": "setValue", "field": "itemId", "value": "$timestamp$_$rand$" }
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
       ]
     ]
   },

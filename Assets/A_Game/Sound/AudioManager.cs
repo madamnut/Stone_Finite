@@ -9,27 +9,29 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
 
     [Header("SFX Clips")]
-    [SerializeField] private AudioClip digClip;                 // Dig.wav
-    [SerializeField] private AudioClip placeClip;               // Place.wav
-    [SerializeField] private AudioClip multiblockCompleteClip;  // Multiblock_Complete.wav 등
-    [SerializeField] private AudioClip playerTookDamageClip;    // Player Damage.wav 등
+    [SerializeField] private AudioClip digClip;
+    [SerializeField] private AudioClip placeClip;
+    [SerializeField] private AudioClip multiblockCompleteClip;
+    [SerializeField] private AudioClip playerTookDamageClip;
+    [SerializeField] private AudioClip popClip;
+    [SerializeField] private AudioClip buttonClickClip; // ✅ 버튼 클릭음
 
     /*────────────── Combat SFX Clips ──────────────*/
     [Header("Combat SFX Clips")]
-    [SerializeField] private List<AudioClip> swingClips = new List<AudioClip>(); // 휘두르기 3종
-    [SerializeField] private AudioClip thrustClip;                                // 찌르기 1종
-    [SerializeField] private AudioClip hitClip;                                   // 데미지 입힐 때 1종
+    [SerializeField] private List<AudioClip> swingClips = new();
+    [SerializeField] private AudioClip thrustClip;
+    [SerializeField] private AudioClip hitClip;
 
     /*────────────── BGM ──────────────*/
     [Header("BGM Source")]
     [SerializeField] private AudioSource bgmSource;
 
-    [Header("BGM Clips (Inspector에서 추가/확장)")]
-    [SerializeField] private List<AudioClip> bgmClips = new List<AudioClip>(); // ogg들 추가
+    [Header("BGM Clips")]
+    [SerializeField] private List<AudioClip> bgmClips = new();
 
     [Header("BGM Settings")]
     public bool playOnStart = true;
-    [Range(0f,1f)] public float bgmVolume = 0.8f;
+    [Range(0f, 1f)] public float bgmVolume = 0.8f;
     public float fadeIn = 0.5f;
     public float fadeOut = 0.5f;
     public float gapSeconds = 0f;
@@ -39,13 +41,10 @@ public class AudioManager : MonoBehaviour
     int _lastIndex = -1;
     Coroutine _bgmLoopCo;
 
-
     void Awake()
     {
-        if (!sfxSource) sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
 
-        if (!bgmSource) bgmSource = gameObject.AddComponent<AudioSource>();
         bgmSource.playOnAwake = false;
         bgmSource.loop = false;
         bgmSource.volume = 0f;
@@ -57,69 +56,38 @@ public class AudioManager : MonoBehaviour
             _bgmLoopCo = StartCoroutine(CoPlayBgmLoop());
     }
 
-
     /*────────────── SFX ──────────────*/
-    public void PlayDig()
-    {
-        if (digClip != null) sfxSource.PlayOneShot(digClip);
-    }
-
-    public void PlayPlace()
-    {
-        if (placeClip != null) sfxSource.PlayOneShot(placeClip);
-    }
-
-    public void PlayMultiblockComplete()
-    {
-        if (multiblockCompleteClip != null) sfxSource.PlayOneShot(multiblockCompleteClip);
-    }
-
-    public void PlayPlayerTookDamage()
-    {
-        if (playerTookDamageClip != null)
-            sfxSource.PlayOneShot(playerTookDamageClip);
-    }
-
+    public void PlayDig()                    => sfxSource.PlayOneShot(digClip);
+    public void PlayPlace()                  => sfxSource.PlayOneShot(placeClip);
+    public void PlayMultiblockComplete()     => sfxSource.PlayOneShot(multiblockCompleteClip);
+    public void PlayPlayerTookDamage()       => sfxSource.PlayOneShot(playerTookDamageClip);
+    public void PlayPop()                    => sfxSource.PlayOneShot(popClip);
+    public void PlayButtonClick()            => sfxSource.PlayOneShot(buttonClickClip); // ✅ 추가
 
     /*────────────── Combat SFX ──────────────*/
     public void PlayWeaponSwing()
     {
-        if (swingClips == null || swingClips.Count == 0) return;
-
+        if (swingClips.Count == 0) return;
         int idx = Random.Range(0, swingClips.Count);
-        var clip = swingClips[idx];
-        if (clip != null)
-            sfxSource.PlayOneShot(clip);
+        sfxSource.PlayOneShot(swingClips[idx]);
     }
 
-    public void PlayWeaponThrust()
-    {
-        if (thrustClip != null)
-            sfxSource.PlayOneShot(thrustClip);
-    }
+    public void PlayWeaponThrust() => sfxSource.PlayOneShot(thrustClip);
+    public void PlayWeaponHit()    => sfxSource.PlayOneShot(hitClip);
 
-    public void PlayWeaponHit()
-    {
-        if (hitClip != null)
-            sfxSource.PlayOneShot(hitClip);
-    }
-
-
-    /*────────────── 내부(BGM) ──────────────*/
+    /*────────────── BGM ──────────────*/
     IEnumerator CoPlayBgmLoop()
     {
         while (true)
         {
-            if (bgmClips.Count == 0) yield break;
-
             int idx = NextIndex();
             _lastIndex = idx;
-            var clip = bgmClips[idx];
 
-            yield return CoFadeTo(clip);
+            yield return CoFadeTo(bgmClips[idx]);
 
             if (!loopForever) yield break;
-            if (gapSeconds > 0f) yield return new WaitForSecondsRealtime(gapSeconds);
+            if (gapSeconds > 0f)
+                yield return new WaitForSecondsRealtime(gapSeconds);
         }
     }
 
@@ -129,7 +97,8 @@ public class AudioManager : MonoBehaviour
             return Random.Range(0, bgmClips.Count);
 
         int i;
-        do { i = Random.Range(0, bgmClips.Count); } while (i == _lastIndex);
+        do { i = Random.Range(0, bgmClips.Count); }
+        while (i == _lastIndex);
         return i;
     }
 
@@ -137,7 +106,8 @@ public class AudioManager : MonoBehaviour
     {
         if (bgmSource.isPlaying && fadeOut > 0f)
         {
-            float t = 0f, start = bgmSource.volume;
+            float t = 0f;
+            float start = bgmSource.volume;
             while (t < fadeOut)
             {
                 t += Time.unscaledDeltaTime;
@@ -160,7 +130,10 @@ public class AudioManager : MonoBehaviour
                 yield return null;
             }
         }
-        else bgmSource.volume = bgmVolume;
+        else
+        {
+            bgmSource.volume = bgmVolume;
+        }
 
         yield return new WaitForSecondsRealtime(next.length);
     }

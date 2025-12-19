@@ -52,6 +52,10 @@ public class LobyManager : MonoBehaviour
     public Texture2D lobbyCursorTex;
     public Vector2 lobbyCursorHotspot = new Vector2(9, 24);
 
+    [Header("UI Click SFX (Lobby Only)")]
+    public AudioSource uiSfxSource;     // 로비에 붙어있는 AudioSource 할당
+    public AudioClip buttonClickClip;   // 버튼 클릭음 클립 할당
+
     float splashAnimTimer;
     static readonly Regex FileNameSafeRegex = new Regex(@"[^a-zA-Z0-9 _\\-\\(\\)\\[\\]\\.]", RegexOptions.Compiled);
 
@@ -65,6 +69,23 @@ public class LobyManager : MonoBehaviour
         SetAllPanelsOff();
         ApplyRandomSplashText();
 
+        // ✅ 모든 버튼 클릭 사운드 바인딩
+        BindClickSound(singlePlayButton);
+        BindClickSound(multiPlayButton);
+        BindClickSound(optionsButton);
+        BindClickSound(creditButton);
+        BindClickSound(exitButton);
+
+        BindClickSound(continueButton);
+        BindClickSound(newGameButton);
+        BindClickSound(singleBackButton);
+
+        BindClickSound(newGameStartButton);
+        BindClickSound(newGameBackButton);
+
+        BindClickSound(creditBackButton);
+
+        // ===== 기존 버튼 로직 =====
         if (singlePlayButton) singlePlayButton.onClick.AddListener(() => { singlePanel.SetActive(true); newGamePanel.SetActive(false); });
         if (multiPlayButton)  multiPlayButton.interactable = false;
         if (optionsButton)    optionsButton.interactable = false;
@@ -110,12 +131,23 @@ public class LobyManager : MonoBehaviour
 
     void OnTransformChildrenChanged() => RebuildScrollContent();
 
+    void PlayUiClick()
+    {
+        uiSfxSource.PlayOneShot(buttonClickClip);
+    }
+
+    void BindClickSound(Button btn)
+    {
+        if (!btn) return;
+        btn.onClick.AddListener(PlayUiClick);
+    }
+
     void ApplyLobbyCursor()
     {
         if (!lobbyCursorTex) return;
 
         UnityEngine.Cursor.lockState = CursorLockMode.None;
-        UnityEngine.Cursor.visible   = true;
+        UnityEngine.Cursor.visible = true;
         UnityEngine.Cursor.SetCursor(
             lobbyCursorTex,
             lobbyCursorHotspot,
@@ -145,14 +177,14 @@ public class LobyManager : MonoBehaviour
 
         // 폴더 및 메타 생성
         string worldsRoot = Path.Combine(Application.persistentDataPath, "Worlds");
-        string worldDir   = Path.Combine(worldsRoot, worldName);
+        string worldDir = Path.Combine(worldsRoot, worldName);
         if (!Directory.Exists(worldsRoot)) Directory.CreateDirectory(worldsRoot);
-        if (!Directory.Exists(worldDir))   Directory.CreateDirectory(worldDir);
+        if (!Directory.Exists(worldDir)) Directory.CreateDirectory(worldDir);
 
         var meta = new WorldMetaData
         {
-            worldName  = worldName,
-            seed       = seedValue,
+            worldName = worldName,
+            seed = seedValue,
             lastPlayed = DateTime.UtcNow.ToString("o")
         };
         File.WriteAllText(Path.Combine(worldDir, "world_meta.json"), JsonUtility.ToJson(meta, true));
@@ -248,6 +280,8 @@ public class LobyManager : MonoBehaviour
 
     void OnEntryClick(GameObject entry)
     {
+        PlayUiClick();
+
         _selectedWorldName = _entryToWorld[entry];
         if (continueButton) continueButton.interactable = true;
 
@@ -260,6 +294,8 @@ public class LobyManager : MonoBehaviour
 
     void OnEntryDoubleClick(GameObject entry)
     {
+        PlayUiClick();
+
         _selectedWorldName = _entryToWorld[entry];
         LoadSelectedWorld();
     }
@@ -307,7 +343,7 @@ public class LobyManager : MonoBehaviour
     public class WorldMetaData
     {
         public string worldName;
-        public int    seed;
+        public int seed;
         public string lastPlayed;
     }
 
