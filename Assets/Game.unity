@@ -10781,11 +10781,11 @@ MonoBehaviour:
   fluidLayerMask:
     serializedVersion: 2
     m_Bits: 67108864
-  fluidMoveSpeedMultiplier: 0.6
+  fluidMoveSpeedMultiplier: 0.4
   fluidHorizontalDamping: 8
   fluidVerticalDamping: 2
-  fluidSinkSpeed: 1.2
-  swimUpAcceleration: 20
+  fluidSinkSpeed: 3
+  swimUpAcceleration: 30
   maxSwimUpSpeed: 5
   skinRoot: {fileID: 3619158284477067207}
   bodyRenderer: {fileID: 5440318835390021669}

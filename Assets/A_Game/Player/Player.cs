@@ -20,13 +20,13 @@ public class Player : MonoBehaviour
     [SerializeField] private Collider2D headTriggerCollider; // 머리 트리거(잠김/숨 참기 판정)
     [SerializeField] private LayerMask fluidLayerMask;       // Fluid 레이어
 
-    [Header("Fluid Movement")]
-    [SerializeField] private float fluidMoveSpeedMultiplier = 0.6f; // 물속 좌우 느려짐
-    [SerializeField] private float fluidHorizontalDamping = 8f;     // 물속 좌우 저항
-    [SerializeField] private float fluidVerticalDamping = 2f;       // 물속 상하 저항
-    [SerializeField] private float fluidSinkSpeed = 1.2f;           // 물속 가만히 있으면 천천히 가라앉음(목표 y속도)
-    [SerializeField] private float swimUpAcceleration = 20f;        // 스페이스 홀드 시 위로 가속
-    [SerializeField] private float maxSwimUpSpeed = 5f;             // 위로 올라가는 최대 속도
+    [Header("Fluid Movement (Recommended Preset)")]
+    [SerializeField] private float fluidMoveSpeedMultiplier = 0.5f; // 물속 좌우 느려짐
+    [SerializeField] private float fluidHorizontalDamping = 10f;    // 물속 좌우 저항
+    [SerializeField] private float fluidVerticalDamping = 6f;       // 물속 상하 저항
+    [SerializeField] private float fluidSinkSpeed = 1.5f;           // 물속 가만히 있으면 천천히 가라앉음(목표 y속도)
+    [SerializeField] private float swimUpAcceleration = 35f;        // (미사용) 가속 방식 쓰고 싶으면 사용
+    [SerializeField] private float maxSwimUpSpeed = 6.5f;           // 위로 올라가는 최대 속도(목표)
 
     [Header("Visual (Skin Root)")]
     [SerializeField] private Transform skinRoot;             // 카메라 제외 스킨 루트
@@ -140,27 +140,27 @@ public class Player : MonoBehaviour
     ContactFilter2D _fluidFilter;
     readonly List<Collider2D> _fluidHits = new List<Collider2D>(8);
 
+    // 물속에서는 중력 끄기용
+    float _defaultGravityScale;
+
     void Awake()
     {
         Inventory = new InventoryData(InventoryCapacity);
 
-        // 인스펙터 신뢰(필수 컴포넌트)
         rb = rb != null ? rb : GetComponent<Rigidbody2D>();
+        _defaultGravityScale = rb.gravityScale;
 
-        // 스킨 루트 기본 스케일 기록
         var s = skinRoot.localScale;
         _baseSkinScaleX = Mathf.Abs(s.x);
         _baseSkinScaleY = s.y;
         _baseSkinScaleZ = s.z;
 
-        // 현재(왼쪽 바라보는 상태) 기준 소팅 순서 기록
         _leftArmOrder  = leftArmRenderer.sortingOrder;
         _rightArmOrder = rightArmRenderer.sortingOrder;
         _leftLegOrder  = leftLegRenderer.sortingOrder;
         _rightLegOrder = rightLegRenderer.sortingOrder;
         _rightHandItemOrder = rightHandItemRenderer.sortingOrder;
 
-        // 데미지 플래시용 렌더러 수집(인스펙터 필수 할당 전제)
         _allRenderers = new SpriteRenderer[]
         {
             bodyRenderer,
@@ -174,21 +174,17 @@ public class Player : MonoBehaviour
         for (int i = 0; i < _allRenderers.Length; i++)
             _originalColors[i] = _allRenderers[i].color;
 
-        // 보행 애니메이션용 기본 회전값 기록
         _leftArmBaseRot  = leftArmRenderer.transform.localRotation;
         _rightArmBaseRot = rightArmRenderer.transform.localRotation;
         _leftLegBaseRot  = leftLegRenderer.transform.localRotation;
         _rightLegBaseRot = rightLegRenderer.transform.localRotation;
 
-        // Fluid overlap 필터
         _fluidFilter = new ContactFilter2D();
         _fluidFilter.useLayerMask = true;
         _fluidFilter.layerMask = fluidLayerMask;
         _fluidFilter.useTriggers = true;
 
-        // 시작 시 방향/소팅 적용
         ApplyFacingAndSorting();
-
         InitHeartsUI();
     }
 
@@ -209,6 +205,9 @@ public class Player : MonoBehaviour
 
         _fluidHits.Clear();
         _isHeadSubmerged = headTriggerCollider.OverlapCollider(_fluidFilter, _fluidHits) > 0;
+
+        // ✅ 물속에서는 중력 끔(gravityScale=9.8 같은 값이면 수영이 못 이김)
+        rb.gravityScale = _isInFluid ? 0f : _defaultGravityScale;
 
         /*────────────── 점프/수영 입력 ──────────────*/
         bool jumpDown = Input.GetButtonDown("Jump");
@@ -281,7 +280,6 @@ public class Player : MonoBehaviour
         stamina = Mathf.Clamp(stamina, 0f, 100f);
 
         /*────────────── 공기(산소) 감소/회복 ──────────────*/
-        // 물속이어도 "머리 잠김"이 아니면 공기가 찬다.
         if (_isHeadSubmerged) oxygen -= oxygenDrainPerSecond * dt;
         else                  oxygen += oxygenRecoverPerSecond * dt;
 
@@ -318,21 +316,17 @@ public class Player : MonoBehaviour
 
         if (_isInFluid)
         {
-            // 좌우: 저항감 있게 목표 속도로 수렴
             float targetX = _moveInput * moveSpeed * fluidMoveSpeedMultiplier;
             v.x = Mathf.Lerp(v.x, targetX, 1f - Mathf.Exp(-fluidHorizontalDamping * fdt));
 
+            // ✅ 상하: 목표 속도 수렴 방식(중력은 Update에서 0으로 꺼둠)
             if (_swimUpHeld)
             {
-                // 스페이스 누르는 동안: 가라앉힘 목표 제거 + 위로 가속
-                v.y = Mathf.Lerp(v.y, 0f, 1f - Mathf.Exp(-fluidVerticalDamping * fdt));
-
-                v.y += swimUpAcceleration * fdt;
-                if (v.y > maxSwimUpSpeed) v.y = maxSwimUpSpeed;
+                float targetY = maxSwimUpSpeed;
+                v.y = Mathf.Lerp(v.y, targetY, 1f - Mathf.Exp(-fluidVerticalDamping * fdt));
             }
             else
             {
-                // 스페이스 안 누르면: 천천히 가라앉도록 수렴
                 float targetY = -Mathf.Abs(fluidSinkSpeed);
                 v.y = Mathf.Lerp(v.y, targetY, 1f - Mathf.Exp(-fluidVerticalDamping * fdt));
             }
@@ -372,7 +366,6 @@ public class Player : MonoBehaviour
             drop.ItemData.Count = left;
     }
 
-    /*──────────────────── 공격 스태미나/쿨다운 API ────────────────────*/
     public bool TryConsumeStaminaForAttack(float staminaCost)
     {
         if (_attackCooldownTimer > 0f)
@@ -392,7 +385,6 @@ public class Player : MonoBehaviour
         _attackCooldownTimer = cooldown;
     }
 
-    /*──────────────────── 방향/플립/소팅 ────────────────────*/
     void SetFacing(int dir)
     {
         if (dir != -1 && dir != 1) return;
@@ -407,7 +399,6 @@ public class Player : MonoBehaviour
         float sign = (_facing == -1) ? 1f : -1f;
         skinRoot.localScale = new Vector3(_baseSkinScaleX * sign, _baseSkinScaleY, _baseSkinScaleZ);
 
-        // 팔/다리 소팅 교환
         if (_facing == -1)
         {
             leftArmRenderer.sortingOrder  = _leftArmOrder;
@@ -428,7 +419,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    /*──────────────────── 걷기 애니메이션 ────────────────────*/
     void UpdateWalkAnimation()
     {
         bool isMovingHoriz = Mathf.Abs(_moveInput) > 0.01f;
@@ -458,7 +448,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    /*──────────────────── 플레이어 데미지 ────────────────────*/
     public void TakeDamage(int damage)
     {
         if (damage <= 0) return;
@@ -489,7 +478,6 @@ public class Player : MonoBehaviour
         _flashCo = null;
     }
 
-    /*──────────────────── 배고픔/갈증/스태미너/공기 UI ────────────────────*/
     void UpdateSurvivalUI()
     {
         hungerFillImage.fillAmount  = Mathf.Clamp01(hunger  / 100f);
@@ -498,7 +486,6 @@ public class Player : MonoBehaviour
         oxygenFillImage.fillAmount  = Mathf.Clamp01(oxygen  / 100f);
     }
 
-    /*──────────────────── 하트 UI 생성 ────────────────────*/
     void InitHeartsUI()
     {
         for (int i = heartRoot.childCount - 1; i >= 0; i--)
@@ -516,7 +503,6 @@ public class Player : MonoBehaviour
         UpdateHeartsUI();
     }
 
-    /*──────────────────── 하트 UI 갱신 ────────────────────*/
     void UpdateHeartsUI()
     {
         int maxHearts = heartObjects.Length;
