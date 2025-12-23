@@ -158,7 +158,7 @@
       { "type": "consume", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Dirt", "count": 1 }
+      { "itemId": "Dirt Cell", "count": 1 }
     ],
     "outputActions": [
       []
@@ -180,7 +180,7 @@
       { "type": "consume", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Mud", "count": 1 }
+      { "itemId": "Mud Cell", "count": 1 }
     ],
     "outputActions": [
       []

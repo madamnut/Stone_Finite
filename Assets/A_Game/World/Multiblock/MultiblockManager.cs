@@ -1,3 +1,5 @@
+// MultiblockManager.cs
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,7 +18,31 @@ public class MultiblockManager : MonoBehaviour
     readonly Dictionary<Vector2Int, Multiblock> _byCell    = new Dictionary<Vector2Int, Multiblock>();
     int _nextInstanceId = 1;
 
+    // defId(JSON 최상단 키) -> 인스턴스 생성기
+    readonly Dictionary<string, Func<Multiblock>> _factoryByDefId = new Dictionary<string, Func<Multiblock>>();
+
     public IReadOnlyDictionary<int, Multiblock> Instances => _instances;
+
+    void Awake()
+    {
+        // 기본 팩토리 등록 (파생 클래스 준비되면 계속 추가)
+        RegisterFactory("Clay Kiln", () => new ClayKiln());
+
+        // RegisterFactory("Campfire", () => new Campfire());
+        // RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
+        // RegisterFactory("Wooden Chest", () => new WoodenChest());
+        // RegisterFactory("Hearth", () => new Hearth());
+        // RegisterFactory("Brick Furnace", () => new BrickFurnace());
+    }
+
+    /// <summary>defId(=JSON 키) -> 생성기 등록/갱신.</summary>
+    public void RegisterFactory(string defId, Func<Multiblock> creator)
+    {
+        if (string.IsNullOrEmpty(defId) || creator == null)
+            return;
+
+        _factoryByDefId[defId] = creator;
+    }
 
     /// <summary>지정 셀을 포함하는 멀티블럭을 조회.</summary>
     public Multiblock GetAtCell(Vector2Int cell)
@@ -26,72 +52,82 @@ public class MultiblockManager : MonoBehaviour
     }
 
     /// <summary>
-    /// MultiblockLibrary.Def에서 클레이 킬른 인스턴스를 생성하고 등록.
-    /// - 패턴 매칭으로 originX, originY 결정된 뒤 호출.
-    /// - result 패턴에 따라 월드 블럭을 교체하고
-    ///   pattern 기준으로 OccupiedCells 를 채운다.
+    /// def(패턴/결과) 기반으로 멀티블럭 인스턴스 생성 + 월드 반영 + 등록.
+    /// - originX, originY는 패턴 매칭으로 결정된 "맨 왼쪽, 맨 아래" 좌표
     /// </summary>
-    public ClayKiln CreateClayKiln(MultiblockLibrary.Def def, int originX, int originY)
+    public Multiblock Create(MultiblockLibrary.Def def, int originX, int originY)
     {
+        if (def == null)
+            return null;
+
         if (world == null)
         {
             Debug.LogError($"{LOG_MB} MultiblockManager.world not assigned.");
             return null;
         }
 
-        var origin   = new Vector2Int(originX, originY);
-        var occupied = new List<Vector2Int>();
+        if (!_factoryByDefId.TryGetValue(def.key, out var creator) || creator == null)
+        {
+            Debug.LogWarning($"{LOG_MB} No factory for defId='{def.key}'. Create skipped.");
+            return null;
+        }
 
         int width  = def.width;
         int height = def.height;
 
-        Debug.Log($"{LOG_MB} CreateClayKiln def='{def.key}' origin=({originX},{originY}) size={width}x{height}");
+        var origin = new Vector2Int(originX, originY);
 
+        Debug.Log($"{LOG_MB} Create defId='{def.key}' origin=({originX},{originY}) size={width}x{height}");
+
+        // OccupiedCells: 현재 MultiblockLibrary 규칙상 pattern은 빈칸 불가 -> 전 칸 점유
+        var occupied = new List<Vector2Int>(width * height);
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
+                occupied.Add(new Vector2Int(originX + x, originY + y));
+        }
+
+        // result 패턴에 셀 이름이 있으면 그 셀로 교체
+        if (world.cellLibrary == null)
+        {
+            Debug.LogError($"{LOG_MB} WorldManager.cellLibrary not assigned.");
+        }
+        else
+        {
+            for (int y = 0; y < height; y++)
             {
-                int wx = originX + x;
-                int wy = originY + y;
-
-                // OccupiedCells 는 pattern 기준으로 채운다 (구조를 이루는 모든 칸)
-                string patternKey = def.pattern[x, y];
-                if (!string.IsNullOrEmpty(patternKey))
+                for (int x = 0; x < width; x++)
                 {
-                    occupied.Add(new Vector2Int(wx, wy));
+                    string resultCellName = def.result[x, y];
+                    if (string.IsNullOrEmpty(resultCellName))
+                        continue;
+
+                    if (!world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId) || placeId == 0)
+                    {
+                        Debug.LogWarning($"{LOG_MB} result cell '{resultCellName}' 에 해당하는 ID를 찾지 못함 (wx={originX + x}, wy={originY + y}). 스킵.");
+                        continue;
+                    }
+
+                    // 일단 FG 레이어에 배치한다고 가정
+                    world.PlaceCell(originX + x, originY + y, placeId);
                 }
-
-                // result 패턴에 셀 이름이 있으면 그 셀로 교체
-                string resultCellName = def.result[x, y];
-                if (string.IsNullOrEmpty(resultCellName))
-                    continue;
-
-                // ✅ 케이스 A: WorldManager가 들고 있는 CellLibrary 사용
-                if (world.cellLibrary == null)
-                {
-                    Debug.LogError($"{LOG_MB} WorldManager.cellLibrary not assigned.");
-                    continue;
-                }
-
-                // ✅ 이름 -> ID 역조회는 CellLibrary에 위임
-                if (!world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId) || placeId == 0)
-                {
-                    Debug.LogWarning($"{LOG_MB} result cell '{resultCellName}' 에 해당하는 ID를 찾지 못함 (wx={wx}, wy={wy}). 스킵.");
-                    continue;
-                }
-
-                // 일단 FG 레이어에 배치한다고 가정
-                world.PlaceCell(wx, wy, placeId);
             }
         }
 
-        var kiln = new ClayKiln();
-        kiln.Initialize(world, def.key, origin, width, height, occupied);
-        kiln.Manager = this;
-        kiln.InstId  = _nextInstanceId++;
+        // 인스턴스 생성 + 공통 초기화
+        var inst = creator.Invoke();
+        if (inst == null)
+        {
+            Debug.LogError($"{LOG_MB} Factory returned null for defId='{def.key}'.");
+            return null;
+        }
 
-        RegisterInstance(kiln);
-        return kiln;
+        inst.Initialize(world, def.key, origin, width, height, occupied);
+        inst.Manager = this;
+        inst.InstId  = _nextInstanceId++;
+
+        RegisterInstance(inst);
+        return inst;
     }
 
     /// <summary>매니저에 신규 인스턴스를 등록.</summary>
@@ -117,10 +153,7 @@ public class MultiblockManager : MonoBehaviour
             _byCell.Add(cell, inst);
         }
 
-        Debug.Log(
-            $"{LOG_MB} Registered multiblock instId={inst.InstId}, " +
-            $"def={inst.DefId}, cells={inst.OccupiedCells.Count}"
-        );
+        Debug.Log($"{LOG_MB} Registered multiblock instId={inst.InstId}, def={inst.DefId}, cells={inst.OccupiedCells.Count}");
     }
 
     /// <summary>

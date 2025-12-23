@@ -170,11 +170,18 @@
     "tags": []
   },
 
-  "Crude Wooden Plank": {
-    "name": "Crude Wooden Plank",
-    "spriteName": "Crude Wooden Plank",
+  "Wooden Plank": {
+    "name": "Wooden Plank",
+    "spriteName": "Wooden Plank",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Wooden Platform"
+      }
+    }
   },
 
   "Charcoal": {

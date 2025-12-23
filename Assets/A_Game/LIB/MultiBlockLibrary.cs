@@ -5,11 +5,12 @@ using UnityEngine;
 
 /// <summary>
 /// 멀티블럭 패턴/결과 정의 + 재료(셀 이름) → 멀티블럭 후보 역조회 전담.
+/// (정확 매칭: pattern에 null/빈문자열/누락 허용하지 않음)
+///
 /// JSON 포맷(예):
 /// {
 ///   "Clay Kiln": [
 ///     {
-///       "name": "Clay Kiln",
 ///       "pattern": [
 ///         ["Clay"],
 ///         ["Clay"]
@@ -31,32 +32,28 @@ public class MultiblockLibrary : MonoBehaviour
     /// <summary>
     /// 하나의 멀티블럭 정의.
     /// - key: JSON 최상단 키 (예: "Clay Kiln")
-    /// - name: 표시용 이름
     /// - width/height: 패턴 크기
-    /// - pattern[x,y]: 요구 재료 셀 이름 (null/빈문자열 → 와일드카드)
-    /// - result[x,y]: 완성 후 배치될 셀 이름 (null/빈문자열 → 변경 없음)
+    /// - pattern[x,y]: 요구 재료 셀 이름 (정확 매칭: null/빈문자열 불가)
+    /// - result[x,y]: 완성 후 배치될 셀 이름 (null/빈문자열 → 변경 없음 허용)
     /// </summary>
     public class Def
     {
-        public string   key;
-        public string   name;
-        public int      width;
-        public int      height;
+        public string    key;
+        public int       width;
+        public int       height;
         public string[,] pattern;
         public string[,] result;
     }
 
-    // 정적 캐시 (한 번만 로드)
+    // 정적 캐시 (게임 공통 1세트, 한 번만 로드)
     static bool _initialized;
-    static readonly List<Def> _defs         = new List<Def>();
+    static readonly List<Def> _defs = new List<Def>();
     static readonly Dictionary<string, List<Def>> _byIngredient = new Dictionary<string, List<Def>>();
-    static readonly Dictionary<string, List<Def>> _byKey        = new Dictionary<string, List<Def>>();
+    static readonly Dictionary<string, List<Def>> _byKey = new Dictionary<string, List<Def>>();
 
     void Awake()
     {
-        // 이미 다른 씬/오브젝트에서 초기화되었으면 스킵
         if (_initialized) return;
-        _initialized = true;
 
         if (multiblockJson == null || string.IsNullOrEmpty(multiblockJson.text))
         {
@@ -64,10 +61,11 @@ public class MultiblockLibrary : MonoBehaviour
             return;
         }
 
-        LoadFromJson(multiblockJson.text);
+        if (LoadFromJson(multiblockJson.text))
+            _initialized = true;
     }
 
-    static void LoadFromJson(string json)
+    static bool LoadFromJson(string json)
     {
         JObject root;
         try
@@ -77,7 +75,7 @@ public class MultiblockLibrary : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogError($"[MultiblockLibrary] JSON parse error: {e}");
-            return;
+            return false;
         }
 
         _defs.Clear();
@@ -86,18 +84,17 @@ public class MultiblockLibrary : MonoBehaviour
 
         foreach (var prop in root.Properties())
         {
-            string defKey = prop.Name;      // 예: "Clay Kiln"
+            string defKey = prop.Name; // 예: "Clay Kiln"
+
             var arr = prop.Value as JArray;
-            if (arr == null)
+            if (arr == null || arr.Count == 0)
                 continue;
 
-            foreach (var entryToken in arr)
+            for (int i = 0; i < arr.Count; i++)
             {
-                var entryObj = entryToken as JObject;
+                var entryObj = arr[i] as JObject;
                 if (entryObj == null)
                     continue;
-
-                string name = entryObj.Value<string>("name") ?? defKey;
 
                 var patternArr = entryObj["pattern"] as JArray;
                 var resultArr  = entryObj["result"]  as JArray;
@@ -109,9 +106,15 @@ public class MultiblockLibrary : MonoBehaviour
                 }
 
                 int height = patternArr.Count;
-                if (height == 0)
+                if (height <= 0)
                 {
                     Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern has zero height.");
+                    continue;
+                }
+
+                if (resultArr.Count != height)
+                {
+                    Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' result height mismatch. patternH={height}, resultH={resultArr.Count}");
                     continue;
                 }
 
@@ -123,43 +126,86 @@ public class MultiblockLibrary : MonoBehaviour
                 }
 
                 int width = firstRow.Count;
-                if (width == 0)
+                if (width <= 0)
                 {
                     Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern has zero width.");
                     continue;
                 }
+
+                // Rect 검증 + pattern 필수값 검증
+                bool invalid = false;
+
+                for (int y = 0; y < height; y++)
+                {
+                    var prow = patternArr[y] as JArray;
+                    var rrow = resultArr[y] as JArray;
+
+                    if (prow == null || rrow == null)
+                    {
+                        Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' row {y} invalid.");
+                        invalid = true;
+                        break;
+                    }
+
+                    if (prow.Count != width)
+                    {
+                        Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern row {y} width mismatch. expected={width}, got={prow.Count}");
+                        invalid = true;
+                        break;
+                    }
+
+                    if (rrow.Count != width)
+                    {
+                        Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' result row {y} width mismatch. expected={width}, got={rrow.Count}");
+                        invalid = true;
+                        break;
+                    }
+
+                    for (int x = 0; x < width; x++)
+                    {
+                        if (prow[x] == null)
+                        {
+                            Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern[{x},{y}] is null (not allowed).");
+                            invalid = true;
+                            break;
+                        }
+
+                        string p = prow[x].ToString();
+                        if (string.IsNullOrEmpty(p))
+                        {
+                            Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' pattern[{x},{y}] is empty (not allowed).");
+                            invalid = true;
+                            break;
+                        }
+                    }
+
+                    if (invalid) break;
+                }
+
+                if (invalid)
+                    continue;
 
                 var pattern = new string[width, height];
                 var result  = new string[width, height];
 
                 for (int y = 0; y < height; y++)
                 {
-                    var prow = patternArr[y] as JArray;
-                    var rrow = resultArr[y]  as JArray;
-
-                    if (prow == null || rrow == null)
-                    {
-                        Debug.LogWarning($"[MultiblockLibrary] def '{defKey}' row {y} invalid.");
-                        continue;
-                    }
+                    var prow = (JArray)patternArr[y];
+                    var rrow = (JArray)resultArr[y];
 
                     for (int x = 0; x < width; x++)
                     {
-                        string p = (x < prow.Count && prow[x] != null) ? prow[x].ToString() : null;
-                        string r = (x < rrow.Count && rrow[x] != null) ? rrow[x].ToString() : null;
+                        pattern[x, y] = prow[x].ToString();
 
-                        if (string.IsNullOrEmpty(p)) p = null;
+                        string r = (rrow[x] != null) ? rrow[x].ToString() : null;
                         if (string.IsNullOrEmpty(r)) r = null;
-
-                        pattern[x, y] = p;
-                        result[x,  y] = r;
+                        result[x, y] = r;
                     }
                 }
 
                 var def = new Def
                 {
                     key     = defKey,
-                    name    = name,
                     width   = width,
                     height  = height,
                     pattern = pattern,
@@ -175,20 +221,19 @@ public class MultiblockLibrary : MonoBehaviour
                 }
                 listByKey.Add(def);
 
-                // ingredient index: pattern 내부에서 null/빈칸 아닌 셀 이름 전부 재료로 등록
+                // ingredient index: pattern 내부의 셀 이름 전부 재료로 등록 (정확 매칭이므로 전부 유효)
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
                     {
                         string ingredient = pattern[x, y];
-                        if (string.IsNullOrEmpty(ingredient))
-                            continue;
 
                         if (!_byIngredient.TryGetValue(ingredient, out var list))
                         {
                             list = new List<Def>();
                             _byIngredient.Add(ingredient, list);
                         }
+
                         if (!list.Contains(def))
                             list.Add(def);
                     }
@@ -199,6 +244,7 @@ public class MultiblockLibrary : MonoBehaviour
 #if UNITY_EDITOR
         Debug.Log($"[MultiblockLibrary] Loaded defs={_defs.Count}, ingredients={_byIngredient.Count}, keys={_byKey.Count}");
 #endif
+        return true;
     }
 
     /// <summary>

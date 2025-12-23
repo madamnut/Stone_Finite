@@ -1,16 +1,72 @@
 {
+  "Campfire": [
+    {
+      "pattern": [
+        ["Campfire_L", "Campfire_R"]
+      ],
+      "result": [
+        ["Campfire_L_Built", "Campfire_R_Built"]
+      ]
+    }
+  ],
+
+  "Primal Workbench": [
+    {
+      "pattern": [
+        ["Wooden Platform", "Wooden Platform"]
+      ],
+      "result": [
+        ["Primal Workbench_L", "Primal Workbench_R"]
+      ]
+    }
+  ],
+
+  "Wooden Chest": [
+    {
+      "pattern": [
+        ["Wooden Box", "Wooden Box"]
+      ],
+      "result": [
+        ["Wooden Chest_L", "Wooden Chest_R"]
+      ]
+    }
+  ],
+
+  "Hearth": [
+    {
+      "pattern": [
+        ["Hearth_TL", "Hearth_TR"],
+        ["Hearth_BL", "Hearth_BR"]
+      ],
+      "result": [
+        ["Hearth_TL_Built", "Hearth_TR_Built"],
+        ["Hearth_BL_Built", "Hearth_BR_Built"]
+      ]
+    }
+  ],
+
   "Clay Kiln": [
     {
-      "name": "Clay Kiln",
-
       "pattern": [
         ["Clay"],
         ["Clay"]
       ],
-
       "result": [
         ["Clay Kiln_Top"],
         ["Clay Kiln_Bottom"]
+      ]
+    }
+  ],
+
+  "Brick Furnace": [
+    {
+      "pattern": [
+        ["Brick Furnace_TL", "Brick Furnace_TR"],
+        ["Brick Furnace_BL", "Brick Furnace_BR"]
+      ],
+      "result": [
+        ["Brick Furnace_TL_Built", "Brick Furnace_TR_Built"],
+        ["Brick Furnace_BL_Built", "Brick Furnace_BR_Built"]
       ]
     }
   ]

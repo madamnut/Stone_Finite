@@ -865,26 +865,22 @@ public class InteractionController : MonoBehaviour
         for (int i = 0; i < defs.Count; i++)
         {
             var d0 = defs[i];
-            Debug.Log($"{LOG_MB}  - [{i}] key='{d0.key}', name='{d0.name}', size={d0.width}x{d0.height}");
+            Debug.Log($"{LOG_MB}  - [{i}] defId='{d0.key}', size={d0.width}x{d0.height}");
         }
 
         int worldW = worldManager.settings.width;
         int worldH = worldManager.settings.height;
 
-        bool anyMatch = false;
-
         foreach (var def in defs)
         {
-            Debug.Log($"{LOG_MB} === def='{def.key}' 패턴 매칭 시도 시작 ===");
+            Debug.Log($"{LOG_MB} === defId='{def.key}' 패턴 매칭 시도 시작 ===");
 
             int patternWidth = def.width;
             int patternHeight = def.height;
 
-            bool defMatched = false;
-
-            for (int py = 0; py < patternHeight && !defMatched; py++)
+            for (int py = 0; py < patternHeight; py++)
             {
-                for (int px = 0; px < patternWidth && !defMatched; px++)
+                for (int px = 0; px < patternWidth; px++)
                 {
                     string patternKey = def.pattern[px, py];
 
@@ -894,7 +890,7 @@ public class InteractionController : MonoBehaviour
                     int originY = cy - py;
 
                     Debug.Log(
-                        $"{LOG_MB} def='{def.key}' 후보 위치: " +
+                        $"{LOG_MB} defId='{def.key}' 후보 위치: " +
                         $"pattern({px},{py})=='{clickedKey}', origin=({originX},{originY})"
                     );
 
@@ -902,7 +898,7 @@ public class InteractionController : MonoBehaviour
                         originX + patternWidth > worldW ||
                         originY + patternHeight > worldH)
                     {
-                        Debug.Log($"{LOG_MB} def='{def.key}' origin=({originX},{originY}) → 월드 범위 밖, 스킵");
+                        Debug.Log($"{LOG_MB} defId='{def.key}' origin=({originX},{originY}) → 월드 범위 밖, 스킵");
                         continue;
                     }
 
@@ -913,8 +909,6 @@ public class InteractionController : MonoBehaviour
                         for (int lx = 0; lx < patternWidth; lx++)
                         {
                             string expectedKey = def.pattern[lx, ly];
-                            if (string.IsNullOrEmpty(expectedKey))
-                                continue;
 
                             int wx = originX + lx;
                             int wy = originY + ly;
@@ -925,7 +919,7 @@ public class InteractionController : MonoBehaviour
                             if (worldKey != expectedKey)
                             {
                                 Debug.Log(
-                                    $"{LOG_MB} def='{def.key}' 불일치: " +
+                                    $"{LOG_MB} defId='{def.key}' 불일치: " +
                                     $"local({lx},{ly})->world({wx},{wy}) " +
                                     $"worldKey='{worldKey}', expected='{expectedKey}'"
                                 );
@@ -938,34 +932,38 @@ public class InteractionController : MonoBehaviour
                     if (!mismatch)
                     {
                         Debug.Log(
-                            $"{LOG_MB} def='{def.key}' 패턴 매칭 성공! " +
+                            $"{LOG_MB} defId='{def.key}' 패턴 매칭 성공! " +
                             $"origin=({originX},{originY}), 클릭 셀 대응 위치=({px},{py})"
                         );
-                        defMatched = true;
-                        anyMatch = true;
 
-                        var kiln = multiblockManager.CreateClayKiln(def, originX, originY);
-                        Debug.Log($"{LOG_MB} ClayKiln 생성 완료: instId={kiln.InstId}, occupied={kiln.OccupiedCells.Count}");
+                        if (multiblockManager == null)
+                        {
+                            Debug.LogError($"{LOG_MB} multiblockManager not assigned.");
+                            return false;
+                        }
+
+                        var inst = multiblockManager.Create(def, originX, originY);
+                        if (inst == null)
+                        {
+                            Debug.LogWarning($"{LOG_MB} Create 실패: defId='{def.key}' origin=({originX},{originY})");
+                            return false;
+                        }
+
+                        Debug.Log($"{LOG_MB} Multiblock 생성 완료: instId={inst.InstId}, defId='{inst.DefId}', occupied={inst.OccupiedCells.Count}");
 
                         if (sound != null) sound.PlayMultiblockComplete();
+
+                        // ✅ 중복 생성 방지: 첫 성공 즉시 종료
+                        return true;
                     }
                 }
             }
 
-            if (!defMatched)
-            {
-                Debug.Log($"{LOG_MB} def='{def.key}'는 어떤 위치에서도 패턴 매칭 실패");
-            }
+            Debug.Log($"{LOG_MB} defId='{def.key}'는 어떤 위치에서도 패턴 매칭 실패");
         }
 
-        if (!anyMatch)
-        {
-            Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
-            return false;
-        }
-
-        Debug.Log($"{LOG_MB} 패턴 매칭 단계 종료");
-        return true;
+        Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
+        return false;
     }
 
     bool GetMouseCell(out int x, out int y)

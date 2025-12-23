@@ -214,5 +214,14 @@
       { "key": "Right", "meta": 2, "sprite": "Torch_Right", "attachedAt": "Right" },
       { "key": "Back",  "meta": 3, "sprite": "Torch_BG",    "attachedAt": "Back" }
     ]
+  },
+
+    "Wooden Platform": {
+    "id": 50002,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
+    ]
   }
 }
