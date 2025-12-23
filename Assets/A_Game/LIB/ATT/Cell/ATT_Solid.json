@@ -174,35 +174,41 @@
     ]
   },
 
-  "Clay Kiln_Bottom": {
+
+  "Primal Workbench_L": {
     "id": 5000,
     "collidable": false,
     "gravity": false,
-    "interaction": "multiblock",
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_L" }
+    ]
+  },
+  "Primal Workbench_R": {
+    "id": 5001,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
+    ]
+  },
+  "Clay Kiln_Bottom": {
+    "id": 5002,
+    "collidable": false,
+    "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_Bottom" }
     ]
   },
   "Clay Kiln_Top": {
-    "id": 5001,
+    "id": 5003,
     "collidable": false,
     "gravity": false,
-    "interaction": "multiblock",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_Top" }
     ]
   },
 
-  "Primal Workbench": {
-    "id": 50000,
-    "collidable": false,
-    "gravity": false,
-    "interaction": "primalcraftModule",
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Primal Workbench" }
-    ]
-  },
-
+  
   "Torch": {
     "id": 50001,
     "collidable": false,
@@ -222,23 +228,6 @@
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
-    ]
-  },
-
-  "Primal Workbench_L": {
-    "id": 50003,
-    "collidable": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_L" }
-    ]
-  },
-  "Primal Workbench_R": {
-    "id": 50004,
-    "collidable": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
     ]
   }
 }

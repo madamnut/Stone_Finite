@@ -878,6 +878,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   world: {fileID: 557152421}
+  interaction: {fileID: 1746062758}
+  primalCraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
 --- !u!1 &172259531
 GameObject:
   m_ObjectHideFlags: 0
@@ -10748,7 +10750,6 @@ MonoBehaviour:
   corpseLibrary: {fileID: 867055871}
   cellLibrary: {fileID: 2047849824}
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
-  primalcraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   sound: {fileID: 2008242133}
   corpseLayerMask:
     serializedVersion: 2

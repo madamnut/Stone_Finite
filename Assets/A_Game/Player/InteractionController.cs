@@ -16,9 +16,7 @@ public class InteractionController : MonoBehaviour
 
     /*────────────── UI ──────────────*/
     [Header("UI")]
-    [Tooltip("Canvas 안 인벤토리 패널 오브젝트")]
     public GameObject inventoryPanel;
-    [Tooltip("일시정지 메뉴 루트(ESC)")]
     public GameObject pauseMenuRoot;
 
     [Header("Pause Buttons")]
@@ -33,9 +31,7 @@ public class InteractionController : MonoBehaviour
     public Player player;
     public Hotbar hotbar;
     public ItemSlot cursorSlot;
-    [Tooltip("파괴 모드 기본 커서 텍스처")]
     public Texture2D breakCursorTex;
-    [Tooltip("전투 모드 커서 텍스처 (Weapon 태그 아이템 손에 들었을 때)")]
     public Texture2D combatCursorTex;
 
     [Header("World References")]
@@ -66,26 +62,18 @@ public class InteractionController : MonoBehaviour
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
 
-    [Header("Interact Prefabs")]
-    public GameObject primalcraftModule;
-
     GameObject _moduleInstance;
 
     [Header("Audio")]
     public AudioManager sound;
 
     [Header("Corpse Hover")]
-    [Tooltip("시체(Corpse)들이 설정된 레이어 마스크")]
     public LayerMask corpseLayerMask;
 
     [Header("Melee Attack Parts")]
-    [Tooltip("Melee 전체 루트 (공격 중에만 활성화)")]
     public Transform meleeRoot;
-    [Tooltip("공격 각도를 담당하는 Transform (Angle)")]
     public Transform meleeAngle;
-    [Tooltip("찌르기 오프셋을 담당하는 Transform (Offset, BoxCollider2D 붙어있음)")]
     public Transform meleeOffset;
-    [Tooltip("공격 무기 스프라이트를 표시하는 SpriteRenderer (Sprite)")]
     public SpriteRenderer meleeSprite;
 
     bool _attackActive = false;
@@ -185,21 +173,8 @@ public class InteractionController : MonoBehaviour
         {
             if (_state == GameState.Ingame)
             {
-                _state = GameState.Inpanel;
-                inventoryPanel.SetActive(true);
-
-                if (_moduleInstance == null)
-                {
-                    _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
-                    _moduleInstance.transform.SetSiblingIndex(0);
-
-                    var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
-                    foreach (var c in crafts)
-                    {
-                        c.recipeLibrary = recipeLibrary;
-                        c.player = player;
-                    }
-                }
+                // ✅ 공통 처리로 통일
+                OpenModule(handcraftModule);
             }
             else if (_state == GameState.Inpanel)
             {
@@ -391,13 +366,11 @@ public class InteractionController : MonoBehaviour
         {
             if (!hasSolid) return;
 
-            // ✅ 멀티블럭 파괴 처리: 부수기 전에 소유 인스턴스 캐시
             Multiblock mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
 
             worldManager.BreakSolid(cx, cy);
             sound.PlayDig();
 
-            // ✅ 한 칸이라도 파괴되면 멀티블럭 해체 + 나머지 원복
             if (mb != null)
                 mb.OnCellBroken(new Vector2Int(cx, cy));
         }
@@ -650,7 +623,6 @@ public class InteractionController : MonoBehaviour
         if (_state != GameState.Ingame) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        // ✅ 멀티블럭 인터랙션 우선
         var mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
         if (mb != null)
         {
@@ -764,7 +736,6 @@ public class InteractionController : MonoBehaviour
         ushort solidId = worldManager.GetSolidId(cx, cy);
         if (solidId == 0) return false;
 
-        // ✅ 중복 생성 방지: 클릭 칸이 이미 멀티블럭 소유면 빌드 금지
         if (multiblockManager.GetAtCell(new Vector2Int(cx, cy)) != null)
             return false;
 
@@ -805,7 +776,6 @@ public class InteractionController : MonoBehaviour
                             int wx = originX + lx;
                             int wy = originY + ly;
 
-                            // ✅ 중복 생성 방지: 패턴 영역 안에 기존 멀티블럭 점유가 있으면 금지
                             if (multiblockManager.GetAtCell(new Vector2Int(wx, wy)) != null)
                             {
                                 mismatch = true;
@@ -825,9 +795,7 @@ public class InteractionController : MonoBehaviour
 
                     if (!mismatch)
                     {
-                        var inst = multiblockManager.Create(def, originX, originY);
-
-                        // 소리/소모 등은 기존 정책대로 필요하면 여기서
+                        multiblockManager.Create(def, originX, originY);
                         sound.PlayMultiblockComplete();
                         return true;
                     }

@@ -27,19 +27,6 @@
     }
   },
 
-  "Primal Workbench": {
-    "name": "Primal Workbench",
-    "spriteName": "Primal Workbench",
-    "maxStack": 32,
-    "tags": ["Placeable"],
-
-    "toolActions": {
-      "Place": {
-        "layer": "Default",
-        "cell": "Primal Workbench"
-      }
-    }
-  },
 
   "Torch": {
     "name": "Torch",
