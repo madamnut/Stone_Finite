@@ -216,12 +216,29 @@
     ]
   },
 
-    "Wooden Platform": {
+  "Wooden Platform": {
     "id": 50002,
     "collidable": true,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
+    ]
+  },
+
+  "Primal Workbench_L": {
+    "id": 50003,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_L" }
+    ]
+  },
+  "Primal Workbench_R": {
+    "id": 50004,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
     ]
   }
 }

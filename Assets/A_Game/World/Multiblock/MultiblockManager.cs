@@ -18,24 +18,16 @@ public class MultiblockManager : MonoBehaviour
     readonly Dictionary<Vector2Int, Multiblock> _byCell    = new Dictionary<Vector2Int, Multiblock>();
     int _nextInstanceId = 1;
 
-    // defId(JSON 최상단 키) -> 인스턴스 생성기
     readonly Dictionary<string, Func<Multiblock>> _factoryByDefId = new Dictionary<string, Func<Multiblock>>();
 
     public IReadOnlyDictionary<int, Multiblock> Instances => _instances;
 
     void Awake()
     {
-        // 기본 팩토리 등록 (파생 클래스 준비되면 계속 추가)
         RegisterFactory("Clay Kiln", () => new ClayKiln());
-
-        // RegisterFactory("Campfire", () => new Campfire());
-        // RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
-        // RegisterFactory("Wooden Chest", () => new WoodenChest());
-        // RegisterFactory("Hearth", () => new Hearth());
-        // RegisterFactory("Brick Furnace", () => new BrickFurnace());
+        RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
     }
 
-    /// <summary>defId(=JSON 키) -> 생성기 등록/갱신.</summary>
     public void RegisterFactory(string defId, Func<Multiblock> creator)
     {
         if (string.IsNullOrEmpty(defId) || creator == null)
@@ -44,17 +36,12 @@ public class MultiblockManager : MonoBehaviour
         _factoryByDefId[defId] = creator;
     }
 
-    /// <summary>지정 셀을 포함하는 멀티블럭을 조회.</summary>
     public Multiblock GetAtCell(Vector2Int cell)
     {
         _byCell.TryGetValue(cell, out var inst);
         return inst;
     }
 
-    /// <summary>
-    /// def(패턴/결과) 기반으로 멀티블럭 인스턴스 생성 + 월드 반영 + 등록.
-    /// - originX, originY는 패턴 매칭으로 결정된 "맨 왼쪽, 맨 아래" 좌표
-    /// </summary>
     public Multiblock Create(MultiblockLibrary.Def def, int originX, int originY)
     {
         if (def == null)
@@ -79,7 +66,6 @@ public class MultiblockManager : MonoBehaviour
 
         Debug.Log($"{LOG_MB} Create defId='{def.key}' origin=({originX},{originY}) size={width}x{height}");
 
-        // OccupiedCells: 현재 MultiblockLibrary 규칙상 pattern은 빈칸 불가 -> 전 칸 점유
         var occupied = new List<Vector2Int>(width * height);
         for (int y = 0; y < height; y++)
         {
@@ -87,7 +73,33 @@ public class MultiblockManager : MonoBehaviour
                 occupied.Add(new Vector2Int(originX + x, originY + y));
         }
 
-        // result 패턴에 셀 이름이 있으면 그 셀로 교체
+        // 인스턴스 생성 + 공통 초기화 (원본 스냅샷을 여기에 붙여야 함)
+        var inst = creator.Invoke();
+        if (inst == null)
+        {
+            Debug.LogError($"{LOG_MB} Factory returned null for defId='{def.key}'.");
+            return null;
+        }
+
+        inst.Initialize(world, def.key, origin, width, height, occupied);
+        inst.Manager = this;
+        inst.InstId  = _nextInstanceId++;
+
+        // ✅ 원본 셀(현재 solidId) 스냅샷 저장 (pattern 매칭이 끝난 시점이므로 그대로 저장하면 됨)
+        inst.originalSolidIds.Clear();
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int wx = originX + x;
+                int wy = originY + y;
+
+                ushort oldId = world.GetSolidId(wx, wy);
+                inst.originalSolidIds[new Vector2Int(wx, wy)] = oldId;
+            }
+        }
+
+        // result 패턴에 셀 이름이 있으면 그 셀로 교체(덮어쓰기)
         if (world.cellLibrary == null)
         {
             Debug.LogError($"{LOG_MB} WorldManager.cellLibrary not assigned.");
@@ -102,35 +114,21 @@ public class MultiblockManager : MonoBehaviour
                     if (string.IsNullOrEmpty(resultCellName))
                         continue;
 
-                    if (!world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId) || placeId == 0)
+                    if (!world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId))
                     {
-                        Debug.LogWarning($"{LOG_MB} result cell '{resultCellName}' 에 해당하는 ID를 찾지 못함 (wx={originX + x}, wy={originY + y}). 스킵.");
+                        Debug.LogWarning($"{LOG_MB} result cell '{resultCellName}' ID not found (wx={originX + x}, wy={originY + y}). skip");
                         continue;
                     }
 
-                    // 일단 FG 레이어에 배치한다고 가정
-                    world.PlaceCell(originX + x, originY + y, placeId);
+                    world.OverwriteSolid(originX + x, originY + y, placeId);
                 }
             }
         }
-
-        // 인스턴스 생성 + 공통 초기화
-        var inst = creator.Invoke();
-        if (inst == null)
-        {
-            Debug.LogError($"{LOG_MB} Factory returned null for defId='{def.key}'.");
-            return null;
-        }
-
-        inst.Initialize(world, def.key, origin, width, height, occupied);
-        inst.Manager = this;
-        inst.InstId  = _nextInstanceId++;
 
         RegisterInstance(inst);
         return inst;
     }
 
-    /// <summary>매니저에 신규 인스턴스를 등록.</summary>
     public void RegisterInstance(Multiblock inst)
     {
         if (inst == null) return;
@@ -157,10 +155,10 @@ public class MultiblockManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 멀티블럭 인스턴스를 제거.
-    /// (월드에서 실제 셀을 부수는 건 WorldManager 쪽에서 담당한다고 가정)
+    /// 멀티블럭 인스턴스를 제거 + (요구사항) 남은 칸 원복.
+    /// brokenCell은 이미 파괴된 칸이므로 원복 대상에서 제외.
     /// </summary>
-    public void Despawn(Multiblock inst)
+    public void Despawn(Multiblock inst, Vector2Int brokenCell)
     {
         if (inst == null) return;
 
@@ -172,7 +170,18 @@ public class MultiblockManager : MonoBehaviour
                     _byCell.Remove(cell);
             }
 
-            Debug.Log($"{LOG_MB} Despawn multiblock instId={inst.InstId}, def={inst.DefId}");
+            // ✅ 남은 부분 원복
+            foreach (var kv in inst.originalSolidIds)
+            {
+                var cell = kv.Key;
+                if (cell == brokenCell)
+                    continue;
+
+                ushort restoreId = kv.Value;
+                world.OverwriteSolid(cell.x, cell.y, restoreId);
+            }
+
+            Debug.Log($"{LOG_MB} Despawn multiblock instId={inst.InstId}, def={inst.DefId}, restoreExcept={brokenCell}");
         }
     }
 }

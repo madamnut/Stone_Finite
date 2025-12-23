@@ -497,6 +497,21 @@ public class WorldManager : MonoBehaviour
     /*────────────────────────────────────────────────────────────
      * World Edit API
      *────────────────────────────────────────────────────────────*/
+    public void OverwriteSolid(int x, int y, ushort newId, ushort newMeta = 0)
+    {
+        var cur = worldMap.GetSolid(x, y);
+        ushort oldSolidId = cur.id;
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
+
+        worldMap.SetSolid(x, y, newId, newMeta);
+
+        if ((cellLibrary.GetSolidFlags(newId) & CellLibrary.SolidFlags.Collidable) != 0)
+            worldMap.SetFluid(x, y, 0, 0);
+
+        MarkChunkDirty(x, y, markSolid: true);
+        OnCellEdited(x, y);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+    }
 
     public bool PlaceSolid(int x, int y, ushort id)
     {

@@ -61,7 +61,7 @@ public class InteractionController : MonoBehaviour
     public RecipeLibrary recipeLibrary;
     public ItemLibrary itemLibrary;
     public CorpseLibrary corpseLibrary;
-    public CellLibrary cellLibrary; // ✅ 추가: 리플렉션 제거, 정식 API 사용
+    public CellLibrary cellLibrary;
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
@@ -127,31 +127,21 @@ public class InteractionController : MonoBehaviour
         resumeButton.onClick.AddListener(OnClickResume);
         exitButton.onClick.AddListener(OnClickQuitToLobby);
 
-        // ✅ Cursor 이름 충돌 방지: UnityEngine.Cursor로 고정
-        if (breakCursorTex != null)
-            UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
+        UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
 
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
-
-        // ✅ CellLibrary 자동 연결 (Inspector 미할당 시 WorldManager에서 가져오기)
-        if (cellLibrary == null && worldManager != null)
-            cellLibrary = worldManager.cellLibrary;
+        meleeRoot.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // ───────── 핫바 스코프: 마우스 스크롤 ─────────
         float scroll = Input.mouseScrollDelta.y;
         if (scroll > 0.01f || scroll < -0.01f)
         {
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
             hotbar.SetScope(_hotbarScope);
-
             RefreshHeldHandSprite();
         }
 
-        // ───────── 핫바 스코프: 숫자키 1~0 (인게임 상태에서만) ─────────
         if (_state == GameState.Ingame)
         {
             int prevScope = _hotbarScope;
@@ -174,21 +164,18 @@ public class InteractionController : MonoBehaviour
             }
         }
 
-        // ───────── 현재 들고 있는 아이템 기준 전투/파괴 모드 및 커서 전환 ─────────
         ItemData scopeHeld = GetHeldItem();
         bool hasWeapon = (scopeHeld != null && scopeHeld.HasTag("Weapon"));
 
         if (hasWeapon && !_combatMode)
         {
             _combatMode = true;
-            if (combatCursorTex != null)
-                UnityEngine.Cursor.SetCursor(combatCursorTex, _combatHotspot, CursorMode.Auto);
+            UnityEngine.Cursor.SetCursor(combatCursorTex, _combatHotspot, CursorMode.Auto);
         }
         else if (!hasWeapon && _combatMode)
         {
             _combatMode = false;
-            if (breakCursorTex != null)
-                UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
+            UnityEngine.Cursor.SetCursor(breakCursorTex, _breakHotspot, CursorMode.Auto);
         }
 
         bool invDown = Input.GetKeyDown(toggleInventoryKey);
@@ -201,7 +188,7 @@ public class InteractionController : MonoBehaviour
                 _state = GameState.Inpanel;
                 inventoryPanel.SetActive(true);
 
-                if (_moduleInstance == null && handcraftModule != null)
+                if (_moduleInstance == null)
                 {
                     _moduleInstance = Instantiate(handcraftModule, inventoryPanel.transform);
                     _moduleInstance.transform.SetSiblingIndex(0);
@@ -279,33 +266,29 @@ public class InteractionController : MonoBehaviour
 
         UpdateHighlight();
 
-        // ───────── 시체 호버 처리: 마우스 아래 Corpse 중 최전면만 ─────────
         Corpse newHoverCorpse = null;
-        if (corpseLayerMask.value != 0)
+        Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 mousePos2 = new Vector2(mouseWorld3.x, mouseWorld3.y);
+
+        var hits = Physics2D.OverlapPointAll(mousePos2, corpseLayerMask);
+        int bestOrder = int.MinValue;
+
+        for (int i = 0; i < hits.Length; i++)
         {
-            Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 mousePos2 = new Vector2(mouseWorld3.x, mouseWorld3.y);
+            var col = hits[i];
+            if (col == null) continue;
 
-            var hits = Physics2D.OverlapPointAll(mousePos2, corpseLayerMask);
-            int bestOrder = int.MinValue;
+            var corpse = col.GetComponentInParent<Corpse>();
+            if (corpse == null) continue;
 
-            for (int i = 0; i < hits.Length; i++)
+            int order = 0;
+            if (corpse.mainRenderer != null)
+                order = corpse.mainRenderer.sortingOrder;
+
+            if (newHoverCorpse == null || order > bestOrder)
             {
-                var col = hits[i];
-                if (col == null) continue;
-
-                var corpse = col.GetComponentInParent<Corpse>();
-                if (corpse == null) continue;
-
-                int order = 0;
-                if (corpse.mainRenderer != null)
-                    order = corpse.mainRenderer.sortingOrder;
-
-                if (newHoverCorpse == null || order > bestOrder)
-                {
-                    newHoverCorpse = corpse;
-                    bestOrder = order;
-                }
+                newHoverCorpse = corpse;
+                bestOrder = order;
             }
         }
 
@@ -407,15 +390,23 @@ public class InteractionController : MonoBehaviour
         if (_layerMode == LayerMode.Solid)
         {
             if (!hasSolid) return;
+
+            // ✅ 멀티블럭 파괴 처리: 부수기 전에 소유 인스턴스 캐시
+            Multiblock mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
+
             worldManager.BreakSolid(cx, cy);
-            if (sound != null) sound.PlayDig();
+            sound.PlayDig();
+
+            // ✅ 한 칸이라도 파괴되면 멀티블럭 해체 + 나머지 원복
+            if (mb != null)
+                mb.OnCellBroken(new Vector2Int(cx, cy));
         }
         else
         {
             if (!hasBg) return;
-            if (hasSolid) return; // BG는 Solid가 있으면 못 부숨(기존 정책 유지)
+            if (hasSolid) return;
             worldManager.BreakBG(cx, cy);
-            if (sound != null) sound.PlayDig();
+            sound.PlayDig();
         }
     }
 
@@ -502,9 +493,6 @@ public class InteractionController : MonoBehaviour
 
         player.StartAttackCooldown(cooldown);
 
-        if (meleeAngle == null)
-            return;
-
         Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
         Vector2 mouseWorld = new Vector2(mouseWorld3.x, mouseWorld3.y);
         Vector2 origin = meleeAngle.position;
@@ -516,15 +504,10 @@ public class InteractionController : MonoBehaviour
         float angleFromUp = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
         bool isLeftSide = (mouseWorld.x < origin.x);
 
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(true);
+        meleeRoot.gameObject.SetActive(true);
 
-        if (meleeSprite != null)
-        {
-            meleeSprite.enabled = true;
-            if (held.Icon != null)
-                meleeSprite.sprite = held.Icon;
-        }
+        meleeSprite.enabled = true;
+        meleeSprite.sprite = held.Icon;
 
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, angleFromUp);
 
@@ -532,33 +515,20 @@ public class InteractionController : MonoBehaviour
         _attackActive = true;
         _hitMobsThisAttack.Clear();
 
-        if (sound != null)
-        {
-            if (actionName == "Swing")
-                sound.PlayWeaponSwing();
-            else if (actionName == "Thrust")
-                sound.PlayWeaponThrust();
-        }
-
         if (actionName == "Swing")
         {
+            sound.PlayWeaponSwing();
             _attackCo = StartCoroutine(CoSwing(angleFromUp, isLeftSide));
         }
         else if (actionName == "Thrust")
         {
+            sound.PlayWeaponThrust();
             _attackCo = StartCoroutine(CoThrust(angleFromUp));
         }
     }
 
     IEnumerator CoSwing(float centerAngle, bool isLeftSide)
     {
-        if (meleeAngle == null)
-        {
-            _attackActive = false;
-            _hitMobsThisAttack.Clear();
-            yield break;
-        }
-
         float duration = 0.25f;
         float halfRange = 60f;
 
@@ -588,8 +558,7 @@ public class InteractionController : MonoBehaviour
 
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
+        meleeRoot.gameObject.SetActive(false);
 
         _attackActive = false;
         _hitMobsThisAttack.Clear();
@@ -599,13 +568,6 @@ public class InteractionController : MonoBehaviour
 
     IEnumerator CoThrust(float centerAngle)
     {
-        if (meleeAngle == null || meleeOffset == null)
-        {
-            _attackActive = false;
-            _hitMobsThisAttack.Clear();
-            yield break;
-        }
-
         meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
 
         float duration = 0.5f;
@@ -640,8 +602,7 @@ public class InteractionController : MonoBehaviour
 
         meleeOffset.localPosition = new Vector3(baseX, 0f, baseZ);
 
-        if (meleeRoot != null)
-            meleeRoot.gameObject.SetActive(false);
+        meleeRoot.gameObject.SetActive(false);
 
         _attackActive = false;
         _hitMobsThisAttack.Clear();
@@ -682,53 +643,21 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
+    // ✅ 단일 셀 기반 primalcraftModule 인터랙션 제거.
+    // (PrimalWorkbench 멀티블럭이 OnInteract에서 UI를 열게 될 것)
     bool TryCellInteraction()
     {
         if (_state != GameState.Ingame) return false;
         if (!GetMouseCell(out int cx, out int cy)) return false;
 
-        ushort id = worldManager.GetSolidId(cx, cy);
-        if (id == 0) return false;
-
-        if (cellLibrary == null) return false;
-
-        if (!cellLibrary.GetInteraction(id, out string interaction))
-            return false;
-
-        if (string.IsNullOrEmpty(interaction)) return false;
-
-        if (interaction == "primalcraftModule")
+        // ✅ 멀티블럭 인터랙션 우선
+        var mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
+        if (mb != null)
         {
-            _state = GameState.Inpanel;
-            inventoryPanel.SetActive(true);
-
-            if (_moduleInstance != null)
-            {
-                Destroy(_moduleInstance);
-                _moduleInstance = null;
-            }
-            if (primalcraftModule != null)
-            {
-                _moduleInstance = Instantiate(primalcraftModule, inventoryPanel.transform);
-                _moduleInstance.transform.SetSiblingIndex(0);
-
-                var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
-                foreach (var c in crafts)
-                {
-                    c.recipeLibrary = recipeLibrary;
-                    c.player = player;
-                }
-            }
-            _hlGO.SetActive(false);
-
-            if (_hoverCorpse != null)
-            {
-                _hoverCorpse.SetHovered(false);
-                _hoverCorpse = null;
-            }
-
+            mb.OnInteract(player, new Vector2Int(cx, cy));
             return true;
         }
+
         return false;
     }
 
@@ -773,11 +702,8 @@ public class InteractionController : MonoBehaviour
 
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
-        if (placeParam == null) return false;
-
         string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
         string cellName = placeParam.TryGetValue("cell", out var cellObj) ? cellObj?.ToString() : null;
-        if (string.IsNullOrEmpty(cellName)) return false;
 
         ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
@@ -812,8 +738,7 @@ public class InteractionController : MonoBehaviour
             if (hasBg) return false;
         }
 
-        if (!worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId))
-            return false;
+        worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId);
 
         bool placed;
         if (targetLayer == WorldManager.CellLayer.Solid)
@@ -823,7 +748,7 @@ public class InteractionController : MonoBehaviour
 
         if (!placed) return false;
 
-        if (sound != null) sound.PlayPlace();
+        sound.PlayPlace();
 
         held.Count -= 1;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
@@ -836,45 +761,23 @@ public class InteractionController : MonoBehaviour
 
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
-        Debug.Log($"{LOG_MB} HandleBuildMultiblock 시작: itemCount={held.Count} at ({cx},{cy})");
-
         ushort solidId = worldManager.GetSolidId(cx, cy);
-        if (solidId == 0)
-        {
-            Debug.Log($"{LOG_MB} 대상 셀이 비어있음(id=0). 취소.");
+        if (solidId == 0) return false;
+
+        // ✅ 중복 생성 방지: 클릭 칸이 이미 멀티블럭 소유면 빌드 금지
+        if (multiblockManager.GetAtCell(new Vector2Int(cx, cy)) != null)
             return false;
-        }
 
         string clickedKey = worldManager.cellLibrary.GetSolidName(solidId);
-        Debug.Log($"{LOG_MB} 대상 셀 id={solidId}, key='{clickedKey}'");
 
-        if (string.IsNullOrEmpty(clickedKey))
-        {
-            Debug.LogWarning($"{LOG_MB} GetSolidName({solidId}) 결과가 비어있음. 취소.");
+        if (!MultiblockLibrary.TryGetByIngredient(clickedKey, out var defs) || defs.Count == 0)
             return false;
-        }
-
-        if (!MultiblockLibrary.TryGetByIngredient(clickedKey, out var defs) ||
-            defs == null || defs.Count == 0)
-        {
-            Debug.Log($"{LOG_MB} 이 재료를 사용하는 멀티블럭 없음. key='{clickedKey}'");
-            return false;
-        }
-
-        Debug.Log($"{LOG_MB} 후보 레시피 개수: {defs.Count}");
-        for (int i = 0; i < defs.Count; i++)
-        {
-            var d0 = defs[i];
-            Debug.Log($"{LOG_MB}  - [{i}] defId='{d0.key}', size={d0.width}x{d0.height}");
-        }
 
         int worldW = worldManager.settings.width;
         int worldH = worldManager.settings.height;
 
         foreach (var def in defs)
         {
-            Debug.Log($"{LOG_MB} === defId='{def.key}' 패턴 매칭 시도 시작 ===");
-
             int patternWidth = def.width;
             int patternHeight = def.height;
 
@@ -883,24 +786,15 @@ public class InteractionController : MonoBehaviour
                 for (int px = 0; px < patternWidth; px++)
                 {
                     string patternKey = def.pattern[px, py];
-
                     if (patternKey != clickedKey) continue;
 
                     int originX = cx - px;
                     int originY = cy - py;
 
-                    Debug.Log(
-                        $"{LOG_MB} defId='{def.key}' 후보 위치: " +
-                        $"pattern({px},{py})=='{clickedKey}', origin=({originX},{originY})"
-                    );
-
                     if (originX < 0 || originY < 0 ||
                         originX + patternWidth > worldW ||
                         originY + patternHeight > worldH)
-                    {
-                        Debug.Log($"{LOG_MB} defId='{def.key}' origin=({originX},{originY}) → 월드 범위 밖, 스킵");
                         continue;
-                    }
 
                     bool mismatch = false;
 
@@ -908,21 +802,21 @@ public class InteractionController : MonoBehaviour
                     {
                         for (int lx = 0; lx < patternWidth; lx++)
                         {
-                            string expectedKey = def.pattern[lx, ly];
-
                             int wx = originX + lx;
                             int wy = originY + ly;
+
+                            // ✅ 중복 생성 방지: 패턴 영역 안에 기존 멀티블럭 점유가 있으면 금지
+                            if (multiblockManager.GetAtCell(new Vector2Int(wx, wy)) != null)
+                            {
+                                mismatch = true;
+                                break;
+                            }
 
                             ushort wid = worldManager.GetSolidId(wx, wy);
                             string worldKey = worldManager.cellLibrary.GetSolidName(wid);
 
-                            if (worldKey != expectedKey)
+                            if (worldKey != def.pattern[lx, ly])
                             {
-                                Debug.Log(
-                                    $"{LOG_MB} defId='{def.key}' 불일치: " +
-                                    $"local({lx},{ly})->world({wx},{wy}) " +
-                                    $"worldKey='{worldKey}', expected='{expectedKey}'"
-                                );
                                 mismatch = true;
                                 break;
                             }
@@ -931,38 +825,16 @@ public class InteractionController : MonoBehaviour
 
                     if (!mismatch)
                     {
-                        Debug.Log(
-                            $"{LOG_MB} defId='{def.key}' 패턴 매칭 성공! " +
-                            $"origin=({originX},{originY}), 클릭 셀 대응 위치=({px},{py})"
-                        );
-
-                        if (multiblockManager == null)
-                        {
-                            Debug.LogError($"{LOG_MB} multiblockManager not assigned.");
-                            return false;
-                        }
-
                         var inst = multiblockManager.Create(def, originX, originY);
-                        if (inst == null)
-                        {
-                            Debug.LogWarning($"{LOG_MB} Create 실패: defId='{def.key}' origin=({originX},{originY})");
-                            return false;
-                        }
 
-                        Debug.Log($"{LOG_MB} Multiblock 생성 완료: instId={inst.InstId}, defId='{inst.DefId}', occupied={inst.OccupiedCells.Count}");
-
-                        if (sound != null) sound.PlayMultiblockComplete();
-
-                        // ✅ 중복 생성 방지: 첫 성공 즉시 종료
+                        // 소리/소모 등은 기존 정책대로 필요하면 여기서
+                        sound.PlayMultiblockComplete();
                         return true;
                     }
                 }
             }
-
-            Debug.Log($"{LOG_MB} defId='{def.key}'는 어떤 위치에서도 패턴 매칭 실패");
         }
 
-        Debug.Log($"{LOG_MB} 어떤 멀티블럭 레시피도 현재 월드와 완전히 일치하지 않음");
         return false;
     }
 
@@ -1009,6 +881,37 @@ public class InteractionController : MonoBehaviour
         Time.timeScale = 1f;
         worldManager.SaveWorld();
         SceneManager.LoadScene("Loby");
+    }
+
+    // ✅ 멀티블럭이 UI 열 때 호출할 공용 메서드
+    public void OpenModule(GameObject modulePrefab)
+    {
+        _state = GameState.Inpanel;
+        inventoryPanel.SetActive(true);
+
+        if (_moduleInstance != null)
+        {
+            Destroy(_moduleInstance);
+            _moduleInstance = null;
+        }
+
+        _moduleInstance = Instantiate(modulePrefab, inventoryPanel.transform);
+        _moduleInstance.transform.SetSiblingIndex(0);
+
+        var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
+        foreach (var c in crafts)
+        {
+            c.recipeLibrary = recipeLibrary;
+            c.player = player;
+        }
+
+        _hlGO.SetActive(false);
+
+        if (_hoverCorpse != null)
+        {
+            _hoverCorpse.SetHovered(false);
+            _hoverCorpse = null;
+        }
     }
 
     private void CloseInventoryPanelToIngame()
