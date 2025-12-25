@@ -250,8 +250,10 @@ public class Cursor : MonoBehaviour
         }
         if (slotView == null) return;
 
-        // denyUserPut 슬롯은 프리뷰/출력 전용: 클릭으로는 아무 조작도 하지 않음
-        if (slotView.denyUserPut)
+        // ✅ 새 규칙:
+        // - denyUserInteraction: 완전 프리뷰(넣기/빼기 모두 금지)
+        // - denyUserPut: 넣기만 금지(출력 슬롯)
+        if (slotView.denyUserInteraction)
             return;
 
         var cur = cursorSlot.Item;
@@ -265,11 +267,18 @@ public class Cursor : MonoBehaviour
         if (useLocal)
         {
             var slot = slotView.Item;
+
+            // ✅ denyUserPut은 "넣기"만 막는다.
+            // - 넣기 시도 케이스: cur != null (커서에 들고 있음)
+            if (slotView.denyUserPut && cur != null)
+                return;
+
             bool same = (cur != null && slot != null && cur.ItemId == slot.ItemId);
             int room  = slot != null ? (slot.MaxStack - slot.Count) : 0;
 
             if (btn == PointerEventData.InputButton.Left)
             {
+                // 슬롯 → 커서 (빼기) : 항상 허용(denyUserInteraction이 아니면)
                 if (cur == null)
                 {
                     if (slot == null) return;
@@ -277,12 +286,16 @@ public class Cursor : MonoBehaviour
                     slotView.Set(null);
                     return;
                 }
+
+                // 커서 → 슬롯 (넣기)
                 if (slot == null)
                 {
                     slotView.Set(cur);
                     cursorSlot.Set(null);
                     return;
                 }
+
+                // 커서 → 같은 아이디 슬롯 (합치기)
                 if (same && room > 0)
                 {
                     int move = cur.Count < room ? cur.Count : room;
@@ -293,6 +306,8 @@ public class Cursor : MonoBehaviour
                     else cursorSlot.Refresh();
                     return;
                 }
+
+                // 스왑
                 slotView.Set(cur);
                 cursorSlot.Set(slot);
                 return;
@@ -300,7 +315,7 @@ public class Cursor : MonoBehaviour
 
             if (btn == PointerEventData.InputButton.Right)
             {
-                // 슬롯 → 커서 (반 갈라서)
+                // 슬롯 → 커서 (반 갈라서) : 빼기, 허용
                 if (cur == null && slot != null)
                 {
                     int take = (slot.Count + 1) / 2;
@@ -328,7 +343,7 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 빈 슬롯 (1개 내려놓기)
+                // 커서 → 빈 슬롯 (1개 내려놓기) : 넣기
                 if (cur != null && slot == null)
                 {
                     var newSlot = new ItemData(
@@ -355,7 +370,7 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 같은 아이디 슬롯 (1개 합치기)
+                // 커서 → 같은 아이디 슬롯 (1개 합치기) : 넣기
                 if (cur != null && same && slot.Count < slot.MaxStack)
                 {
                     slot.Count += 1;
@@ -375,22 +390,30 @@ public class Cursor : MonoBehaviour
         int idx   = slotView.index;
 
         var slotInv  = items[idx];
+
+        // ✅ denyUserPut은 "넣기"만 막는다.
+        if (slotView.denyUserPut && cur != null)
+            return;
+
         bool sameInv = (cur != null && slotInv != null && cur.ItemId == slotInv.ItemId);
         int roomInv  = slotInv != null ? (slotInv.MaxStack - slotInv.Count) : 0;
 
         if (btn == PointerEventData.InputButton.Left)
         {
+            // 슬롯 → 커서 (빼기)
             if (cur == null)
             {
                 if (slotInv == null) return;
                 cursorSlot.Set(slotInv);
                 items[idx] = null;
             }
+            // 커서 → 슬롯 (넣기)
             else if (slotInv == null)
             {
                 items[idx] = cur;
                 cursorSlot.Set(null);
             }
+            // 합치기
             else if (sameInv && roomInv > 0)
             {
                 int move = cur.Count < roomInv ? cur.Count : roomInv;
@@ -399,6 +422,7 @@ public class Cursor : MonoBehaviour
                 if (cur.Count <= 0) cursorSlot.Set(null);
                 else cursorSlot.Refresh();
             }
+            // 스왑
             else
             {
                 items[idx] = cur;
@@ -410,7 +434,7 @@ public class Cursor : MonoBehaviour
 
         if (btn == PointerEventData.InputButton.Right)
         {
-            // 인벤토리 슬롯 → 커서 (반 갈라서)
+            // 인벤토리 슬롯 → 커서 (반 갈라서) : 빼기
             if (cur == null && slotInv != null)
             {
                 int take = (slotInv.Count + 1) / 2;
@@ -438,7 +462,7 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
-            // 커서 → 인벤토리 빈 슬롯(1개 내려놓기)
+            // 커서 → 인벤토리 빈 슬롯(1개 내려놓기) : 넣기
             if (cur != null && slotInv == null)
             {
                 items[idx] = new ItemData(
@@ -464,7 +488,7 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
-            // 커서 → 같은 아이디 인벤토리 슬롯 (1개 합치기)
+            // 커서 → 같은 아이디 인벤토리 슬롯 (1개 합치기) : 넣기
             if (cur != null && sameInv && slotInv.Count < slotInv.MaxStack)
             {
                 slotInv.Count += 1;

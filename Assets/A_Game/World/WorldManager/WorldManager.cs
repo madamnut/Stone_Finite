@@ -285,7 +285,7 @@ public class WorldManager : MonoBehaviour
             if (solidId != 0)
             {
                 string nm = cellLibrary.GetSolidName(solidId);
-                if (!string.IsNullOrEmpty(nm) && nm.StartsWith("Grass_"))
+                if (nm == "Grass")
                 {
                     if (Random.value < 0.05f)
                     {

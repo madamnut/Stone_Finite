@@ -29,6 +29,7 @@ public class ItemSlot : MonoBehaviour,
     [Header("Local Mode / Guard")]
     public bool useLocalStorage = false;       // 크래프팅 슬롯 등 인덱스 없이 운용
     public bool denyUserPut     = false;       // 유저 투입 금지(출력 슬롯용)
+    public bool denyUserInteraction = false;   // 유저 상호작용 금지(읽기 전용)
 
     private ItemData _item;                    // 현재 아이템(null → 빈 슬롯)
 

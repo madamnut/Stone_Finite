@@ -132,14 +132,27 @@
     "name": "Log",
     "spriteName": "Log",
     "maxStack": 32,
-    "tags": []
-  },
+    "tags": ["Placeable"],
 
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Log"
+      }
+    }
+  },
   "Stripped Log": {
     "name": "Stripped Log",
     "spriteName": "Stripped Log",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Stripped Log"
+      }
+    }
   },
 
   "Bark Strip": {
@@ -160,7 +173,18 @@
     "name": "Quarter Stripped Log",
     "spriteName": "Quarter Stripped Log",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Placeable", "Fuel"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Firewood"
+      },
+      "Fuel": {
+        "burnTicks": 600,
+        "resultItem": "Ash"
+      }
+    }
   },
 
   "Wood Shavings": {
@@ -173,6 +197,12 @@
   "Wooden Plank": {
     "name": "Wooden Plank",
     "spriteName": "Wooden Plank",
+    "maxStack": 32,
+    "tags": []
+  },
+  "Wooden Platform": {
+    "name": "Wooden Platform",
+    "spriteName": "Wooden Platform",
     "maxStack": 32,
     "tags": ["Placeable"],
 
@@ -294,8 +324,26 @@
     "name": "Raw Beef",
     "spriteName": "Raw Beef",
     "maxStack": 16,
-    "tags": []
+    "tags": ["Cookable"],
+    "toolActions": {
+      "Cook": {
+        "cookTicks": 300,
+        "resultItem": "Cooked Beef"
+      }
+    }
   },
+  "Cooked Beef": {
+    "name": "Cooked Beef",
+    "spriteName": "Cooked Beef",
+    "maxStack": 16,
+    "tags": ["Eatable"],
+    "toolActions": {
+      "Eat": {
+        "Hunger": 25
+      }
+    }
+  },
+
   "Beef Stomach": {
     "name": "Beef Stomach",
     "spriteName": "Beef Stomach",
@@ -365,6 +413,13 @@
   "Horn": {
     "name": "Horn",
     "spriteName": "Horn",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Ash": {
+    "name": "Ash",
+    "spriteName": "Ash",
     "maxStack": 32,
     "tags": []
   }

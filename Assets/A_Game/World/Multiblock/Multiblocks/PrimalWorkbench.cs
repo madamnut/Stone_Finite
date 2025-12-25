@@ -1,10 +1,12 @@
+// PrimalWorkbench.cs
 using UnityEngine;
 
 public class PrimalWorkbench : Multiblock
 {
     public override void OnInteract(Player player, Vector2Int hitCell)
     {
-        Manager.OpenModule("PrimalCraft");
+        // 🔧 변경: owner(this) 전달
+        Manager.OpenModule("PrimalCraft", this);
     }
 
     public override SaveData ToSaveData()

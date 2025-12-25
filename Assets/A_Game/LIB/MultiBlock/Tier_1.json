@@ -2,10 +2,10 @@
   "Campfire": [
     {
       "pattern": [
-        ["Campfire_L", "Campfire_R"]
+        ["Firewood", "Firewood"]
       ],
       "result": [
-        ["Campfire_L_Built", "Campfire_R_Built"]
+        ["Campfire_L", "Campfire_R"]
       ]
     }
   ],

@@ -64,6 +64,9 @@ public class InteractionController : MonoBehaviour
 
     GameObject _moduleInstance;
 
+    // ✅ 추가: 현재 열린 모듈 인스턴스 접근용
+    public GameObject CurrentModuleInstance => _moduleInstance;
+
     [Header("Audio")]
     public AudioManager sound;
 
@@ -616,8 +619,6 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
-    // ✅ 단일 셀 기반 primalcraftModule 인터랙션 제거.
-    // (PrimalWorkbench 멀티블럭이 OnInteract에서 UI를 열게 될 것)
     bool TryCellInteraction()
     {
         if (_state != GameState.Ingame) return false;
@@ -852,7 +853,8 @@ public class InteractionController : MonoBehaviour
     }
 
     // ✅ 멀티블럭이 UI 열 때 호출할 공용 메서드
-    public void OpenModule(GameObject modulePrefab)
+    // 변경: 생성된 인스턴스를 반환
+    public GameObject OpenModule(GameObject modulePrefab)
     {
         _state = GameState.Inpanel;
         inventoryPanel.SetActive(true);
@@ -880,6 +882,8 @@ public class InteractionController : MonoBehaviour
             _hoverCorpse.SetHovered(false);
             _hoverCorpse = null;
         }
+
+        return _moduleInstance;
     }
 
     private void CloseInventoryPanelToIngame()

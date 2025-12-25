@@ -7,34 +7,22 @@
     { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
     { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
   ],
-  "Grass_Left": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-  "Grass_Right": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-  "Grass_TopLeft": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-  "Grass_TopRight": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-  "Grass_TopLeftRight": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-  "Grass_LeftRight": [
-    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
-    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
-  ],
-
   "Clay": [
     { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
   ],
+  "Wooden Platform": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Log": [
+    { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Stripped Log": [
+    { "itemId": "Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Firewood": [
+    { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+
 
   "Rock": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 4, "max": 4 }
@@ -75,41 +63,47 @@
     { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }
   ],
 
-    "Ore_Coal": [
+  "Ore_Coal": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
     { "itemId": "Coal Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
-    "Ore_Copper": [
+  "Ore_Copper": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
     { "itemId": "Copper Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
-    "Ore_Iron": [
+  "Ore_Iron": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
     { "itemId": "Iron Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
-    "Ore_Tin": [
+  "Ore_Tin": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
     { "itemId": "Tin Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
 
-    "Primal Workbench": [
-    { "itemId": "Primal Workbench", "probability": 1, "min": 1, "max": 1 }
+  "Primal Workbench_L": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Primal Workbench_R": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
   ],
 
 
-
-
-
-    "Mud": [
+  "Mud": [
     { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
   ],
 
 
   
-      "Mud Furnace_0": [
+  "Mud Furnace_0": [
     { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
   ],
-      "Mud Furnace_1": [
+  "Mud Furnace_1": [
     { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Campfire_L": [
+    { "itemId": "Firewood", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Campfire_R": [
+    { "itemId": "Firewood", "probability": 1, "min": 1, "max": 1 }
   ]
 }

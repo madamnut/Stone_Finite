@@ -56,6 +56,30 @@
       { "key": "Default", "meta": 0, "sprite": "Mud" }
     ]
   },
+  "Log": {
+    "id": 6,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Log" }
+    ]
+  },
+  "Stripped Log": {
+    "id": 7,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Stripped Log" }
+    ]
+  },
+  "Firewood": {
+    "id": 8,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Firewood" }
+    ]
+  },
 
   "Sand": {
     "id": 1000,
@@ -207,8 +231,23 @@
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_Top" }
     ]
   },
+  "Campfire_L": {
+    "id": 5004,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Campfire_L" }
+    ]
+  },
+  "Campfire_R": {
+    "id": 5005,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Campfire_R" }
+    ]
+  },
 
-  
   "Torch": {
     "id": 50001,
     "collidable": false,

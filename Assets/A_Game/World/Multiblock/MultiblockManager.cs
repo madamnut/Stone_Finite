@@ -10,9 +10,15 @@ public class MultiblockManager : MonoBehaviour
     [Header("Deps")]
     public WorldManager world;
 
+    [SerializeField] ItemLibrary itemLibrary;
+    public ItemLibrary ItemLibrary => itemLibrary;
+
     // ✅ UI Bridge (Inspector에서 할당)
     public InteractionController interaction;
+
+    [Header("Modules (Prefabs)")]
     public GameObject primalCraftModule; // PrimalWorkbench가 열 모듈
+    public GameObject campfireModule;    // Campfire가 열 모듈
 
     readonly Dictionary<int, Multiblock> _instances = new Dictionary<int, Multiblock>();
     readonly Dictionary<Vector2Int, Multiblock> _byCell = new Dictionary<Vector2Int, Multiblock>();
@@ -26,6 +32,27 @@ public class MultiblockManager : MonoBehaviour
     {
         RegisterFactory("Clay Kiln", () => new ClayKiln());
         RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
+        RegisterFactory("Campfire", () => new Campfire());
+    }
+
+    // ✅ 멀티블럭 틱: 물리 틱(FixedUpdate) 기준으로 구동
+    void FixedUpdate()
+    {
+        if (_instances.Count == 0) return;
+
+        // Dictionary.Values foreach는 중간에 Despawn되면 예외 가능성 있음
+        // → 안전하게 스냅샷 후 Tick
+        // (임의 유틸 추가 금지 조건이 있어 지역 리스트로만 처리)
+        List<Multiblock> snap = new List<Multiblock>(_instances.Count);
+        foreach (var kv in _instances)
+            snap.Add(kv.Value);
+
+        for (int i = 0; i < snap.Count; i++)
+        {
+            var mb = snap[i];
+            if (mb != null)
+                mb.Tick();
+        }
     }
 
     public void RegisterFactory(string defId, Func<Multiblock> creator)
@@ -39,19 +66,32 @@ public class MultiblockManager : MonoBehaviour
         return inst;
     }
 
-    // ✅ 멀티블럭이 "모듈 이름"만 주면, 매니저가 실제 UI를 연다.
-    public void OpenModule(string moduleId)
+    // ✅ 멀티블럭이 "모듈 이름" + "본인(this)"를 주면, 매니저가 실제 UI를 열고 바인딩까지 한다.
+    public void OpenModule(string moduleId, Multiblock owner)
     {
         GameObject prefab = moduleId switch
         {
             "PrimalCraft" => primalCraftModule,
+            "Campfire"    => campfireModule,
             _ => null
         };
 
         if (prefab == null) return;
+        if (interaction == null) return;
 
-        // interaction은 인스펙터 완전신뢰
-        interaction.OpenModule(prefab);
+        var instGO = interaction.OpenModule(prefab);
+        if (instGO == null) return;
+
+        // 모듈별 바인딩
+        if (moduleId == "Campfire")
+        {
+            var campfire = owner as Campfire;
+            if (campfire == null) return;
+
+            var ui = instGO.GetComponentInChildren<CampfireModule>(true);
+            if (ui != null)
+                ui.Bind(campfire);
+        }
     }
 
     public Multiblock Create(MultiblockLibrary.Def def, int originX, int originY)

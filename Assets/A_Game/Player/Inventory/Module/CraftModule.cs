@@ -1,3 +1,4 @@
+// CraftModule.cs
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -60,7 +61,8 @@ public class CraftModule : MonoBehaviour
             if (s == null) continue;
 
             s.useLocalStorage = true;
-            s.denyUserPut     = false;
+            s.denyUserPut = false;
+            s.denyUserInteraction = false;
             s.Set(null);
 
             // 테이블 타입 기준으로 사용하지 않는 슬롯은 비활성화
@@ -69,13 +71,16 @@ public class CraftModule : MonoBehaviour
         }
 
         // 출력(프리뷰) 슬롯 초기화
+        // ✅ 변경: 프리뷰는 "완전 상호작용 금지" (넣기/빼기 모두 금지)
         if (outputs == null) outputs = new List<ItemSlot>(2);
         for (int i = 0; i < outputs.Count; i++)
         {
             var s = outputs[i];
             if (s == null) continue;
+
             s.useLocalStorage = true;
-            s.denyUserPut     = true; // 프리뷰 전용, 유저 투입/수정 불가
+            s.denyUserPut = true;
+            s.denyUserInteraction = true; // 프리뷰 전용: 완전 조작 금지
             s.Set(null);
         }
 

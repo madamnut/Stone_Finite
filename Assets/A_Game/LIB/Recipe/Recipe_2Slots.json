@@ -248,8 +248,24 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Wooden Plank", "count": 2 },
+      { "itemId": "Wooden Plank", "count": 4 },
       { "itemId": "Wood Shavings", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Wooden Plank", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Platform", "count": 4 }
     ],
     "outputActions": []
   },
