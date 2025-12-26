@@ -1,3 +1,4 @@
+// MultiblockManager.cs
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,24 +13,28 @@ public class MultiblockManager : MonoBehaviour
     [SerializeField] ItemLibrary itemLibrary;
     public ItemLibrary ItemLibrary => itemLibrary;
 
-    [Header("UI Bridge")]
+    // ✅ UI Bridge (Inspector에서 할당)
     public InteractionController interaction;
 
     [Header("Modules (Prefabs)")]
-    public GameObject primalCraftModule;
-    public GameObject campfireModule;
+    public GameObject primalCraftModule; // PrimalWorkbench가 열 모듈
+    public GameObject campfireModule;    // Campfire가 열 모듈
 
-    [Header("VFX")]
-    public VfxManager vfx; // ✅ 프리팹/인스턴스는 VfxManager가 가진다.
+    [Header("VFX (Loop Prefabs)")]
+    // Campfire 전용: Fire_01 루프 프리팹(Animator 붙은 스프라이트 오브젝트)
+    public GameObject fire01Prefab;
+
+    // 가까워지면 활성 / 멀어지면 비활 (일단 플레이어 기준 거리)
+    public float vfxActiveRange = 40f;
+
+    // Campfire Fire_01 로드/언로드 관리 (instId -> vfx instance)
+    readonly Dictionary<int, GameObject> _campfireFire = new Dictionary<int, GameObject>();
 
     readonly Dictionary<int, Multiblock> _instances = new Dictionary<int, Multiblock>();
     readonly Dictionary<Vector2Int, Multiblock> _byCell = new Dictionary<Vector2Int, Multiblock>();
     int _nextInstanceId = 1;
 
     readonly Dictionary<string, Func<Multiblock>> _factoryByDefId = new Dictionary<string, Func<Multiblock>>();
-
-    // VFX 요청 수집용 버퍼(매 틱 재사용)
-    readonly List<Multiblock.VfxRequest> _vfxBuf = new List<Multiblock.VfxRequest>(8);
 
     public IReadOnlyDictionary<int, Multiblock> Instances => _instances;
 
@@ -40,19 +45,13 @@ public class MultiblockManager : MonoBehaviour
         RegisterFactory("Campfire", () => new Campfire());
     }
 
-    void Start()
-    {
-        // VfxManager가 플레이어 거리 컬링을 하므로 player를 넘겨준다.
-        if (vfx != null && interaction != null && interaction.player != null)
-            vfx.SetPlayer(interaction.player.transform);
-    }
-
     // ✅ 멀티블럭 틱: 물리 틱(FixedUpdate) 기준으로 구동
     void FixedUpdate()
     {
         if (_instances.Count == 0) return;
 
-        // 중간 Despawn 대비 스냅샷
+        // Dictionary.Values foreach는 중간에 Despawn되면 예외 가능성 있음
+        // → 안전하게 스냅샷 후 Tick
         List<Multiblock> snap = new List<Multiblock>(_instances.Count);
         foreach (var kv in _instances)
             snap.Add(kv.Value);
@@ -63,32 +62,69 @@ public class MultiblockManager : MonoBehaviour
             if (mb == null) continue;
 
             mb.Tick();
-            ApplyVfxRequests(mb);
+            UpdateVfx(mb);
         }
     }
 
-    void ApplyVfxRequests(Multiblock mb)
+    void UpdateVfx(Multiblock mb)
     {
-        if (vfx == null) return;
+        // 현재는 Campfire의 Fire_01만 처리
+        if (mb is not Campfire cf)
+            return;
 
-        _vfxBuf.Clear();
-        mb.GetVfxRequests(_vfxBuf);
+        int id = cf.InstId;
 
-        if (_vfxBuf.Count == 0) return;
+        bool shouldBurn = cf.Isburning;
+        bool inRange = IsInVfxRange(cf);
 
-        // Origin 기준 오프셋 -> 월드좌표로 변환 후 전달
-        for (int i = 0; i < _vfxBuf.Count; i++)
+        // 불 꺼짐 or 멀어짐 => 비활/정리
+        if (!shouldBurn || !inRange)
         {
-            var r = _vfxBuf[i];
-
-            Vector3 pos = new Vector3(
-                mb.Origin.x + r.offset.x,
-                mb.Origin.y + r.offset.y,
-                0f
-            );
-
-            vfx.SetLoopVfx(mb.InstId, r.key, r.active, pos);
+            if (_campfireFire.TryGetValue(id, out var go) && go != null)
+            {
+                go.SetActive(false);
+            }
+            return;
         }
+
+        // 켜져야 함 + 범위 안 => 생성 또는 활성
+        if (!_campfireFire.TryGetValue(id, out var inst) || inst == null)
+        {
+            if (fire01Prefab == null) return;
+
+            Vector3 pos = GetCampfireFireWorldPos(cf);
+            inst = Instantiate(fire01Prefab, pos, Quaternion.identity);
+            inst.name = $"Fire_01(Campfire#{id})";
+
+            _campfireFire[id] = inst;
+        }
+
+        inst.transform.position = GetCampfireFireWorldPos(cf);
+        if (!inst.activeSelf) inst.SetActive(true);
+    }
+
+    bool IsInVfxRange(Multiblock mb)
+    {
+        if (interaction == null || interaction.player == null)
+            return true; // 플레이어 참조 없으면 항상 켠다
+
+        Vector3 p = interaction.player.transform.position;
+
+        // 멀티블럭은 Origin이 "좌하단 셀"이므로 중심을 대충 잡아준다
+        Vector3 center = new Vector3(
+            mb.Origin.x + mb.Width * 0.5f,
+            mb.Origin.y + mb.Height * 0.5f,
+            0f
+        );
+
+        float r = Mathf.Max(0.01f, vfxActiveRange);
+        return (p - center).sqrMagnitude <= r * r;
+    }
+
+    Vector3 GetCampfireFireWorldPos(Campfire cf)
+    {
+        // 요구사항: 오리진 기준 (1, 0.5)
+        return new Vector3(cf.Origin.x + 1f, cf.Origin.y + 0.5f, 0f);
     }
 
     public void RegisterFactory(string defId, Func<Multiblock> creator)
@@ -118,8 +154,12 @@ public class MultiblockManager : MonoBehaviour
         var instGO = interaction.OpenModule(prefab);
         if (instGO == null) return;
 
-        if (moduleId == "Campfire" && owner is Campfire campfire)
+        // 모듈별 바인딩
+        if (moduleId == "Campfire")
         {
+            var campfire = owner as Campfire;
+            if (campfire == null) return;
+
             var ui = instGO.GetComponentInChildren<CampfireModule>(true);
             if (ui != null)
                 ui.Bind(campfire);
@@ -152,22 +192,26 @@ public class MultiblockManager : MonoBehaviour
 
         inst.originalSolidIds.Clear();
         for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
         {
-            int wx = originX + x;
-            int wy = originY + y;
-            inst.originalSolidIds[new Vector2Int(wx, wy)] = world.GetSolidId(wx, wy);
+            for (int x = 0; x < width; x++)
+            {
+                int wx = originX + x;
+                int wy = originY + y;
+                inst.originalSolidIds[new Vector2Int(wx, wy)] = world.GetSolidId(wx, wy);
+            }
         }
 
         for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
         {
-            string resultCellName = def.result[x, y];
-            if (string.IsNullOrEmpty(resultCellName))
-                continue;
+            for (int x = 0; x < width; x++)
+            {
+                string resultCellName = def.result[x, y];
+                if (string.IsNullOrEmpty(resultCellName))
+                    continue;
 
-            world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId);
-            world.OverwriteSolid(originX + x, originY + y, placeId);
+                world.cellLibrary.TryGetSolidIdByName(resultCellName, out ushort placeId);
+                world.OverwriteSolid(originX + x, originY + y, placeId);
+            }
         }
 
         RegisterInstance(inst);
@@ -178,7 +222,7 @@ public class MultiblockManager : MonoBehaviour
     {
         _instances.Add(inst.InstId, inst);
         foreach (var cell in inst.OccupiedCells)
-            _byCell[cell] = inst;
+            _byCell.Add(cell, inst);
     }
 
     public void Despawn(Multiblock inst, Vector2Int brokenCell)
@@ -191,9 +235,14 @@ public class MultiblockManager : MonoBehaviour
                 _byCell.Remove(cell);
         }
 
-        // ✅ 해당 멀티블럭에 속한 모든 루프 VFX 정리 (VfxManager가 인스턴스 소유)
-        if (vfx != null)
-            vfx.DespawnAllForOwner(inst.InstId);
+        // VFX 정리 (Campfire)
+        if (inst is Campfire)
+        {
+            int id = inst.InstId;
+            if (_campfireFire.TryGetValue(id, out var go) && go != null)
+                Destroy(go);
+            _campfireFire.Remove(id);
+        }
 
         foreach (var kv in inst.originalSolidIds)
         {
