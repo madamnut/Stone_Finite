@@ -10,12 +10,9 @@ public class Chunk : MonoBehaviour
     public Tilemap solidTilemap;
     public Tilemap liquidTilemap;
 
-    // ── 라이트 메쉬 오브젝트 ──
-    public GameObject lightMeshObject;
-
-    [HideInInspector] public MeshFilter   lightMeshFilter;
-    [HideInInspector] public MeshRenderer lightMeshRenderer;
-    [HideInInspector] public Color32[]    lightColors; // (ChunkSize+1)^2
+    // ── Light Overlay (Quad) ──
+    // 프리팹에서 LightOverlay 오브젝트를 연결 (MeshRenderer 보유)
+    public MeshRenderer lightOverlayRenderer;
 
     // ── 타일 버퍼(재사용) ──
     [HideInInspector] public TileBase[] bgBuffer;
@@ -36,6 +33,12 @@ public class Chunk : MonoBehaviour
     [HideInInspector] public MaterialPropertyBlock liquidMpb;
     [HideInInspector] public TilemapRenderer liquidRenderer;
 
+    // ── Light Texture (청크별 1회 생성, 이후 재사용) ──
+    // 18x18: 가운데 16x16 + 테두리 1픽셀 패딩(인접 청크 보간용)
+    [HideInInspector] public Texture2D lightTex;          // 18x18, RGBA (A에 어둠 알파)
+    [HideInInspector] public Color32[] lightPixels;       // 18*18
+    [HideInInspector] public MaterialPropertyBlock lightMpb;
+
     void Awake()
     {
         // 타일 버퍼
@@ -51,7 +54,6 @@ public class Chunk : MonoBehaviour
         liquidTypePixels = new Color32[ts];
         liquidAmtPixels  = new Color32[ts];
 
-        // R8을 쓰고 싶으면 TextureFormat.R8로 바꿔도 됨(URP/플랫폼 호환 확인 필요)
         liquidTypeTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
         liquidTypeTex.filterMode = FilterMode.Point;
         liquidTypeTex.wrapMode   = TextureWrapMode.Clamp;
@@ -60,78 +62,30 @@ public class Chunk : MonoBehaviour
         liquidAmountTex.filterMode = FilterMode.Point;
         liquidAmountTex.wrapMode   = TextureWrapMode.Clamp;
 
-        // ── 라이트 메쉬 ──
-        lightMeshFilter   = lightMeshObject.GetComponent<MeshFilter>();
-        lightMeshRenderer = lightMeshObject.GetComponent<MeshRenderer>();
+        // ── Light Overlay 기본 리소스 (청크당 1회 생성, 이후 재사용) ──
+        lightMpb = new MaterialPropertyBlock();
 
-        var mesh = lightMeshFilter.sharedMesh;
-
-        int vW = ChunkSize + 1;
-        int vH = ChunkSize + 1;
-        int vCount = vW * vH;
-
-        bool needBuild = (mesh == null) || (mesh.vertexCount != vCount);
-
-        if (needBuild)
+        // LightOverlayRenderer가 없으면 Light 레이어는 비활성(렌더는 안 하지만 게임 진행엔 영향 없음)
+        if (lightOverlayRenderer != null)
         {
-            mesh = new Mesh
-            {
-                indexFormat = (vCount > 65000)
-                    ? UnityEngine.Rendering.IndexFormat.UInt32
-                    : UnityEngine.Rendering.IndexFormat.UInt16,
-                name = "ChunkLightMesh"
-            };
+            const int L = ChunkSize + 2; // 18
+            lightPixels = new Color32[L * L];
 
-            var verts = new Vector3[vCount];
-            var uvs   = new Vector2[vCount];
-            lightColors = new Color32[vCount];
+            lightTex = new Texture2D(L, L, TextureFormat.RGBA32, false, true);
+            lightTex.filterMode = FilterMode.Bilinear;
+            lightTex.wrapMode   = TextureWrapMode.Clamp;
 
-            for (int y = 0; y < vH; y++)
-            {
-                for (int x = 0; x < vW; x++)
-                {
-                    int i = y * vW + x;
-                    verts[i] = new Vector3(x, y, 0f); // 로컬 0..16 격자
-                    uvs[i]   = new Vector2(x / (float)ChunkSize, y / (float)ChunkSize);
-                    lightColors[i] = new Color32(0, 0, 0, 0);
-                }
-            }
+            // 초기값: 완전 투명(어둠 없음)
+            for (int i = 0; i < lightPixels.Length; i++)
+                lightPixels[i] = new Color32(0, 0, 0, 0);
 
-            int quadCount = ChunkSize * ChunkSize;
-            var tris = new int[quadCount * 6];
-            int ti = 0;
+            lightTex.SetPixels32(lightPixels);
+            lightTex.Apply(false, false);
 
-            for (int y = 0; y < ChunkSize; y++)
-            {
-                for (int x = 0; x < ChunkSize; x++)
-                {
-                    int v0 = y * vW + x;
-                    int v1 = v0 + 1;
-                    int v2 = v0 + vW;
-                    int v3 = v2 + 1;
-
-                    tris[ti++] = v0; tris[ti++] = v2; tris[ti++] = v1;
-                    tris[ti++] = v1; tris[ti++] = v2; tris[ti++] = v3;
-                }
-            }
-
-            mesh.vertices  = verts;
-            mesh.uv        = uvs;
-            mesh.triangles = tris;
-            mesh.colors32  = lightColors;
-            mesh.RecalculateBounds();
-
-            lightMeshFilter.sharedMesh = mesh;
+            // MPB에 텍스처 바인딩 (프로퍼티 이름은 셰이더에 맞춰 통일)
+            lightOverlayRenderer.GetPropertyBlock(lightMpb);
+            lightMpb.SetTexture("_LightTex", lightTex);
+            lightOverlayRenderer.SetPropertyBlock(lightMpb);
         }
-        else
-        {
-            lightColors = mesh.colors32;
-            if (lightColors == null || lightColors.Length != vCount)
-                lightColors = new Color32[vCount];
-        }
-
-        // 라이트 오브젝트를 청크 로컬(0,0)에 맞춤
-        lightMeshObject.transform.SetParent(transform, false);
-        lightMeshObject.transform.localPosition = Vector3.zero;
     }
 }

@@ -1,4 +1,4 @@
-Shader "Custom/Liquid_WaterSprite_WithDistort_Builtin"
+Shader "Custom/Fluid_WaterSprite_WithDistort_Builtin"
 {
     Properties
     {

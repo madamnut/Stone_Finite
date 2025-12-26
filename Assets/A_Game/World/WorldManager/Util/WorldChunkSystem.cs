@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// 청크 풀 / 로드 / 언로드 / 타일맵 리프레시 / 라이트 메쉬까지 담당하는 시스템
+/// 청크 풀 / 로드 / 언로드 / 타일맵 리프레시 / 라이트 레이어(텍스처)까지 담당하는 시스템
 /// (WorldManager에서 의존성만 주입해서 사용)
 ///
 /// WorldData 구조(신규):
@@ -16,13 +16,18 @@ using UnityEngine.Tilemaps;
 ///   - Tilemap liquidTilemap;  (필드명 유지)
 ///   - TileBase[] bgBuffer, solidBuffer, liquidBuffer;
 ///   - bool bgDirty, solidDirty, liquidDirty, lightDirty;
-///   - lightMeshFilter/lightColors 등은 기존과 동일
 ///
 /// Liquid Mask 전제(Chunk.cs에 추가된 필드):
 ///   - Texture2D liquidTypeTex, liquidAmountTex (16x16)
 ///   - Color32[] liquidTypePixels, liquidAmtPixels (256)
 ///   - MaterialPropertyBlock liquidMpb
 ///   - TilemapRenderer liquidRenderer
+///
+/// Light Overlay 전제(Chunk.cs에 추가된 필드):
+///   - MeshRenderer lightOverlayRenderer
+///   - Texture2D lightTex (18x18)
+///   - Color32[] lightPixels (18*18)
+///   - MaterialPropertyBlock lightMpb
 ///
 /// Tile 정책:
 /// - BG 타일: CellLibrary.GetBgTile(id)
@@ -68,6 +73,8 @@ public class WorldChunkSystem
     private Vector2Int lastPlayerChunk = Vector2Int.zero;
 
     public IReadOnlyDictionary<Vector2Int, GameObject> ActiveChunks => activeChunks;
+
+    const int LIGHT_MAX = 15;
 
     // ───────── 생성자 ─────────
     public WorldChunkSystem(
@@ -531,7 +538,7 @@ public class WorldChunkSystem
 
         activeChunks[coord] = go;
 
-        // 라이트 메쉬 초기화
+        // 라이트 초기화(텍스처)
         RefreshLightLayer(coord);
 
         c.bgDirty = false;
@@ -662,57 +669,52 @@ public class WorldChunkSystem
         if (!activeChunks.TryGetValue(coord, out var go)) return;
         var c = go.GetComponent<Chunk>();
 
-        var mesh = c.lightMeshFilter.sharedMesh;
-        if (mesh == null) return;
+        if (c.lightOverlayRenderer == null) return;
+        if (c.lightTex == null || c.lightPixels == null) return;
 
-        int vW = chunkSize + 1, vH = chunkSize + 1, vCount = vW * vH;
-        var cols = (c.lightColors != null && c.lightColors.Length == vCount)
-            ? c.lightColors : new Color32[vCount];
+        int L = chunkSize + 2; // 18
+        if (c.lightPixels.Length != L * L) return;
 
         int sx = coord.x * chunkSize;
         int sy = coord.y * chunkSize;
 
-        for (int vy = 0; vy <= chunkSize; vy++)
+        for (int ty = 0; ty < L; ty++)
         {
-            for (int vx = 0; vx <= chunkSize; vx++)
+            for (int tx = 0; tx < L; tx++)
             {
-                int gx = sx + vx;
-                int gy = sy + vy;
+                int gx = Mathf.Clamp(sx + (tx - 1), 0, worldWidth - 1);
+                int gy = Mathf.Clamp(sy + (ty - 1), 0, worldHeight - 1);
 
-                float sum = 0f;
-                int samples = 0;
+                ushort nat = worldMap.naturalLight[gx, gy];
+                ushort art = worldMap.artificialLight[gx, gy];
 
-                // 3x3 샘플
-                for (int oy = -1; oy <= 1; oy++)
-                for (int ox = -1; ox <= 1; ox++)
-                {
-                    int x = Mathf.Clamp(gx + ox, 0, worldWidth - 1);
-                    int y = Mathf.Clamp(gy + oy, 0, worldHeight - 1);
+                int ns = (int)nat - (int)globalBrightnessOffset;
+                if (ns < 0) ns = 0;
+                if (ns > LIGHT_MAX) ns = LIGHT_MAX;
 
-                    ushort nat = worldMap.naturalLight[x, y];
-                    ushort art = worldMap.artificialLight[x, y];
+                int a = (int)art;
+                if (a < 0) a = 0;
+                if (a > LIGHT_MAX) a = LIGHT_MAX;
 
-                    int ns = (int)nat - (int)globalBrightnessOffset;
-                    if (ns < 0) ns = 0;
+                float n01 = ns / 15f;
+                float a01 = a / 15f;
 
-                    float n01 = ns / 15f;
-                    float a01 = art / 15f;
+                float b01 = Mathf.Max(n01, a01);
+                b01 = Mathf.Clamp01(b01);
 
-                    sum += Mathf.Max(n01, a01);
-                    samples++;
-                }
-
-                float avg = (samples > 0) ? (sum / samples) : 0f;
-                avg = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(avg));
-
-                float A01 = 1f - avg;
+                float A01 = 1f - b01;
                 byte Ab = (byte)Mathf.RoundToInt(Mathf.Clamp01(A01) * 255f);
 
-                cols[vy * vW + vx] = new Color32(0, 0, 0, Ab);
+                c.lightPixels[ty * L + tx] = new Color32(0, 0, 0, Ab);
             }
         }
 
-        c.lightColors = cols;
-        mesh.colors32 = cols;
+        c.lightTex.SetPixels32(c.lightPixels);
+        c.lightTex.Apply(false, false);
+
+        c.lightOverlayRenderer.GetPropertyBlock(c.lightMpb);
+        c.lightMpb.SetTexture("_LightTex", c.lightTex);
+        c.lightOverlayRenderer.SetPropertyBlock(c.lightMpb);
     }
+
 }
