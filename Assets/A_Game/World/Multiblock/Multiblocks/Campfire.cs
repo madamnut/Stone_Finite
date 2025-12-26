@@ -1,4 +1,4 @@
-// Campfire.cs
+// Campfire.cs (전체 교체본)
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -71,7 +71,6 @@ public class Campfire : Multiblock
             case SlotKind.IngredientOut: _ingOut = item; break;
         }
 
-        // ✅ 고스트 방지
         CleanupZeroCountSlots();
     }
 
@@ -98,6 +97,8 @@ public class Campfire : Multiblock
     {
         CleanupZeroCountSlots();
 
+        bool wasBurning = Isburning;
+
         if (IngredientChanged())
         {
             ResetCookProgress();
@@ -107,6 +108,7 @@ public class Campfire : Multiblock
         bool canCookNow = CanCookNow(out int cookNeed, out string cookResult);
         bool ingOutBlocked = IsOutputFullOrBlocked(_ingOut, cookResult);
 
+        // 1) 연료가 없으면: (기존 유지) "요리 가능한 상황"에서만 점화 시도
         if (_fuelTicksLeft <= 0)
         {
             if (!string.IsNullOrEmpty(_fuelResultItemId))
@@ -123,7 +125,15 @@ public class Campfire : Multiblock
             }
         }
 
-        if (_fuelTicksLeft > 0 && canCookNow && !ingOutBlocked)
+        // 2) 불꽃이 켜져있으면: 재료 유무 상관없이 연료는 무조건 감소
+        if (_fuelTicksLeft > 0)
+        {
+            _fuelTicksLeft -= 1;
+            if (_fuelTicksLeft < 0) _fuelTicksLeft = 0;
+        }
+
+        // 3) 요리는: "틱 시작 시 불꽃 ON" + 재료/출력 조건 만족 시에만 진행
+        if (wasBurning && canCookNow && !ingOutBlocked)
         {
             if (_cookTicksNeed <= 0 || _cookResultItemId != cookResult)
             {
@@ -131,9 +141,6 @@ public class Campfire : Multiblock
                 _cookResultItemId = cookResult;
                 _cookTicksDone = Mathf.Clamp(_cookTicksDone, 0, _cookTicksNeed);
             }
-
-            _fuelTicksLeft -= 1;
-            if (_fuelTicksLeft < 0) _fuelTicksLeft = 0;
 
             _cookTicksDone += 1;
             if (_cookTicksDone > _cookTicksNeed) _cookTicksDone = _cookTicksNeed;
@@ -149,14 +156,29 @@ public class Campfire : Multiblock
                 ResetCookProgress();
                 SnapshotIngredient();
             }
+        }
 
-            if (_fuelTicksLeft <= 0)
-            {
-                TryPushFuelResultToFuelOut();
-            }
+        // 4) 이번 틱에 불이 끝났으면 부산물 처리
+        if (wasBurning && _fuelTicksLeft <= 0)
+        {
+            TryPushFuelResultToFuelOut();
+        }
+
+        // 5) 상태 전이(edge)에서만 "캠프파이어 전체 파트" meta 변경 요청
+        bool isBurningNow = Isburning;
+        if (wasBurning != isBurningNow)
+        {
+            RequestApplyCampfireMeta(isBurningNow);
         }
 
         CleanupZeroCountSlots();
+    }
+
+    void RequestApplyCampfireMeta(bool burning)
+    {
+        if (Manager == null) return;
+        // Campfire는 모든 파트가 같이 변함: Default(meta=0), Burning(meta=1)
+        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 1 : 0));
     }
 
     void CleanupZeroCountSlots()
@@ -274,6 +296,9 @@ public class Campfire : Multiblock
         _fuelResultItemId = resultItem;
 
         CleanupZeroCountSlots();
+
+        // 점화 즉시 meta 변경 요청(불꽃 켜진 순간부터)
+        RequestApplyCampfireMeta(true);
     }
 
     void TryPushFuelResultToFuelOut()
@@ -383,5 +408,8 @@ public class Campfire : Multiblock
         _fuelResultItemId = null;
         ResetCookProgress();
         SnapshotIngredient();
+
+        // 로드 기본은 꺼짐 상태 meta 요청
+        RequestApplyCampfireMeta(false);
     }
 }

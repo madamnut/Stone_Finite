@@ -226,9 +226,9 @@ public class WorldManager : MonoBehaviour
 
         switch (attachedAt)
         {
-            case "Down":  sy = y - 1; break;
-            case "Up":    sy = y + 1; break;
-            case "Left":  sx = x - 1; break;
+            case "Down": sy = y - 1; break;
+            case "Up": sy = y + 1; break;
+            case "Left": sx = x - 1; break;
             case "Right": sx = x + 1; break;
             default:
                 throw new System.Exception($"[Attachment] Unknown attachedAt='{attachedAt}' (solidId={s.id}, meta={s.meta})");
@@ -419,7 +419,9 @@ public class WorldManager : MonoBehaviour
 
     void SetFluidInternal(int x, int y, ushort id, int newAmount)
     {
-        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        var oldS = worldMap.GetSolid(x, y);
+        ushort oldSolidId = oldS.id;
+        ushort oldSolidMeta = oldS.meta;
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         newAmount = Mathf.Clamp(newAmount, 0, WorldData.MaxFluid);
@@ -434,7 +436,7 @@ public class WorldManager : MonoBehaviour
         }
 
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
     }
 
     void MoveFluidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
@@ -491,7 +493,7 @@ public class WorldManager : MonoBehaviour
 
         entityManager.Register(fb);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldFluidId: oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId: id, oldSolidMeta: s.meta, oldFluidId: oldFluidId);
     }
 
     /*────────────────────────────────────────────────────────────
@@ -501,6 +503,7 @@ public class WorldManager : MonoBehaviour
     {
         var cur = worldMap.GetSolid(x, y);
         ushort oldSolidId = cur.id;
+        ushort oldSolidMeta = cur.meta;
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         worldMap.SetSolid(x, y, newId, newMeta);
@@ -510,7 +513,7 @@ public class WorldManager : MonoBehaviour
 
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
     }
 
     public bool PlaceSolid(int x, int y, ushort id)
@@ -522,6 +525,7 @@ public class WorldManager : MonoBehaviour
         if (curS.id != 0) return false;
 
         ushort oldSolidId = 0;
+        ushort oldSolidMeta = 0;
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         worldMap.SetSolid(x, y, id, 0);
@@ -532,7 +536,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
         return true;
     }
 
@@ -541,7 +545,9 @@ public class WorldManager : MonoBehaviour
         if (!worldMap.InBounds(x, y)) return false;
         if (fluidId == 0 || amount == 0) return false;
 
-        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        var oldS = worldMap.GetSolid(x, y);
+        ushort oldSolidId = oldS.id;
+        ushort oldSolidMeta = oldS.meta;
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         if (IsCollidable(x, y)) return false;
@@ -563,7 +569,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
         return insert > 0;
     }
 
@@ -598,7 +604,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markSolid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldMeta, oldFluidId);
 
         // 드랍은 기존 규칙 유지 (id -> name)
         string key = cellLibrary.GetSolidName(oldSolidId);
@@ -621,7 +627,10 @@ public class WorldManager : MonoBehaviour
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return default;
 
-        ushort oldSolidId = worldMap.GetSolid(x, y).id;
+        var oldS = worldMap.GetSolid(x, y);
+        ushort oldSolidId = oldS.id;
+        ushort oldSolidMeta = oldS.meta;
+
         var removed = worldMap.GetFluid(x, y);
         ushort oldFluidId = removed.id;
 
@@ -632,7 +641,7 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         OnCellEdited(x, y);
 
-        HandleSourceLightChangeAt(x, y, oldSolidId, oldFluidId);
+        HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
         return removed;
     }
 
@@ -1176,22 +1185,26 @@ public class WorldManager : MonoBehaviour
             MarkLightDirtyCells(_lightChangedList);
     }
 
-    private byte GetSourceBrightness(ushort solidId, ushort fluidId)
+    // ✅ meta 반영
+    private byte GetSourceBrightness(ushort solidId, ushort solidMeta, ushort fluidId)
     {
-        byte sb = cellLibrary.GetSolidBrightness(solidId);
+        byte sb = cellLibrary.GetSolidBrightness(solidId, solidMeta);
         byte lb = cellLibrary.GetFluidBrightness(fluidId);
         return (sb >= lb) ? sb : lb;
     }
 
-    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldFluidId)
+    // ✅ meta 반영
+    private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldSolidMeta, ushort oldFluidId)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;
 
-        ushort newSolidId = worldMap.GetSolid(x, y).id;
+        var newS = worldMap.GetSolid(x, y);
+        ushort newSolidId = newS.id;
+        ushort newSolidMeta = newS.meta;
         ushort newFluidId = worldMap.GetFluid(x, y).id;
 
-        byte oldB = GetSourceBrightness(oldSolidId, oldFluidId);
-        byte newB = GetSourceBrightness(newSolidId, newFluidId);
+        byte oldB = GetSourceBrightness(oldSolidId, oldSolidMeta, oldFluidId);
+        byte newB = GetSourceBrightness(newSolidId, newSolidMeta, newFluidId);
 
         if (oldB == 0 && newB == 0) return;
 

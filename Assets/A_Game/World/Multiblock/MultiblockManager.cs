@@ -102,6 +102,31 @@ public class MultiblockManager : MonoBehaviour
         return inst;
     }
 
+    /// <summary>
+    /// 멀티블럭이 점유한 모든 셀의 meta를 변경한다. (id는 유지)
+    /// - World write는 Manager가 담당.
+    /// - Campfire처럼 "전체 파트가 함께 변하는" 케이스에 사용.
+    /// </summary>
+    public void ApplyMetaToAllOccupiedCells(Multiblock owner, ushort targetMeta)
+    {
+        if (owner == null) return;
+        if (world == null) return;
+
+        var cells = owner.OccupiedCells;
+        if (cells == null) return;
+
+        for (int i = 0; i < cells.Count; i++)
+        {
+            var c = cells[i];
+
+            ushort id = world.GetSolidId(c.x, c.y);
+            if (id == 0) continue;
+
+            // id 유지 + meta만 변경
+            world.OverwriteSolid(c.x, c.y, id, targetMeta);
+        }
+    }
+
     // ✅ 멀티블럭이 "모듈 이름" + "본인(this)"를 주면, 매니저가 실제 UI를 열고 바인딩까지 한다.
     public void OpenModule(string moduleId, Multiblock owner)
     {

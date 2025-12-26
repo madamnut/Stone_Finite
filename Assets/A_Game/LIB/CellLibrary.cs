@@ -13,6 +13,7 @@ using UnityEngine.U2D;
 /// JSON 규칙:
 /// - 기재되지 않은 속성은 0/false/null 취급
 /// - brightness는 0~15 클램프
+/// - variants[].brightness_override는 0~15 클램프 (미기재면 미오버라이드)
 ///
 /// Sprite 규칙(권장):
 /// - Solid variants Sprite 이름 = variants[].sprite
@@ -50,6 +51,11 @@ public class CellLibrary : MonoBehaviour
         public ushort meta;
         public string spriteName; // variants[].sprite (필수)
         public string attachedAt; // variants[].attachedAt (선택)
+
+        // ✅ optional override
+        // -1이면 오버라이드 없음, 0..15면 오버라이드 값
+        public sbyte brightnessOverride;
+
         // key는 가독성용이라 저장/사용 안 함
     }
 
@@ -182,11 +188,21 @@ public class CellLibrary : MonoBehaviour
 
                     string attachedAt = vObj["attachedAt"]?.Value<string>(); // optional
 
+                    // ✅ brightness_override (optional)
+                    sbyte brightnessOverride = -1;
+                    if (vObj.TryGetValue("brightness_override", out JToken boTok) && boTok != null && boTok.Type != JTokenType.Null)
+                    {
+                        int boInt = boTok.Value<int>();
+                        if (boInt < 0) boInt = 0; else if (boInt > 15) boInt = 15;
+                        brightnessOverride = (sbyte)boInt;
+                    }
+
                     variants[meta] = new SolidVariantDef
                     {
                         meta = meta,
                         spriteName = spriteName,
-                        attachedAt = attachedAt
+                        attachedAt = attachedAt,
+                        brightnessOverride = brightnessOverride
                     };
                 }
 
@@ -338,9 +354,31 @@ public class CellLibrary : MonoBehaviour
         return _solidById.TryGetValue(id, out var def) ? def.flags : SolidFlags.None;
     }
 
+    /// <summary>
+    /// ✅ id 기준 기본 brightness (meta 무시)
+    /// </summary>
     public byte GetSolidBrightness(ushort id)
     {
         return _solidById.TryGetValue(id, out var def) ? def.brightness : (byte)0;
+    }
+
+    /// <summary>
+    /// ✅ (id, meta) 기준 brightness
+    /// - variants[].brightness_override가 있으면 그 값을 사용
+    /// - 없으면 def.brightness 사용
+    /// </summary>
+    public byte GetSolidBrightness(ushort id, ushort meta)
+    {
+        if (!_solidById.TryGetValue(id, out var def))
+            return 0;
+
+        if (def.variants != null && def.variants.TryGetValue(meta, out var v))
+        {
+            if (v.brightnessOverride >= 0)
+                return (byte)v.brightnessOverride;
+        }
+
+        return def.brightness;
     }
 
     public byte GetFluidBrightness(ushort id)

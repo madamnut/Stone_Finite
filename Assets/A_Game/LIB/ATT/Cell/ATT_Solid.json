@@ -235,16 +235,20 @@
     "id": 5004,
     "collidable": false,
     "gravity": false,
+    "brightness": 0,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Campfire_L" }
+      { "key": "Default", "meta": 0, "sprite": "Campfire_L" },
+      { "key": "Burning", "meta": 1, "sprite": "Campfire_L", "brightness_override": 15 }
     ]
   },
   "Campfire_R": {
     "id": 5005,
     "collidable": false,
     "gravity": false,
+    "brightness": 0,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Campfire_R" }
+      { "key": "Default", "meta": 0, "sprite": "Campfire_R" },
+      { "key": "Burning", "meta": 1, "sprite": "Campfire_R", "brightness_override": 15 }
     ]
   },
 
