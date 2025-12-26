@@ -80,6 +80,20 @@ public class Campfire : Multiblock
         Manager.OpenModule("Campfire", this);
     }
 
+    // ───────── VFX 요청 ─────────
+    // Campfire는 Fire_01 하나만 사용, Origin 기준 (1, 0.5)
+    public override void GetLoopVfxRequests(List<LoopVfxRequest> outList)
+    {
+        if (outList == null) return;
+
+        outList.Add(new LoopVfxRequest
+        {
+            vfxKey   = "Fire_01",
+            localPos = new Vector2(1f, 0.5f),
+            on       = Isburning
+        });
+    }
+
     public override void Tick()
     {
         // ✅ 고스트 방지(외부에서 Count 0이 된 채 들어올 수 있음)

@@ -1,4 +1,3 @@
-// Multiblock.cs
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,6 +33,21 @@ public abstract class Multiblock
 
     // ✅ “원래 셀” 복구용 스냅샷 (키: 월드 좌표, 값: 원본 solidId)
     internal readonly Dictionary<Vector2Int, ushort> originalSolidIds = new Dictionary<Vector2Int, ushort>();
+
+    // ───────── VFX 요청 구조 ─────────
+    public struct VfxRequest
+    {
+        public string  key;     // "Smoke", "Fire_01"
+        public Vector2 offset;  // Origin 기준 상대 위치
+        public bool    active;  // 켜기/끄기
+    }
+
+    /// <summary>
+    /// 멀티블럭이 표시해야 하는 루프 VFX 요청을 outList에 추가한다.
+    /// - offset은 Origin 기준 "월드 좌표 오프셋" (셀 좌표가 아니라 월드 단위로 취급)
+    /// - active=false를 보내면 VfxManager가 비활 처리(또는 생성 안 함)
+    /// </summary>
+    public virtual void GetVfxRequests(List<VfxRequest> outList) { }
 
     // ───────── 초기화 ─────────
     public virtual void Initialize(

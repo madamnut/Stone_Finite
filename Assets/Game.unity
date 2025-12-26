@@ -882,6 +882,8 @@ MonoBehaviour:
   interaction: {fileID: 1746062758}
   primalCraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   campfireModule: {fileID: 8683761661018755451, guid: 0ffd85b8869380c439e4a992432c783a, type: 3}
+  fire01Prefab: {fileID: 0}
+  vfxActiveRange: 40
 --- !u!1 &172259531
 GameObject:
   m_ObjectHideFlags: 0
@@ -4211,6 +4213,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: 5358ad9990888484796b5120fb6f2d41, type: 2}
   psPrefab: {fileID: 8503514865183458434, guid: ebae7067911745d4fbf25b4b244715df, type: 3}
+  smokePrefab: {fileID: 7781305964760329441, guid: b7bc54ed3a540f5459defb8c2f63d61c, type: 3}
+  fire01Prefab: {fileID: 3384927473059046907, guid: ad6e703e01814d74ab04226ac62a900e, type: 3}
+  activeRange: 40
 --- !u!4 &672136423
 Transform:
   m_ObjectHideFlags: 0
