@@ -99,7 +99,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _Intensity: 0.082709104
+    - _Intensity: 0.65091264
     - _InvertMask: 0
     - _Metallic: 0
     - _Mix: 0.806
@@ -133,7 +133,7 @@ Material:
     - _Weight: 0.372
     - _ZWrite: 1
     m_Colors:
-    - _Center: {r: 0.5846214, g: 0.43678284, b: 0, a: 0}
+    - _Center: {r: 0.2629013, g: 0.5054531, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Tint: {r: 0, g: 0, b: 0, a: 1}

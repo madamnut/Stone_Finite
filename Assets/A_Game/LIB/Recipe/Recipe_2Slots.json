@@ -271,22 +271,6 @@
   },
 
   {
-    "isOrdered": true,
-    "inputs": [
-      { "itemId": "Wooden Plank", "count": 1 },
-      { "itemId": "Wooden Plank", "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
-    ],
-    "outputs": [
-      { "itemId": "Primal Workbench", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
     "isOrdered": false,
     "inputs": [
       { "itemId": "Leaf", "count": 1 },

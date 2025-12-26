@@ -24,10 +24,12 @@ public class Campfire : Multiblock
     int _cookTicksNeed = 0;
     string _cookResultItemId = null;
 
-    // 재료 중간에 빼면 초기화 규칙용
-    ItemData _prevIngRef = null;
-    int _prevIngCount = 0;
+    // 재료 변경 감지용 (Count 변화는 무시: 스택 분할/합치기 시 초기화 방지)
+    string _prevIngItemId = null;
     int _prevIngDur = 0;
+
+    // 파괴 드랍 가드(멀티블럭 구성 셀들이 여러 번 깨져도 1회만 드랍)
+    bool _droppedOnDestroy = false;
 
     public bool Isburning => _fuelTicksLeft > 0;
 
@@ -77,6 +79,17 @@ public class Campfire : Multiblock
     public override void OnInteract(Player player, Vector2Int hitCell)
     {
         Manager.OpenModule("Campfire", this);
+    }
+
+    public override void OnCellBroken(Vector2Int brokenCell)
+    {
+        if (!_droppedOnDestroy)
+        {
+            _droppedOnDestroy = true;
+            DropAllInternalItems();
+        }
+
+        base.OnCellBroken(brokenCell);
     }
 
     // ───────── VFX 요청 ─────────
@@ -191,17 +204,32 @@ public class Campfire : Multiblock
 
     bool IngredientChanged()
     {
-        var it = _ingIn;
-        int c = it != null ? it.Count : 0;
-        int d = it != null ? it.Durability : 0;
-        return (it != _prevIngRef || c != _prevIngCount || d != _prevIngDur);
+        // 현재 재료 없음(또는 0개): 이전에 재료가 있었으면 변경으로 간주
+        if (_ingIn == null || _ingIn.Count <= 0)
+            return !string.IsNullOrEmpty(_prevIngItemId);
+
+        string curId = _ingIn.ItemId;
+        int curDur = _ingIn.Durability;
+
+        if (string.IsNullOrEmpty(_prevIngItemId)) return true;
+        if (curId != _prevIngItemId) return true;
+        if (curDur != _prevIngDur) return true;
+
+        // Count 변화는 무시
+        return false;
     }
 
     void SnapshotIngredient()
     {
-        _prevIngRef = _ingIn;
-        _prevIngCount = _ingIn != null ? _ingIn.Count : 0;
-        _prevIngDur = _ingIn != null ? _ingIn.Durability : 0;
+        if (_ingIn == null || _ingIn.Count <= 0)
+        {
+            _prevIngItemId = null;
+            _prevIngDur = 0;
+            return;
+        }
+
+        _prevIngItemId = _ingIn.ItemId;
+        _prevIngDur = _ingIn.Durability;
     }
 
     void ResetCookProgress()
@@ -377,6 +405,49 @@ public class Campfire : Multiblock
         return true;
     }
 
+    void DropAllInternalItems()
+    {
+        if (World == null || World.itemDropper == null)
+            return;
+
+        Vector3 origin = new Vector3(
+            Origin.x + (Width * 0.5f),
+            Origin.y + (Height * 0.5f),
+            0f
+        );
+
+        DropSlot(ref _fuelIn, origin);
+        DropSlot(ref _fuelOut, origin);
+        DropSlot(ref _ingIn, origin);
+        DropSlot(ref _ingOut, origin);
+    }
+
+    void DropSlot(ref ItemData slot, Vector3 origin)
+    {
+        if (slot == null) return;
+        if (slot.Count <= 0) { slot = null; return; }
+
+        var copy = new ItemData(
+            itemId:        slot.ItemId,
+            name:          slot.Name,
+            spriteName:    slot.SpriteName,
+            itemType:      slot.ItemType,
+            maxStack:      slot.MaxStack,
+            maxDurability: slot.MaxDurability,
+            durability:    slot.Durability,
+            toolActions:   slot.ToolActions,
+            weaponActions: slot.WeaponActions,
+            breakActions:  slot.BreakActions,
+            tags:          slot.Tags,
+            details:       slot.Details,
+            icon:          slot.Icon,
+            count:         slot.Count
+        );
+
+        World.itemDropper.SpawnDroppedItem(copy, origin);
+        slot = null;
+    }
+
     public override SaveData ToSaveData()
     {
         return new SaveData
@@ -408,6 +479,8 @@ public class Campfire : Multiblock
         _fuelResultItemId = null;
         ResetCookProgress();
         SnapshotIngredient();
+
+        _droppedOnDestroy = false;
 
         // 로드 기본은 꺼짐 상태 meta 요청
         RequestApplyCampfireMeta(false);
