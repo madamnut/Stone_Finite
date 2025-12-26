@@ -71,7 +71,7 @@ public class Campfire : Multiblock
             case SlotKind.IngredientOut: _ingOut = item; break;
         }
 
-        // ✅ 고스트 방지: Count 0이면 즉시 슬롯 비우기
+        // ✅ 고스트 방지
         CleanupZeroCountSlots();
     }
 
@@ -82,41 +82,33 @@ public class Campfire : Multiblock
 
     // ───────── VFX 요청 ─────────
     // Campfire는 Fire_01 하나만 사용, Origin 기준 (1, 0.5)
-    public override void GetLoopVfxRequests(List<LoopVfxRequest> outList)
+    public override void GetVfxRequests(List<VfxRequest> outList)
     {
         if (outList == null) return;
 
-        outList.Add(new LoopVfxRequest
+        outList.Add(new VfxRequest
         {
-            vfxKey   = "Fire_01",
-            localPos = new Vector2(1f, 0.5f),
-            on       = Isburning
+            key    = "Fire_01",
+            offset = new Vector2(1f, .8f),
+            active = Isburning
         });
     }
 
     public override void Tick()
     {
-        // ✅ 고스트 방지(외부에서 Count 0이 된 채 들어올 수 있음)
         CleanupZeroCountSlots();
 
-        // 1) 재료가 중간에 빠졌으면 진행도 초기화
         if (IngredientChanged())
         {
             ResetCookProgress();
             SnapshotIngredient();
         }
 
-        // 2) 현재 “요리를 진행할 수 있는지” 판단
         bool canCookNow = CanCookNow(out int cookNeed, out string cookResult);
-
-        // 3) 출력이 꽉 차면 멈춤(부산물 누적 안됨)
         bool ingOutBlocked = IsOutputFullOrBlocked(_ingOut, cookResult);
 
-        // 4) 연료 버퍼가 없고, 지금 요리가 가능하면 -> fuelIn에서 1개 즉시 소모해서 버퍼 채우기
-        //    단, fuelOut이 가득이면 새로운 연료 시작 금지
         if (_fuelTicksLeft <= 0)
         {
-            // 버퍼 0인데도 부산물 못 넣은 상태면 계속 시도
             if (!string.IsNullOrEmpty(_fuelResultItemId))
             {
                 TryPushFuelResultToFuelOut();
@@ -126,14 +118,11 @@ public class Campfire : Multiblock
                 if (canCookNow && !ingOutBlocked)
                 {
                     if (!IsFuelOutBlockedForNewFuel())
-                    {
                         TryStartBurnFromFuelIn();
-                    }
                 }
             }
         }
 
-        // 5) 버퍼가 있고 요리 가능한 상태면 진행
         if (_fuelTicksLeft > 0 && canCookNow && !ingOutBlocked)
         {
             if (_cookTicksNeed <= 0 || _cookResultItemId != cookResult)
@@ -143,19 +132,16 @@ public class Campfire : Multiblock
                 _cookTicksDone = Mathf.Clamp(_cookTicksDone, 0, _cookTicksNeed);
             }
 
-            // 1 tick 진행
             _fuelTicksLeft -= 1;
             if (_fuelTicksLeft < 0) _fuelTicksLeft = 0;
 
             _cookTicksDone += 1;
             if (_cookTicksDone > _cookTicksNeed) _cookTicksDone = _cookTicksNeed;
 
-            // cook 완료 처리
             if (_cookTicksNeed > 0 && _cookTicksDone >= _cookTicksNeed)
             {
                 if (ConsumeOne(_ingIn))
                 {
-                    // ✅ Count 0이면 슬롯 비우기
                     if (_ingIn != null && _ingIn.Count <= 0) _ingIn = null;
                     TryProduceCookResult();
                 }
@@ -164,14 +150,12 @@ public class Campfire : Multiblock
                 SnapshotIngredient();
             }
 
-            // 연료가 방금 끝났으면 부산물 적재 시도
             if (_fuelTicksLeft <= 0)
             {
                 TryPushFuelResultToFuelOut();
             }
         }
 
-        // ✅ 마무리 정리
         CleanupZeroCountSlots();
     }
 
@@ -251,7 +235,6 @@ public class Campfire : Multiblock
             return false;
 
         if (_fuelOut == null) return false;
-
         if (_fuelOut.ItemId != resultItem) return true;
 
         return _fuelOut.Count >= _fuelOut.MaxStack;
@@ -283,13 +266,11 @@ public class Campfire : Multiblock
 
         if (burnTicks <= 0) return;
 
-        // ✅ 연료 1개 즉시 소모 + 고스트 방지
         _fuelIn.Count -= 1;
         if (_fuelIn.Count <= 0) _fuelIn = null;
 
         _fuelTicksLeft = burnTicks;
         _fuelTicksMax  = burnTicks;
-
         _fuelResultItemId = resultItem;
 
         CleanupZeroCountSlots();
@@ -338,7 +319,6 @@ public class Campfire : Multiblock
             return false;
 
         if (outSlot == null) return false;
-
         if (outSlot.ItemId != expectedItemId) return true;
 
         return outSlot.Count >= outSlot.MaxStack;
@@ -361,7 +341,6 @@ public class Campfire : Multiblock
         }
 
         _ingOut.Count += 1;
-
         CleanupZeroCountSlots();
     }
 

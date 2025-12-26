@@ -882,8 +882,7 @@ MonoBehaviour:
   interaction: {fileID: 1746062758}
   primalCraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   campfireModule: {fileID: 8683761661018755451, guid: 0ffd85b8869380c439e4a992432c783a, type: 3}
-  fire01Prefab: {fileID: 0}
-  vfxActiveRange: 40
+  vfx: {fileID: 672136422}
 --- !u!1 &172259531
 GameObject:
   m_ObjectHideFlags: 0
