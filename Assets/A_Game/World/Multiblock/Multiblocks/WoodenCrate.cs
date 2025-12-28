@@ -167,14 +167,24 @@ public class WoodenCrate : Multiblock
             }
         }
 
+        // OriginalSolidIds (row-major)
+        ushort[] orig = new ushort[Width * Height];
+        for (int y = 0; y < Height; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+            orig[x + y * Width] = originalSolidIds.TryGetValue(cell, out var id) ? id : (ushort)0;
+        }
+
         return new SaveData
         {
-            DefId       = DefId,
-            InstId      = InstId,
-            Origin      = Origin,
-            Width       = Width,
-            Height      = Height,
-            PayloadJson = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty
+            DefId            = DefId,
+            InstId           = InstId,
+            Origin           = Origin,
+            Width            = Width,
+            Height           = Height,
+            PayloadJson      = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty,
+            OriginalSolidIds = orig
         };
     }
 
@@ -191,11 +201,26 @@ public class WoodenCrate : Multiblock
             for (int x = 0; x < Width; x++)
                 occupiedCells.Add(new Vector2Int(Origin.x + x, Origin.y + y));
 
+        // originalSolidIds restore (row-major)
+        originalSolidIds.Clear();
+        if (data.OriginalSolidIds != null && data.OriginalSolidIds.Length == Width * Height)
+        {
+            for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+            {
+                var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+                originalSolidIds[cell] = data.OriginalSolidIds[x + y * Width];
+            }
+        }
+
         _inventory = new InventoryData(Capacity);
         _droppedOnDestroy = false;
 
         if (string.IsNullOrEmpty(data.PayloadJson))
+        {
+            _inventory.NotifyChanged();
             return;
+        }
 
         WoodenCratePayload payload;
         try
@@ -204,11 +229,15 @@ public class WoodenCrate : Multiblock
         }
         catch
         {
+            _inventory.NotifyChanged();
             return;
         }
 
         if (payload == null || payload.items == null)
+        {
+            _inventory.NotifyChanged();
             return;
+        }
 
         int n = Mathf.Min(Capacity, payload.items.Count);
 
@@ -243,6 +272,7 @@ public class WoodenCrate : Multiblock
             );
         }
 
+        // 나머지 슬롯(저장 데이터가 더 짧은 경우)은 null 유지
         _inventory.NotifyChanged();
     }
 }

@@ -238,4 +238,64 @@ public class MultiblockManager : MonoBehaviour
 
         Debug.Log($"{LOG_MB} Despawn multiblock instId={inst.InstId}, def={inst.DefId}, restoreExcept={brokenCell}");
     }
+
+    /// <summary>
+    /// 로드된 SaveData들로 멀티블럭 인스턴스들을 복원한다.
+    /// - 월드 셀 덮어쓰기는 하지 않는다. (이미 world.bin에서 복원된 상태를 전제로)
+    /// - _instances/_byCell 재구성 + _nextInstanceId 갱신
+    /// </summary>
+    public void LoadFromSaveDatas(List<Multiblock.SaveData> list)
+    {
+        // 기존 VFX 정리
+        if (vfx != null && _instances.Count > 0)
+        {
+            foreach (var kv in _instances)
+                vfx.DespawnAllForOwner(kv.Key);
+        }
+
+        _instances.Clear();
+        _byCell.Clear();
+
+        int maxId = 0;
+
+        if (list == null || list.Count == 0)
+        {
+            _nextInstanceId = 1;
+            return;
+        }
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            var sd = list[i];
+
+            if (string.IsNullOrEmpty(sd.DefId))
+                continue;
+
+            if (!_factoryByDefId.TryGetValue(sd.DefId, out var creator) || creator == null)
+            {
+                Debug.LogWarning($"{LOG_MB} No factory for defId='{sd.DefId}'. Load skipped.");
+                continue;
+            }
+
+            var occupied = new List<Vector2Int>(sd.Width * sd.Height);
+            for (int y = 0; y < sd.Height; y++)
+                for (int x = 0; x < sd.Width; x++)
+                    occupied.Add(new Vector2Int(sd.Origin.x + x, sd.Origin.y + y));
+
+            var inst = creator.Invoke();
+
+            inst.Initialize(world, sd.DefId, sd.Origin, sd.Width, sd.Height, occupied);
+            inst.Manager = this;
+            inst.InstId = sd.InstId;
+
+            inst.FromSaveData(sd);
+
+            RegisterInstance(inst);
+
+            if (inst.InstId > maxId)
+                maxId = inst.InstId;
+        }
+
+        _nextInstanceId = (maxId <= 0) ? 1 : (maxId + 1);
+    }
 }

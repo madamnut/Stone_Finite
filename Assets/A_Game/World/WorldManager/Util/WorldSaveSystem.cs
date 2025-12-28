@@ -8,10 +8,19 @@ using Newtonsoft.Json;
 /// ⚠ 호환성 전혀 고려 안 함 (신규 포맷 고정)
 /// WorldData 구조(신규):
 ///   bg / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
+/// + Multiblock 인스턴스(신규):
+///   count
+///   반복:
+///     DefId(string)
+///     InstId(int)
+///     Origin(x,y)
+///     Width/Height(int)
+///     PayloadJson(string)
+///     OriginalSolidIds(ushort[] row-major, length = Width*Height)
 /// </summary>
 public static class WorldSaveSystem
 {
-    private const string SAVE_FILE        = "world.bin";    // 월드 셀/라이트/시간
+    private const string SAVE_FILE        = "world.bin";    // 월드 셀/라이트/시간(+멀티블럭)
     private const string PLAYER_SAVE_FILE = "player.bin";   // 플레이어
     private const string ENTITY_SAVE_FILE = "entities.bin"; // 엔티티
 
@@ -50,7 +59,8 @@ public static class WorldSaveSystem
         HashSet<Vector2Int> tickNext,
         Player playerComp,
         Transform player,
-        EntityManager entityManager
+        EntityManager entityManager,
+        MultiblockManager multiblockManager
     )
     {
         try
@@ -116,6 +126,50 @@ public static class WorldSaveSystem
                     bw.Write(p.x);
                     bw.Write(p.y);
                 }
+
+                // ───── 멀티블럭 섹션 (신규) ─────
+                int mbCount = 0;
+                if (multiblockManager != null && multiblockManager.Instances != null)
+                    mbCount = multiblockManager.Instances.Count;
+
+                bw.Write(mbCount);
+
+                if (mbCount > 0)
+                {
+                    foreach (var kv in multiblockManager.Instances)
+                    {
+                        var mb = kv.Value;
+                        if (mb == null)
+                        {
+                            // null 이면 빈 더미로 넣지 않고 스킵(카운트가 깨지므로 금지)
+                            // 따라서 mbCount는 "실제 null 제외"로 계산돼야 한다.
+                            // 여기까지 왔다는건 Instances에 null이 들어있는 비정상 상황.
+                            // 안전하게 0개로 저장 처리.
+                            // (요구사항: 호환성 고려 안함. 포맷 깨짐 방지)
+                            throw new System.Exception("[SAVE] Multiblock instance is null in Instances.");
+                        }
+
+                        Multiblock.SaveData sd = mb.ToSaveData();
+
+                        bw.Write(sd.DefId ?? "");
+                        bw.Write(sd.InstId);
+                        bw.Write(sd.Origin.x);
+                        bw.Write(sd.Origin.y);
+                        bw.Write(sd.Width);
+                        bw.Write(sd.Height);
+
+                        bw.Write(sd.PayloadJson ?? "");
+
+                        ushort[] orig = sd.OriginalSolidIds;
+                        int origLen = (orig != null) ? orig.Length : 0;
+                        bw.Write(origLen);
+                        if (origLen > 0)
+                        {
+                            for (int i = 0; i < origLen; i++)
+                                bw.Write(orig[i]);
+                        }
+                    }
+                }
             }
 
             if (File.Exists(path)) File.Delete(path);
@@ -142,12 +196,14 @@ public static class WorldSaveSystem
         out int height,
         out long loadedTick,
         HashSet<Vector2Int> tickCurr,
-        HashSet<Vector2Int> tickNext
+        HashSet<Vector2Int> tickNext,
+        out List<Multiblock.SaveData> multiblocks
     )
     {
         loaded = default;
         width = height = 0;
         loadedTick = 0;
+        multiblocks = null;
 
         string path = Path.Combine(WorldLoadContext.GetSavePath(), SAVE_FILE);
         if (!File.Exists(path))
@@ -220,6 +276,39 @@ public static class WorldSaveSystem
                     tickNext.Add(new Vector2Int(x, y));
             }
 
+            // ───── 멀티블럭 섹션 (신규) ─────
+            int mbCount = br.ReadInt32();
+            if (mbCount < 0) mbCount = 0;
+
+            multiblocks = new List<Multiblock.SaveData>(mbCount);
+
+            for (int i = 0; i < mbCount; i++)
+            {
+                var sd = new Multiblock.SaveData
+                {
+                    DefId  = br.ReadString(),
+                    InstId = br.ReadInt32(),
+                    Origin = new Vector2Int(br.ReadInt32(), br.ReadInt32()),
+                    Width  = br.ReadInt32(),
+                    Height = br.ReadInt32(),
+                    PayloadJson = br.ReadString()
+                };
+
+                int origLen = br.ReadInt32();
+                if (origLen > 0)
+                {
+                    sd.OriginalSolidIds = new ushort[origLen];
+                    for (int j = 0; j < origLen; j++)
+                        sd.OriginalSolidIds[j] = br.ReadUInt16();
+                }
+                else
+                {
+                    sd.OriginalSolidIds = null;
+                }
+
+                multiblocks.Add(sd);
+            }
+
             loaded = data;
             return true;
         }
@@ -229,6 +318,7 @@ public static class WorldSaveSystem
             loaded = null;
             width = height = 0;
             loadedTick = 0;
+            multiblocks = null;
             return false;
         }
     }

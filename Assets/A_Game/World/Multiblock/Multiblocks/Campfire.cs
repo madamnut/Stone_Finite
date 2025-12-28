@@ -1,6 +1,7 @@
 // Campfire.cs (전체 교체본)
 using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 public class Campfire : Multiblock
 {
@@ -450,6 +451,45 @@ public class Campfire : Multiblock
 
     public override SaveData ToSaveData()
     {
+        // PayloadJson
+        JObject root = new JObject();
+
+        JObject PackItem(ItemData it)
+        {
+            if (it == null || it.Count <= 0) return null;
+            return new JObject
+            {
+                ["id"]    = it.ItemId,
+                ["count"] = it.Count,
+                ["dur"]   = it.Durability
+            };
+        }
+
+        root["fuelIn"]  = PackItem(_fuelIn);
+        root["fuelOut"] = PackItem(_fuelOut);
+        root["ingIn"]   = PackItem(_ingIn);
+        root["ingOut"]  = PackItem(_ingOut);
+
+        root["fuelTicksLeft"]    = _fuelTicksLeft;
+        root["fuelTicksMax"]     = _fuelTicksMax;
+        root["fuelResultItemId"] = _fuelResultItemId;
+
+        root["cookTicksDone"]    = _cookTicksDone;
+        root["cookTicksNeed"]    = _cookTicksNeed;
+        root["cookResultItemId"] = _cookResultItemId;
+
+        root["prevIngItemId"]    = _prevIngItemId;
+        root["prevIngDur"]       = _prevIngDur;
+
+        // OriginalSolidIds (row-major)
+        ushort[] orig = new ushort[Width * Height];
+        for (int y = 0; y < Height; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+            orig[x + y * Width] = originalSolidIds.TryGetValue(cell, out var id) ? id : (ushort)0;
+        }
+
         return new SaveData
         {
             DefId = DefId,
@@ -457,7 +497,8 @@ public class Campfire : Multiblock
             Origin = Origin,
             Width = Width,
             Height = Height,
-            PayloadJson = null
+            PayloadJson = root.ToString(),
+            OriginalSolidIds = orig
         };
     }
 
@@ -474,15 +515,82 @@ public class Campfire : Multiblock
             for (int x = 0; x < Width; x++)
                 occupiedCells.Add(new Vector2Int(Origin.x + x, Origin.y + y));
 
+        // originalSolidIds restore (row-major)
+        originalSolidIds.Clear();
+        if (data.OriginalSolidIds != null && data.OriginalSolidIds.Length == Width * Height)
+        {
+            for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+            {
+                var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+                originalSolidIds[cell] = data.OriginalSolidIds[x + y * Width];
+            }
+        }
+
+        // defaults
         _fuelIn = _fuelOut = _ingIn = _ingOut = null;
         _fuelTicksLeft = _fuelTicksMax = 0;
         _fuelResultItemId = null;
-        ResetCookProgress();
-        SnapshotIngredient();
+
+        _cookTicksDone = 0;
+        _cookTicksNeed = 0;
+        _cookResultItemId = null;
+
+        _prevIngItemId = null;
+        _prevIngDur = 0;
 
         _droppedOnDestroy = false;
 
-        // 로드 기본은 꺼짐 상태 meta 요청
-        RequestApplyCampfireMeta(false);
+        // payload load
+        if (!string.IsNullOrEmpty(data.PayloadJson))
+        {
+            JObject root = null;
+            try { root = JObject.Parse(data.PayloadJson); }
+            catch { root = null; }
+
+            if (root != null)
+            {
+                ItemData UnpackItem(JToken tok)
+                {
+                    if (tok == null || tok.Type == JTokenType.Null) return null;
+
+                    string id = tok.Value<string>("id");
+                    int count = tok.Value<int?>("count") ?? 0;
+                    int dur   = tok.Value<int?>("dur") ?? 0;
+
+                    if (string.IsNullOrEmpty(id) || count <= 0) return null;
+
+                    ItemData it = null;
+                    if (Manager != null && Manager.ItemLibrary != null)
+                        it = Manager.ItemLibrary.Create(id, count);
+
+                    if (it != null)
+                        it.Durability = dur;
+
+                    return it;
+                }
+
+                _fuelIn  = UnpackItem(root["fuelIn"]);
+                _fuelOut = UnpackItem(root["fuelOut"]);
+                _ingIn   = UnpackItem(root["ingIn"]);
+                _ingOut  = UnpackItem(root["ingOut"]);
+
+                _fuelTicksLeft    = root.Value<int?>("fuelTicksLeft") ?? 0;
+                _fuelTicksMax     = root.Value<int?>("fuelTicksMax") ?? 0;
+                _fuelResultItemId = root.Value<string>("fuelResultItemId");
+
+                _cookTicksDone    = root.Value<int?>("cookTicksDone") ?? 0;
+                _cookTicksNeed    = root.Value<int?>("cookTicksNeed") ?? 0;
+                _cookResultItemId = root.Value<string>("cookResultItemId");
+
+                _prevIngItemId    = root.Value<string>("prevIngItemId");
+                _prevIngDur       = root.Value<int?>("prevIngDur") ?? 0;
+            }
+        }
+
+        CleanupZeroCountSlots();
+
+        // 로드 후 meta는 현재 상태 기준으로 맞춤
+        RequestApplyCampfireMeta(Isburning);
     }
 }

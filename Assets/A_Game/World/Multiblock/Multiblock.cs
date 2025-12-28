@@ -102,6 +102,10 @@ public abstract class Multiblock
         public int        Width;
         public int        Height;
         public string     PayloadJson;
+
+        // ✅ origin + (x,y) 기반으로 복원 가능한 값들은 좌표 딕셔너리 대신 배열로 저장
+        // row-major: index = x + y * Width, length = Width * Height
+        public ushort[]   OriginalSolidIds;
     }
 
     public abstract SaveData ToSaveData();

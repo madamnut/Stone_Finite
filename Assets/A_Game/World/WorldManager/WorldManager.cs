@@ -1,3 +1,4 @@
+// WorldManager.cs (전체 교체본)
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -33,6 +34,12 @@ public class WorldManager : MonoBehaviour
     [Header("Drops / VFX")]
     public ItemDropper itemDropper;
     public VfxManager vfx;
+
+    [Header("Multiblock")]
+    public MultiblockManager multiblockManager;
+
+    // 로드 때만 임시로 들고있다가 Awake 끝에서 적용
+    private List<Multiblock.SaveData> _loadedMultiblocks;
 
     [Header("Corpse")]
     public CorpseLibrary corpseLibrary;
@@ -742,7 +749,7 @@ public class WorldManager : MonoBehaviour
         }
         else if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
         {
-            if (!LoadWorldFromDisk(out worldMap))
+            if (!LoadWorldFromDisk(out worldMap, out _loadedMultiblocks))
             {
                 Debug.LogError("[BOOT] 저장 파일을 읽을 수 없습니다. (없음 or 포맷 불일치)");
                 SceneManager.LoadScene("Loby");
@@ -802,6 +809,15 @@ public class WorldManager : MonoBehaviour
 
         ApplyTimeSyncedBrightness(forceDirty: true);
         chunkSystem.ResetLastPlayerChunk(player.position);
+
+        // ✅ 멀티블럭 복원 (월드/청크 시스템 준비 이후)
+        if (multiblockManager != null)
+        {
+            if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
+                multiblockManager.LoadFromSaveDatas(_loadedMultiblocks);
+            else
+                multiblockManager.LoadFromSaveDatas(null);
+        }
     }
 
     void Start()
@@ -1232,28 +1248,34 @@ public class WorldManager : MonoBehaviour
             tickNext,
             playerComp,
             player,
-            entityManager
+            entityManager,
+            multiblockManager
         );
     }
 
-    bool LoadWorldFromDisk(out WorldData loaded)
+    bool LoadWorldFromDisk(out WorldData loaded, out List<Multiblock.SaveData> multiblocks)
     {
         int w, h;
         long loadedTick;
+
         bool ok = WorldSaveSystem.LoadWorldFromDisk(
             out loaded,
             out w,
             out h,
             out loadedTick,
             tickCurr,
-            tickNext
+            tickNext,
+            out multiblocks
         );
-
         if (ok)
         {
             W = w;
             H = h;
             worldTick = loadedTick;
+        }
+        else
+        {
+            multiblocks = null;
         }
 
         return ok;
