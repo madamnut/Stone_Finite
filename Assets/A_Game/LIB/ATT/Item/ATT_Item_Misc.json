@@ -198,8 +198,30 @@
     "name": "Wooden Plank",
     "spriteName": "Wooden Plank",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Wooden Plank"
+      }
+    }
   },
+
+  "Wooden Frame": {
+    "name": "Wooden Frame",
+    "spriteName": "Wooden Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Wooden Frame"
+      }
+    }
+  },
+
   "Wooden Platform": {
     "name": "Wooden Platform",
     "spriteName": "Wooden Platform",

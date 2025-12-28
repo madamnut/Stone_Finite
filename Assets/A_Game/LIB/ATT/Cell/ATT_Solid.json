@@ -80,6 +80,31 @@
       { "key": "Default", "meta": 0, "sprite": "Firewood" }
     ]
   },
+  "Wooden Plank": {
+    "id": 9,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Plank" }
+    ]
+  },
+  "Wooden Platform": {
+    "id": 10,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
+    ]
+  },
+  "Wooden Frame": {
+    "id": 11,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Frame" }
+    ]
+  },
+
 
   "Sand": {
     "id": 1000,
@@ -215,24 +240,8 @@
       { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
     ]
   },
-  "Clay Kiln_Bottom": {
-    "id": 5002,
-    "collidable": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_Bottom" }
-    ]
-  },
-  "Clay Kiln_Top": {
-    "id": 5003,
-    "collidable": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_Top" }
-    ]
-  },
   "Campfire_L": {
-    "id": 5004,
+    "id": 5002,
     "collidable": false,
     "gravity": false,
     "brightness": 0,
@@ -242,13 +251,29 @@
     ]
   },
   "Campfire_R": {
-    "id": 5005,
+    "id": 5003,
     "collidable": false,
     "gravity": false,
     "brightness": 0,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Campfire_R" },
       { "key": "Burning", "meta": 1, "sprite": "Campfire_R", "brightness_override": 15 }
+    ]
+  },
+  "Wooden Crate_L": {
+    "id": 5004,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Crate_L" }
+    ]
+  },
+  "Wooden Crate_R": {
+    "id": 5005,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Crate_R" }
     ]
   },
 
@@ -262,15 +287,6 @@
       { "key": "Left",  "meta": 1, "sprite": "Torch_Left",  "attachedAt": "Left" },
       { "key": "Right", "meta": 2, "sprite": "Torch_Right", "attachedAt": "Right" },
       { "key": "Back",  "meta": 3, "sprite": "Torch_BG",    "attachedAt": "Back" }
-    ]
-  },
-
-  "Wooden Platform": {
-    "id": 50002,
-    "collidable": true,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
     ]
   }
 }

@@ -10,8 +10,14 @@
   "Clay": [
     { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
   ],
+  "Wooden Plank": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
+  ],
   "Wooden Platform": [
     { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Frame": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
   ],
   "Log": [
     { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }
@@ -105,5 +111,11 @@
   ],
   "Campfire_R": [
     { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Crate_L": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Crate_R": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
   ]
 }

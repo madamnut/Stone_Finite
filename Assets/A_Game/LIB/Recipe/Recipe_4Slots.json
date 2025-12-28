@@ -185,5 +185,27 @@
     "outputActions": [
       []
     ]
+  },
+
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Wooden Platform", "count": 1 },
+      { "itemId": "Wooden Platform", "count": 1 },
+      { "itemId": "Wooden Platform", "count": 1 },
+      { "itemId": "Wooden Platform", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
   }
 ]

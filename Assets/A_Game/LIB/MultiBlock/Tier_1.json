@@ -21,13 +21,13 @@
     }
   ],
 
-  "Wooden Chest": [
+  "Wooden Crate": [
     {
       "pattern": [
-        ["Wooden Box", "Wooden Box"]
+        ["Wooden Frame", "Wooden Frame"]
       ],
       "result": [
-        ["Wooden Chest_L", "Wooden Chest_R"]
+        ["Wooden Crate_L", "Wooden Crate_R"]
       ]
     }
   ],

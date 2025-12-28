@@ -882,6 +882,7 @@ MonoBehaviour:
   interaction: {fileID: 1746062758}
   primalCraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   campfireModule: {fileID: 8683761661018755451, guid: 0ffd85b8869380c439e4a992432c783a, type: 3}
+  woodenCrateModule: {fileID: 8683761661018755451, guid: 9f73900305dc0e54695b2dd7034c7541, type: 3}
   vfx: {fileID: 672136422}
 --- !u!1 &172259531
 GameObject:
