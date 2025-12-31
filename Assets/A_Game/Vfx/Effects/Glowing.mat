@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: BGGodRayMat
-  m_Shader: {fileID: 4800000, guid: f2674764fae6fa24783874f4002b2844, type: 3}
+  m_Name: Glowing
+  m_Shader: {fileID: 4800000, guid: 4c56cd160d648a94d8f7285e24b9d7d1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -23,10 +23,6 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _BGTex:
-        m_Texture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -47,10 +43,6 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _FGTex:
-        m_Texture: {fileID: 8400000, guid: 9bb4d988b48d8b6418a7b6c194c0ec78, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -63,78 +55,36 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _OcclusionTex:
-        m_Texture: {fileID: 8400000, guid: 40e14e550ce71a541b8d805c286a1625, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _Texture:
-        m_Texture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _TextureBG:
-        m_Texture: {fileID: 8400000, guid: 340eb43222d669449804699c28ee545f, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _TextureFG:
-        m_Texture: {fileID: 8400000, guid: 9bb4d988b48d8b6418a7b6c194c0ec78, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 1
-    - _BGAlpha: 0.3
     - _BumpScale: 1
+    - _CoreStrength: 0.63
     - _Cutoff: 0.5
-    - _Decay: 0.462
-    - _Density: 0.789
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _EndT: 0.832
-    - _Exposure: 0.61
-    - _FGAlpha: 0.6
+    - _EdgeSoftness: 1.01
+    - _FlickerAmount: 0.15
+    - _FlickerSpeed: 6.2
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _Intensity: 1.503768
-    - _InvertMask: 0
+    - _GlowStrength: 1.58
     - _Metallic: 0
-    - _Mix: 0.806
     - _Mode: 0
-    - _NoiseFreq: 198
-    - _NoiseSpeed: 0.4
-    - _NoiseStrength: 1.24
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Samples: 128
-    - _SamplesF: 64
-    - _SilhouetteThreshold: 0.269
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _StartT: 1
-    - _StripeFreq: 22
-    - _StripePower: 5.15
-    - _StripeRadialFreq: 12.1
-    - _StripeRadialSpeed: 3
-    - _StripeSpeed: 2.8
-    - _StripeStrength: 0.01
-    - _SunAngle: -5.6323957
     - _UVSec: 0
-    - _UseAlphaAsMask: 1
-    - _WarpAmp: 0.0239
-    - _WarpByT: 4.15
-    - _WarpFreq: 113
-    - _WarpMaskPow: 3.14
-    - _WarpSpeed: -8.4
-    - _Weight: 0.372
     - _ZWrite: 1
     m_Colors:
-    - _Center: {r: 0.8604126, g: 0.6722603, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Tint: {r: 0, g: 0, b: 0, a: 1}
+    - _GlowColor: {r: 1, g: 0.6, b: 0.19999996, a: 1}
+    - _Tint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

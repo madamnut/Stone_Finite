@@ -48,12 +48,12 @@
   "Clay Kiln": [
     {
       "pattern": [
-        ["Clay"],
-        ["Clay"]
+        ["Clay", "Clay"],
+        ["Clay", "Clay"]
       ],
       "result": [
-        ["Clay Kiln_Top"],
-        ["Clay Kiln_Bottom"]
+        ["Clay Kiln_TL", "Clay Kiln_TR"],
+        ["Clay Kiln_BL", "Clay Kiln_BR"]
       ]
     }
   ],

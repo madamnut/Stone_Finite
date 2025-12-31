@@ -32,7 +32,16 @@ public class Campfire : Multiblock
     // 파괴 드랍 가드(멀티블럭 구성 셀들이 여러 번 깨져도 1회만 드랍)
     bool _droppedOnDestroy = false;
 
+    // ───────── 불 VFX 끊김 방지(히스테리시스) ─────────
+    // 연료가 0이 된 직후에도 N틱 동안 불을 유지 (연료 교체 1틱 꺼짐 방지)
+    const int FIRE_HOLD_TICKS = 5;
+    int _fireHoldTicksLeft = 0;
+
+    // 논리상 "타고 있음"(요리/연료 소모 기준)
     public bool Isburning => _fuelTicksLeft > 0;
+
+    // 표시/메타/VFX용 "불이 보이는 상태"
+    bool IsFireActiveFx => _fuelTicksLeft > 0 || _fireHoldTicksLeft > 0;
 
     public float FuelProgress01
     {
@@ -103,7 +112,7 @@ public class Campfire : Multiblock
         {
             key    = "Fire_01",
             offset = new Vector2(1f, .8f),
-            active = Isburning
+            active = IsFireActiveFx
         });
     }
 
@@ -111,7 +120,8 @@ public class Campfire : Multiblock
     {
         CleanupZeroCountSlots();
 
-        bool wasBurning = Isburning;
+        bool wasBurning   = Isburning;      // 요리/연료 소모 기준
+        bool wasFireFxOn  = IsFireActiveFx; // 표시/메타 기준
 
         if (IngredientChanged())
         {
@@ -144,6 +154,22 @@ public class Campfire : Multiblock
         {
             _fuelTicksLeft -= 1;
             if (_fuelTicksLeft < 0) _fuelTicksLeft = 0;
+
+            // 실제 연료가 타는 중이면 hold는 필요 없음
+            if (_fuelTicksLeft > 0) _fireHoldTicksLeft = 0;
+        }
+
+        // 2.5) 연료가 방금 끝난 경우: hold 시작(이번 틱 이후부터)
+        if (wasBurning && _fuelTicksLeft <= 0)
+        {
+            _fireHoldTicksLeft = FIRE_HOLD_TICKS;
+        }
+
+        // 2.6) hold 틱 감소 (연료가 없는 동안만)
+        if (_fuelTicksLeft <= 0 && _fireHoldTicksLeft > 0)
+        {
+            _fireHoldTicksLeft -= 1;
+            if (_fireHoldTicksLeft < 0) _fireHoldTicksLeft = 0;
         }
 
         // 3) 요리는: "틱 시작 시 불꽃 ON" + 재료/출력 조건 만족 시에만 진행
@@ -179,10 +205,10 @@ public class Campfire : Multiblock
         }
 
         // 5) 상태 전이(edge)에서만 "캠프파이어 전체 파트" meta 변경 요청
-        bool isBurningNow = Isburning;
-        if (wasBurning != isBurningNow)
+        bool isFireFxOnNow = IsFireActiveFx;
+        if (wasFireFxOn != isFireFxOnNow)
         {
-            RequestApplyCampfireMeta(isBurningNow);
+            RequestApplyCampfireMeta(isFireFxOnNow);
         }
 
         CleanupZeroCountSlots();
@@ -323,6 +349,9 @@ public class Campfire : Multiblock
         _fuelTicksLeft = burnTicks;
         _fuelTicksMax  = burnTicks;
         _fuelResultItemId = resultItem;
+
+        // 새 연료가 들어오면 hold는 끊음
+        _fireHoldTicksLeft = 0;
 
         CleanupZeroCountSlots();
 
@@ -541,6 +570,8 @@ public class Campfire : Multiblock
 
         _droppedOnDestroy = false;
 
+        _fireHoldTicksLeft = 0;
+
         // payload load
         if (!string.IsNullOrEmpty(data.PayloadJson))
         {
@@ -590,7 +621,7 @@ public class Campfire : Multiblock
 
         CleanupZeroCountSlots();
 
-        // 로드 후 meta는 현재 상태 기준으로 맞춤
-        RequestApplyCampfireMeta(Isburning);
+        // 로드 후 meta는 현재 상태 기준으로 맞춤(표시/메타 기준)
+        RequestApplyCampfireMeta(IsFireActiveFx);
     }
 }

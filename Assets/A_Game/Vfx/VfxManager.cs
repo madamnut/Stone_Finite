@@ -9,9 +9,10 @@ public class VfxManager : MonoBehaviour
     public ParticleSystem psPrefab; // 파티클 시스템 프리팹
 
     [Header("Loop VFX Prefabs")]
-    // 키는 string으로 고정: "Smoke", "Fire_01"
+    // 키는 string으로 고정: "Smoke", "Fire_01", "Fire_02"
     public GameObject smokePrefab;
     public GameObject fire01Prefab;
+    public GameObject fire02Prefab;
 
     [Header("Loop VFX Culling")]
     public float activeRange = 40f;  // 플레이어 기준 거리 비활/활
@@ -122,6 +123,7 @@ public class VfxManager : MonoBehaviour
         {
             "Smoke"   => smokePrefab,
             "Fire_01" => fire01Prefab,
+            "Fire_02" => fire02Prefab,
             _ => null
         };
     }
