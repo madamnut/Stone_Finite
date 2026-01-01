@@ -18,7 +18,8 @@ public class MultiblockManager : MonoBehaviour
     [Header("Modules (Prefabs)")]
     public GameObject primalCraftModule;
     public GameObject campfireModule;
-    public GameObject woodenCrateModule; // ✅ 추가
+    public GameObject woodenCrateModule;
+    public GameObject clayKilnModule; // ✅ 추가
 
     [Header("VFX")]
     public VfxManager vfx; // ✅ 프리팹/인스턴스는 VfxManager가 가진다.
@@ -39,7 +40,7 @@ public class MultiblockManager : MonoBehaviour
         RegisterFactory("Clay Kiln", () => new ClayKiln());
         RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
         RegisterFactory("Campfire", () => new Campfire());
-        RegisterFactory("Wooden Crate", () => new WoodenCrate()); // ✅ 추가
+        RegisterFactory("Wooden Crate", () => new WoodenCrate());
     }
 
     void Start()
@@ -136,7 +137,8 @@ public class MultiblockManager : MonoBehaviour
         {
             "PrimalCraft"   => primalCraftModule,
             "Campfire"      => campfireModule,
-            "Wooden Crate"  => woodenCrateModule, // ✅ 추가
+            "Wooden Crate"  => woodenCrateModule,
+            "Clay Kiln"     => clayKilnModule, // ✅ 추가
             _ => null
         };
 
@@ -157,6 +159,12 @@ public class MultiblockManager : MonoBehaviour
             var ui = instGO.GetComponentInChildren<WoodenCrateModule>(true);
             if (ui != null)
                 ui.Bind(crate);
+        }
+        else if (moduleId == "Clay Kiln" && owner is ClayKiln kiln)
+        {
+            var ui = instGO.GetComponentInChildren<ClayKilnModule>(true);
+            if (ui != null)
+                ui.Bind(kiln);
         }
     }
 

@@ -1,4 +1,4 @@
-// MultiblockLibrary.cs
+// MultiblockLibrary.cs (전체 교체본) - JSON row0(맨 위) -> 내부 y=0(맨 아래)로 파싱 시 Y 뒤집기
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -12,12 +12,12 @@ using UnityEngine;
 ///   "Clay Kiln": [
 ///     {
 ///       "pattern": [
-///         ["Clay"],
-///         ["Clay"]
+///         ["Clay", "Clay"],
+///         ["Clay", "Clay"]
 ///       ],
 ///       "result": [
-///         ["Clay Kiln_Top"],
-///         ["Clay Kiln_Bottom"]
+///         ["Clay Kiln_TL", "Clay Kiln_TR"],
+///         ["Clay Kiln_BL", "Clay Kiln_BR"]
 ///       ]
 ///     }
 ///   ]
@@ -29,23 +29,15 @@ public class MultiblockLibrary : MonoBehaviour
     [Tooltip("멀티블럭 정의 JSON (예: Clay Kiln 패턴/결과 등)")]
     public TextAsset multiblockJson;
 
-    /// <summary>
-    /// 하나의 멀티블럭 정의.
-    /// - key: JSON 최상단 키 (예: "Clay Kiln")
-    /// - width/height: 패턴 크기
-    /// - pattern[x,y]: 요구 재료 셀 이름 (정확 매칭: null/빈문자열 불가)
-    /// - result[x,y]: 완성 후 배치될 셀 이름 (null/빈문자열 → 변경 없음 허용)
-    /// </summary>
     public class Def
     {
         public string    key;
         public int       width;
         public int       height;
-        public string[,] pattern;
-        public string[,] result;
+        public string[,] pattern; // pattern[x,y] where y=0 is bottom
+        public string[,] result;  // result[x,y] where y=0 is bottom
     }
 
-    // 정적 캐시 (게임 공통 1세트, 한 번만 로드)
     static bool _initialized;
     static readonly List<Def> _defs = new List<Def>();
     static readonly Dictionary<string, List<Def>> _byIngredient = new Dictionary<string, List<Def>>();
@@ -84,7 +76,7 @@ public class MultiblockLibrary : MonoBehaviour
 
         foreach (var prop in root.Properties())
         {
-            string defKey = prop.Name; // 예: "Clay Kiln"
+            string defKey = prop.Name;
 
             var arr = prop.Value as JArray;
             if (arr == null || arr.Count == 0)
@@ -132,7 +124,6 @@ public class MultiblockLibrary : MonoBehaviour
                     continue;
                 }
 
-                // Rect 검증 + pattern 필수값 검증
                 bool invalid = false;
 
                 for (int y = 0; y < height; y++)
@@ -188,10 +179,13 @@ public class MultiblockLibrary : MonoBehaviour
                 var pattern = new string[width, height];
                 var result  = new string[width, height];
 
-                for (int y = 0; y < height; y++)
+                // ✅ JSON은 row0=맨 위. 내부 배열은 y=0=맨 아래로 쓰기 위해 Y를 뒤집어서 저장한다.
+                for (int jsonY = 0; jsonY < height; jsonY++)
                 {
-                    var prow = (JArray)patternArr[y];
-                    var rrow = (JArray)resultArr[y];
+                    int y = (height - 1 - jsonY);
+
+                    var prow = (JArray)patternArr[jsonY];
+                    var rrow = (JArray)resultArr[jsonY];
 
                     for (int x = 0; x < width; x++)
                     {
@@ -221,7 +215,7 @@ public class MultiblockLibrary : MonoBehaviour
                 }
                 listByKey.Add(def);
 
-                // ingredient index: pattern 내부의 셀 이름 전부 재료로 등록 (정확 매칭이므로 전부 유효)
+                // ingredient index: pattern 내부의 셀 이름 전부 재료로 등록
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
@@ -247,10 +241,6 @@ public class MultiblockLibrary : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// 특정 재료 셀 이름을 포함하는 멀티블럭 후보 정의 목록을 가져온다.
-    /// InteractionController.HandleBuildMultiblock 에서 사용.
-    /// </summary>
     public static bool TryGetByIngredient(string ingredientCellKey, out List<Def> defs)
     {
         if (string.IsNullOrEmpty(ingredientCellKey))
@@ -270,10 +260,6 @@ public class MultiblockLibrary : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 멀티블럭 key(JSON 최상단 키)로 정의 목록 조회.
-    /// (하나의 key 아래 여러 변형이 있을 수 있음.)
-    /// </summary>
     public static List<Def> GetByKey(string defKey)
     {
         if (string.IsNullOrEmpty(defKey))
@@ -285,6 +271,5 @@ public class MultiblockLibrary : MonoBehaviour
         return null;
     }
 
-    /// <summary>전체 정의 열람이 필요할 때 사용.</summary>
     public static IReadOnlyList<Def> AllDefs => _defs;
 }

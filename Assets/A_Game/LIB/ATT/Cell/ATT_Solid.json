@@ -276,6 +276,42 @@
       { "key": "Default", "meta": 0, "sprite": "Wooden Crate_R" }
     ]
   },
+  "Clay Kiln_BL": {
+    "id": 5006,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BL" },
+      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_BL",  "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_BR": {
+    "id": 5007,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BR" },
+      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_BR",  "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_TL": {
+    "id": 5008,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TL" },
+      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_TL",  "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_TR": {
+    "id": 5009,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TR" },
+      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_TR",  "brightness_override": 15 }
+    ]
+  },
 
   "Torch": {
     "id": 50001,

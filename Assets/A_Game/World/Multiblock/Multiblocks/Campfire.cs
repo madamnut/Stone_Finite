@@ -1,4 +1,4 @@
-// Campfire.cs (전체 교체본)
+// Campfire.cs (전체 교체본) - Fuel은 점화 전 검사만, Cook은 amount 공간 없으면 완료/소모 안 됨
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
@@ -19,11 +19,13 @@ public class Campfire : Multiblock
 
     // 현재 연료가 다 타면 나오는 부산물(예: Ash)
     string _fuelResultItemId = null;
+    int _fuelResultAmount = 1; // Fuel.amount
 
     // 요리 진행(게이지)
     int _cookTicksDone = 0;
     int _cookTicksNeed = 0;
     string _cookResultItemId = null;
+    int _cookResultAmount = 1; // Cook.amount
 
     // 재료 변경 감지용 (Count 변화는 무시: 스택 분할/합치기 시 초기화 방지)
     string _prevIngItemId = null;
@@ -129,10 +131,10 @@ public class Campfire : Multiblock
             SnapshotIngredient();
         }
 
-        bool canCookNow = CanCookNow(out int cookNeed, out string cookResult);
-        bool ingOutBlocked = IsOutputFullOrBlocked(_ingOut, cookResult);
+        bool canCookNow = CanCookNow(out int cookNeed, out string cookResult, out int cookAmount);
+        bool ingOutBlocked = IsOutputFullOrBlocked(_ingOut, cookResult, cookAmount);
 
-        // 1) 연료가 없으면: (기존 유지) "요리 가능한 상황"에서만 점화 시도
+        // 1) 연료가 없으면: "요리 가능한 상황"에서만 점화 시도
         if (_fuelTicksLeft <= 0)
         {
             if (!string.IsNullOrEmpty(_fuelResultItemId))
@@ -179,6 +181,7 @@ public class Campfire : Multiblock
             {
                 _cookTicksNeed = cookNeed;
                 _cookResultItemId = cookResult;
+                _cookResultAmount = Mathf.Max(1, cookAmount);
                 _cookTicksDone = Mathf.Clamp(_cookTicksDone, 0, _cookTicksNeed);
             }
 
@@ -187,14 +190,18 @@ public class Campfire : Multiblock
 
             if (_cookTicksNeed > 0 && _cookTicksDone >= _cookTicksNeed)
             {
-                if (ConsumeOne(_ingIn))
+                // amount만큼 결과 슬롯 공간이 없으면 "완료/소모" 자체가 일어나지 않음
+                if (!IsOutputFullOrBlocked(_ingOut, _cookResultItemId, _cookResultAmount))
                 {
-                    if (_ingIn != null && _ingIn.Count <= 0) _ingIn = null;
-                    TryProduceCookResult();
-                }
+                    if (ConsumeOne(_ingIn))
+                    {
+                        if (_ingIn != null && _ingIn.Count <= 0) _ingIn = null;
+                        TryProduceCookResult();
+                    }
 
-                ResetCookProgress();
-                SnapshotIngredient();
+                    ResetCookProgress();
+                    SnapshotIngredient();
+                }
             }
         }
 
@@ -264,12 +271,14 @@ public class Campfire : Multiblock
         _cookTicksDone = 0;
         _cookTicksNeed = 0;
         _cookResultItemId = null;
+        _cookResultAmount = 1;
     }
 
-    bool CanCookNow(out int cookNeed, out string cookResult)
+    bool CanCookNow(out int cookNeed, out string cookResult, out int cookAmount)
     {
         cookNeed = 0;
         cookResult = null;
+        cookAmount = 1;
 
         if (_ingIn == null) return false;
         if (_ingIn.Count <= 0) return false;
@@ -290,6 +299,16 @@ public class Campfire : Multiblock
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
             cookResult = riObj.ToString();
 
+        if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
+        {
+            if (amObj is int i) cookAmount = i;
+            else if (amObj is long l) cookAmount = (int)l;
+            else if (amObj is float f) cookAmount = Mathf.RoundToInt(f);
+            else if (amObj is double d) cookAmount = (int)d;
+            else int.TryParse(amObj.ToString(), out cookAmount);
+        }
+        cookAmount = Mathf.Max(1, cookAmount);
+
         if (cookNeed <= 0) return false;
         if (string.IsNullOrEmpty(cookResult)) return false;
 
@@ -305,16 +324,32 @@ public class Campfire : Multiblock
             return true;
 
         string resultItem = null;
+        int amount = 1;
+
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
             resultItem = riObj.ToString();
+
+        if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
+        {
+            if (amObj is int i) amount = i;
+            else if (amObj is long l) amount = (int)l;
+            else if (amObj is float f) amount = Mathf.RoundToInt(f);
+            else if (amObj is double d) amount = (int)d;
+            else int.TryParse(amObj.ToString(), out amount);
+        }
+        amount = Mathf.Max(1, amount);
 
         if (string.IsNullOrEmpty(resultItem))
             return false;
 
+        // fuelOut이 비어있으면 항상 OK
         if (_fuelOut == null) return false;
+
+        // 다른 아이템이 들어있으면 막힘
         if (_fuelOut.ItemId != resultItem) return true;
 
-        return _fuelOut.Count >= _fuelOut.MaxStack;
+        // amount만큼 들어갈 공간이 없으면 막힘
+        return (_fuelOut.Count + amount) > _fuelOut.MaxStack;
     }
 
     void TryStartBurnFromFuelIn()
@@ -328,6 +363,7 @@ public class Campfire : Multiblock
 
         int burnTicks = 0;
         string resultItem = null;
+        int amount = 1;
 
         if (cfg.TryGetValue("burnTicks", out var btObj) && btObj != null)
         {
@@ -341,6 +377,16 @@ public class Campfire : Multiblock
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
             resultItem = riObj.ToString();
 
+        if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
+        {
+            if (amObj is int i) amount = i;
+            else if (amObj is long l) amount = (int)l;
+            else if (amObj is float f) amount = Mathf.RoundToInt(f);
+            else if (amObj is double d) amount = (int)d;
+            else int.TryParse(amObj.ToString(), out amount);
+        }
+        amount = Mathf.Max(1, amount);
+
         if (burnTicks <= 0) return;
 
         _fuelIn.Count -= 1;
@@ -348,7 +394,9 @@ public class Campfire : Multiblock
 
         _fuelTicksLeft = burnTicks;
         _fuelTicksMax  = burnTicks;
+
         _fuelResultItemId = resultItem;
+        _fuelResultAmount = amount;
 
         // 새 연료가 들어오면 hold는 끊음
         _fireHoldTicksLeft = 0;
@@ -364,17 +412,25 @@ public class Campfire : Multiblock
         if (string.IsNullOrEmpty(_fuelResultItemId))
         {
             _fuelTicksMax = 0;
+            _fuelResultAmount = 1;
             return;
         }
+
+        int amount = Mathf.Max(1, _fuelResultAmount);
+
+        // 안전상 재검사는 유지 (정책상 "사전 검사만"이지만, 슬롯이 바뀌었을 때 손실 방지)
+        if (IsOutputFullOrBlocked(_fuelOut, _fuelResultItemId, amount))
+            return;
 
         if (_fuelOut == null)
         {
             if (Manager != null && Manager.ItemLibrary != null)
-                _fuelOut = Manager.ItemLibrary.Create(_fuelResultItemId, 1);
+                _fuelOut = Manager.ItemLibrary.Create(_fuelResultItemId, amount);
 
             if (_fuelOut != null)
             {
                 _fuelResultItemId = null;
+                _fuelResultAmount = 1;
                 _fuelTicksMax = 0;
             }
 
@@ -382,48 +438,48 @@ public class Campfire : Multiblock
             return;
         }
 
-        if (_fuelOut.ItemId != _fuelResultItemId)
-            return;
-
-        if (_fuelOut.Count >= _fuelOut.MaxStack)
-            return;
-
-        _fuelOut.Count += 1;
+        _fuelOut.Count += amount;
 
         _fuelResultItemId = null;
+        _fuelResultAmount = 1;
         _fuelTicksMax = 0;
 
         CleanupZeroCountSlots();
     }
 
-    bool IsOutputFullOrBlocked(ItemData outSlot, string expectedItemId)
+    bool IsOutputFullOrBlocked(ItemData outSlot, string expectedItemId, int requiredAmount)
     {
         if (string.IsNullOrEmpty(expectedItemId))
             return false;
 
+        requiredAmount = Mathf.Max(1, requiredAmount);
+
         if (outSlot == null) return false;
         if (outSlot.ItemId != expectedItemId) return true;
 
-        return outSlot.Count >= outSlot.MaxStack;
+        return (outSlot.Count + requiredAmount) > outSlot.MaxStack;
     }
 
     void TryProduceCookResult()
     {
         if (string.IsNullOrEmpty(_cookResultItemId)) return;
 
-        if (IsOutputFullOrBlocked(_ingOut, _cookResultItemId))
+        int amount = Mathf.Max(1, _cookResultAmount);
+
+        // 완료 시점에도 amount만큼 공간 없으면 생성 안 함(그 전에 Tick에서 이미 막아두긴 함)
+        if (IsOutputFullOrBlocked(_ingOut, _cookResultItemId, amount))
             return;
 
         if (_ingOut == null)
         {
             if (Manager != null && Manager.ItemLibrary != null)
-                _ingOut = Manager.ItemLibrary.Create(_cookResultItemId, 1);
+                _ingOut = Manager.ItemLibrary.Create(_cookResultItemId, amount);
 
             CleanupZeroCountSlots();
             return;
         }
 
-        _ingOut.Count += 1;
+        _ingOut.Count += amount;
         CleanupZeroCountSlots();
     }
 
@@ -502,10 +558,12 @@ public class Campfire : Multiblock
         root["fuelTicksLeft"]    = _fuelTicksLeft;
         root["fuelTicksMax"]     = _fuelTicksMax;
         root["fuelResultItemId"] = _fuelResultItemId;
+        root["fuelResultAmount"] = _fuelResultAmount;
 
         root["cookTicksDone"]    = _cookTicksDone;
         root["cookTicksNeed"]    = _cookTicksNeed;
         root["cookResultItemId"] = _cookResultItemId;
+        root["cookResultAmount"] = _cookResultAmount;
 
         root["prevIngItemId"]    = _prevIngItemId;
         root["prevIngDur"]       = _prevIngDur;
@@ -560,16 +618,17 @@ public class Campfire : Multiblock
         _fuelIn = _fuelOut = _ingIn = _ingOut = null;
         _fuelTicksLeft = _fuelTicksMax = 0;
         _fuelResultItemId = null;
+        _fuelResultAmount = 1;
 
         _cookTicksDone = 0;
         _cookTicksNeed = 0;
         _cookResultItemId = null;
+        _cookResultAmount = 1;
 
         _prevIngItemId = null;
         _prevIngDur = 0;
 
         _droppedOnDestroy = false;
-
         _fireHoldTicksLeft = 0;
 
         // payload load
@@ -609,10 +668,14 @@ public class Campfire : Multiblock
                 _fuelTicksLeft    = root.Value<int?>("fuelTicksLeft") ?? 0;
                 _fuelTicksMax     = root.Value<int?>("fuelTicksMax") ?? 0;
                 _fuelResultItemId = root.Value<string>("fuelResultItemId");
+                _fuelResultAmount = root.Value<int?>("fuelResultAmount") ?? 1;
+                if (_fuelResultAmount < 1) _fuelResultAmount = 1;
 
                 _cookTicksDone    = root.Value<int?>("cookTicksDone") ?? 0;
                 _cookTicksNeed    = root.Value<int?>("cookTicksNeed") ?? 0;
                 _cookResultItemId = root.Value<string>("cookResultItemId");
+                _cookResultAmount = root.Value<int?>("cookResultAmount") ?? 1;
+                if (_cookResultAmount < 1) _cookResultAmount = 1;
 
                 _prevIngItemId    = root.Value<string>("prevIngItemId");
                 _prevIngDur       = root.Value<int?>("prevIngDur") ?? 0;

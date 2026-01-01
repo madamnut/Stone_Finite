@@ -59,7 +59,15 @@
     "name": "Unfired Clay Slab",
     "spriteName": "Unfired Clay Slab",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Fireable"],
+
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Clay Slab",
+        "amount": 1
+      }
+    }
   },
 
   "Unfired Clay Brick": {
@@ -107,23 +115,30 @@
     }
   },
 
-  "Fired Clay Brick": {
-    "name": "Fired Clay Brick",
-    "spriteName": "Fired Clay Brick",
+  "Clay Slab": {
+    "name": "Clay Slab",
+    "spriteName": "Clay Slab",
     "maxStack": 32,
     "tags": []
   },
 
-  "Fired Clay Bowl": {
-    "name": "Fired Clay Bowl",
-    "spriteName": "Fired Clay Bowl",
+  "Clay Brick": {
+    "name": "Clay Brick",
+    "spriteName": "Clay Brick",
     "maxStack": 32,
     "tags": []
   },
 
-  "Fired Clay Pot": {
-    "name": "Fired Clay Pot",
-    "spriteName": "Fired Clay Pot",
+  "Clay Bowl": {
+    "name": "Clay Bowl",
+    "spriteName": "Clay Bowl",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Clay Pot": {
+    "name": "Clay Pot",
+    "spriteName": "Clay Pot",
     "maxStack": 32,
     "tags": []
   },
@@ -162,6 +177,7 @@
     "spriteName": "Leaf",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 20,
@@ -171,18 +187,12 @@
     }
   },
 
-  "Pebble": {
-    "name": "Pebble",
-    "spriteName": "Pebble",
-    "maxStack": 32,
-    "tags": []
-  },
-
   "Plant": {
     "name": "Plant",
     "spriteName": "Plant",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 40,
@@ -197,6 +207,7 @@
     "spriteName": "Plant Fiber",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 40,
@@ -271,6 +282,7 @@
     "spriteName": "Twig",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 80,
@@ -285,6 +297,7 @@
     "spriteName": "Branch",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 240,
@@ -299,6 +312,7 @@
     "spriteName": "Bough",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 340,
@@ -319,10 +333,17 @@
         "layer": "Dynamic",
         "cell": "Log"
       },
+
       "Fuel": {
         "burnTicks": 600,
         "resultItem": "Ash",
-        "amount": 1
+        "amount": 2
+      },
+
+      "Fire": {
+        "fireTicks": 600,
+        "resultItem": "Charcoal",
+        "amount": 4
       }
     }
   },
@@ -338,24 +359,17 @@
         "layer": "Dynamic",
         "cell": "Stripped Log"
       },
+
       "Fuel": {
         "burnTicks": 520,
         "resultItem": "Ash",
-        "amount": 1
-      }
-    }
-  },
+        "amount": 2
+      },
 
-  "Bark Strip": {
-    "name": "Bark Strip",
-    "spriteName": "Bark Strip",
-    "maxStack": 32,
-    "tags": ["Fuel"],
-    "toolActions": {
-      "Fuel": {
-        "burnTicks": 160,
-        "resultItem": "Ash",
-        "amount": 1
+      "Fire": {
+        "fireTicks": 520,
+        "resultItem": "Charcoal",
+        "amount": 4
       }
     }
   },
@@ -365,11 +379,18 @@
     "spriteName": "Half Stripped Log",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 380,
         "resultItem": "Ash",
         "amount": 1
+      },
+
+      "Fire": {
+        "fireTicks": 380,
+        "resultItem": "Charcoal",
+        "amount": 2
       }
     }
   },
@@ -385,9 +406,16 @@
         "layer": "Solid",
         "cell": "Firewood"
       },
+
       "Fuel": {
         "burnTicks": 220,
         "resultItem": "Ash",
+        "amount": 1
+      },
+
+      "Fire": {
+        "fireTicks": 220,
+        "resultItem": "Charcoal",
         "amount": 1
       }
     }
@@ -398,6 +426,7 @@
     "spriteName": "Wood Shavings",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 140,
@@ -418,6 +447,7 @@
         "layer": "Dynamic",
         "cell": "Wooden Plank"
       },
+
       "Fuel": {
         "burnTicks": 460,
         "resultItem": "Ash",
@@ -437,10 +467,11 @@
         "layer": "Dynamic",
         "cell": "Wooden Frame"
       },
+
       "Fuel": {
         "burnTicks": 680,
         "resultItem": "Ash",
-        "amount": 1
+        "amount": 2
       }
     }
   },
@@ -456,10 +487,11 @@
         "layer": "Default",
         "cell": "Wooden Platform"
       },
+
       "Fuel": {
         "burnTicks": 520,
         "resultItem": "Ash",
-        "amount": 1
+        "amount": 2
       }
     }
   },
@@ -469,11 +501,12 @@
     "spriteName": "Charcoal",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 1800,
         "resultItem": "Ash",
-        "amount": 1
+        "amount": 4
       }
     }
   },
@@ -490,6 +523,7 @@
         "type": "Standard",
         "potentialDurability": 16
       },
+
       "Fuel": {
         "burnTicks": 120,
         "resultItem": "Ash",
@@ -510,6 +544,7 @@
         "type": "Short",
         "potentialDurability": 16
       },
+
       "Fuel": {
         "burnTicks": 80,
         "resultItem": "Ash",
@@ -530,6 +565,7 @@
         "type": "Long",
         "potentialDurability": 16
       },
+
       "Fuel": {
         "burnTicks": 160,
         "resultItem": "Ash",
@@ -550,11 +586,12 @@
     "spriteName": "Coal Chunk",
     "maxStack": 32,
     "tags": ["Fuel"],
+
     "toolActions": {
       "Fuel": {
         "burnTicks": 3600,
         "resultItem": "Ash",
-        "amount": 1
+        "amount": 8
       }
     }
   },
@@ -606,10 +643,12 @@
     "spriteName": "Raw Beef",
     "maxStack": 16,
     "tags": ["Cookable"],
+
     "toolActions": {
       "Cook": {
         "cookTicks": 300,
-        "resultItem": "Cooked Beef"
+        "resultItem": "Cooked Beef",
+        "amount": 1
       }
     }
   },
@@ -619,6 +658,7 @@
     "spriteName": "Cooked Beef",
     "maxStack": 16,
     "tags": ["Eatable"],
+
     "toolActions": {
       "Eat": {
         "Hunger": 25

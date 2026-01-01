@@ -4027,6 +4027,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0424851ad606d5d4b8a945bfb552d879, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fuelIn: {fileID: 6333137234993461084}
+  fuelOut: {fileID: 2623805381013348363}
+  fireInA: {fileID: 60557020300054235}
+  fireOutA: {fileID: 7797038576158982201}
+  fireInB: {fileID: 3877576065696158037}
+  fireOutB: {fileID: 7856449056335584750}
+  fireGauge: {fileID: 1695845731935089622}
+  progressGaugeA: {fileID: 8897895538999263518}
+  progressGaugeB: {fileID: 3112780202878777574}
 --- !u!1 &8093542154565546964
 GameObject:
   m_ObjectHideFlags: 0
