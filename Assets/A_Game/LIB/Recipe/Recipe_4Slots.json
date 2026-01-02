@@ -144,7 +144,25 @@
   },
 
   {
-    "isOrdered": true,
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "ToolActions": { "Hammering": {} }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Clay Brick", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
     "inputs": [
       { "itemId": "Clay Chunk", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
@@ -154,7 +172,7 @@
       { "type": "durability", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Clay Slab", "count": 1 }
+      { "itemId": "Unfired Clay Slab", "count": 1 }
     ],
     "outputActions": [
       []
@@ -162,9 +180,27 @@
   },
 
   {
-    "isOrdered": true,
+    "isOrdered": false,
     "inputs": [
-      { "itemId": "Clay Slab", "count": 1 }
+      { "itemId": "Refractory Clay Chunk", "count": 1 },
+      { "ToolActions": { "Pounding": {} }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Unfired Clay Slab", "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 }
@@ -178,23 +214,44 @@
   },
 
   {
-    "isOrdered": true,
+    "isOrdered": false,
     "inputs": [
-      { "itemId": "Clay Slab", "count": 1 },
-      { "itemId": "Clay Slab", "count": 1 }
+      { "itemId": "Unfired Clay Slab", "count": 1 },
+      { "itemId": "Unfired Clay Slab", "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Clay Pot", "count": 1 }
+      { "itemId": "Unfired Clay Pot", "count": 1 }
     ],
     "outputActions": [
       []
     ]
   },
 
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Crucible", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
   
 
   {
@@ -279,6 +336,28 @@
     ],
     "outputs": [
       { "itemId": "Wooden Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Grog", "count": 1 },
+      { "itemId": "Grog", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "itemId": "Sand Pile", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Chunk", "count": 2 }
     ],
     "outputActions": [
       []

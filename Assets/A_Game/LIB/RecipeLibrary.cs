@@ -72,31 +72,77 @@ public class RecipeLibrary : MonoBehaviour
         // ───────── 4슬롯 테이블 (Primal 등) ─────────
         if (n == 4)
         {
+            int filled = 0;
+            for (int i = 0; i < 4; i++)
+                if (slots[i] != null) filled++;
+
+            // 1) 4-slot 레시피(_r4) 우선
             if (_r4 != null)
             {
-                var r4_4 = FilterByInputCount(_r4, 4);
-                if (r4_4.Count > 0 &&
-                    TryMatchSet(r4_4, slots, fourContext: true,
-                                out resultItems, out remappedInputActions, out matchedRecipe))
-                    return true;
+                if (filled == 4)
+                {
+                    var set = FilterByInputCount(_r4, 4);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
 
-                var r4_3 = FilterByInputCount(_r4, 3);
-                if (r4_3.Count > 0 &&
-                    TryMatchSet(r4_3, slots, fourContext: true,
-                                out resultItems, out remappedInputActions, out matchedRecipe))
-                    return true;
+                    return false; // filled=4면 여기서 결론
+                }
 
-                var r4_2 = FilterByInputCount(_r4, 2);
-                if (r4_2.Count > 0 &&
-                    TryMatch2InFourContext(r4_2, slots,
-                                            out resultItems, out remappedInputActions, out matchedRecipe))
-                    return true;
+                if (filled == 3)
+                {
+                    var set = FilterByInputCount(_r4, 3);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
+
+                    return false; // filled=3면 여기서 결론
+                }
+
+                if (filled == 2)
+                {
+                    var set = FilterByInputCount(_r4, 2);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
+                }
+                else if (filled == 1)
+                {
+                    var set = FilterByInputCount(_r4, 1);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
+                }
+                else
+                {
+                    return false; // filled==0
+                }
             }
 
-            if (_r2 != null &&
-                TryMatch2InFourContext(_r2, slots,
-                                       out resultItems, out remappedInputActions, out matchedRecipe))
-                return true;
+            // 2) 실패 시 2-slot 레시피(_r2) fallback (상위→하위 허용)
+            if (_r2 != null)
+            {
+                if (filled == 2)
+                {
+                    var set = FilterByInputCount(_r2, 2);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
+                }
+                else if (filled == 1)
+                {
+                    var set = FilterByInputCount(_r2, 1);
+                    if (set.Count > 0 &&
+                        TryMatchSet(set, slots, fourContext: true,
+                                   out resultItems, out remappedInputActions, out matchedRecipe))
+                        return true;
+                }
+            }
 
             return false;
         }
@@ -104,13 +150,9 @@ public class RecipeLibrary : MonoBehaviour
         // ───────── 2슬롯 테이블 (Hand 등) ─────────
         if (n == 2)
         {
+            // 하위(2슬롯)가 상위(4슬롯) 레시피를 매칭하는 일은 없어야 함 → _r2만 본다
             if (_r2 != null &&
                 TryMatchSet(_r2, slots, fourContext: false,
-                            out resultItems, out remappedInputActions, out matchedRecipe))
-                return true;
-
-            if (_r4 != null &&
-                TryMatchSet(FilterByInputCount(_r4, 2), slots, fourContext: false,
                             out resultItems, out remappedInputActions, out matchedRecipe))
                 return true;
 
@@ -246,35 +288,6 @@ public class RecipeLibrary : MonoBehaviour
             matchedRecipe = r;
             return true;
         }
-
-        return false;
-    }
-
-    // 4슬롯 컨텍스트에서 2슬롯/1슬롯 레시피를 우선순위대로 시도
-    bool TryMatch2InFourContext(
-        JArray recipeSet2,
-        List<ItemData> slots,
-        out List<ItemData> resultItems,
-        out JArray remappedInputActions,
-        out JObject matchedRecipe)
-    {
-        resultItems = null;
-        remappedInputActions = null;
-        matchedRecipe = null;
-
-        if (recipeSet2 == null || slots.Count != 4) return false;
-
-        var cnt2 = FilterByInputCount(recipeSet2, 2);
-        if (cnt2.Count > 0 &&
-            TryMatchSet(cnt2, slots, fourContext: true,
-                        out resultItems, out remappedInputActions, out matchedRecipe))
-            return true;
-
-        var cnt1 = FilterByInputCount(recipeSet2, 1);
-        if (cnt1.Count > 0 &&
-            TryMatchSet(cnt1, slots, fourContext: true,
-                        out resultItems, out remappedInputActions, out matchedRecipe))
-            return true;
 
         return false;
     }
@@ -691,7 +704,6 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                // details 루트 생략 허용 X (고정 스펙)
                 continue;
             }
             else if (type == "copy")
@@ -800,10 +812,8 @@ public class RecipeLibrary : MonoBehaviour
                 string field = act.Value<string>("field");
                 if (string.IsNullOrEmpty(field)) continue;
 
-                // Combine 제거 같은 용도: ToolActions.Combine
                 if (field == "ToolActions" || field == "WeaponActions" || field == "BreakActions")
                 {
-                    // 전체 삭제는 null 처리(원한다면 빈 dict로 바꿔도 됨)
                     if (field == "ToolActions") overrideTool = new Dictionary<string, Dictionary<string, object>>();
                     else if (field == "WeaponActions") overrideWeapon = new Dictionary<string, Dictionary<string, object>>();
                     else overrideBreak = new Dictionary<string, Dictionary<string, object>>();
@@ -1003,15 +1013,12 @@ public class RecipeLibrary : MonoBehaviour
 
         if (parts.Length == 1)
         {
-            // "ToolActions.Combine"에 value를 넣는 케이스는 보통 안 쓰지만, 지원은 해둠
-            // value가 Dictionary<string, object>면 그것으로 교체, 아니면 빈 param으로
             if (value is Dictionary<string, object> d)
                 param = new Dictionary<string, object>(d);
             newRoot[actionName] = param;
             return newRoot;
         }
 
-        // param 내부 중첩 딕셔너리 지원
         object curr = param;
         for (int i = 1; i < parts.Length - 1; i++)
         {
@@ -1033,7 +1040,6 @@ public class RecipeLibrary : MonoBehaviour
                 }
                 else
                 {
-                    // dict 아닌 값이면 덮어씌워서 dict로 만든다
                     var created = new Dictionary<string, object>();
                     dict[key] = created;
                     curr = created;
@@ -1109,10 +1115,6 @@ public class RecipeLibrary : MonoBehaviour
             lastDict.Remove(parts[^1]);
 
         newRoot[actionName] = newParam;
-
-        // param이 완전히 비면 액션도 지울지? (원하면 지워도 됨)
-        // 여기서는 "Combine 자체 제거"는 레시피에서 ToolActions.Combine로 하니까
-        // 내부 키 삭제만으로는 액션을 유지.
         return newRoot;
     }
 

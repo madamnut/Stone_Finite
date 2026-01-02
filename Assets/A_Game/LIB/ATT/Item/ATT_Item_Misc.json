@@ -143,6 +143,97 @@
     "tags": []
   },
 
+  "Grog": {
+    "name": "Grog",
+    "spriteName": "Grog",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Refractory Clay Chunk": {
+    "name": "Unfired Refractory Clay Chunk",
+    "spriteName": "Unfired Refractory Clay Chunk",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Refractory Clay Brick": {
+    "name": "Unfired Refractory Clay Brick",
+    "spriteName": "Unfired Refractory Clay Brick",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 500,
+        "resultItem": "Refractory Clay Brick",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Refractory Clay Slab": {
+    "name": "Unfired Refractory Clay Slab",
+    "spriteName": "Unfired Refractory Clay Slab",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 550,
+        "resultItem": "Refractory Clay Slab",
+        "amount": 1
+      }
+    }
+  },
+
+  "Refractory Clay Brick": {
+    "name": "Refractory Clay Brick",
+    "spriteName": "Refractory Clay Brick",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Refractory Clay Crucible": {
+    "name": "Unfired Refractory Clay Crucible",
+    "spriteName": "Unfired Refractory Clay Crucible",
+    "maxStack": 16,
+    "tags": ["Fireable"],
+
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 600,
+        "resultItem": "Refractory Clay Crucible",
+        "amount": 1
+      }
+    }
+  },
+
+  "Refractory Clay Crucible": {
+    "name": "Refractory Clay Crucible",
+    "spriteName": "Refractory Clay Crucible",
+    "maxStack": 1,
+    "tags": ["UniqueModule"],
+
+    "toolActions": {
+      "Open": {
+        "moduleType": "Refractory Clay Crucible",
+        "requireState": "Solid"
+      }
+    },
+
+    "details": {
+      "state": "Solid",
+      "capacity": 4,
+      "solid": [ null, null, null, null ],
+      "molten": {
+        "metalId": null,
+        "amount": 0
+      }
+    }
+  },
+
+
   "Clay": {
     "name": "Clay",
     "spriteName": "Clay",
