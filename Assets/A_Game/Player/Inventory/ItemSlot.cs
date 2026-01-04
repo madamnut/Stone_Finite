@@ -5,8 +5,8 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// 인벤토리/핫바/크래프팅 공통 슬롯
-/// ▸ 아이콘(Image)   ▸ 스택(TextMeshProUGUI)
-/// ▸ Scope(Image) (핫바 선택) ▸ Selected(Image) (마우스 오버)
+/// ▸ 아이콘(Image)        ▸ 스택(TextMeshProUGUI)
+/// ▸ Scope(Image) (핫바 선택) ▸ Selected(Image) (마우스 오버)
 /// </summary>
 public class ItemSlot : MonoBehaviour,
                         IPointerEnterHandler,
@@ -22,6 +22,10 @@ public class ItemSlot : MonoBehaviour,
     public GameObject      durabilityRoot;     // 내구도 바 부모 오브젝트
     public Image           durabilityBar;      // 내구도 바(Filled Image)
 
+    [Header("Progress UI")]
+    public GameObject      progressRoot;       // 진행 바 부모 오브젝트 (시작 시 OFF)
+    public Image           progressBar;        // 진행 바(Filled Image)
+
     [Header("Binding (메타데이터)")]
     public InventoryData inventory;            // 이 슬롯이 속한 인벤토리
     public int           index = -1;           // 인벤토리 인덱스(0~49 등)
@@ -36,9 +40,10 @@ public class ItemSlot : MonoBehaviour,
     /*────────── 초기화 ──────────*/
     void Awake()
     {
-        if (scopeImage)     scopeImage.enabled   = false; // 시작 시 OFF
+        if (scopeImage)     scopeImage.enabled    = false; // 시작 시 OFF
         if (selectedImage)  selectedImage.enabled = false;
         if (durabilityRoot) durabilityRoot.SetActive(false);
+        if (progressRoot)   progressRoot.SetActive(false);
     }
 
     /*────────── 공개 API ──────────*/
@@ -55,6 +60,7 @@ public class ItemSlot : MonoBehaviour,
             if (iconImage)      iconImage.enabled      = false;
             if (countText)      countText.enabled      = false;
             if (durabilityRoot) durabilityRoot.SetActive(false);
+            if (progressRoot)   progressRoot.SetActive(false);
             return;
         }
 
@@ -76,6 +82,7 @@ public class ItemSlot : MonoBehaviour,
         {
             if (countText)      countText.enabled      = false;
             if (durabilityRoot) durabilityRoot.SetActive(false);
+            if (progressRoot)   progressRoot.SetActive(false);
             return;
         }
 
@@ -129,6 +136,25 @@ public class ItemSlot : MonoBehaviour,
                 durabilityBar.color = finalColor;
             }
         }
+    }
+
+    /// <summary>
+    /// 특수 케이스에서만 진행 바 표시/갱신.
+    /// fill01: 0~1
+    /// show: true면 표시, false면 숨김
+    /// </summary>
+    public void SetProgress(float fill01, bool show)
+    {
+        if (!progressRoot || !progressBar) return;
+
+        if (!show)
+        {
+            progressRoot.SetActive(false);
+            return;
+        }
+
+        progressRoot.SetActive(true);
+        progressBar.fillAmount = Mathf.Clamp01(fill01);
     }
 
     /// <summary>핫바 키 선택 시 테두리 토글</summary>

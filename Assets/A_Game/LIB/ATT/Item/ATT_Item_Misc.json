@@ -213,23 +213,16 @@
     "name": "Refractory Clay Crucible",
     "spriteName": "Refractory Clay Crucible",
     "maxStack": 1,
-    "tags": ["UniqueModule"],
+    "tags": ["Crucible"],
 
     "toolActions": {
-      "Open": {
-        "moduleType": "Refractory Clay Crucible",
-        "requireState": "Solid"
+      "Crucible": {
+        "capacity": 10
       }
     },
 
     "details": {
-      "state": "Solid",
-      "capacity": 4,
-      "solid": [ null, null, null, null ],
-      "molten": {
-        "metalId": null,
-        "amount": 0
-      }
+      "layers": []
     }
   },
 
@@ -691,21 +684,48 @@
     "name": "Copper Ore Chunk",
     "spriteName": "Copper Ore Chunk",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Smeltable"],
+
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 1
+      }
+    }
   },
 
   "Iron Ore Chunk": {
     "name": "Iron Ore Chunk",
     "spriteName": "Iron Ore Chunk",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Smeltable"],
+
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 260,
+        "resultItem": "Molten Iron",
+        "amount": 1
+      }
+    }
   },
 
   "Tin Ore Chunk": {
     "name": "Tin Ore Chunk",
     "spriteName": "Tin Ore Chunk",
     "maxStack": 32,
-    "tags": []
+    "tags": ["Smeltable"],
+
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 180,
+        "resultItem": "Molten Tin",
+        "amount": 1
+      }
+    }
   },
 
   "Small Raw Hide": {

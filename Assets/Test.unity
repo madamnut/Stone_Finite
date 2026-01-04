@@ -319,6 +319,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: Smoke
       objectReference: {fileID: 0}
+    - target: {fileID: 7781305964760329441, guid: b7bc54ed3a540f5459defb8c2f63d61c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9093147898682933013, guid: b7bc54ed3a540f5459defb8c2f63d61c, type: 3}
+      propertyPath: prewarm
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9093147898682933013, guid: b7bc54ed3a540f5459defb8c2f63d61c, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9093147898682933013, guid: b7bc54ed3a540f5459defb8c2f63d61c, type: 3}
+      propertyPath: useUnscaledTime
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
