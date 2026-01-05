@@ -61,12 +61,12 @@
   "Brick Furnace": [
     {
       "pattern": [
-        ["Brick Furnace_TL", "Brick Furnace_TR"],
-        ["Brick Furnace_BL", "Brick Furnace_BR"]
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell"]
       ],
       "result": [
-        ["Brick Furnace_TL_Built", "Brick Furnace_TR_Built"],
-        ["Brick Furnace_BL_Built", "Brick Furnace_BR_Built"]
+        ["Brick Furnace_TL", "Brick Furnace_TR"],
+        ["Brick Furnace_BL", "Brick Furnace_BR"]
       ]
     }
   ]

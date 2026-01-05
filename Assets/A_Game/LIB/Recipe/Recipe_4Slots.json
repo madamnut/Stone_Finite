@@ -183,6 +183,24 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Refractory Clay Chunk", "count": 1 },
+      { "ToolActions": { "Hammering": {} }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Brick", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Refractory Clay Chunk", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
     ],
     "inputActions": [
@@ -225,6 +243,24 @@
     ],
     "outputs": [
       { "itemId": "Unfired Clay Pot", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Thick Refractory Clay Slab", "count": 1 }
     ],
     "outputActions": [
       []
@@ -357,7 +393,47 @@
       { "type": "consume", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Unfired Refractory Clay Chunk", "count": 2 }
+      { "itemId": "Refractory Clay Chunk", "count": 2 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Clay Brick", "count": 1 },
+      { "itemId": "Clay Brick", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Clay Brick Cell", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Refractory Clay Brick", "count": 1 },
+      { "itemId": "Refractory Clay Brick", "count": 1 },
+      { "itemId": "Refractory Clay Chunk", "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Refractory Clay Brick Cell", "count": 1 }
     ],
     "outputActions": [
       []

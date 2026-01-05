@@ -104,6 +104,22 @@
       { "key": "Default", "meta": 0, "sprite": "Wooden Frame" }
     ]
   },
+  "Clay Brick Cell": {
+    "id": 12,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Brick Cell" }
+    ]
+  },
+  "Refractory Clay Brick Cell": {
+    "id": 13,
+    "collidable": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Refractory Clay Brick Cell" }
+    ]
+  },
 
 
   "Sand": {
@@ -310,6 +326,42 @@
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TR" },
       { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_TR",  "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_BL": {
+    "id": 5010,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BL" },
+      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_BL",  "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_BR": {
+    "id": 5011,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BR" },
+      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_BR",  "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_TL": {
+    "id": 5012,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TL" },
+      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_TL",  "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_TR": {
+    "id": 5013,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TR" },
+      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_TR",  "brightness_override": 15 }
     ]
   },
 

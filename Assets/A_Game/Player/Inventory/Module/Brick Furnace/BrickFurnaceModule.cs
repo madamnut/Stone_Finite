@@ -1,24 +1,19 @@
 // BrickFurnaceModule.cs
-// - BrickFurnace UI 모듈
-// - 입력 9슬롯 진행도는 ItemSlot에 새로 추가한 progressBar 사용
-// - 패턴은 CampfireModule / ClayKilnModule과 동일:
-//   1) 유저가 출력 슬롯에서 꺼냈으면 먼저 BrickFurnace에 반영
-//   2) 입력 변경 시 BrickFurnace에 반영
-//   3) BrickFurnace -> UI Pull
-//   4) 게이지/진행도 갱신
+// - BrickFurnace 멀티블럭 UI 모듈
+// - 입력 9슬롯은 ItemSlot.SetProgress()로 "슬롯별 smelt 진행도" 표시
+// - 연료 게이지는 (선택) fireGauge 로 표시
+// - CrucibleView(선택): Crucible 용량 + layers를 전달하여 도가니 내부 층 시각화
 //
-// [전제]
-// BrickFurnace가 아래 API를 제공한다고 가정함:
+// BrickFurnace가 아래 API를 제공한다고 가정:
 // - ItemData GetSlot(BrickFurnace.SlotKind kind)
 // - void    SetSlot(BrickFurnace.SlotKind kind, ItemData item)
-// - float   FuelProgress01 { get; }                 // 0~1 (연료 게이지)
-// - float   GetInputProgress01(int index0to8)       // 0~1 (입력 슬롯별 진행도, 예약 없으면 0)
-//   (진행도 == "예약된 1개분 smelt 진행" 이라는 규칙 그대로)
+// - float   FuelProgress01 { get; }                 // 0~1
+// - float   GetInputProgress01(int index0to8)       // 0~1 (예약/진행 없으면 0)
 //
-// ItemSlot에 아래 UI 레퍼런스가 추가되어 있다고 가정:
-// - public GameObject progressRoot;
-// - public Image      progressBar;
+// ItemSlot에 아래 API가 추가되어 있다고 가정:
+// - public void SetProgress(float fill01, bool show)
 
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -43,6 +38,9 @@ public class BrickFurnaceModule : MonoBehaviour
     [Header("Gauges (Optional)")]
     public Image fireGauge; // 연료 게이지(있으면 표시)
 
+    [Header("Crucible View (Optional)")]
+    public CrucibleView crucibleView; // 도가니 레이어 시각화
+
     BrickFurnace _furnace;
 
     // ────────── 입력 스냅샷(변경 감지) ──────────
@@ -59,6 +57,10 @@ public class BrickFurnaceModule : MonoBehaviour
     public void Bind(BrickFurnace furnace)
     {
         _furnace = furnace;
+
+        // CrucibleView deps 주입
+        if (crucibleView != null && furnace != null && furnace.World != null)
+            crucibleView.itemLibrary = furnace.World.itemLibrary;
 
         // 로컬 슬롯 모드
         SetupSlot(fuelIn,   denyPut: false, denyInteraction: false);
@@ -78,63 +80,62 @@ public class BrickFurnaceModule : MonoBehaviour
 
         // 최초 UI 반영
         PullFromFurnace();
-        SnapshotAll();
+        CaptureSnapshots();
         RefreshGaugesAndProgress();
+        RefreshCrucibleView();
     }
 
     void SetupSlot(ItemSlot slot, bool denyPut, bool denyInteraction)
     {
         if (slot == null) return;
 
-        slot.useLocalStorage       = true;
-        slot.inventory             = null;
-        slot.index                 = -1;
-        slot.denyUserPut           = denyPut;
-        slot.denyUserInteraction   = denyInteraction;
+        slot.useLocalStorage = true;
+        slot.inventory = null;
+        slot.index = -1;
 
-        // progressBar는 시작 비활성(특수 경우에만)
-        // (ItemSlot 쪽에서 Awake 시 꺼두는게 베스트지만, 여기서도 한 번 더 안전하게)
-        if (slot.progressRoot != null)
-            slot.progressRoot.SetActive(false);
-        if (slot.progressBar != null)
-            slot.progressBar.fillAmount = 0f;
+        slot.denyUserPut = denyPut;
+        slot.denyUserInteraction = denyInteraction;
+
+        // progress UI는 기본 OFF 유지
+        slot.SetProgress(0f, false);
     }
 
     void Update()
     {
         if (_furnace == null) return;
 
-        // 1) 유저가 출력 슬롯(fuelOut)에서 꺼냈는지 먼저 반영
-        if (OutputsChanged())
+        // 유저 조작(투입/교체/제거) 반영
+        bool inputsChanged = InputsChanged();
+        bool outputChanged = OutputChanged();
+
+        if (inputsChanged)
         {
-            PushOutputsToFurnace();
-            SnapshotOutputs();
+            PushInputsToFurnace();      // ✅ 변경된 슬롯만 SetSlot
+            CaptureInputSnapshots();
         }
 
-        // 2) 입력 변경 반영
-        if (InputsChanged())
+        if (outputChanged)
         {
-            PushInputsToFurnace();
-            SnapshotInputs();
+            PushOutputsToFurnace();     // ✅ 변경된 슬롯만 SetSlot
+            CaptureOutputSnapshots();
         }
 
-        // 3) 표시 동기화
+        // Furnace 틱으로 인해 내부 아이템이 변할 수 있으니 UI는 항상 Pull
         PullFromFurnace();
-        SnapshotAll(); // Pull 이후 스냅샷 재정렬(덮어쓰기/깜빡임 방지)
 
-        // 4) 게이지/진행도
+        // 게이지/진행도 UI 갱신
         RefreshGaugesAndProgress();
+
+        // 도가니 레이어 시각화 갱신
+        RefreshCrucibleView();
     }
 
-    // ─────────────────────────────────────────────
-    // Push/Pull
-    // ─────────────────────────────────────────────
     void PullFromFurnace()
     {
         if (_furnace == null) return;
 
-        if (fuelIn != null)  fuelIn.Set(_furnace.GetSlot(BrickFurnace.SlotKind.FuelIn));
-        if (fuelOut != null) fuelOut.Set(_furnace.GetSlot(BrickFurnace.SlotKind.FuelOut));
+        if (fuelIn != null)   fuelIn.Set(_furnace.GetSlot(BrickFurnace.SlotKind.FuelIn));
+        if (fuelOut != null)  fuelOut.Set(_furnace.GetSlot(BrickFurnace.SlotKind.FuelOut));
         if (crucible != null) crucible.Set(_furnace.GetSlot(BrickFurnace.SlotKind.Crucible));
 
         SetInputSlotUI(0, _furnace.GetSlot(BrickFurnace.SlotKind.In0));
@@ -155,143 +156,61 @@ public class BrickFurnaceModule : MonoBehaviour
         slot.Set(item);
     }
 
+    // ✅ 구조 수정: 변경된 슬롯만 SetSlot 호출
     void PushInputsToFurnace()
     {
         if (_furnace == null) return;
 
+        // fuelIn
         if (fuelIn != null)
-            _furnace.SetSlot(BrickFurnace.SlotKind.FuelIn, fuelIn.Item);
+        {
+            var cur = fuelIn.Item;
+            if (Changed(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, cur))
+                _furnace.SetSlot(BrickFurnace.SlotKind.FuelIn, cur);
+        }
 
+        // crucible
         if (crucible != null)
-            _furnace.SetSlot(BrickFurnace.SlotKind.Crucible, crucible.Item);
+        {
+            var cur = crucible.Item;
+            if (Changed(_prevCrucible, _prevCrucibleCount, _prevCrucibleDur, cur))
+                _furnace.SetSlot(BrickFurnace.SlotKind.Crucible, cur);
+        }
 
-        var s0 = GetInputSlot(0); if (s0 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In0, s0.Item);
-        var s1 = GetInputSlot(1); if (s1 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In1, s1.Item);
-        var s2 = GetInputSlot(2); if (s2 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In2, s2.Item);
-        var s3 = GetInputSlot(3); if (s3 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In3, s3.Item);
-        var s4 = GetInputSlot(4); if (s4 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In4, s4.Item);
-        var s5 = GetInputSlot(5); if (s5 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In5, s5.Item);
-        var s6 = GetInputSlot(6); if (s6 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In6, s6.Item);
-        var s7 = GetInputSlot(7); if (s7 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In7, s7.Item);
-        var s8 = GetInputSlot(8); if (s8 != null) _furnace.SetSlot(BrickFurnace.SlotKind.In8, s8.Item);
+        // inputs 0~8
+        for (int i = 0; i < 9; i++)
+        {
+            var s = GetInputSlot(i);
+            var cur = (s != null) ? s.Item : null;
+
+            if (!Changed(_prevIns[i], _prevInsCount[i], _prevInsDur[i], cur))
+                continue;
+
+            switch (i)
+            {
+                case 0: _furnace.SetSlot(BrickFurnace.SlotKind.In0, cur); break;
+                case 1: _furnace.SetSlot(BrickFurnace.SlotKind.In1, cur); break;
+                case 2: _furnace.SetSlot(BrickFurnace.SlotKind.In2, cur); break;
+                case 3: _furnace.SetSlot(BrickFurnace.SlotKind.In3, cur); break;
+                case 4: _furnace.SetSlot(BrickFurnace.SlotKind.In4, cur); break;
+                case 5: _furnace.SetSlot(BrickFurnace.SlotKind.In5, cur); break;
+                case 6: _furnace.SetSlot(BrickFurnace.SlotKind.In6, cur); break;
+                case 7: _furnace.SetSlot(BrickFurnace.SlotKind.In7, cur); break;
+                case 8: _furnace.SetSlot(BrickFurnace.SlotKind.In8, cur); break;
+            }
+        }
     }
 
+    // ✅ 구조 수정: 변경된 경우에만 SetSlot 호출
     void PushOutputsToFurnace()
     {
         if (_furnace == null) return;
 
         if (fuelOut != null)
-            _furnace.SetSlot(BrickFurnace.SlotKind.FuelOut, fuelOut.Item);
-    }
-
-    // ─────────────────────────────────────────────
-    // Change detection
-    // ─────────────────────────────────────────────
-    bool OutputsChanged()
-    {
-        var f = fuelOut != null ? fuelOut.Item : null;
-        int fc = f != null ? f.Count : 0;
-        int fd = f != null ? f.Durability : 0;
-
-        if (f != _prevFuelOut || fc != _prevFuelOutCount || fd != _prevFuelOutDur)
-            return true;
-
-        return false;
-    }
-
-    bool InputsChanged()
-    {
-        // FuelIn
-        var fi = fuelIn != null ? fuelIn.Item : null;
-        int fic = fi != null ? fi.Count : 0;
-        int fid = fi != null ? fi.Durability : 0;
-        if (fi != _prevFuelIn || fic != _prevFuelInCount || fid != _prevFuelInDur)
-            return true;
-
-        // Crucible
-        var c = crucible != null ? crucible.Item : null;
-        int cc = c != null ? c.Count : 0;
-        int cd = c != null ? c.Durability : 0;
-        if (c != _prevCrucible || cc != _prevCrucibleCount || cd != _prevCrucibleDur)
-            return true;
-
-        // Inputs 0..8
-        for (int i = 0; i < 9; i++)
         {
-            var s = GetInputSlot(i);
-            var it = s != null ? s.Item : null;
-            int cnt = it != null ? it.Count : 0;
-            int dur = it != null ? it.Durability : 0;
-
-            if (it != _prevIns[i] || cnt != _prevInsCount[i] || dur != _prevInsDur[i])
-                return true;
-        }
-
-        return false;
-    }
-
-    void SnapshotAll()
-    {
-        SnapshotInputs();
-        SnapshotOutputs();
-    }
-
-    void SnapshotOutputs()
-    {
-        var f = fuelOut != null ? fuelOut.Item : null;
-        _prevFuelOut = f;
-        _prevFuelOutCount = f != null ? f.Count : 0;
-        _prevFuelOutDur   = f != null ? f.Durability : 0;
-    }
-
-    void SnapshotInputs()
-    {
-        var fi = fuelIn != null ? fuelIn.Item : null;
-        _prevFuelIn = fi;
-        _prevFuelInCount = fi != null ? fi.Count : 0;
-        _prevFuelInDur   = fi != null ? fi.Durability : 0;
-
-        var c = crucible != null ? crucible.Item : null;
-        _prevCrucible = c;
-        _prevCrucibleCount = c != null ? c.Count : 0;
-        _prevCrucibleDur   = c != null ? c.Durability : 0;
-
-        for (int i = 0; i < 9; i++)
-        {
-            var s = GetInputSlot(i);
-            var it = s != null ? s.Item : null;
-
-            _prevIns[i] = it;
-            _prevInsCount[i] = it != null ? it.Count : 0;
-            _prevInsDur[i]   = it != null ? it.Durability : 0;
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    // Gauges / ProgressBar
-    // ─────────────────────────────────────────────
-    void RefreshGaugesAndProgress()
-    {
-        if (_furnace == null) return;
-
-        if (fireGauge != null)
-            fireGauge.fillAmount = _furnace.FuelProgress01;
-
-        // 입력 9슬롯 progressBar (예약된 슬롯만 0~1)
-        for (int i = 0; i < 9; i++)
-        {
-            var slot = GetInputSlot(i);
-            if (slot == null) continue;
-
-            float p01 = _furnace.GetInputProgress01(i);
-            p01 = Mathf.Clamp01(p01);
-
-            // 진행도 > 0 일 때만 표시(요구: 시작 시 비활성)
-            if (slot.progressRoot != null)
-                slot.progressRoot.SetActive(p01 > 0f);
-
-            if (slot.progressBar != null)
-                slot.progressBar.fillAmount = p01;
+            var cur = fuelOut.Item;
+            if (Changed(_prevFuelOut, _prevFuelOutCount, _prevFuelOutDur, cur))
+                _furnace.SetSlot(BrickFurnace.SlotKind.FuelOut, cur);
         }
     }
 
@@ -310,5 +229,154 @@ public class BrickFurnaceModule : MonoBehaviour
             case 8: return in8;
         }
         return null;
+    }
+
+    void RefreshGaugesAndProgress()
+    {
+        if (_furnace == null) return;
+
+        // 연료 게이지
+        if (fireGauge != null)
+            fireGauge.fillAmount = Mathf.Clamp01(_furnace.FuelProgress01);
+
+        // 입력 슬롯별 진행도
+        for (int i = 0; i < 9; i++)
+        {
+            var slot = GetInputSlot(i);
+            if (slot == null) continue;
+
+            float p = Mathf.Clamp01(_furnace.GetInputProgress01(i));
+            slot.SetProgress(p, p > 0f);
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // CrucibleView
+    // ─────────────────────────────────────────────
+    void RefreshCrucibleView()
+    {
+        if (crucibleView == null) return;
+
+        ItemData c = (crucible != null) ? crucible.Item : null;
+        if (c == null || c.Count <= 0)
+        {
+            crucibleView.Clear();
+            return;
+        }
+
+        int cap = ReadCrucibleCapacity(c);
+        if (cap <= 0)
+        {
+            crucibleView.Clear();
+            return;
+        }
+
+        object layersObj = null;
+        if (c.Details != null && c.Details.TryGetValue("layers", out var lo) && lo != null)
+            layersObj = lo;
+
+        crucibleView.SetData(cap, layersObj);
+    }
+
+    int ReadCrucibleCapacity(ItemData c)
+    {
+        if (c == null) return 0;
+        if (c.ToolActions == null) return 0;
+
+        if (!c.ToolActions.TryGetValue("Crucible", out Dictionary<string, object> cfg) || cfg == null)
+            return 0;
+
+        if (!cfg.TryGetValue("capacity", out var capObj) || capObj == null)
+            return 0;
+
+        if (capObj is int i) return i;
+        if (capObj is long l) return (int)l;
+        if (capObj is float f) return Mathf.RoundToInt(f);
+        if (capObj is double d) return (int)d;
+
+        int r;
+        return int.TryParse(capObj.ToString(), out r) ? r : 0;
+    }
+
+    // ─────────────────────────────────────────────
+    // Change detection (snapshots)
+    // ─────────────────────────────────────────────
+    void CaptureSnapshots()
+    {
+        CaptureInputSnapshots();
+        CaptureOutputSnapshots();
+    }
+
+    void CaptureInputSnapshots()
+    {
+        // fuelIn
+        _prevFuelIn = (fuelIn != null) ? fuelIn.Item : null;
+        _prevFuelInCount = (_prevFuelIn != null) ? _prevFuelIn.Count : 0;
+        _prevFuelInDur   = (_prevFuelIn != null) ? _prevFuelIn.Durability : 0;
+
+        // crucible
+        _prevCrucible = (crucible != null) ? crucible.Item : null;
+        _prevCrucibleCount = (_prevCrucible != null) ? _prevCrucible.Count : 0;
+        _prevCrucibleDur   = (_prevCrucible != null) ? _prevCrucible.Durability : 0;
+
+        // inputs
+        for (int i = 0; i < 9; i++)
+        {
+            var s = GetInputSlot(i);
+            var it = (s != null) ? s.Item : null;
+
+            _prevIns[i] = it;
+            _prevInsCount[i] = (it != null) ? it.Count : 0;
+            _prevInsDur[i]   = (it != null) ? it.Durability : 0;
+        }
+    }
+
+    void CaptureOutputSnapshots()
+    {
+        _prevFuelOut = (fuelOut != null) ? fuelOut.Item : null;
+        _prevFuelOutCount = (_prevFuelOut != null) ? _prevFuelOut.Count : 0;
+        _prevFuelOutDur   = (_prevFuelOut != null) ? _prevFuelOut.Durability : 0;
+    }
+
+    bool InputsChanged()
+    {
+        // fuelIn
+        var curFuelIn = (fuelIn != null) ? fuelIn.Item : null;
+        if (Changed(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, curFuelIn)) return true;
+
+        // crucible
+        var curCrucible = (crucible != null) ? crucible.Item : null;
+        if (Changed(_prevCrucible, _prevCrucibleCount, _prevCrucibleDur, curCrucible)) return true;
+
+        // inputs
+        for (int i = 0; i < 9; i++)
+        {
+            var s = GetInputSlot(i);
+            var cur = (s != null) ? s.Item : null;
+
+            if (Changed(_prevIns[i], _prevInsCount[i], _prevInsDur[i], cur))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool OutputChanged()
+    {
+        var curFuelOut = (fuelOut != null) ? fuelOut.Item : null;
+        return Changed(_prevFuelOut, _prevFuelOutCount, _prevFuelOutDur, curFuelOut);
+    }
+
+    bool Changed(ItemData prevRef, int prevCount, int prevDur, ItemData cur)
+    {
+        if (!ReferenceEquals(prevRef, cur)) return true;
+
+        int curCount = (cur != null) ? cur.Count : 0;
+        int curDur   = (cur != null) ? cur.Durability : 0;
+
+        if (prevCount != curCount) return true;
+        if (prevDur   != curDur)   return true;
+
+        return false;
     }
 }

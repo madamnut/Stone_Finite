@@ -129,6 +129,20 @@
     "tags": []
   },
 
+  "Clay Brick Cell": {
+    "name": "Clay Brick Cell",
+    "spriteName": "Clay Brick Cell",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Clay Brick Cell"
+      }
+    }
+  },
+
   "Clay Bowl": {
     "name": "Clay Bowl",
     "spriteName": "Clay Bowl",
@@ -150,9 +164,9 @@
     "tags": []
   },
 
-  "Unfired Refractory Clay Chunk": {
-    "name": "Unfired Refractory Clay Chunk",
-    "spriteName": "Unfired Refractory Clay Chunk",
+  "Refractory Clay Chunk": {
+    "name": "Refractory Clay Chunk",
+    "spriteName": "Refractory Clay Chunk",
     "maxStack": 32,
     "tags": []
   },
@@ -187,11 +201,31 @@
     }
   },
 
+  "Unfired Thick Refractory Clay Slab": {
+    "name": "Unfired Thick Refractory Clay Slab",
+    "spriteName": "Unfired Thick Refractory Clay Slab",
+    "maxStack": 32,
+    "tags": []
+  },
+
   "Refractory Clay Brick": {
     "name": "Refractory Clay Brick",
     "spriteName": "Refractory Clay Brick",
     "maxStack": 32,
     "tags": []
+  },
+  "Refractory Clay Brick Cell": {
+    "name": "Refractory Clay Brick Cell",
+    "spriteName": "Refractory Clay Brick Cell",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Refractory Clay Brick Cell"
+      }
+    }
   },
 
   "Unfired Refractory Clay Crucible": {
@@ -428,6 +462,21 @@
         "fireTicks": 600,
         "resultItem": "Charcoal",
         "amount": 4
+      }
+    }
+  },
+
+  "Bark Strip": {
+    "name": "Bark Strip",
+    "spriteName": "Bark Strip",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 100,
+        "resultItem": "Ash",
+        "amount": 1
       }
     }
   },

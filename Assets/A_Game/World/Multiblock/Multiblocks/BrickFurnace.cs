@@ -57,6 +57,34 @@ public class BrickFurnace : Multiblock
     bool IsBurning => _fuelTicksLeft > 0;
     bool IsFireActiveFx => IsBurning || _fireHoldTicksLeft > 0;
 
+    // ─────────────────────────────────────────────
+    // Public read API (Module용)
+    // ─────────────────────────────────────────────
+    public float FuelProgress01
+    {
+        get
+        {
+            if (_fuelTicksMax <= 0) return 0f;
+            return Mathf.Clamp01((float)_fuelTicksLeft / (float)_fuelTicksMax);
+        }
+    }
+
+    /// <summary>
+    /// 입력 슬롯 index(0~8)의 smelt 진행도(0~1).
+    /// 예약이 없거나 진행 중이 아니면 0.
+    /// </summary>
+    public float GetInputProgress01(int index)
+    {
+        if ((uint)index >= 9u) return 0f;
+        if (!_reserved[index]) return 0f;
+
+        int need = _smeltTicksNeed[index];
+        int done = _smeltTicksDone[index];
+
+        if (need <= 0) return 0f;
+        return Mathf.Clamp01((float)done / (float)need);
+    }
+
     public ItemData GetSlot(SlotKind kind)
     {
         switch (kind)
@@ -122,14 +150,30 @@ public class BrickFurnace : Multiblock
 
     void SetInputSlot(int i, ItemData item)
     {
+        // 기존 입력 스냅샷
+        var prev = _ins[i];
+
+        // "종류/내구도 동일"이면 count 변화만으로는 진행도/예약을 깨지 않음
+        bool sameKind =
+            prev != null &&
+            item != null &&
+            prev.Count > 0 &&
+            item.Count > 0 &&
+            prev.ItemId == item.ItemId &&
+            prev.Durability == item.Durability;
+
         _ins[i] = item;
 
-        // 입력 변경 -> 그 슬롯의 예약/진행은 무효
-        ClearReservationForSlot(i);
-        _smeltTicksDone[i] = 0;
-        _smeltTicksNeed[i] = 0;
+        // 종류가 바뀌었거나, null/0이 되었으면 그 슬롯 진행도/예약 무효
+        if (!sameKind)
+        {
+            ClearReservationForSlot(i);
+            _smeltTicksDone[i] = 0;
+            _smeltTicksNeed[i] = 0;
+        }
 
         // 우선순위(0→8) 보장: 전체 재예약
+        // sameKind면 Recompute 내부의 "같은 예약(spec 동일)" 로직이 진행도를 유지해줌
         RecomputeReservationsByPriority();
     }
 
@@ -145,7 +189,7 @@ public class BrickFurnace : Multiblock
             _droppedOnDestroy = true;
             DropAllInternalItems();
         }
-        base.OnCellBroken(brokenCell);
+        base.OnCellBroken(brokenCell); // 기본 구현: Despawn + 원복:contentReference[oaicite:2]{index=2}
     }
 
     public override void GetVfxRequests(List<VfxRequest> outList)
@@ -180,11 +224,16 @@ public class BrickFurnace : Multiblock
         // 조건 1) Crucible 없거나 가득 차면: 녹이기 중단 / 연료 투입(점화) 중단
         bool allowWork = crucibleOk && !crucibleFull;
 
-        // allowWork 기준으로 예약 상태 정합성 맞춤
-        if (allowWork)
-            RecomputeReservationsByPriority();
+        if (!allowWork)
+        {
+            // 진행도는 예약과 동치 규칙이므로 전부 0
+            ClearAllReservationsAndProgressBecauseNoWork();
+        }
         else
-            ClearAllReservationsAndProgressBecauseNoWork(); // 진행도는 예약과 동치라 0으로 맞춤
+        {
+            // allowWork일 때만 "진행도 유지" 방식으로 재계산
+            RecomputeReservationsByPriority();
+        }
 
         bool hasWork = allowWork && HasAnyReservedWork();
 
@@ -283,7 +332,7 @@ public class BrickFurnace : Multiblock
                 }
             }
 
-            // 커밋 후 남은 입력들 재예약
+            // 커밋 후 남은 입력들 재예약(진행도 유지 방식)
             RecomputeReservationsByPriority();
         }
 
@@ -323,7 +372,6 @@ public class BrickFurnace : Multiblock
 
     void ClearAllReservationsAndProgressBecauseNoWork()
     {
-        // 진행도는 "예약과 동치" 규칙 때문에 0으로 맞춤
         ResetAllSmeltProgressAndReservations();
     }
 
@@ -364,13 +412,36 @@ public class BrickFurnace : Multiblock
         int current = GetCrucibleCurrentAmount(_crucible);
         if (current >= capacity)
         {
-            // 조건 1: full이면 전부 중단
             ResetAllSmeltProgressAndReservations();
             return;
         }
 
-        // 우선순위 0→8을 확실히 보장하기 위해 "항상 재구성"
-        ResetAllSmeltProgressAndReservations();
+        // 기존 상태 스냅샷
+        bool[] oldRes = new bool[9];
+        int[] oldDone = new int[9];
+        int[] oldNeed = new int[9];
+        int[] oldAmt  = new int[9];
+        string[] oldId = new string[9];
+
+        for (int i = 0; i < 9; i++)
+        {
+            oldRes[i] = _reserved[i];
+            oldDone[i] = _smeltTicksDone[i];
+            oldNeed[i] = _smeltTicksNeed[i];
+            oldAmt[i]  = _reservedAmount[i];
+            oldId[i]   = _reservedFluidId[i];
+        }
+
+        // 새로 확정할 상태(우선순위 0→8 단방향 확정)
+        for (int i = 0; i < 9; i++)
+        {
+            _reserved[i] = false;
+            _reservedAmount[i] = 0;
+            _reservedFluidId[i] = null;
+            _smeltTicksNeed[i] = 0;
+            _smeltTicksDone[i] = 0;
+        }
+        _reservedTotal = 0;
 
         for (int i = 0; i < 9; i++)
         {
@@ -393,15 +464,27 @@ public class BrickFurnace : Multiblock
             _reservedTotal += resAmt;
 
             _smeltTicksNeed[i] = needTicks;
-            _smeltTicksDone[i] = 0;
+
+            // "같은 예약(spec 동일)"이면 기존 진행도 유지
+            if (oldRes[i] && oldId[i] == resId && oldAmt[i] == resAmt && oldNeed[i] == needTicks)
+            {
+                int keep = oldDone[i];
+                if (keep < 0) keep = 0;
+                if (keep > needTicks) keep = needTicks;
+                _smeltTicksDone[i] = keep;
+            }
+            else
+            {
+                _smeltTicksDone[i] = 0;
+            }
         }
     }
 
-    bool TryReadSmeltSpecForOne(ItemData input, out int smeltNeed, out string resultFluidId, out int amount)
+    bool TryReadSmeltSpecForOne(ItemData input, out int smeltNeed, out string resultItemId, out int amount)
     {
         smeltNeed = 0;
-        resultFluidId = null;
-        amount = 1;
+        resultItemId = null;
+        amount = 0;
 
         if (input == null) return false;
         if (input.Count <= 0) return false;
@@ -410,38 +493,33 @@ public class BrickFurnace : Multiblock
         if (!input.ToolActions.TryGetValue("Smelt", out Dictionary<string, object> cfg) || cfg == null)
             return false;
 
-        // required level (기본 1)
-        int reqLevel = 1;
-        if (cfg.TryGetValue("level", out var lvObj) && lvObj != null)
-            reqLevel = ToInt(lvObj, 1);
-        else if (cfg.TryGetValue("tempLevel", out var tlObj) && tlObj != null)
-            reqLevel = ToInt(tlObj, 1);
-        else if (cfg.TryGetValue("requiredLevel", out var rlObj) && rlObj != null)
-            reqLevel = ToInt(rlObj, 1);
+        // 네 "정식 양식" 강제:
+        // temperature, smeltTicks, resultItem, amount 전부 필수
 
-        if (reqLevel > SMELT_LEVEL) return false;
+        if (!cfg.TryGetValue("temperature", out var tempObj) || tempObj == null)
+            return false;
 
-        // ticks
-        if (cfg.TryGetValue("smeltTicks", out var stObj) && stObj != null)
-            smeltNeed = ToInt(stObj, 0);
-        else if (cfg.TryGetValue("ticks", out var tObj) && tObj != null)
-            smeltNeed = ToInt(tObj, 0);
+        int reqTemp = ToInt(tempObj, -1);
+        if (reqTemp <= 0) return false;
+        if (reqTemp > SMELT_LEVEL) return false;
 
-        // result id (fluid or item id)
-        if (cfg.TryGetValue("resultFluid", out var rfObj) && rfObj != null)
-            resultFluidId = rfObj.ToString();
-        else if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
-            resultFluidId = riObj.ToString();
-        else if (cfg.TryGetValue("result", out var rObj) && rObj != null)
-            resultFluidId = rObj.ToString();
+        if (!cfg.TryGetValue("smeltTicks", out var stObj) || stObj == null)
+            return false;
 
-        // amount (Crucible에 들어갈 양, 1개분)
-        if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
-            amount = ToInt(amObj, 1);
-        amount = Mathf.Max(1, amount);
-
+        smeltNeed = ToInt(stObj, 0);
         if (smeltNeed <= 0) return false;
-        if (string.IsNullOrEmpty(resultFluidId)) return false;
+
+        if (!cfg.TryGetValue("resultItem", out var riObj) || riObj == null)
+            return false;
+
+        resultItemId = riObj.ToString();
+        if (string.IsNullOrEmpty(resultItemId)) return false;
+
+        if (!cfg.TryGetValue("amount", out var amObj) || amObj == null)
+            return false;
+
+        amount = ToInt(amObj, 0);
+        if (amount <= 0) return false;
 
         return true;
     }
@@ -539,7 +617,6 @@ public class BrickFurnace : Multiblock
 
         if (layersObj is JArray jarr)
         {
-            // 정규화
             var normalized = new List<object>();
             for (int i = 0; i < jarr.Count; i++)
                 normalized.Add(jarr[i]);
@@ -608,7 +685,8 @@ public class BrickFurnace : Multiblock
     }
 
     // ─────────────────────────────────────────────
-    // Fuel helpers (ClayKiln 패턴)
+    // Fuel helpers (네 Fuel 양식)
+    // Fuel: { burnTicks, resultItem, amount }
     // ─────────────────────────────────────────────
     bool IsFuelOutBlockedForNewFuel()
     {
@@ -648,10 +726,11 @@ public class BrickFurnace : Multiblock
         if (!_fuelIn.ToolActions.TryGetValue("Fuel", out Dictionary<string, object> cfg) || cfg == null)
             return false;
 
-        if (!cfg.TryGetValue("fuelTicks", out var ftObj) || ftObj == null)
+        // 네 양식: burnTicks
+        if (!cfg.TryGetValue("burnTicks", out var btObj) || btObj == null)
             return false;
 
-        gainedTicks = ToInt(ftObj, 0);
+        gainedTicks = ToInt(btObj, 0);
         if (gainedTicks <= 0) return false;
 
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
@@ -783,6 +862,7 @@ public class BrickFurnace : Multiblock
 
     // ─────────────────────────────────────────────
     // Save/Load (ClayKiln 스타일 + Crucible layers 별도 저장)
+    // + OriginalSolidIds 저장 (로드된 멀티블럭 분해 원복용)
     // ─────────────────────────────────────────────
     public override SaveData ToSaveData()
     {
@@ -799,8 +879,8 @@ public class BrickFurnace : Multiblock
             };
         }
 
-        root["fuelIn"]  = PackItem(_fuelIn);
-        root["fuelOut"] = PackItem(_fuelOut);
+        root["fuelIn"]   = PackItem(_fuelIn);
+        root["fuelOut"]  = PackItem(_fuelOut);
         root["crucible"] = PackItem(_crucible);
 
         var ins = new JArray();
@@ -836,7 +916,6 @@ public class BrickFurnace : Multiblock
         root["reserved"] = resArr;
         root["reservedAmount"] = resAmtArr;
         root["reservedFluidId"] = resIdArr;
-
         root["reservedTotal"] = _reservedTotal;
 
         // Crucible layers 저장 (ItemData.Details 자체를 저장하지 않는 프로젝트 패턴이므로 별도)
@@ -844,9 +923,17 @@ public class BrickFurnace : Multiblock
         {
             if (_crucible.Details.TryGetValue("layers", out var layersObj) && layersObj != null)
             {
-                // JSON으로 바로 넣기(복원 시 List<object>로 변환)
                 root["crucible_layers"] = JToken.FromObject(layersObj);
             }
+        }
+
+        // ✅ OriginalSolidIds (row-major)
+        ushort[] orig = new ushort[Width * Height];
+        for (int y = 0; y < Height; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+            orig[x + y * Width] = originalSolidIds.TryGetValue(cell, out var id) ? id : (ushort)0;
         }
 
         return new SaveData
@@ -857,7 +944,7 @@ public class BrickFurnace : Multiblock
             Width = Width,
             Height = Height,
             PayloadJson = root.ToString(Newtonsoft.Json.Formatting.None),
-            OriginalSolidIds = null
+            OriginalSolidIds = orig
         };
     }
 
@@ -973,7 +1060,6 @@ public class BrickFurnace : Multiblock
                 // Crucible layers 복원
                 if (_crucible != null && root["crucible_layers"] != null && root["crucible_layers"].Type != JTokenType.Null)
                 {
-                    // List<object> 형태로 넣어줌(런타임 로직이 List<object>를 표준으로 사용)
                     var list = root["crucible_layers"].ToObject<List<object>>();
                     if (list != null)
                         _crucible.SetDetail("layers", list);
@@ -983,7 +1069,7 @@ public class BrickFurnace : Multiblock
 
         CleanupZeroCountSlots();
 
-        // 로드 후에도 우선순위/예약 규칙을 강제해서 모순 제거
+        // 로드 후에도 우선순위/예약 규칙을 강제해서 모순 제거(진행도 유지 방식)
         RecomputeReservationsByPriority();
 
         // meta는 "연료가 타는중" 기준으로 맞춤

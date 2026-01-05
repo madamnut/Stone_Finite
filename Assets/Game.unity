@@ -884,6 +884,7 @@ MonoBehaviour:
   campfireModule: {fileID: 8683761661018755451, guid: 0ffd85b8869380c439e4a992432c783a, type: 3}
   woodenCrateModule: {fileID: 8683761661018755451, guid: 9f73900305dc0e54695b2dd7034c7541, type: 3}
   clayKilnModule: {fileID: 7961135980991331487, guid: 428cbb19de4949e48962c71d3cf96911, type: 3}
+  brickFurnaceModule: {fileID: 7961135980991331487, guid: 7fabc04242b70b34dad554464a5a8671, type: 3}
   vfx: {fileID: 672136422}
 --- !u!1 &172259531
 GameObject:

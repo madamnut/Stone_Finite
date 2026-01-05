@@ -75,15 +75,15 @@
   ],
   "Ore_Copper": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Copper Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Copper Ore Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
   "Ore_Iron": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Iron Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Iron Ore Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
   "Ore_Tin": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Tin Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Tin Ore Chunk", "probability": 1, "min": 2, "max": 2 }
   ],
 
   "Primal Workbench_L": [
@@ -129,5 +129,23 @@
   ],
   "Clay Kiln_TR": [
     { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Brick Furnace_BL": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_BR": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_TL": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_TR": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Clay Brick Cell": [
+    { "itemId": "Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Refractory Clay Brick Cell": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
   ]
 }
