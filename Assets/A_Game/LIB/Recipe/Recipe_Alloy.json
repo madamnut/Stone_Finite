@@ -1,0 +1,9 @@
+[
+  {
+    "inputs": [
+      { "id": "Molten Tin", "amount": 1 },
+      { "id": "Molten Copper", "amount": 9 }
+    ],
+    "output": { "id": "Molten Bronze", "amount": 10 }
+  }
+]

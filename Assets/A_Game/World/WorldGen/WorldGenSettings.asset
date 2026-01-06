@@ -53,15 +53,22 @@ MonoBehaviour:
   coalSeedDensity: 0.002
   coalExpansionProb: 0.5
   coalMaxGrowthFactor: 1.5
-  copperMinHeight: 600
-  copperMaxHeight: 700
+  tinMinHeight: 630
+  tinMaxHeight: 730
+  tinClusterSizeMean: 50
+  tinClusterSizeStdDev: 13
+  tinSeedDensity: 0.0015
+  tinExpansionProb: 0.4
+  tinMaxGrowthFactor: 1.4
+  copperMinHeight: 670
+  copperMaxHeight: 740
   copperClusterSizeMean: 60
   copperClusterSizeStdDev: 15
   copperSeedDensity: 0.0015
   copperExpansionProb: 0.4
   copperMaxGrowthFactor: 1.4
   ironMinHeight: 500
-  ironMaxHeight: 650
+  ironMaxHeight: 700
   ironClusterSizeMean: 50
   ironClusterSizeStdDev: 12
   ironSeedDensity: 0.002

@@ -189,7 +189,7 @@ public class BrickFurnace : Multiblock
             _droppedOnDestroy = true;
             DropAllInternalItems();
         }
-        base.OnCellBroken(brokenCell); // 기본 구현: Despawn + 원복:contentReference[oaicite:2]{index=2}
+        base.OnCellBroken(brokenCell); // 기본 구현: Despawn + 원복
     }
 
     public override void GetVfxRequests(List<VfxRequest> outList)
@@ -323,7 +323,13 @@ public class BrickFurnace : Multiblock
                 if (_smeltTicksNeed[i] > 0 && _smeltTicksDone[i] >= _smeltTicksNeed[i])
                 {
                     if (ConsumeOneFromInput(i))
+                    {
                         AddFluidToCrucibleLayers(_crucible, _reservedFluidId[i], _reservedAmount[i]);
+
+                        // ✅ 커밋 직후 합금 판정 (WorldManager 경유)
+                        if (World != null && World.recipeLibrary != null)
+                            World.recipeLibrary.TryApplyAlloysToCrucible(_crucible);
+                    }
 
                     // 1개 처리 완료 -> 예약 해제 + 진행 리셋
                     ClearReservationForSlot(i);

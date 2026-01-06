@@ -1,5 +1,4 @@
-// Cursor.cs
-using System.Collections;
+// Cursor.cs (전체 교체본)
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -49,8 +48,10 @@ public class Cursor : MonoBehaviour
                 rt.anchoredPosition = local;
         }
 
-        // ── 호버 슬롯 탐지 ──
-        ItemSlot hover = null;
+        // ── 호버 탐지 ──
+        ItemSlot hoverSlot = null;
+        ICursorTooltipSource hoverTip = null;
+
         if (EventSystem.current != null)
         {
             _hits.Clear();
@@ -59,115 +60,143 @@ public class Cursor : MonoBehaviour
 
             for (int i = 0; i < _hits.Count; i++)
             {
-                var s = _hits[i].gameObject.GetComponentInParent<ItemSlot>();
-                if (s == null || s == cursorSlot) continue;
-                hover = s;
-                break;
+                var go = _hits[i].gameObject;
+
+                // 1) ItemSlot 우선
+                var s = go.GetComponentInParent<ItemSlot>();
+                if (s != null && s != cursorSlot)
+                {
+                    hoverSlot = s;
+                    break;
+                }
+
+                // 2) 없으면 ICursorTooltipSource 후보(첫 번째로 잡히는 것)
+                if (hoverTip == null)
+                {
+                    var t = go.GetComponentInParent<ICursorTooltipSource>();
+                    if (t != null) hoverTip = t;
+                }
             }
         }
 
         // ── 툴팁 갱신 ──
-        if (hover != null && hover.Item != null && tooltipText != null)
+        bool showTooltip = false;
+
+        if (tooltipText != null)
         {
-            var it = hover.Item;
-            var sb = new StringBuilder(512);
-
-            // 기본 메타
-            sb.AppendLine(it.Name);
-            sb.Append("ID: ").AppendLine(it.ItemId);
-            sb.Append("Type: ").AppendLine(it.ItemType);
-            sb.Append("Sprite: ").AppendLine(it.SpriteName);
-            sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-            sb.Append("Durability: ")
-              .Append(it.Durability)
-              .Append(" / ")
-              .AppendLine(it.MaxDurability.ToString());
-
-            // 태그
-            sb.AppendLine();
-            sb.AppendLine("Tags:");
-            if (it.Tags != null && it.Tags.Count > 0)
+            // A) ItemSlot 툴팁(기존 로직)
+            if (hoverSlot != null && hoverSlot.Item != null)
             {
-                for (int i = 0; i < it.Tags.Count; i++)
-                    sb.Append(" - ").AppendLine(it.Tags[i]);
-            }
-            else
-            {
-                sb.AppendLine(" - (none)");
-            }
+                var it = hoverSlot.Item;
+                var sb = new StringBuilder(512);
 
-            // 액션들 (전체 파라미터 딕셔너리까지 표시)
-            sb.AppendLine();
-            sb.AppendLine("ToolActions:");
-            AppendActionKeysInline(sb, it.ToolActions);
+                sb.AppendLine(it.Name);
+                sb.Append("ID: ").AppendLine(it.ItemId);
+                sb.Append("Type: ").AppendLine(it.ItemType);
+                sb.Append("Sprite: ").AppendLine(it.SpriteName);
+                sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
+                sb.Append("Durability: ")
+                  .Append(it.Durability)
+                  .Append(" / ")
+                  .AppendLine(it.MaxDurability.ToString());
 
-            sb.AppendLine("WeaponActions:");
-            AppendActionKeysInline(sb, it.WeaponActions);
-
-            sb.AppendLine("BreakActions:");
-            AppendActionKeysInline(sb, it.BreakActions);
-
-            // 디테일 전체(중첩 포함, ATT details + 런타임 확장)
-            sb.AppendLine();
-            sb.AppendLine("Details:");
-            if (it.Details != null && it.Details.Count > 0)
-            {
-                foreach (var kv in it.Details)
+                sb.AppendLine();
+                sb.AppendLine("Tags:");
+                if (it.Tags != null && it.Tags.Count > 0)
                 {
-                    AppendDetailRecursive(sb, " - ", kv.Key, kv.Value);
+                    for (int i = 0; i < it.Tags.Count; i++)
+                        sb.Append(" - ").AppendLine(it.Tags[i]);
+                }
+                else
+                {
+                    sb.AppendLine(" - (none)");
+                }
+
+                sb.AppendLine();
+                sb.AppendLine("ToolActions:");
+                AppendActionKeysInline(sb, it.ToolActions);
+
+                sb.AppendLine("WeaponActions:");
+                AppendActionKeysInline(sb, it.WeaponActions);
+
+                sb.AppendLine("BreakActions:");
+                AppendActionKeysInline(sb, it.BreakActions);
+
+                sb.AppendLine();
+                sb.AppendLine("Details:");
+                if (it.Details != null && it.Details.Count > 0)
+                {
+                    foreach (var kv in it.Details)
+                        AppendDetailRecursive(sb, " - ", kv.Key, kv.Value);
+                }
+                else
+                {
+                    sb.AppendLine(" - (none)");
+                }
+
+                tooltipText.text = sb.ToString();
+                showTooltip = true;
+            }
+            // B) ICursorTooltipSource 툴팁(도가니 레이어 등)
+            else if (hoverTip != null)
+            {
+                var sb = new StringBuilder(128);
+                hoverTip.TryBuildTooltip(sb);
+                if (sb.Length > 0)
+                {
+                    tooltipText.text = sb.ToString();
+                    showTooltip = true;
+                }
+            }
+        }
+
+        if (tooltipObject != null)
+        {
+            if (showTooltip)
+            {
+                if (!tooltipObject.activeSelf) tooltipObject.SetActive(true);
+
+                // ── 패널 자체를 화면 경계로 클램프 ──
+                if (canvas.renderMode != RenderMode.WorldSpace)
+                {
+                    var canvasRT = (RectTransform)canvas.transform;
+                    var tooltipRT = tooltipRoot != null ? tooltipRoot : tooltipText.rectTransform;
+
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
+
+                    Vector2 ap = tooltipOffset;
+                    var r = tooltipRT.rect;
+                    var cr = canvasRT.rect;
+                    var pv = tooltipRT.pivot;
+
+                    float left = rt.anchoredPosition.x + ap.x - r.width * pv.x;
+                    float right = rt.anchoredPosition.x + ap.x + r.width * (1f - pv.x);
+                    float bottom = rt.anchoredPosition.y + ap.y - r.height * pv.y;
+                    float top = rt.anchoredPosition.y + ap.y + r.height * (1f - pv.y);
+
+                    float minX = cr.xMin + tooltipPadding.x;
+                    float maxX = cr.xMax - tooltipPadding.x;
+                    float minY = cr.yMin + tooltipPadding.y;
+                    float maxY = cr.yMax - tooltipPadding.y;
+
+                    if (left < minX) ap.x += (minX - left);
+                    if (right > maxX) ap.x -= (right - maxX);
+                    if (top > maxY) ap.y -= (top - maxY);
+                    if (bottom < minY) ap.y += (minY - bottom);
+
+                    tooltipRT.anchoredPosition = ap;
                 }
             }
             else
             {
-                sb.AppendLine(" - (none)");
+                if (tooltipObject.activeSelf) tooltipObject.SetActive(false);
             }
-
-            tooltipText.text = sb.ToString();
-            if (tooltipObject != null && !tooltipObject.activeSelf) tooltipObject.SetActive(true);
-
-            // ── 패널 자체를 화면 경계로 클램프 ──
-            if (canvas.renderMode != RenderMode.WorldSpace)
-            {
-                var canvasRT  = (RectTransform)canvas.transform;
-                var tooltipRT = tooltipRoot != null ? tooltipRoot : tooltipText.rectTransform;
-
-                LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
-
-                Vector2 ap = tooltipOffset;  // 커서 기준 오프셋
-                var r  = tooltipRT.rect;
-                var cr = canvasRT.rect;
-                var pv = tooltipRT.pivot;
-
-                float left   = rt.anchoredPosition.x + ap.x - r.width  * pv.x;
-                float right  = rt.anchoredPosition.x + ap.x + r.width  * (1f - pv.x);
-                float bottom = rt.anchoredPosition.y + ap.y - r.height * pv.y;
-                float top    = rt.anchoredPosition.y + ap.y + r.height * (1f - pv.y);
-
-                float minX = cr.xMin + tooltipPadding.x;
-                float maxX = cr.xMax - tooltipPadding.x;
-                float minY = cr.yMin + tooltipPadding.y;
-                float maxY = cr.yMax - tooltipPadding.y;
-
-                if (left   < minX) ap.x += (minX - left);
-                if (right  > maxX) ap.x -= (right - maxX);
-                if (top    > maxY) ap.y -= (top - maxY);
-                if (bottom < minY) ap.y += (minY - bottom);
-
-                tooltipRT.anchoredPosition = ap; // 커서(부모) 기준 배치
-            }
-        }
-        else
-        {
-            if (tooltipObject != null && tooltipObject.activeSelf) tooltipObject.SetActive(false);
         }
 
         if (Input.GetMouseButtonDown(0)) HandleClick(PointerEventData.InputButton.Left);
         if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
     }
 
-    // 액션 딕셔너리 전체 출력 (tool/weapon/break)
-    //  - 액션 이름
-    //  - 그 아래에 파라미터 딕셔너리 전체(중첩 구조 포함) 출력
     static void AppendActionKeysInline(
         StringBuilder sb,
         IDictionary<string, Dictionary<string, object>> actions)
@@ -181,19 +210,14 @@ public class Cursor : MonoBehaviour
         foreach (var kv in actions)
         {
             string actionName = kv.Key;
-            var paramDict     = kv.Value;
+            var paramDict = kv.Value;
 
-            // 액션 이름
             sb.Append(" - ").Append(actionName).AppendLine(":");
 
             if (paramDict != null && paramDict.Count > 0)
             {
-                // 각 파라미터 키/값을 다 까서 표시
                 foreach (var p in paramDict)
-                {
-                    // indent "    " 붙여서 nested 형식으로 표시
                     AppendDetailRecursive(sb, "    ", p.Key, p.Value);
-                }
             }
             else
             {
@@ -202,7 +226,6 @@ public class Cursor : MonoBehaviour
         }
     }
 
-    // details 값 전체를 중첩 구조 포함해서 출력
     static void AppendDetailRecursive(StringBuilder sb, string indent, string key, object value)
     {
         if (value is Dictionary<string, object> dict)
@@ -211,7 +234,7 @@ public class Cursor : MonoBehaviour
             foreach (var kv in dict)
                 AppendDetailRecursive(sb, indent + "  ", kv.Key, kv.Value);
         }
-        else if (value is IList list && value is not string)
+        else if (value is System.Collections.IList list && value is not string)
         {
             sb.Append(indent).Append(key).AppendLine(": [");
             int idx = 0;
@@ -250,9 +273,6 @@ public class Cursor : MonoBehaviour
         }
         if (slotView == null) return;
 
-        // ✅ 새 규칙:
-        // - denyUserInteraction: 완전 프리뷰(넣기/빼기 모두 금지)
-        // - denyUserPut: 넣기만 금지(출력 슬롯)
         if (slotView.denyUserInteraction)
             return;
 
@@ -268,17 +288,14 @@ public class Cursor : MonoBehaviour
         {
             var slot = slotView.Item;
 
-            // ✅ denyUserPut은 "넣기"만 막는다.
-            // - 넣기 시도 케이스: cur != null (커서에 들고 있음)
             if (slotView.denyUserPut && cur != null)
                 return;
 
             bool same = (cur != null && slot != null && cur.ItemId == slot.ItemId);
-            int room  = slot != null ? (slot.MaxStack - slot.Count) : 0;
+            int room = slot != null ? (slot.MaxStack - slot.Count) : 0;
 
             if (btn == PointerEventData.InputButton.Left)
             {
-                // 슬롯 → 커서 (빼기) : 항상 허용(denyUserInteraction이 아니면)
                 if (cur == null)
                 {
                     if (slot == null) return;
@@ -287,7 +304,6 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 슬롯 (넣기)
                 if (slot == null)
                 {
                     slotView.Set(cur);
@@ -295,19 +311,17 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 같은 아이디 슬롯 (합치기)
                 if (same && room > 0)
                 {
                     int move = cur.Count < room ? cur.Count : room;
                     slot.Count += move;
-                    cur.Count  -= move;
+                    cur.Count -= move;
                     slotView.Refresh();
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
                     return;
                 }
 
-                // 스왑
                 slotView.Set(cur);
                 cursorSlot.Set(slot);
                 return;
@@ -315,25 +329,24 @@ public class Cursor : MonoBehaviour
 
             if (btn == PointerEventData.InputButton.Right)
             {
-                // 슬롯 → 커서 (반 갈라서) : 빼기, 허용
                 if (cur == null && slot != null)
                 {
                     int take = (slot.Count + 1) / 2;
                     var copy = new ItemData(
-                        itemId:        slot.ItemId,
-                        name:          slot.Name,
-                        spriteName:    slot.SpriteName,
-                        itemType:      slot.ItemType,
-                        maxStack:      slot.MaxStack,
+                        itemId: slot.ItemId,
+                        name: slot.Name,
+                        spriteName: slot.SpriteName,
+                        itemType: slot.ItemType,
+                        maxStack: slot.MaxStack,
                         maxDurability: slot.MaxDurability,
-                        durability:    slot.Durability,
-                        toolActions:   slot.ToolActions,
+                        durability: slot.Durability,
+                        toolActions: slot.ToolActions,
                         weaponActions: slot.WeaponActions,
-                        breakActions:  slot.BreakActions,
-                        tags:          slot.Tags,
-                        details:       slot.Details,
-                        icon:          slot.Icon,
-                        count:         take
+                        breakActions: slot.BreakActions,
+                        tags: slot.Tags,
+                        details: slot.Details,
+                        icon: slot.Icon,
+                        count: take
                     );
                     cursorSlot.Set(copy);
 
@@ -343,24 +356,23 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 빈 슬롯 (1개 내려놓기) : 넣기
                 if (cur != null && slot == null)
                 {
                     var newSlot = new ItemData(
-                        itemId:        cur.ItemId,
-                        name:          cur.Name,
-                        spriteName:    cur.SpriteName,
-                        itemType:      cur.ItemType,
-                        maxStack:      cur.MaxStack,
+                        itemId: cur.ItemId,
+                        name: cur.Name,
+                        spriteName: cur.SpriteName,
+                        itemType: cur.ItemType,
+                        maxStack: cur.MaxStack,
                         maxDurability: cur.MaxDurability,
-                        durability:    cur.Durability,
-                        toolActions:   cur.ToolActions,
+                        durability: cur.Durability,
+                        toolActions: cur.ToolActions,
                         weaponActions: cur.WeaponActions,
-                        breakActions:  cur.BreakActions,
-                        tags:          cur.Tags,
-                        details:       cur.Details,
-                        icon:          cur.Icon,
-                        count:         1
+                        breakActions: cur.BreakActions,
+                        tags: cur.Tags,
+                        details: cur.Details,
+                        icon: cur.Icon,
+                        count: 1
                     );
                     slotView.Set(newSlot);
 
@@ -370,11 +382,10 @@ public class Cursor : MonoBehaviour
                     return;
                 }
 
-                // 커서 → 같은 아이디 슬롯 (1개 합치기) : 넣기
                 if (cur != null && same && slot.Count < slot.MaxStack)
                 {
                     slot.Count += 1;
-                    cur.Count  -= 1;
+                    cur.Count -= 1;
                     slotView.Refresh();
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
@@ -385,44 +396,39 @@ public class Cursor : MonoBehaviour
         }
 
         // ===== 인벤토리 바운드 경로 =====
-        var inv   = slotView.inventory;
+        var inv = slotView.inventory;
         var items = inv.items;
-        int idx   = slotView.index;
+        int idx = slotView.index;
 
-        var slotInv  = items[idx];
+        var slotInv = items[idx];
 
-        // ✅ denyUserPut은 "넣기"만 막는다.
         if (slotView.denyUserPut && cur != null)
             return;
 
         bool sameInv = (cur != null && slotInv != null && cur.ItemId == slotInv.ItemId);
-        int roomInv  = slotInv != null ? (slotInv.MaxStack - slotInv.Count) : 0;
+        int roomInv = slotInv != null ? (slotInv.MaxStack - slotInv.Count) : 0;
 
         if (btn == PointerEventData.InputButton.Left)
         {
-            // 슬롯 → 커서 (빼기)
             if (cur == null)
             {
                 if (slotInv == null) return;
                 cursorSlot.Set(slotInv);
                 items[idx] = null;
             }
-            // 커서 → 슬롯 (넣기)
             else if (slotInv == null)
             {
                 items[idx] = cur;
                 cursorSlot.Set(null);
             }
-            // 합치기
             else if (sameInv && roomInv > 0)
             {
                 int move = cur.Count < roomInv ? cur.Count : roomInv;
                 slotInv.Count += move;
-                cur.Count     -= move;
+                cur.Count -= move;
                 if (cur.Count <= 0) cursorSlot.Set(null);
                 else cursorSlot.Refresh();
             }
-            // 스왑
             else
             {
                 items[idx] = cur;
@@ -434,25 +440,24 @@ public class Cursor : MonoBehaviour
 
         if (btn == PointerEventData.InputButton.Right)
         {
-            // 인벤토리 슬롯 → 커서 (반 갈라서) : 빼기
             if (cur == null && slotInv != null)
             {
                 int take = (slotInv.Count + 1) / 2;
                 var copy = new ItemData(
-                    itemId:        slotInv.ItemId,
-                    name:          slotInv.Name,
-                    spriteName:    slotInv.SpriteName,
-                    itemType:      slotInv.ItemType,
-                    maxStack:      slotInv.MaxStack,
+                    itemId: slotInv.ItemId,
+                    name: slotInv.Name,
+                    spriteName: slotInv.SpriteName,
+                    itemType: slotInv.ItemType,
+                    maxStack: slotInv.MaxStack,
                     maxDurability: slotInv.MaxDurability,
-                    durability:    slotInv.Durability,
-                    toolActions:   slotInv.ToolActions,
+                    durability: slotInv.Durability,
+                    toolActions: slotInv.ToolActions,
                     weaponActions: slotInv.WeaponActions,
-                    breakActions:  slotInv.BreakActions,
-                    tags:          slotInv.Tags,
-                    details:       slotInv.Details,
-                    icon:          slotInv.Icon,
-                    count:         take
+                    breakActions: slotInv.BreakActions,
+                    tags: slotInv.Tags,
+                    details: slotInv.Details,
+                    icon: slotInv.Icon,
+                    count: take
                 );
                 cursorSlot.Set(copy);
 
@@ -462,24 +467,23 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
-            // 커서 → 인벤토리 빈 슬롯(1개 내려놓기) : 넣기
             if (cur != null && slotInv == null)
             {
                 items[idx] = new ItemData(
-                    itemId:        cur.ItemId,
-                    name:          cur.Name,
-                    spriteName:    cur.SpriteName,
-                    itemType:      cur.ItemType,
-                    maxStack:      cur.MaxStack,
+                    itemId: cur.ItemId,
+                    name: cur.Name,
+                    spriteName: cur.SpriteName,
+                    itemType: cur.ItemType,
+                    maxStack: cur.MaxStack,
                     maxDurability: cur.MaxDurability,
-                    durability:    cur.Durability,
-                    toolActions:   cur.ToolActions,
+                    durability: cur.Durability,
+                    toolActions: cur.ToolActions,
                     weaponActions: cur.WeaponActions,
-                    breakActions:  cur.BreakActions,
-                    tags:          cur.Tags,
-                    details:       cur.Details,
-                    icon:          cur.Icon,
-                    count:         1
+                    breakActions: cur.BreakActions,
+                    tags: cur.Tags,
+                    details: cur.Details,
+                    icon: cur.Icon,
+                    count: 1
                 );
                 cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);
@@ -488,11 +492,10 @@ public class Cursor : MonoBehaviour
                 return;
             }
 
-            // 커서 → 같은 아이디 인벤토리 슬롯 (1개 합치기) : 넣기
             if (cur != null && sameInv && slotInv.Count < slotInv.MaxStack)
             {
                 slotInv.Count += 1;
-                cur.Count     -= 1;
+                cur.Count -= 1;
                 if (cur.Count <= 0) cursorSlot.Set(null);
                 else cursorSlot.Refresh();
                 inv.NotifyChanged();

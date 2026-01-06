@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 238456405}
   - component: {fileID: 238456404}
   - component: {fileID: 238456403}
+  - component: {fileID: 238456406}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -158,7 +159,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -214,6 +215,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &238456406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238456402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a160d838ff8b4b4693ac20007e008c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AssetsPPU: 100
+  m_RefResolutionX: 5120
+  m_RefResolutionY: 1536
+  m_UpscaleRT: 0
+  m_PixelSnapping: 0
+  m_CropFrameX: 0
+  m_CropFrameY: 0
+  m_StretchFill: 0
 --- !u!1 &1457305231
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,22 +280,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
-  seed: 0
+  seed: 1564
   targetUI: {fileID: 1960623954}
   filterMode: 0
-  flipY: 1
+  flipY: 0
   unknownColor: {r: 1, g: 0, b: 1, a: 1}
-  air: {r: 1, g: 0, b: 0.87986803, a: 1}
+  air: {r: 1, g: 0, b: 1, a: 1}
   rock: {r: 0.35, g: 0.35, b: 0.35, a: 1}
   dirt: {r: 0.47, g: 0.28, b: 0.19, a: 1}
-  grass_Left: {r: 0.16, g: 0.67, b: 0.24, a: 1}
-  grass_Top: {r: 0.2, g: 0.71, b: 0.27, a: 1}
-  grass_Right: {r: 0.16, g: 0.67, b: 0.24, a: 1}
-  grass_TopLeft: {r: 0.18, g: 0.69, b: 0.25, a: 1}
-  grass_TopRight: {r: 0.18, g: 0.69, b: 0.25, a: 1}
-  grass_LeftRight: {r: 0.18, g: 0.69, b: 0.25, a: 1}
-  grass_TopLeftRight: {r: 0.2, g: 0.71, b: 0.27, a: 1}
+  grass: {r: 0.2, g: 0.71, b: 0.27, a: 1}
   clay: {r: 1, g: 0.3654716, b: 0.16509432, a: 1}
+  mud: {r: 0.35, g: 0.25, b: 0.2, a: 1}
   sand: {r: 0.82, g: 0.75, b: 0.47, a: 1}
   gravel: {r: 0.55, g: 0.51, b: 0.47, a: 1}
   trunk: {r: 0.43, g: 0.27, b: 0.12, a: 1}
@@ -284,8 +300,8 @@ MonoBehaviour:
   stone_Pile: {r: 0.51, g: 0.51, b: 0.51, a: 1}
   small_Stone_Pile: {r: 0.59, g: 0.59, b: 0.59, a: 1}
   ore_Coal: {r: 0.12, g: 0.12, b: 0.12, a: 1}
-  ore_Copper: {r: 0.78, g: 0.47, b: 0.2, a: 1}
-  ore_Iron: {r: 0.71, g: 0.71, b: 0.78, a: 1}
+  ore_Copper: {r: 0.18752226, g: 0.9245283, b: 0.32492384, a: 1}
+  ore_Iron: {r: 0.8396226, g: 0.4119867, b: 0.07524917, a: 1}
   ore_Tin: {r: 0.71, g: 0.78, b: 0.86, a: 1}
   granite: {r: 0.20363119, g: 0.20363119, b: 0.3018868, a: 1}
   amphibolite: {r: 0.14337842, g: 0.15659486, b: 0.16981131, a: 1}

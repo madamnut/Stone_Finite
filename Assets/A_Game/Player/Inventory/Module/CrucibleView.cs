@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,39 +10,55 @@ public class CrucibleView : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     [Header("UI")]
-    public RectTransform contentRoot; // 레이어들이 들어갈 부모(VerticalLayoutGroup 있어도/없어도 됨)
-    public GameObject layerPrefab;    // Smelt 시각 프리팹
-    public float minLayerHeight = 2f; // 너무 얇아져서 안 보이는 것 방지(원하면 0)
+    public RectTransform contentRoot;
+    public GameObject layerPrefab;
+    public float minLayerHeight = 2f;
+
+    ItemData _crucibleItem;
+    int _capacityCached;
+    List<object> _layersListRef;
 
     int _prevCapacity;
     int _prevSum;
     string _prevSig;
 
-    /// <summary>
-    /// CrucibleView는 "capacity + layers"만 받아서 시각화한다.
-    /// layersObj 허용 타입:
-    /// - JArray
-    /// - List<object> (JObject / Dictionary)
-    /// - List<(string itemId, int amount)>
-    ///
-    /// itemId == spriteName 규칙으로 itemLibrary.GetSprite(itemId) 사용
-    /// </summary>
-    public void SetData(int capacity, object layersObj)
+    public void BindCrucible(ItemData crucibleItem)
     {
-        if (capacity <= 0)
+        _crucibleItem = crucibleItem;
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (_crucibleItem == null || _crucibleItem.Count <= 0)
         {
+            _capacityCached = 0;
+            _layersListRef = null;
             Clear();
             return;
         }
 
-        var layers = NormalizeLayers(layersObj); // bottom -> top (last is top)
+        int cap = ReadCrucibleCapacity(_crucibleItem);
+        _capacityCached = cap;
+
+        if (cap <= 0)
+        {
+            _layersListRef = null;
+            Clear();
+            return;
+        }
+
+        // ✅ 핵심: Details["layers"]를 반드시 List<object>로 통일해서 박아둔다
+        _layersListRef = EnsureLayersListRef(_crucibleItem);
+
+        var layers = NormalizeLayers(_layersListRef); // bottom->top
         int sum = SumAmount(layers);
         string sig = BuildSignature(layers);
 
-        if (capacity == _prevCapacity && sum == _prevSum && sig == _prevSig)
+        if (cap == _prevCapacity && sum == _prevSum && sig == _prevSig)
             return;
 
-        ForceRefresh(capacity, layers, sum, sig);
+        ForceRefresh(cap, layers, sum, sig);
     }
 
     public void Clear()
@@ -57,6 +74,24 @@ public class CrucibleView : MonoBehaviour
         _prevSig = null;
     }
 
+    public bool BringLayerToTop(int layerIndexInCrucible)
+    {
+        if (_crucibleItem == null) return false;
+        if (_layersListRef == null) return false;
+        if (_capacityCached <= 0) return false;
+
+        if ((uint)layerIndexInCrucible >= (uint)_layersListRef.Count) return false;
+        if (layerIndexInCrucible == _layersListRef.Count - 1) return false;
+
+        var moved = _layersListRef[layerIndexInCrucible];
+        _layersListRef.RemoveAt(layerIndexInCrucible);
+        _layersListRef.Add(moved);
+
+        _prevSig = null;
+        Refresh();
+        return true;
+    }
+
     void ForceRefresh(int capacity, List<(string itemId, int amount)> layers, int sum, string sig)
     {
         Clear();
@@ -64,8 +99,6 @@ public class CrucibleView : MonoBehaviour
         if (contentRoot == null || layerPrefab == null || itemLibrary == null) return;
         if (layers == null || layers.Count == 0) return;
 
-        // 레이아웃 의존 없이 "부모 Rect" 기준으로 폭/높이를 직접 박기 위해
-        // 먼저 캔버스/레이아웃을 1회 갱신한다.
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
 
@@ -75,23 +108,20 @@ public class CrucibleView : MonoBehaviour
         if (parentW <= 0.01f) parentW = ((RectTransform)transform).rect.width;
         if (parentH <= 0.01f) parentH = ((RectTransform)transform).rect.height;
 
-        // VerticalLayoutGroup: child index 0이 맨 위.
-        // layers는 bottom->top 이므로, top->bottom 순서로 생성해서 위→아래가 되게 함.
+        // layers bottom->top, UI는 top->bottom 생성
         for (int i = layers.Count - 1; i >= 0; i--)
         {
             var (itemId, amount) = layers[i];
             if (string.IsNullOrEmpty(itemId) || amount <= 0) continue;
 
             float h = parentH * ((float)amount / capacity);
-            if (minLayerHeight > 0f && h < minLayerHeight)
-                h = minLayerHeight;
+            if (minLayerHeight > 0f && h < minLayerHeight) h = minLayerHeight;
 
             var go = Instantiate(layerPrefab, contentRoot, false);
 
             var rt = go.GetComponent<RectTransform>();
             if (rt != null)
             {
-                // ✅ 앵커/스트레치/레이아웃 영향 최소화: 중앙 고정 + size 직접 지정
                 rt.anchorMin = new Vector2(0.5f, 0.5f);
                 rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
@@ -100,7 +130,6 @@ public class CrucibleView : MonoBehaviour
                 rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
             }
 
-            // ✅ VerticalLayoutGroup이 크기를 건드릴 수도 있으니 LayoutElement가 있으면 고정값을 넣어준다.
             var le = go.GetComponent<LayoutElement>();
             if (le != null)
             {
@@ -113,7 +142,6 @@ public class CrucibleView : MonoBehaviour
                 le.flexibleHeight = 0f;
             }
 
-            // ✅ 아이콘은 itemId == spriteName 규칙으로 바로 조회
             var img = go.GetComponentInChildren<Image>(true);
             if (img != null)
             {
@@ -121,6 +149,10 @@ public class CrucibleView : MonoBehaviour
                 img.enabled = (img.sprite != null);
                 img.preserveAspect = true;
             }
+
+            var smelts = go.GetComponent<CrucibleSmelts>();
+            if (smelts != null)
+                smelts.Init(this, i, itemId, amount);
         }
 
         _prevCapacity = capacity;
@@ -128,94 +160,119 @@ public class CrucibleView : MonoBehaviour
         _prevSig = sig;
     }
 
-    // ────────── helpers ──────────
+    // ✅ 여기 고친 부분: IList 전부 받아서 List<object>로 통일해 SetDetail로 다시 박기
+    List<object> EnsureLayersListRef(ItemData c)
+    {
+        object lo = null;
+        if (c.Details != null)
+            c.Details.TryGetValue("layers", out lo);
+
+        // 없으면 생성
+        if (lo == null)
+        {
+            var created = new List<object>();
+            c.SetDetail("layers", created);
+            return created;
+        }
+
+        // 이미 List<object>
+        if (lo is List<object> listObj)
+            return listObj;
+
+        // JArray -> List<object>
+        if (lo is JArray ja)
+        {
+            var converted = new List<object>(ja.Count);
+            for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]); // JObject 유지
+            c.SetDetail("layers", converted);
+            return converted;
+        }
+
+        // ✅ 대부분 여기 걸림: List<Dictionary<...>> / List<JObject> / 기타 IList
+        if (lo is IList ilist && lo is not string)
+        {
+            var converted = new List<object>(ilist.Count);
+            for (int i = 0; i < ilist.Count; i++)
+                converted.Add(ilist[i]);
+
+            c.SetDetail("layers", converted);
+            return converted;
+        }
+
+        // 이상 타입이면 교체
+        var fallback = new List<object>();
+        c.SetDetail("layers", fallback);
+        return fallback;
+    }
+
+    int ReadCrucibleCapacity(ItemData c)
+    {
+        if (c == null) return 0;
+        if (c.ToolActions == null) return 0;
+        if (!c.ToolActions.TryGetValue("Crucible", out Dictionary<string, object> cfg) || cfg == null) return 0;
+        if (!cfg.TryGetValue("capacity", out var capObj) || capObj == null) return 0;
+
+        if (capObj is int i) return i;
+        if (capObj is long l) return (int)l;
+        if (capObj is float f) return Mathf.RoundToInt(f);
+        if (capObj is double d) return (int)d;
+        return int.TryParse(capObj.ToString(), out int r) ? r : 0;
+    }
 
     static int SumAmount(List<(string itemId, int amount)> layers)
     {
         if (layers == null) return 0;
         int s = 0;
-        for (int i = 0; i < layers.Count; i++)
-            s += layers[i].amount;
+        for (int i = 0; i < layers.Count; i++) s += layers[i].amount;
         return s;
     }
 
     static string BuildSignature(List<(string itemId, int amount)> layers)
     {
         if (layers == null || layers.Count == 0) return "";
-
         var sb = new System.Text.StringBuilder(128);
         for (int i = 0; i < layers.Count; i++)
-        {
-            sb.Append(layers[i].itemId);
-            sb.Append(':');
-            sb.Append(layers[i].amount);
-            sb.Append('|');
-        }
+            sb.Append(layers[i].itemId).Append(':').Append(layers[i].amount).Append('|');
         return sb.ToString();
     }
 
-    List<(string itemId, int amount)> NormalizeLayers(object layersObj)
+    List<(string itemId, int amount)> NormalizeLayers(List<object> layersList)
     {
-        if (layersObj == null) return null;
-
-        if (layersObj is List<(string itemId, int amount)> typed)
-            return typed;
+        if (layersList == null) return null;
 
         var result = new List<(string, int)>();
 
-        // JArray 케이스
-        if (layersObj is JArray jarr)
+        for (int i = 0; i < layersList.Count; i++)
         {
-            for (int i = 0; i < jarr.Count; i++)
+            string id = null;
+            int amt = 0;
+
+            var obj = layersList[i];
+
+            if (obj is JObject jo)
             {
-                var jo = jarr[i] as JObject;
-                if (jo == null) continue;
-
-                string id = (jo["itemId"] ?? jo["fluidId"])?.ToString();
-                int amt = jo["amount"] != null ? jo["amount"].Value<int>() : 0;
-
-                if (!string.IsNullOrEmpty(id) && amt > 0)
-                    result.Add((id, amt));
+                id = (jo["itemId"] ?? jo["fluidId"])?.ToString();
+                amt = jo["amount"] != null ? jo["amount"].Value<int>() : 0;
             }
-            return result;
+            else if (obj is Dictionary<string, object> d)
+            {
+                if (d.TryGetValue("itemId", out var idObj) && idObj != null) id = idObj.ToString();
+                else if (d.TryGetValue("fluidId", out var fidObj) && fidObj != null) id = fidObj.ToString();
+
+                if (d.TryGetValue("amount", out var aObj) && aObj != null)
+                {
+                    if (aObj is int ii) amt = ii;
+                    else if (aObj is long ll) amt = (int)ll;
+                    else if (aObj is float ff) amt = Mathf.RoundToInt(ff);
+                    else if (aObj is double dd) amt = (int)dd;
+                    else int.TryParse(aObj.ToString(), out amt);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(id) && amt > 0)
+                result.Add((id, amt));
         }
 
-        // List<object> 케이스 (JObject or Dictionary)
-        if (layersObj is List<object> list)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                string id = null;
-                int amt = 0;
-
-                if (list[i] is JObject jo)
-                {
-                    id = (jo["itemId"] ?? jo["fluidId"])?.ToString();
-                    amt = jo["amount"] != null ? jo["amount"].Value<int>() : 0;
-                }
-                else if (list[i] is Dictionary<string, object> d)
-                {
-                    if (d.TryGetValue("itemId", out var idObj) && idObj != null)
-                        id = idObj.ToString();
-                    else if (d.TryGetValue("fluidId", out var fidObj) && fidObj != null)
-                        id = fidObj.ToString();
-
-                    if (d.TryGetValue("amount", out var aObj) && aObj != null)
-                    {
-                        if (aObj is int ii) amt = ii;
-                        else if (aObj is long ll) amt = (int)ll;
-                        else if (aObj is float ff) amt = Mathf.RoundToInt(ff);
-                        else if (aObj is double dd) amt = (int)dd;
-                        else int.TryParse(aObj.ToString(), out amt);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(id) && amt > 0)
-                    result.Add((id, amt));
-            }
-            return result;
-        }
-
-        return null;
+        return result;
     }
 }

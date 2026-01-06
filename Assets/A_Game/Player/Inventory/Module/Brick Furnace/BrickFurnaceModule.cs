@@ -1,18 +1,3 @@
-// BrickFurnaceModule.cs
-// - BrickFurnace 멀티블럭 UI 모듈
-// - 입력 9슬롯은 ItemSlot.SetProgress()로 "슬롯별 smelt 진행도" 표시
-// - 연료 게이지는 (선택) fireGauge 로 표시
-// - CrucibleView(선택): Crucible 용량 + layers를 전달하여 도가니 내부 층 시각화
-//
-// BrickFurnace가 아래 API를 제공한다고 가정:
-// - ItemData GetSlot(BrickFurnace.SlotKind kind)
-// - void    SetSlot(BrickFurnace.SlotKind kind, ItemData item)
-// - float   FuelProgress01 { get; }                 // 0~1
-// - float   GetInputProgress01(int index0to8)       // 0~1 (예약/진행 없으면 0)
-//
-// ItemSlot에 아래 API가 추가되어 있다고 가정:
-// - public void SetProgress(float fill01, bool show)
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -36,14 +21,13 @@ public class BrickFurnaceModule : MonoBehaviour
     public ItemSlot in8;
 
     [Header("Gauges (Optional)")]
-    public Image fireGauge; // 연료 게이지(있으면 표시)
+    public Image fireGauge;
 
     [Header("Crucible View (Optional)")]
-    public CrucibleView crucibleView; // 도가니 레이어 시각화
+    public CrucibleView crucibleView;
 
     BrickFurnace _furnace;
 
-    // ────────── 입력 스냅샷(변경 감지) ──────────
     ItemData _prevFuelIn; int _prevFuelInCount; int _prevFuelInDur;
     ItemData _prevCrucible; int _prevCrucibleCount; int _prevCrucibleDur;
 
@@ -51,20 +35,20 @@ public class BrickFurnaceModule : MonoBehaviour
     readonly int[] _prevInsCount = new int[9];
     readonly int[] _prevInsDur = new int[9];
 
-    // ────────── 출력 스냅샷(유저가 꺼냈는지 감지) ──────────
     ItemData _prevFuelOut; int _prevFuelOutCount; int _prevFuelOutDur;
+
+    // ✅ CrucibleView 바인딩 캐시(매 프레임 Bind 호출 방지)
+    ItemData _boundCrucibleForView;
 
     public void Bind(BrickFurnace furnace)
     {
         _furnace = furnace;
 
-        // CrucibleView deps 주입
         if (crucibleView != null && furnace != null && furnace.World != null)
             crucibleView.itemLibrary = furnace.World.itemLibrary;
 
-        // 로컬 슬롯 모드
         SetupSlot(fuelIn,   denyPut: false, denyInteraction: false);
-        SetupSlot(fuelOut,  denyPut: true,  denyInteraction: false); // 출력: 넣기 금지, 빼기 허용
+        SetupSlot(fuelOut,  denyPut: true,  denyInteraction: false);
 
         SetupSlot(crucible, denyPut: false, denyInteraction: false);
 
@@ -78,7 +62,6 @@ public class BrickFurnaceModule : MonoBehaviour
         SetupSlot(in7, denyPut: false, denyInteraction: false);
         SetupSlot(in8, denyPut: false, denyInteraction: false);
 
-        // 최초 UI 반영
         PullFromFurnace();
         CaptureSnapshots();
         RefreshGaugesAndProgress();
@@ -96,7 +79,6 @@ public class BrickFurnaceModule : MonoBehaviour
         slot.denyUserPut = denyPut;
         slot.denyUserInteraction = denyInteraction;
 
-        // progress UI는 기본 OFF 유지
         slot.SetProgress(0f, false);
     }
 
@@ -104,29 +86,24 @@ public class BrickFurnaceModule : MonoBehaviour
     {
         if (_furnace == null) return;
 
-        // 유저 조작(투입/교체/제거) 반영
         bool inputsChanged = InputsChanged();
         bool outputChanged = OutputChanged();
 
         if (inputsChanged)
         {
-            PushInputsToFurnace();      // ✅ 변경된 슬롯만 SetSlot
+            PushInputsToFurnace();
             CaptureInputSnapshots();
         }
 
         if (outputChanged)
         {
-            PushOutputsToFurnace();     // ✅ 변경된 슬롯만 SetSlot
+            PushOutputsToFurnace();
             CaptureOutputSnapshots();
         }
 
-        // Furnace 틱으로 인해 내부 아이템이 변할 수 있으니 UI는 항상 Pull
         PullFromFurnace();
 
-        // 게이지/진행도 UI 갱신
         RefreshGaugesAndProgress();
-
-        // 도가니 레이어 시각화 갱신
         RefreshCrucibleView();
     }
 
@@ -156,12 +133,10 @@ public class BrickFurnaceModule : MonoBehaviour
         slot.Set(item);
     }
 
-    // ✅ 구조 수정: 변경된 슬롯만 SetSlot 호출
     void PushInputsToFurnace()
     {
         if (_furnace == null) return;
 
-        // fuelIn
         if (fuelIn != null)
         {
             var cur = fuelIn.Item;
@@ -169,7 +144,6 @@ public class BrickFurnaceModule : MonoBehaviour
                 _furnace.SetSlot(BrickFurnace.SlotKind.FuelIn, cur);
         }
 
-        // crucible
         if (crucible != null)
         {
             var cur = crucible.Item;
@@ -177,7 +151,6 @@ public class BrickFurnaceModule : MonoBehaviour
                 _furnace.SetSlot(BrickFurnace.SlotKind.Crucible, cur);
         }
 
-        // inputs 0~8
         for (int i = 0; i < 9; i++)
         {
             var s = GetInputSlot(i);
@@ -201,7 +174,6 @@ public class BrickFurnaceModule : MonoBehaviour
         }
     }
 
-    // ✅ 구조 수정: 변경된 경우에만 SetSlot 호출
     void PushOutputsToFurnace()
     {
         if (_furnace == null) return;
@@ -235,11 +207,9 @@ public class BrickFurnaceModule : MonoBehaviour
     {
         if (_furnace == null) return;
 
-        // 연료 게이지
         if (fireGauge != null)
             fireGauge.fillAmount = Mathf.Clamp01(_furnace.FuelProgress01);
 
-        // 입력 슬롯별 진행도
         for (int i = 0; i < 9; i++)
         {
             var slot = GetInputSlot(i);
@@ -251,51 +221,23 @@ public class BrickFurnaceModule : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    // CrucibleView
+    // CrucibleView (✅ CrucibleView가 ItemData를 직접 수정)
     // ─────────────────────────────────────────────
     void RefreshCrucibleView()
     {
         if (crucibleView == null) return;
 
         ItemData c = (crucible != null) ? crucible.Item : null;
-        if (c == null || c.Count <= 0)
+
+        if (!ReferenceEquals(_boundCrucibleForView, c))
         {
-            crucibleView.Clear();
+            _boundCrucibleForView = c;
+            crucibleView.BindCrucible(c);
             return;
         }
 
-        int cap = ReadCrucibleCapacity(c);
-        if (cap <= 0)
-        {
-            crucibleView.Clear();
-            return;
-        }
-
-        object layersObj = null;
-        if (c.Details != null && c.Details.TryGetValue("layers", out var lo) && lo != null)
-            layersObj = lo;
-
-        crucibleView.SetData(cap, layersObj);
-    }
-
-    int ReadCrucibleCapacity(ItemData c)
-    {
-        if (c == null) return 0;
-        if (c.ToolActions == null) return 0;
-
-        if (!c.ToolActions.TryGetValue("Crucible", out Dictionary<string, object> cfg) || cfg == null)
-            return 0;
-
-        if (!cfg.TryGetValue("capacity", out var capObj) || capObj == null)
-            return 0;
-
-        if (capObj is int i) return i;
-        if (capObj is long l) return (int)l;
-        if (capObj is float f) return Mathf.RoundToInt(f);
-        if (capObj is double d) return (int)d;
-
-        int r;
-        return int.TryParse(capObj.ToString(), out r) ? r : 0;
+        // 같은 아이템이면 Refresh만
+        crucibleView.Refresh();
     }
 
     // ─────────────────────────────────────────────
@@ -309,17 +251,14 @@ public class BrickFurnaceModule : MonoBehaviour
 
     void CaptureInputSnapshots()
     {
-        // fuelIn
         _prevFuelIn = (fuelIn != null) ? fuelIn.Item : null;
         _prevFuelInCount = (_prevFuelIn != null) ? _prevFuelIn.Count : 0;
         _prevFuelInDur   = (_prevFuelIn != null) ? _prevFuelIn.Durability : 0;
 
-        // crucible
         _prevCrucible = (crucible != null) ? crucible.Item : null;
         _prevCrucibleCount = (_prevCrucible != null) ? _prevCrucible.Count : 0;
         _prevCrucibleDur   = (_prevCrucible != null) ? _prevCrucible.Durability : 0;
 
-        // inputs
         for (int i = 0; i < 9; i++)
         {
             var s = GetInputSlot(i);
@@ -340,15 +279,12 @@ public class BrickFurnaceModule : MonoBehaviour
 
     bool InputsChanged()
     {
-        // fuelIn
         var curFuelIn = (fuelIn != null) ? fuelIn.Item : null;
         if (Changed(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, curFuelIn)) return true;
 
-        // crucible
         var curCrucible = (crucible != null) ? crucible.Item : null;
         if (Changed(_prevCrucible, _prevCrucibleCount, _prevCrucibleDur, curCrucible)) return true;
 
-        // inputs
         for (int i = 0; i < 9; i++)
         {
             var s = GetInputSlot(i);

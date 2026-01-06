@@ -82,6 +82,15 @@ public class WorldGenSettings : ScriptableObject
     public float coalExpansionProb = 0.5f;
     public float coalMaxGrowthFactor = 1.5f;
 
+    [Header("Ore: Tin Cluster Settings")]
+    public int tinMinHeight = 300;
+    public int tinMaxHeight = 700;
+    public float tinClusterSizeMean = 60f;
+    public float tinClusterSizeStdDev = 15f;
+    public float tinSeedDensity = 0.0015f;
+    public float tinExpansionProb = 0.4f;
+    public float tinMaxGrowthFactor = 1.4f;
+
     [Header("Ore: Copper Cluster Settings")]
     public int copperMinHeight = 300;
     public int copperMaxHeight = 700;

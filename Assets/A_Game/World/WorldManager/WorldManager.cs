@@ -12,8 +12,9 @@ public class WorldManager : MonoBehaviour
     [Header("월드 생성 설정")]
     public WorldGenSettings settings;
 
-    [Header("Cell Library")]
+    [Header("Libraries")]
     public CellLibrary cellLibrary;
+    public RecipeLibrary recipeLibrary;
 
     [Header("청크 Prefab & 관리")]
     public GameObject chunkPrefab;
@@ -283,25 +284,25 @@ public class WorldManager : MonoBehaviour
 
         if (xMin >= xMax || yMin >= yMax) return;
 
-        for (int i = 0; i < randomTicksPerWorldTick; i++)
-        {
-            int gx = Random.Range(xMin, xMax);
-            int gy = Random.Range(yMin, yMax);
+        // for (int i = 0; i < randomTicksPerWorldTick; i++)
+        // {
+        //     int gx = Random.Range(xMin, xMax);
+        //     int gy = Random.Range(yMin, yMax);
 
-            ushort solidId = worldMap.GetSolid(gx, gy).id;
-            if (solidId != 0)
-            {
-                string nm = cellLibrary.GetSolidName(solidId);
-                if (nm == "Grass")
-                {
-                    if (Random.value < 0.05f)
-                    {
-                        Vector3 spawnPos = new Vector3(gx + 0.5f, gy + 1.5f, 0f);
-                        mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
-                    }
-                }
-            }
-        }
+        //     ushort solidId = worldMap.GetSolid(gx, gy).id;
+        //     if (solidId != 0)
+        //     {
+        //         string nm = cellLibrary.GetSolidName(solidId);
+        //         if (nm == "Grass")
+        //         {
+        //             if (Random.value < 0.05f)
+        //             {
+        //                 Vector3 spawnPos = new Vector3(gx + 0.5f, gy + 1.5f, 0f);
+        //                 mobLibrary.SpawnMob("Cow", spawnPos, entityManager);
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     /*────────────────────────────────────────────────────────────

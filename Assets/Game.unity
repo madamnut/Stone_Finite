@@ -3967,6 +3967,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
   cellLibrary: {fileID: 2047849824}
+  recipeLibrary: {fileID: 1177056459}
   chunkPrefab: {fileID: 1467755856479255932, guid: a781b01f90409ab4591ea34f295ab47b, type: 3}
   chunkRoot: {fileID: 105343928}
   initialPoolSize: 200
@@ -7504,6 +7505,7 @@ MonoBehaviour:
   itemLibrary: {fileID: 236639235}
   recipe2Json: {fileID: 4900000, guid: 7ded93dc164c3d544a58f8b90d0f8dda, type: 3}
   recipe4Json: {fileID: 4900000, guid: 3495c1fa712b8f941a421f0a1c3887d4, type: 3}
+  alloyJson: {fileID: 4900000, guid: 8e9e1f06cd2156d46b7647539f59523c, type: 3}
 --- !u!1001 &1185331131
 PrefabInstance:
   m_ObjectHideFlags: 0

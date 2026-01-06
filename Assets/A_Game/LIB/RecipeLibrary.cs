@@ -1,4 +1,4 @@
-// RecipeLibrary.cs
+// RecipeLibrary.cs (전체 교체본)
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -14,8 +14,27 @@ public class RecipeLibrary : MonoBehaviour
     public TextAsset recipe2Json; // 2-slot
     public TextAsset recipe4Json; // 4-slot
 
+    [Header("Alloy Jsons")]
+    public TextAsset alloyJson;   // ✅ 합금(크루시블) 전용
+
     JArray _r2;
     JArray _r4;
+
+    // ✅ 합금 레시피(별도 스키마)
+    // [
+    //   {
+    //     "inputs": [ { "id":"Molten Tin", "amount":1 }, { "id":"Molten Copper", "amount":9 } ],
+    //     "output": { "id":"Molten Bronze", "amount":10 }
+    //   }
+    // ]
+    class AlloyEntry
+    {
+        public readonly List<(string id, int amount)> inputs = new List<(string, int)>();
+        public string outId;
+        public int outAmount;
+    }
+
+    readonly List<AlloyEntry> _alloys = new List<AlloyEntry>();
 
     void Awake()
     {
@@ -23,6 +42,126 @@ public class RecipeLibrary : MonoBehaviour
             _r2 = JArray.Parse(recipe2Json.text);
         if (recipe4Json != null && !string.IsNullOrEmpty(recipe4Json.text))
             _r4 = JArray.Parse(recipe4Json.text);
+
+        LoadAlloys(); // ✅ 추가
+    }
+
+    void LoadAlloys()
+    {
+        _alloys.Clear();
+
+        if (alloyJson == null || string.IsNullOrEmpty(alloyJson.text))
+            return;
+
+        JArray arr;
+        try { arr = JArray.Parse(alloyJson.text); }
+        catch { return; }
+
+        for (int i = 0; i < arr.Count; i++)
+        {
+            var obj = arr[i] as JObject;
+            if (obj == null) continue;
+
+            var inputs = obj["inputs"] as JArray;
+            var output = obj["output"] as JObject;
+            if (inputs == null || inputs.Count == 0 || output == null) continue;
+
+            string outId = output.Value<string>("id");
+            int outAmt = output.Value<int?>("amount") ?? 0;
+            if (string.IsNullOrEmpty(outId) || outAmt <= 0) continue;
+
+            var e = new AlloyEntry();
+            e.outId = outId;
+            e.outAmount = outAmt;
+
+            bool ok = true;
+            for (int k = 0; k < inputs.Count; k++)
+            {
+                var inp = inputs[k] as JObject;
+                if (inp == null) { ok = false; break; }
+
+                string inId = inp.Value<string>("id");
+                int inAmt = inp.Value<int?>("amount") ?? 0;
+
+                if (string.IsNullOrEmpty(inId) || inAmt <= 0) { ok = false; break; }
+                e.inputs.Add((inId, inAmt));
+            }
+
+            if (!ok || e.inputs.Count == 0) continue;
+            _alloys.Add(e);
+        }
+    }
+
+    /// <summary>
+    /// ✅ 크루시블 layers에 합금 레시피를 적용한다.
+    /// - BrickFurnace 등에서 "Molten X"를 layers에 커밋한 직후 호출.
+    /// - 합금 레시피는 alloyJson 스키마를 사용(크래프팅 레시피와 별도).
+    /// - 우선순위는 alloyJson 배열 순서(앞쪽이 우선).
+    /// </summary>
+    public bool TryApplyAlloysToCrucible(ItemData crucible)
+    {
+        if (_alloys.Count == 0) return false;
+        if (crucible == null || crucible.Details == null) return false;
+        if (!crucible.Details.TryGetValue("layers", out var layersObj) || layersObj == null) return false;
+
+        if (layersObj is not List<object> layers) return false;
+
+        bool changed = false;
+
+        // 레시피 우선순위: 하나라도 적용되면 처음부터 다시 스캔(연쇄 합금)
+        while (true)
+        {
+            bool applied = false;
+
+            for (int r = 0; r < _alloys.Count; r++)
+            {
+                var recipe = _alloys[r];
+
+                // 1) totals 집계
+                var totals = new Dictionary<string, int>();
+                for (int i = 0; i < layers.Count; i++)
+                {
+                    if (!TryReadLayer(layers[i], out var id, out var amt)) continue;
+                    if (string.IsNullOrEmpty(id) || amt <= 0) continue;
+
+                    if (totals.TryGetValue(id, out var cur)) totals[id] = cur + amt;
+                    else totals[id] = amt;
+                }
+
+                // 2) batches 계산
+                int batches = int.MaxValue;
+                for (int i = 0; i < recipe.inputs.Count; i++)
+                {
+                    var (id, amt) = recipe.inputs[i];
+                    totals.TryGetValue(id, out int have);
+
+                    int b = have / amt;
+                    if (b < batches) batches = b;
+                    if (batches == 0) break;
+                }
+
+                if (batches <= 0 || batches == int.MaxValue)
+                    continue;
+
+                // 3) 소모(Top layer부터)
+                for (int i = 0; i < recipe.inputs.Count; i++)
+                {
+                    var (id, amt) = recipe.inputs[i];
+                    ConsumeFromTop(layers, id, batches * amt);
+                }
+
+                // 4) 결과 추가(Top 누적)
+                AddOrStackAtTop(layers, recipe.outId, batches * recipe.outAmount);
+
+                applied = true;
+                changed = true;
+                break;
+            }
+
+            if (!applied) break;
+        }
+
+        return changed;
     }
 
     /// <summary>
@@ -1152,5 +1291,89 @@ public class RecipeLibrary : MonoBehaviour
         string ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
         string rand = Guid.NewGuid().ToString("N").Substring(0, 6);
         return s.Replace("$timestamp$", ts).Replace("$rand$", rand);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ✅ Crucible layers helpers (합금 전용)
+    // layers 원소 형태:
+    //   - JObject: { "itemId": "Molten Copper", "amount": 9 }
+    //   - Dictionary<string, object> 동일 키
+    // ─────────────────────────────────────────────────────────
+    bool TryReadLayer(object layerObj, out string itemId, out int amount)
+    {
+        itemId = null;
+        amount = 0;
+
+        if (layerObj is JObject jo)
+        {
+            itemId = jo.Value<string>("itemId");
+            amount = jo.Value<int?>("amount") ?? 0;
+            return true;
+        }
+
+        if (layerObj is Dictionary<string, object> dict)
+        {
+            if (dict.TryGetValue("itemId", out var idObj)) itemId = idObj as string;
+
+            if (dict.TryGetValue("amount", out var amtObj))
+            {
+                if (amtObj is int i) amount = i;
+                else if (amtObj is long l) amount = (int)l;
+                else if (amtObj != null && int.TryParse(amtObj.ToString(), out int p)) amount = p;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void SetLayerAmount(List<object> layers, int index, int newAmount)
+    {
+        if (index < 0 || index >= layers.Count) return;
+
+        if (layers[index] is JObject jo)
+        {
+            jo["amount"] = newAmount;
+            return;
+        }
+
+        if (layers[index] is Dictionary<string, object> dict)
+        {
+            dict["amount"] = newAmount;
+            return;
+        }
+    }
+
+    void ConsumeFromTop(List<object> layers, string itemId, int need)
+    {
+        for (int i = layers.Count - 1; i >= 0 && need > 0; i--)
+        {
+            if (!TryReadLayer(layers[i], out var id, out var amt)) continue;
+            if (id != itemId || amt <= 0) continue;
+
+            int take = Mathf.Min(amt, need);
+            int left = amt - take;
+            need -= take;
+
+            if (left <= 0) layers.RemoveAt(i);
+            else SetLayerAmount(layers, i, left);
+        }
+    }
+
+    void AddOrStackAtTop(List<object> layers, string itemId, int addAmount)
+    {
+        if (addAmount <= 0) return;
+
+        if (layers.Count > 0 && TryReadLayer(layers[layers.Count - 1], out var id, out var amt) && id == itemId)
+        {
+            SetLayerAmount(layers, layers.Count - 1, amt + addAmount);
+            return;
+        }
+
+        var jo = new JObject();
+        jo["itemId"] = itemId;
+        jo["amount"] = addAmount;
+        layers.Add(jo);
     }
 }
