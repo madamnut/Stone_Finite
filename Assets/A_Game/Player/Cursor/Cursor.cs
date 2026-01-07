@@ -273,6 +273,11 @@ public class Cursor : MonoBehaviour
         }
         if (slotView == null) return;
 
+        // ✅ 버튼 모드 슬롯은 커서가 "아이템 이동"을 처리하지 않음
+        // (후보 슬롯 등은 ItemSlot.onClick으로만 처리)
+        if (slotView.useAsButton)
+            return;
+
         if (slotView.denyUserInteraction)
             return;
 

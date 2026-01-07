@@ -21,6 +21,19 @@
     }
   ],
 
+  "Toolbench": [
+    {
+      "pattern": [
+        ["Wooden Frame", "Wooden Frame"],
+        ["Wooden Platform", "Wooden Platform"]
+      ],
+      "result": [
+        ["Toolbench_TL", "Toolbench_TR"],
+        ["Toolbench_BL", "Toolbench_BR"]
+      ]
+    }
+  ],
+
   "Wooden Crate": [
     {
       "pattern": [

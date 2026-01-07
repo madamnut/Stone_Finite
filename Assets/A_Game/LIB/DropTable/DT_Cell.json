@@ -92,7 +92,18 @@
   "Primal Workbench_R": [
     { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
   ],
-
+  "Toolbench_TL": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_TR": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_BL": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_BR": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
 
   "Mud": [
     { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }

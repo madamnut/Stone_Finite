@@ -364,6 +364,38 @@
       { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_TR",  "brightness_override": 15 }
     ]
   },
+  "Toolbench_BL": {
+    "id": 5014,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_BL" }
+    ]
+  },
+  "Toolbench_BR": {
+    "id": 5015,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_BR" }
+    ]
+  },
+  "Toolbench_TL": {
+    "id": 5016,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_TL" }
+    ]
+  },
+  "Toolbench_TR": {
+    "id": 5017,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_TR" }
+    ]
+  },
 
   "Torch": {
     "id": 50001,

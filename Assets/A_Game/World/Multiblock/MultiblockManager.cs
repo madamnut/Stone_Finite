@@ -1,3 +1,4 @@
+// MultiblockManager.cs (전체 교체본)
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,10 +21,11 @@ public class MultiblockManager : MonoBehaviour
     public GameObject campfireModule;
     public GameObject woodenCrateModule;
     public GameObject clayKilnModule;
-    public GameObject brickFurnaceModule; // ✅ 추가
+    public GameObject brickFurnaceModule;
+    public GameObject toolbenchModule;    // ✅ 추가
 
     [Header("VFX")]
-    public VfxManager vfx; // ✅ 프리팹/인스턴스는 VfxManager가 가진다.
+    public VfxManager vfx;
 
     readonly Dictionary<int, Multiblock> _instances = new Dictionary<int, Multiblock>();
     readonly Dictionary<Vector2Int, Multiblock> _byCell = new Dictionary<Vector2Int, Multiblock>();
@@ -31,7 +33,6 @@ public class MultiblockManager : MonoBehaviour
 
     readonly Dictionary<string, Func<Multiblock>> _factoryByDefId = new Dictionary<string, Func<Multiblock>>();
 
-    // VFX 요청 수집용 버퍼(매 틱 재사용)
     readonly List<Multiblock.VfxRequest> _vfxBuf = new List<Multiblock.VfxRequest>(8);
 
     public IReadOnlyDictionary<int, Multiblock> Instances => _instances;
@@ -42,22 +43,20 @@ public class MultiblockManager : MonoBehaviour
         RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
         RegisterFactory("Campfire", () => new Campfire());
         RegisterFactory("Wooden Crate", () => new WoodenCrate());
-        RegisterFactory("Brick Furnace", () => new BrickFurnace()); // ✅ 추가
+        RegisterFactory("Brick Furnace", () => new BrickFurnace());
+        RegisterFactory("Toolbench", () => new Toolbench()); // ✅ 추가
     }
 
     void Start()
     {
-        // VfxManager가 플레이어 거리 컬링을 하므로 player를 넘겨준다.
         if (vfx != null && interaction != null && interaction.player != null)
             vfx.SetPlayer(interaction.player.transform);
     }
 
-    // ✅ 멀티블럭 틱: 물리 틱(FixedUpdate) 기준으로 구동
     void FixedUpdate()
     {
         if (_instances.Count == 0) return;
 
-        // 중간 Despawn 대비 스냅샷
         List<Multiblock> snap = new List<Multiblock>(_instances.Count);
         foreach (var kv in _instances)
             snap.Add(kv.Value);
@@ -78,10 +77,8 @@ public class MultiblockManager : MonoBehaviour
 
         _vfxBuf.Clear();
         mb.GetVfxRequests(_vfxBuf);
-
         if (_vfxBuf.Count == 0) return;
 
-        // Origin 기준 오프셋 -> 월드좌표로 변환 후 전달
         for (int i = 0; i < _vfxBuf.Count; i++)
         {
             var r = _vfxBuf[i];
@@ -107,11 +104,6 @@ public class MultiblockManager : MonoBehaviour
         return inst;
     }
 
-    /// <summary>
-    /// 멀티블럭이 점유한 모든 셀의 meta를 변경한다. (id는 유지)
-    /// - World write는 Manager가 담당.
-    /// - Campfire처럼 "전체 파트가 함께 변하는" 케이스에 사용.
-    /// </summary>
     public void ApplyMetaToAllOccupiedCells(Multiblock owner, ushort targetMeta)
     {
         if (owner == null) return;
@@ -127,12 +119,10 @@ public class MultiblockManager : MonoBehaviour
             ushort id = world.GetSolidId(c.x, c.y);
             if (id == 0) continue;
 
-            // id 유지 + meta만 변경
             world.OverwriteSolid(c.x, c.y, id, targetMeta);
         }
     }
 
-    // ✅ 멀티블럭이 "모듈 이름" + "본인(this)"를 주면, 매니저가 실제 UI를 열고 바인딩까지 한다.
     public void OpenModule(string moduleId, Multiblock owner)
     {
         GameObject prefab = moduleId switch
@@ -141,7 +131,8 @@ public class MultiblockManager : MonoBehaviour
             "Campfire"       => campfireModule,
             "Wooden Crate"   => woodenCrateModule,
             "Clay Kiln"      => clayKilnModule,
-            "Brick Furnace"  => brickFurnaceModule, // ✅ 추가
+            "Brick Furnace"  => brickFurnaceModule,
+            "Toolbench"      => toolbenchModule,
             _ => null
         };
 
@@ -169,11 +160,23 @@ public class MultiblockManager : MonoBehaviour
             if (ui != null)
                 ui.Bind(kiln);
         }
-        else if (moduleId == "Brick Furnace" && owner is BrickFurnace furnace) // ✅ 추가
+        else if (moduleId == "Brick Furnace" && owner is BrickFurnace furnace)
         {
             var ui = instGO.GetComponentInChildren<BrickFurnaceModule>(true);
             if (ui != null)
                 ui.Bind(furnace);
+        }
+        else if (moduleId == "Toolbench" && owner is Toolbench toolbench)
+        {
+            var ui = instGO.GetComponentInChildren<ToolbenchModule>(true);
+            if (ui != null)
+            {
+                // ✅ ToolbenchModule은 CraftModule이 아니므로 여기서 직접 주입
+                ui.recipeLibrary = interaction.recipeLibrary;
+                ui.player = interaction.player;
+
+                ui.Bind(toolbench);
+            }
         }
     }
 
@@ -242,7 +245,6 @@ public class MultiblockManager : MonoBehaviour
                 _byCell.Remove(cell);
         }
 
-        // ✅ 해당 멀티블럭에 속한 모든 루프 VFX 정리 (VfxManager가 인스턴스 소유)
         if (vfx != null)
             vfx.DespawnAllForOwner(inst.InstId);
 
@@ -256,14 +258,8 @@ public class MultiblockManager : MonoBehaviour
         Debug.Log($"{LOG_MB} Despawn multiblock instId={inst.InstId}, def={inst.DefId}, restoreExcept={brokenCell}");
     }
 
-    /// <summary>
-    /// 로드된 SaveData들로 멀티블럭 인스턴스들을 복원한다.
-    /// - 월드 셀 덮어쓰기는 하지 않는다. (이미 world.bin에서 복원된 상태를 전제로)
-    /// - _instances/_byCell 재구성 + _nextInstanceId 갱신
-    /// </summary>
     public void LoadFromSaveDatas(List<Multiblock.SaveData> list)
     {
-        // 기존 VFX 정리
         if (vfx != null && _instances.Count > 0)
         {
             foreach (var kv in _instances)

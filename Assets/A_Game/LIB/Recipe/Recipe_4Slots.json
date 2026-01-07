@@ -253,24 +253,6 @@
     "isOrdered": true,
     "inputs": [
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
-      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
-    ],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
-    ],
-    "outputs": [
-      { "itemId": "Unfired Thick Refractory Clay Slab", "count": 1 }
-    ],
-    "outputActions": [
-      []
-    ]
-  },
-
-  {
-    "isOrdered": true,
-    "inputs": [
-      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
@@ -382,7 +364,6 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Grog", "count": 1 },
-      { "itemId": "Grog", "count": 1 },
       { "itemId": "Clay Chunk", "count": 1 },
       { "itemId": "Sand Pile", "count": 1 }
     ],
@@ -439,4 +420,6 @@
       []
     ]
   }
+
+
 ]

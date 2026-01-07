@@ -885,6 +885,7 @@ MonoBehaviour:
   woodenCrateModule: {fileID: 8683761661018755451, guid: 9f73900305dc0e54695b2dd7034c7541, type: 3}
   clayKilnModule: {fileID: 7961135980991331487, guid: 428cbb19de4949e48962c71d3cf96911, type: 3}
   brickFurnaceModule: {fileID: 7961135980991331487, guid: 7fabc04242b70b34dad554464a5a8671, type: 3}
+  toolbenchModule: {fileID: 8683761661018755451, guid: ac9c408fe562700468365a5301dc71e1, type: 3}
   vfx: {fileID: 672136422}
 --- !u!1 &172259531
 GameObject:
@@ -7506,6 +7507,7 @@ MonoBehaviour:
   recipe2Json: {fileID: 4900000, guid: 7ded93dc164c3d544a58f8b90d0f8dda, type: 3}
   recipe4Json: {fileID: 4900000, guid: 3495c1fa712b8f941a421f0a1c3887d4, type: 3}
   alloyJson: {fileID: 4900000, guid: 8e9e1f06cd2156d46b7647539f59523c, type: 3}
+  toolbenchJson: {fileID: 4900000, guid: 890e966fff46cf44ea30845927e6b13d, type: 3}
 --- !u!1001 &1185331131
 PrefabInstance:
   m_ObjectHideFlags: 0

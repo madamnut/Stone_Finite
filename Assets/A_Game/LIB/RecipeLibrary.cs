@@ -17,8 +17,45 @@ public class RecipeLibrary : MonoBehaviour
     [Header("Alloy Jsons")]
     public TextAsset alloyJson;   // ✅ 합금(크루시블) 전용
 
+    [Header("Toolbench Jsons")]
+    public TextAsset toolbenchJson; // ✅ Toolbench 전용 (candidates 스키마)
+
     JArray _r2;
     JArray _r4;
+
+    // ✅ Toolbench 레시피(별도 스키마) - NEW(권장)
+    // [
+    //   {
+    //     "inputs":{
+    //       "material":{ "itemId":"Unfired Refractory Clay Slab", "count":1 },
+    //       "tool":{ "ToolActions":{ "Carving":{} }, "count":1 }
+    //     },
+    //     "inputActions":{
+    //       "material":{ "type":"consume", "amount":1 },
+    //       "tool":{ "type":"durability", "amount":-1 }
+    //     },
+    //     "candidates":[ { "itemId":"Unfired Ingot Mold", "count":1 } ]
+    //   }
+    // ]
+    //
+    // ✅ Toolbench 레시피(LEGACY 호환)
+    // [
+    //   {
+    //     "isOrdered": true,
+    //     "inputs": [
+    //       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+    //       { "ToolActions": { "Carving": {} }, "count": 1 }
+    //     ],
+    //     "inputActions": [
+    //       { "type": "consume", "amount": 1 },
+    //       { "type": "durability", "amount": -1 }
+    //     ],
+    //     "candidates": [
+    //       { "itemId": "Unfired Ingot Mold", "count": 1 }
+    //     ]
+    //   }
+    // ]
+    JArray _toolbench;
 
     // ✅ 합금 레시피(별도 스키마)
     // [
@@ -43,7 +80,38 @@ public class RecipeLibrary : MonoBehaviour
         if (recipe4Json != null && !string.IsNullOrEmpty(recipe4Json.text))
             _r4 = JArray.Parse(recipe4Json.text);
 
-        LoadAlloys(); // ✅ 추가
+        LoadAlloys();     // ✅ 추가
+        LoadToolbench();  // ✅ 추가
+    }
+
+    void LoadToolbench()
+    {
+        _toolbench = null;
+
+        if (toolbenchJson == null || string.IsNullOrEmpty(toolbenchJson.text))
+            return;
+
+        try
+        {
+            // 1) 배열 루트 지원: [ {...}, ... ]
+            _toolbench = JArray.Parse(toolbenchJson.text);
+        }
+        catch
+        {
+            // 2) 오브젝트 루트 지원: { "Toolbench": [ ... ] } 같은 케이스도 흡수
+            try
+            {
+                var jo = JObject.Parse(toolbenchJson.text);
+                if (jo.TryGetValue("Toolbench", out var tok) && tok is JArray arr)
+                    _toolbench = arr;
+                else
+                    _toolbench = null;
+            }
+            catch
+            {
+                _toolbench = null;
+            }
+        }
     }
 
     void LoadAlloys()
@@ -90,6 +158,186 @@ public class RecipeLibrary : MonoBehaviour
             if (!ok || e.inputs.Count == 0) continue;
             _alloys.Add(e);
         }
+    }
+
+    /// <summary>
+    /// ✅ Toolbench 전용: (재료 1슬롯 + 툴 1슬롯)에서 가능한 결과 후보(candidates)를 반환.
+    /// - NEW 스키마(inputs/material+tool, inputActions/material+tool) 지원
+    /// - LEGACY 스키마(inputs 배열, inputActions 배열, isOrdered)도 호환
+    /// - matchedRecipe: 매칭된 레시피 JObject
+    /// - remappedInputActions: 슬롯 인덱스 기준으로 리맵된 inputActions (null 허용)
+    /// </summary>
+    public bool TryGetToolbenchCandidates(
+        List<ItemData> slots,
+        out List<ItemData> candidates,
+        out JArray remappedInputActions,
+        out JObject matchedRecipe)
+    {
+        candidates = null;
+        remappedInputActions = null;
+        matchedRecipe = null;
+
+        if (itemLibrary == null || slots == null) return false;
+        if (slots.Count != 2) return false;
+        if (_toolbench == null || _toolbench.Count == 0) return false;
+
+        // Toolbench는 2슬롯 고정: slots[0]=material, slots[1]=tool
+        return TryMatchToolbenchSet(_toolbench, slots, out candidates, out remappedInputActions, out matchedRecipe);
+    }
+
+    bool TryMatchToolbenchSet(
+        JArray recipeSet,
+        List<ItemData> slots,
+        out List<ItemData> candidates,
+        out JArray remappedInputActions,
+        out JObject matchedRecipe)
+    {
+        candidates = null;
+        remappedInputActions = null;
+        matchedRecipe = null;
+
+        var mat = slots[0];
+        var tool = slots[1];
+
+        for (int rix = 0; rix < recipeSet.Count; rix++)
+        {
+            var r = recipeSet[rix] as JObject;
+            if (r == null) continue;
+
+            // candidates 또는 outputs(호환)
+            var candArray = r["candidates"] as JArray;
+            if (candArray == null) candArray = r["outputs"] as JArray;
+            if (candArray == null || candArray.Count == 0) continue;
+
+            // ───────── NEW: inputs object ─────────
+            // "inputs": { "material":{...}, "tool":{...} }
+            if (r["inputs"] is JObject inObj)
+            {
+                var matSpec = inObj["material"] as JObject;
+                var toolSpec = inObj["tool"] as JObject;
+
+                // NEW 스키마가 아니면 아래 LEGACY로 내려감
+                if (matSpec != null && toolSpec != null)
+                {
+                    if (mat == null || tool == null) continue;
+                    if (!MatchSpecWithCount(mat, matSpec)) continue;
+                    if (!MatchSpecWithCount(tool, toolSpec)) continue;
+
+                    // inputActions: { material:{...}, tool:{...} } (null 허용)
+                    remappedInputActions = new JArray { null, null };
+
+                    if (r["inputActions"] is JObject actObj)
+                    {
+                        remappedInputActions[0] = actObj.TryGetValue("material", out var am) ? am : null;
+                        remappedInputActions[1] = actObj.TryGetValue("tool", out var at) ? at : null;
+                    }
+
+                    // candidates 생성
+                    var resultsNew = new List<ItemData>();
+                    for (int ci = 0; ci < candArray.Count; ci++)
+                    {
+                        var c = candArray[ci] as JObject;
+                        if (c == null) continue;
+
+                        string id = c.Value<string>("itemId");
+                        int cnt = c.Value<int?>("count") ?? 1;
+                        if (string.IsNullOrEmpty(id) || cnt <= 0) continue;
+
+                        var it = itemLibrary.Create(id, cnt);
+                        if (it != null)
+                            resultsNew.Add(it);
+                    }
+
+                    if (resultsNew.Count == 0)
+                    {
+                        remappedInputActions = null;
+                        continue;
+                    }
+
+                    candidates = resultsNew;
+                    matchedRecipe = r;
+                    return true;
+                }
+            }
+
+            // ───────── LEGACY: inputs array ─────────
+            var inputs = r["inputs"] as JArray;
+            if (inputs == null || inputs.Count == 0) continue;
+
+            var inActs = r["inputActions"] as JArray;
+            bool isOrdered = r.Value<bool?>("isOrdered") ?? false;
+
+            // Toolbench는 2개 인풋만 의미 있음
+            if (inputs.Count != 2) continue;
+
+            if (mat == null || tool == null) continue;
+
+            int[] assign = null;
+
+            if (isOrdered)
+            {
+                if (!MatchSpecWithCount(mat, inputs[0] as JObject)) continue;
+                if (!MatchSpecWithCount(tool, inputs[1] as JObject)) continue;
+                assign = new[] { 0, 1 };
+            }
+            else
+            {
+                var presentIdx = new List<int>(2);
+                if (slots[0] != null) presentIdx.Add(0);
+                if (slots[1] != null) presentIdx.Add(1);
+
+                assign = TryUnordered(inputs, slots, presentIdx);
+                if (assign == null) continue;
+            }
+
+            // 입력액션 리맵(슬롯 인덱스 기준)
+            remappedInputActions = new JArray { null, null };
+            if (inActs != null)
+            {
+                for (int k = 0; k < inputs.Count; k++)
+                {
+                    int si = assign[k];
+                    if (si >= 0 && si < 2 && k < inActs.Count)
+                        remappedInputActions[si] = inActs[k];
+                }
+            }
+
+            // candidates 생성
+            var results = new List<ItemData>();
+            for (int ci = 0; ci < candArray.Count; ci++)
+            {
+                var c = candArray[ci] as JObject;
+                if (c == null) continue;
+
+                string id = c.Value<string>("itemId");
+                int cnt = c.Value<int?>("count") ?? 1;
+                if (string.IsNullOrEmpty(id) || cnt <= 0) continue;
+
+                var it = itemLibrary.Create(id, cnt);
+                if (it != null)
+                    results.Add(it);
+            }
+
+            if (results.Count == 0)
+            {
+                remappedInputActions = null;
+                continue;
+            }
+
+            candidates = results;
+            matchedRecipe = r;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool MatchSpecWithCount(ItemData it, JObject spec)
+    {
+        if (!MatchSpec(it, spec)) return false;
+        int need = spec?.Value<int?>("count") ?? 1;
+        if (it == null || it.Count < need) return false;
+        return true;
     }
 
     /// <summary>

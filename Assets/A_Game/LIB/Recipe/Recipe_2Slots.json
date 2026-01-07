@@ -562,19 +562,17 @@
     "isOrdered": false,
     "inputs": [
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
-      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+      { "ToolActions": { "Pounding": {} }, "count": 1 }
     ],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "consume", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Unfired Thick Refractory Clay Slab", "count": 1 }
+      { "itemId": "Mold Base", "count": 1 }
     ],
     "outputActions": [
       []
     ]
   }
-
-
 ]

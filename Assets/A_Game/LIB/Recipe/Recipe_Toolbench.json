@@ -1,0 +1,24 @@
+[
+  {
+    "inputs":{
+      "material":{"itemId":"Unfired Refractory Clay Slab","count":1},
+      "tool":{"ToolActions":{"Carving":{}},"count":1}
+    },
+    "inputActions":{
+      "material":{"type":"consume","amount":1},
+      "tool":{"type":"durability","amount":-1}
+    },
+    "candidates":[
+      {"itemId":"Unfired Ingot Mold","count":1},
+      {"itemId":"Unfired Plate Mold","count":1},
+      {"itemId":"Unfired Axe Head Mold","count":1},
+      {"itemId":"Unfired Pickaxe Head Mold","count":1},
+      {"itemId":"Unfired Hammer Head Mold","count":1},
+      {"itemId":"Unfired Chisel Head Mold","count":1},
+      {"itemId":"Unfired Short Blade Mold","count":1},
+      {"itemId":"Unfired Long Blade Mold","count":1},
+      {"itemId":"Unfired Saw Blade Mold","count":1},
+      {"itemId":"Unfired Nail Mold","count":1}
+    ]
+  }
+]

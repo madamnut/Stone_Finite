@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -6,17 +7,18 @@ using UnityEngine.EventSystems;
 /// <summary>
 /// 인벤토리/핫바/크래프팅 공통 슬롯
 /// ▸ 아이콘(Image)        ▸ 스택(TextMeshProUGUI)
-/// ▸ Scope(Image) (핫바 선택) ▸ Selected(Image) (마우스 오버)
+/// ▸ Scope(Image) (핫바 선택) ▸ Selected(Image) (마우스 오버 / (useAsButton 시) 선택 표시)
 /// </summary>
 public class ItemSlot : MonoBehaviour,
                         IPointerEnterHandler,
-                        IPointerExitHandler
+                        IPointerExitHandler,
+                        IPointerClickHandler
 {
     [Header("UI References")]
     public Image           iconImage;          // 아이콘
     public TextMeshProUGUI countText;          // 스택 수
     public Image           scopeImage;         // 핫바 선택 테두리
-    public Image           selectedImage;      // 마우스 오버 하이라이트
+    public Image           selectedImage;      // 마우스 오버 하이라이트 / (useAsButton 시) 선택 표시
 
     [Header("Durability UI")]
     public GameObject      durabilityRoot;     // 내구도 바 부모 오브젝트
@@ -34,6 +36,12 @@ public class ItemSlot : MonoBehaviour,
     public bool useLocalStorage = false;       // 크래프팅 슬롯 등 인덱스 없이 운용
     public bool denyUserPut     = false;       // 유저 투입 금지(출력 슬롯용)
     public bool denyUserInteraction = false;   // 유저 상호작용 금지(읽기 전용)
+
+    // ✅ 코드 기반 버튼 모드(인스펙터에 Button 컴포넌트 추가 안 함)
+    // - true면 selectedImage는 "선택 표시"로만 사용(hover 토글 금지)
+    // - 클릭 시 onClick 이벤트 발행
+    public bool useAsButton = false;
+    public event Action<ItemSlot> onClick;
 
     private ItemData _item;                    // 현재 아이템(null → 빈 슬롯)
 
@@ -128,7 +136,6 @@ public class ItemSlot : MonoBehaviour,
                 durabilityBar.fillAmount = fill;
 
                 // 색상: 내구도 높을수록 초록, 낮을수록 빨강으로 연속 변화
-                // 0 → 빨강, 1 → 초록, 중간값은 자연스럽게 오렌지/노랑 계열로
                 Color red   = new Color(1f, 0f, 0f);
                 Color green = new Color(0f, 1f, 0f);
 
@@ -163,7 +170,10 @@ public class ItemSlot : MonoBehaviour,
         if (scopeImage) scopeImage.enabled = on;
     }
 
-    /// <summary>외부에서 직접 선택 하이라이트 토글</summary>
+    /// <summary>
+    /// 외부에서 직접 선택 하이라이트 토글
+    /// - useAsButton=true인 후보 슬롯은 이걸로만 selectedImage를 제어(hover 토글 금지)
+    /// </summary>
     public void SetSelected(bool on)
     {
         if (selectedImage) selectedImage.enabled = on;
@@ -172,12 +182,26 @@ public class ItemSlot : MonoBehaviour,
     /*────────── Mouse Hover ──────────*/
     public void OnPointerEnter(PointerEventData _)
     {
+        // 버튼 모드에서는 selectedImage를 "선택 표시"로 쓰므로 hover로 건드리지 않음
+        if (useAsButton) return;
+
         if (selectedImage) selectedImage.enabled = true;
     }
 
     public void OnPointerExit(PointerEventData _)
     {
+        if (useAsButton) return;
+
         if (selectedImage) selectedImage.enabled = false;
+    }
+
+    /*────────── Click ──────────*/
+    public void OnPointerClick(PointerEventData _)
+    {
+        if (!useAsButton) return;
+        if (denyUserInteraction) return;
+
+        onClick?.Invoke(this);
     }
 
     /*────────── 프로퍼티 ──────────*/

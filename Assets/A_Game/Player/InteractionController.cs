@@ -748,11 +748,24 @@ public class InteractionController : MonoBehaviour
         int worldW = worldManager.settings.width;
         int worldH = worldManager.settings.height;
 
-        foreach (var def in defs)
+        // ✅ 후보 수집: (def, originX, originY, area)
+        MultiblockLibrary.Def bestDef = null;
+        int bestOx = 0;
+        int bestOy = 0;
+        int bestArea = -1;
+
+        // defs 순서가 tie-breaker(면적 동일하면 먼저 나온 것 유지)
+        for (int di = 0; di < defs.Count; di++)
         {
+            var def = defs[di];
+
             int patternWidth = def.width;
             int patternHeight = def.height;
 
+            // 방어
+            if (patternWidth <= 0 || patternHeight <= 0) continue;
+
+            // 클릭한 셀이 패턴 내부 어느 좌표(px,py)일 수 있는지 전부 시도
             for (int py = 0; py < patternHeight; py++)
             {
                 for (int px = 0; px < patternWidth; px++)
@@ -796,16 +809,34 @@ public class InteractionController : MonoBehaviour
 
                     if (!mismatch)
                     {
-                        multiblockManager.Create(def, originX, originY);
-                        sound.PlayMultiblockComplete();
-                        return true;
+                        int area = patternWidth * patternHeight;
+
+                        // ✅ 큰 것 우선
+                        if (area > bestArea)
+                        {
+                            bestArea = area;
+                            bestDef = def;
+                            bestOx = originX;
+                            bestOy = originY;
+                        }
+
+                        // 같은 def에서 다른 origin이 또 매칭될 수 있는데
+                        // 동일 면적이므로 tie-breaker 유지하려면 여기서 continue만
                     }
                 }
             }
         }
 
+        if (bestDef != null)
+        {
+            multiblockManager.Create(bestDef, bestOx, bestOy);
+            sound.PlayMultiblockComplete();
+            return true;
+        }
+
         return false;
     }
+
 
     bool GetMouseCell(out int x, out int y)
     {
