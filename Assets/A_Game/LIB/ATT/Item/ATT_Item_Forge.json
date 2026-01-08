@@ -1,0 +1,436 @@
+{
+  "Large Copper Plate": {
+    "name": "Large Copper Plate",
+    "spriteName": "Large Copper Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Copper Plate": {
+    "name": "Copper Plate",
+    "spriteName": "Copper Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Copper Plate": {
+    "name": "Small Copper Plate",
+    "spriteName": "Small Copper Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Long Copper Rod": {
+    "name": "Long Copper Rod",
+    "spriteName": "Long Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Copper Rod": {
+    "name": "Copper Rod",
+    "spriteName": "Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Short Copper Rod": {
+    "name": "Short Copper Rod",
+    "spriteName": "Short Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Large Copper Preform": {
+    "name": "Large Copper Preform",
+    "spriteName": "Large Copper Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Copper Preform": {
+    "name": "Copper Preform",
+    "spriteName": "Copper Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Copper Preform": {
+    "name": "Small Copper Preform",
+    "spriteName": "Small Copper Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Tin Plate": {
+    "name": "Large Tin Plate",
+    "spriteName": "Large Tin Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Tin Plate": {
+    "name": "Tin Plate",
+    "spriteName": "Tin Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Tin Plate": {
+    "name": "Small Tin Plate",
+    "spriteName": "Small Tin Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Long Tin Rod": {
+    "name": "Long Tin Rod",
+    "spriteName": "Long Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Tin Rod": {
+    "name": "Tin Rod",
+    "spriteName": "Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Short Tin Rod": {
+    "name": "Short Tin Rod",
+    "spriteName": "Short Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Large Tin Preform": {
+    "name": "Large Tin Preform",
+    "spriteName": "Large Tin Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Tin Preform": {
+    "name": "Tin Preform",
+    "spriteName": "Tin Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Tin Preform": {
+    "name": "Small Tin Preform",
+    "spriteName": "Small Tin Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Bronze Plate": {
+    "name": "Large Bronze Plate",
+    "spriteName": "Large Bronze Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Bronze Plate": {
+    "name": "Bronze Plate",
+    "spriteName": "Bronze Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Bronze Plate": {
+    "name": "Small Bronze Plate",
+    "spriteName": "Small Bronze Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Long Bronze Rod": {
+    "name": "Long Bronze Rod",
+    "spriteName": "Long Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Bronze Rod": {
+    "name": "Bronze Rod",
+    "spriteName": "Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Short Bronze Rod": {
+    "name": "Short Bronze Rod",
+    "spriteName": "Short Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Large Bronze Preform": {
+    "name": "Large Bronze Preform",
+    "spriteName": "Large Bronze Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Bronze Preform": {
+    "name": "Bronze Preform",
+    "spriteName": "Bronze Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Bronze Preform": {
+    "name": "Small Bronze Preform",
+    "spriteName": "Small Bronze Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Iron Plate": {
+    "name": "Large Iron Plate",
+    "spriteName": "Large Iron Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Iron Plate": {
+    "name": "Iron Plate",
+    "spriteName": "Iron Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Iron Plate": {
+    "name": "Small Iron Plate",
+    "spriteName": "Small Iron Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Long Iron Rod": {
+    "name": "Long Iron Rod",
+    "spriteName": "Long Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Iron Rod": {
+    "name": "Iron Rod",
+    "spriteName": "Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Short Iron Rod": {
+    "name": "Short Iron Rod",
+    "spriteName": "Short Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Large Iron Preform": {
+    "name": "Large Iron Preform",
+    "spriteName": "Large Iron Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Iron Preform": {
+    "name": "Iron Preform",
+    "spriteName": "Iron Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Iron Preform": {
+    "name": "Small Iron Preform",
+    "spriteName": "Small Iron Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Steel Plate": {
+    "name": "Large Steel Plate",
+    "spriteName": "Large Steel Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Steel Plate": {
+    "name": "Steel Plate",
+    "spriteName": "Steel Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Steel Plate": {
+    "name": "Small Steel Plate",
+    "spriteName": "Small Steel Plate",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Long Steel Rod": {
+    "name": "Long Steel Rod",
+    "spriteName": "Long Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Steel Rod": {
+    "name": "Steel Rod",
+    "spriteName": "Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Short Steel Rod": {
+    "name": "Short Steel Rod",
+    "spriteName": "Short Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle"],
+
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "potentialDurability": 64
+      }
+    }
+  },
+
+  "Large Steel Preform": {
+    "name": "Large Steel Preform",
+    "spriteName": "Large Steel Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Steel Preform": {
+    "name": "Steel Preform",
+    "spriteName": "Steel Preform",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Steel Preform": {
+    "name": "Small Steel Preform",
+    "spriteName": "Small Steel Preform",
+    "maxStack": 32,
+    "tags": []
+  }
+}

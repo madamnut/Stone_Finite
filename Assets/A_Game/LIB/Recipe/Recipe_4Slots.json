@@ -419,6 +419,24 @@
     "outputActions": [
       []
     ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "ToolActions": { "Crucible": {} }, "count": 1 },
+      { "ToolActions": { "Mold": {} }, "count": 1 }
+    ],
+    "inputActions": [
+      { "type": "consumeMetal", "amount": null },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": null, "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
   }
 
 

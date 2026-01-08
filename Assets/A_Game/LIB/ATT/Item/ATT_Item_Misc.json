@@ -910,187 +910,16 @@
     "tags": []
   },
 
-  "Axe Head Mold": {
-    "name": "Axe Head Mold",
-    "spriteName": "Axe Head Mold",
+  "Unfired Large Plate Mold": {
+    "name": "Unfired Large Plate Mold",
+    "spriteName": "Unfired Large Plate Mold",
     "maxStack": 1,
     "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Axe Head"
-      }
-    }
-  },
-
-  "Chisel Head Mold": {
-    "name": "Chisel Head Mold",
-    "spriteName": "Chisel Head Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Chisel Head"
-      }
-    }
-  },
-
-  "Hammer Head Mold": {
-    "name": "Hammer Head Mold",
-    "spriteName": "Hammer Head Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Hammer Head"
-      }
-    }
-  },
-
-  "Pickaxe Head Mold": {
-    "name": "Pickaxe Head Mold",
-    "spriteName": "Pickaxe Head Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Pickaxe Head"
-      }
-    }
-  },
-
-  "Plate Mold": {
-    "name": "Plate Mold",
-    "spriteName": "Plate Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Plate"
-      }
-    }
-  },
-
-  "Ingot Mold": {
-    "name": "Ingot Mold",
-    "spriteName": "Ingot Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Ingot"
-      }
-    }
-  },
-
-  "Nail Mold": {
-    "name": "Nail Mold",
-    "spriteName": "Nail Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Nail"
-      }
-    }
-  },
-
-  "Saw Blade Mold": {
-    "name": "Saw Blade Mold",
-    "spriteName": "Saw Blade Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Saw Blade"
-      }
-    }
-  },
-
-  "Short Blade Head Mold": {
-    "name": "Short Blade Head Mold",
-    "spriteName": "Short Blade Head Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Short Blade Head"
-      }
-    }
-  },
-
-  "Long Blade Head Mold": {
-    "name": "Long Blade Head Mold",
-    "spriteName": "Long Blade Head Mold",
-    "maxStack": 1,
-    "maxDurability": 64,
-    "tags": ["Cast"],
-    "toolActions": {
-      "Cast": {
-        "shape": "Long Blade Head"
-      }
-    }
-  },
-
-  "Unfired Axe Head Mold": {
-    "name": "Unfired Axe Head Mold",
-    "spriteName": "Unfired Axe Head Mold",
-    "maxStack": 32,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Axe Head Mold",
-        "amount": 1
-      }
-    }
-  },
-
-  "Unfired Chisel Head Mold": {
-    "name": "Unfired Chisel Head Mold",
-    "spriteName": "Unfired Chisel Head Mold",
-    "maxStack": 32,
-    "tags": ["Fireable"],
-    "toolActions": {
-      "Fire": {
-        "fireTicks": 200,
-        "resultItem": "Chisel Head Mold",
-        "amount": 1
-      }
-    }
-  },
-
-  "Unfired Hammer Head Mold": {
-    "name": "Unfired Hammer Head Mold",
-    "spriteName": "Unfired Hammer Head Mold",
-    "maxStack": 32,
-    "tags": ["Fireable"],
-    "toolActions": {
-      "Fire": {
-        "fireTicks": 200,
-        "resultItem": "Hammer Head Mold",
-        "amount": 1
-      }
-    }
-  },
-
-  "Unfired Pickaxe Head Mold": {
-    "name": "Unfired Pickaxe Head Mold",
-    "spriteName": "Unfired Pickaxe Head Mold",
-    "maxStack": 32,
-    "tags": ["Fireable"],
-    "toolActions": {
-      "Fire": {
-        "fireTicks": 200,
-        "resultItem": "Pickaxe Head Mold",
+        "resultItem": "Large Plate Mold",
         "amount": 1
       }
     }
@@ -1099,7 +928,8 @@
   "Unfired Plate Mold": {
     "name": "Unfired Plate Mold",
     "spriteName": "Unfired Plate Mold",
-    "maxStack": 32,
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
@@ -1110,72 +940,251 @@
     }
   },
 
-  "Unfired Ingot Mold": {
-    "name": "Unfired Ingot Mold",
-    "spriteName": "Unfired Ingot Mold",
-    "maxStack": 32,
+  "Unfired Small Plate Mold": {
+    "name": "Unfired Small Plate Mold",
+    "spriteName": "Unfired Small Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Ingot Mold",
+        "resultItem": "Small Plate Mold",
         "amount": 1
       }
     }
   },
 
-  "Unfired Nail Mold": {
-    "name": "Unfired Nail Mold",
-    "spriteName": "Unfired Nail Mold",
-    "maxStack": 32,
+  "Unfired Long Rod Mold": {
+    "name": "Unfired Long Rod Mold",
+    "spriteName": "Unfired Long Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Nail Mold",
+        "resultItem": "Long Rod Mold",
         "amount": 1
       }
     }
   },
 
-  "Unfired Saw Blade Mold": {
-    "name": "Unfired Saw Blade Mold",
-    "spriteName": "Unfired Saw Blade Mold",
-    "maxStack": 32,
+  "Unfired Rod Mold": {
+    "name": "Unfired Rod Mold",
+    "spriteName": "Unfired Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Saw Blade Mold",
+        "resultItem": "Rod Mold",
         "amount": 1
       }
     }
   },
 
-  "Unfired Short Blade Mold": {
-    "name": "Unfired Short Blade Mold",
-    "spriteName": "Unfired Short Blade Mold",
-    "maxStack": 32,
+  "Unfired Short Rod Mold": {
+    "name": "Unfired Short Rod Mold",
+    "spriteName": "Unfired Short Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Short Blade Mold",
+        "resultItem": "Short Rod Mold",
         "amount": 1
       }
     }
   },
 
-  "Unfired Long Blade Mold": {
-    "name": "Unfired Long Blade Mold",
-    "spriteName": "Unfired Long Blade Mold",
-    "maxStack": 32,
+  "Unfired Large Preform Mold": {
+    "name": "Unfired Large Preform Mold",
+    "spriteName": "Unfired Large Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
     "tags": ["Fireable"],
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
-        "resultItem": "Long Blade Mold",
+        "resultItem": "Large Preform Mold",
         "amount": 1
+      }
+    }
+  },
+
+  "Unfired Preform Mold": {
+    "name": "Unfired Preform Mold",
+    "spriteName": "Unfired Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Preform Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Small Preform Mold": {
+    "name": "Unfired Small Preform Mold",
+    "spriteName": "Unfired Small Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Small Preform Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Plate Mold": {
+    "name": "Large Plate Mold",
+    "spriteName": "Large Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Large",
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Plate Mold": {
+    "name": "Plate Mold",
+    "spriteName": "Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Small Plate Mold": {
+    "name": "Small Plate Mold",
+    "spriteName": "Small Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Small",
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Long Rod Mold": {
+    "name": "Long Rod Mold",
+    "spriteName": "Long Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Long",
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Rod Mold": {
+    "name": "Rod Mold",
+    "spriteName": "Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Short Rod Mold": {
+    "name": "Short Rod Mold",
+    "spriteName": "Short Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Short",
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Large Preform Mold": {
+    "name": "Large Preform Mold",
+    "spriteName": "Large Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Large",
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Preform Mold": {
+    "name": "Preform Mold",
+    "spriteName": "Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Small Preform Mold": {
+    "name": "Small Preform Mold",
+    "spriteName": "Small Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Small",
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 5
       }
     }
   }

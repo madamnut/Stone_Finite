@@ -9,16 +9,15 @@
       "tool":{"type":"durability","amount":-1}
     },
     "candidates":[
-      {"itemId":"Unfired Ingot Mold","count":1},
+      {"itemId":"Unfired Large Plate Mold","count":1},
       {"itemId":"Unfired Plate Mold","count":1},
-      {"itemId":"Unfired Axe Head Mold","count":1},
-      {"itemId":"Unfired Pickaxe Head Mold","count":1},
-      {"itemId":"Unfired Hammer Head Mold","count":1},
-      {"itemId":"Unfired Chisel Head Mold","count":1},
-      {"itemId":"Unfired Short Blade Mold","count":1},
-      {"itemId":"Unfired Long Blade Mold","count":1},
-      {"itemId":"Unfired Saw Blade Mold","count":1},
-      {"itemId":"Unfired Nail Mold","count":1}
+      {"itemId":"Unfired Small Plate Mold","count":1},
+      {"itemId":"Unfired Long Rod Mold","count":1},
+      {"itemId":"Unfired Rod Mold","count":1},
+      {"itemId":"Unfired Short Rod Mold","count":1},
+      {"itemId":"Unfired Large Preform Mold","count":1},
+      {"itemId":"Unfired Preform Mold","count":1},
+      {"itemId":"Unfired Small Preform Mold","count":1}
     ]
   }
 ]
