@@ -311,6 +311,93 @@ public class CraftModule : MonoBehaviour
                 else
                     slot.Refresh();
             }
+            else if (type == "consumeMetal")
+            {
+                // Crucible.details.layers 의 "맨 위(layers[-1])"에서 amount 만큼 소모
+                // layers 원소는 JObject 또는 Dictionary<string, object> 형태를 허용
+                if (slot.Item.Details == null) continue;
+                if (!slot.Item.Details.TryGetValue("layers", out var layersObj) || layersObj == null) continue;
+
+                List<object> layers = null;
+
+                if (layersObj is List<object> list)
+                {
+                    layers = list;
+                }
+                else if (layersObj is JArray jarr)
+                {
+                    // normalize to List<object>
+                    layers = new List<object>(jarr.Count);
+                    for (int k = 0; k < jarr.Count; k++)
+                        layers.Add(jarr[k]);
+                    slot.Item.SetDetail("layers", layers);
+                }
+                else
+                {
+                    continue;
+                }
+
+                int need = Mathf.Max(1, amount);
+
+                while (need > 0 && layers.Count > 0)
+                {
+                    int topIndex = layers.Count - 1;
+                    object top = layers[topIndex];
+
+                    int topAmt = 0;
+
+                    if (top is JObject jo)
+                    {
+                        topAmt = jo.Value<int?>("amount") ?? 0;
+                    }
+                    else if (top is Dictionary<string, object> dict)
+                    {
+                        if (dict.TryGetValue("amount", out var aObj) && aObj != null)
+                        {
+                            if (aObj is int ai) topAmt = ai;
+                            else if (aObj is long al) topAmt = (int)al;
+                            else if (aObj is float af) topAmt = Mathf.RoundToInt(af);
+                            else if (aObj is double ad) topAmt = (int)ad;
+                            else int.TryParse(aObj.ToString(), out topAmt);
+                        }
+                    }
+                    else if (top is JToken tok)
+                    {
+                        // 드물게 JToken으로 들어온 경우
+                        if (tok.Type == JTokenType.Object)
+                        {
+                            var o = (JObject)tok;
+                            topAmt = o.Value<int?>("amount") ?? 0;
+                        }
+                    }
+
+                    if (topAmt <= 0)
+                    {
+                        layers.RemoveAt(topIndex);
+                        continue;
+                    }
+
+                    int take = Mathf.Min(topAmt, need);
+                    int left = topAmt - take;
+                    need -= take;
+
+                    if (left <= 0)
+                    {
+                        layers.RemoveAt(topIndex);
+                    }
+                    else
+                    {
+                        if (top is JObject jo2)
+                            jo2["amount"] = left;
+                        else if (top is Dictionary<string, object> dict2)
+                            dict2["amount"] = left;
+                        else if (top is JToken tok2 && tok2.Type == JTokenType.Object)
+                            ((JObject)tok2)["amount"] = left;
+                    }
+                }
+
+                slot.Refresh();
+            }
         }
     }
 }

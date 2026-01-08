@@ -5,6 +5,7 @@
       { "itemId": "Plant", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -21,6 +22,7 @@
       { "itemId": "Plant Fiber", "count": 1 },
       { "itemId": "Plant Fiber", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
@@ -37,6 +39,7 @@
       { "itemId": "Plant Twine", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -52,6 +55,7 @@
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 }
     ],
@@ -67,6 +71,7 @@
       { "itemId": "Short Plant Twine", "count": 1 },
       { "itemId": "Short Plant Twine", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
@@ -83,6 +88,7 @@
       { "itemId": "Plant Twine", "count": 1 },
       { "itemId": "Plant Twine", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
@@ -98,6 +104,7 @@
     "inputs": [
       { "itemId": "Long Plant Twine", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 }
     ],
@@ -113,6 +120,7 @@
       { "itemId": "Branch", "count": 1 },
       { "ToolActions": { "Cutting": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -129,6 +137,7 @@
       { "itemId": "Bough", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -145,6 +154,7 @@
       { "itemId": "Long Wooden Stick", "count": 1 },
       { "ToolActions": { "Chopping": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -161,6 +171,7 @@
       { "itemId": "Wooden Stick", "count": 1 },
       { "ToolActions": { "Chopping": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -177,6 +188,7 @@
       { "itemId": "Log", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -194,6 +206,7 @@
       { "itemId": "Stripped Log", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -210,6 +223,7 @@
       { "itemId": "Half Stripped Log", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -226,6 +240,7 @@
       { "itemId": "Quarter Stripped Log", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -243,6 +258,7 @@
       { "itemId": "Half Stripped Log", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -260,6 +276,7 @@
       { "itemId": "Wooden Plank", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -276,6 +293,7 @@
       { "itemId": "Leaf", "count": 1 },
       { "itemId": "Leaf", "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
@@ -292,6 +310,7 @@
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -308,6 +327,7 @@
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -324,6 +344,7 @@
       { "itemId": "Stone Chopper", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -340,6 +361,7 @@
       { "itemId": "Stone Chopper", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -356,6 +378,7 @@
       { "itemId": "Stone Pounder", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -372,6 +395,7 @@
       { "itemId": "Stone Pounder", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -388,6 +412,7 @@
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -404,6 +429,7 @@
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -420,6 +446,7 @@
       { "itemId": "Flint Blade", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -436,6 +463,7 @@
       { "itemId": "Flint Blade", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -452,6 +480,7 @@
       { "itemId": "Flint Scraper", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -468,6 +497,7 @@
       { "itemId": "Flint Scraper", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -484,6 +514,7 @@
       { "itemId": "Bough", "count": 1 },
       { "ToolActions": { "Carving": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -500,6 +531,7 @@
       { "itemId": "Wooden Club", "count": 1 },
       { "ToolActions": { "Carving": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -516,6 +548,7 @@
       { "itemId": "Clay Brick", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -532,6 +565,7 @@
       { "itemId": "Clay Bowl", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -548,6 +582,7 @@
       { "itemId": "Clay Pot", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }
@@ -564,6 +599,7 @@
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
     ],
+    "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
       { "type": "durability", "amount": -1 }

@@ -416,32 +416,6 @@ public class RecipeLibrary : MonoBehaviour
     /// 슬롯 스냅샷 그대로 입력.
     /// - resultItems: 출력액션까지 적용된 결과 아이템 배열(멀티 아웃풋).
     /// - remappedInputActions: 슬롯 인덱스별 인풋액션(JArray, null 허용).
-    ///
-    /// JSON 스키마:
-    /// {
-    ///   "isOrdered": false,
-    ///   "inputs": [...],
-    ///   "inputActions": [ {..}, {..}, ... ],
-    ///   "outputs": [
-    ///     { "itemId": "X", "count": 1 },
-    ///     { "itemId": "Y", "count": 2 }
-    ///   ],
-    ///   "outputActions": [
-    ///     [ {..}, {..} ],   // outputs[0] 에 대한 액션
-    ///     [ {..} ]          // outputs[1] 에 대한 액션
-    ///   ]
-    /// }
-    ///
-    /// 액션 타입(신규 고정):
-    /// - consume
-    /// - set
-    /// - copy
-    /// - sum
-    /// - delete
-    ///
-    /// 필드 루트(신규 고정, 대소문자 포함):
-    /// name, spriteName, itemId, durability, maxDurability, tags,
-    /// details, ToolActions, WeaponActions, BreakActions
     /// </summary>
     public bool TryCraft(
         List<ItemData> slots,
@@ -628,6 +602,14 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
+            // ✅ inputConditions 평가(매칭 필터)
+            var conds = r["inputConditions"] as JArray;
+            if (conds != null && conds.Count > 0)
+            {
+                if (!EvalAllConditions(conds, slots, assign))
+                    continue;
+            }
+
             // 입력액션 리맵
             remappedInputActions = new JArray();
             for (int i = 0; i < slots.Count; i++) remappedInputActions.Add(null);
@@ -639,6 +621,9 @@ public class RecipeLibrary : MonoBehaviour
                     if (si >= 0 && si < slots.Count) remappedInputActions[si] = inActs[k];
                 }
             }
+
+            // ✅ inputActions 내 amount가 식(string)인 경우 평가해서 숫자로 고정 (현재는 consumeMetal 우선)
+            NormalizeInputActions(remappedInputActions, slots, assign);
 
             // 멀티 아웃풋 생성
             var results = new List<ItemData>();
@@ -652,15 +637,21 @@ public class RecipeLibrary : MonoBehaviour
                 int outCnt = outSpec.Value<int?>("count") ?? 1;
                 if (string.IsNullOrEmpty(outId) || outCnt <= 0) continue;
 
-                var baseItem = itemLibrary.Create(outId, outCnt);
-                if (baseItem == null) continue;
-
                 // outputActions[oi] 는 JArray(액션 리스트)
                 JArray perActs = null;
                 if (oaRoot != null && oi < oaRoot.Count && oaRoot[oi] is JArray ja)
                     perActs = ja;
 
-                var finalItem = ApplyOutputActions(baseItem, perActs, slots, assign);
+                ItemData baseItem = null;
+
+                // ✅ @dynamic: baseItem 생성하지 않고 create 액션이 최종 itemId를 만든다
+                if (!string.Equals(outId, "@dynamic", StringComparison.Ordinal))
+                {
+                    baseItem = itemLibrary.Create(outId, outCnt);
+                    if (baseItem == null) continue;
+                }
+
+                var finalItem = ApplyOutputActions(baseItem, perActs, slots, assign, outCnt);
                 if (finalItem != null)
                     results.Add(finalItem);
             }
@@ -831,10 +822,6 @@ public class RecipeLibrary : MonoBehaviour
 
     /// <summary>
     /// ToolActions 스펙 매칭.
-    /// - spec 예시:
-    ///   { "ToolActions": { "PercussionFlaking": {}, "X": { "foo": "bar" } } }
-    ///   { "ToolActions": ["PercussionFlaking", "X"] }
-    ///   { "ToolActions": "PercussionFlaking" }
     /// </summary>
     bool MatchToolActions(ItemData it, JToken toolSpec)
     {
@@ -952,11 +939,50 @@ public class RecipeLibrary : MonoBehaviour
         };
     }
 
-    // 출력액션 적용 (신규 스키마: consume/set/copy/sum/delete)
-    ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign)
+    // 출력액션 적용 (신규 스키마: consume/set/copy/sum/delete + create)
+    ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign, int outCount)
     {
-        if (dst == null) return null;
         if (outActs == null || outActs.Count == 0) return dst;
+
+        // ✅ dst가 null(@dynamic)인 경우: create 액션으로 먼저 생성
+        if (dst == null)
+        {
+            ItemData created = null;
+
+            for (int i = 0; i < outActs.Count; i++)
+            {
+                var act = outActs[i] as JObject;
+                if (act == null) continue;
+
+                string type = act.Value<string>("type");
+                if (type != "create") continue;
+
+                string from = act.Value<string>("from");
+                if (string.IsNullOrEmpty(from)) continue;
+
+                object moltenIdObj = ResolveExpr(from, slots, assign);
+                string moltenId = moltenIdObj?.ToString();
+                if (string.IsNullOrEmpty(moltenId)) continue;
+
+                string stripPrefix = act.Value<string>("stripPrefix");
+                string metal = moltenId;
+
+                if (!string.IsNullOrEmpty(stripPrefix) && metal.StartsWith(stripPrefix, StringComparison.Ordinal))
+                    metal = metal.Substring(stripPrefix.Length);
+
+                string prefix = ResolveExprToString(act.Value<string>("prefixFrom"), slots, assign);
+                string suffix = ResolveExprToString(act.Value<string>("suffixFrom"), slots, assign);
+
+                string createdItemId = BuildId(prefix, metal, suffix);
+                if (string.IsNullOrEmpty(createdItemId)) continue;
+
+                created = itemLibrary.Create(createdItemId, outCount);
+                break;
+            }
+
+            dst = created;
+            if (dst == null) return null; // create 실패
+        }
 
         string overrideName = null;
         string overrideSprite = null;
@@ -973,6 +999,12 @@ public class RecipeLibrary : MonoBehaviour
             var act = outActs[i] as JObject; if (act == null) continue;
             string type = act.Value<string>("type");
             if (string.IsNullOrEmpty(type)) continue;
+
+            if (type == "create")
+            {
+                // 이미 @dynamic 처리에서 반영했으므로 스킵
+                continue;
+            }
 
             if (type == "set")
             {
@@ -1275,6 +1307,256 @@ public class RecipeLibrary : MonoBehaviour
             icon: finalIcon,
             count: dst.Count
         );
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // inputConditions / expression
+    // ─────────────────────────────────────────────────────────
+    bool EvalAllConditions(JArray conds, List<ItemData> slots, int[] assign)
+    {
+        for (int i = 0; i < conds.Count; i++)
+        {
+            var c = conds[i] as JObject;
+            if (c == null) return false;
+
+            string path = c.Value<string>("path");
+            string op = c.Value<string>("op");
+            string rhs = c.Value<string>("rhs");
+
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(op) || string.IsNullOrEmpty(rhs))
+                return false;
+
+            object lObj = ResolveExpr(path, slots, assign);
+            object rObj = ResolveExpr(rhs, slots, assign);
+
+            if (!Compare(lObj, op, rObj))
+                return false;
+        }
+
+        return true;
+    }
+
+    bool Compare(object left, string op, object right)
+    {
+        // numeric 우선
+        bool lNum = TryToNumber(left, out double ln);
+        bool rNum = TryToNumber(right, out double rn);
+
+        if (lNum && rNum)
+        {
+            switch (op)
+            {
+                case ">=": return ln >= rn;
+                case ">":  return ln > rn;
+                case "<=": return ln <= rn;
+                case "<":  return ln < rn;
+                case "==": return Math.Abs(ln - rn) < 0.000001;
+                case "!=": return Math.Abs(ln - rn) >= 0.000001;
+                default:   return false;
+            }
+        }
+
+        // string 비교(==/!=만)
+        string ls = left?.ToString();
+        string rs = right?.ToString();
+
+        if (op == "==") return string.Equals(ls, rs, StringComparison.Ordinal);
+        if (op == "!=") return !string.Equals(ls, rs, StringComparison.Ordinal);
+
+        return false;
+    }
+
+    bool TryToNumber(object v, out double num)
+    {
+        num = 0;
+
+        if (v == null) return false;
+        if (v is int i) { num = i; return true; }
+        if (v is long l) { num = l; return true; }
+        if (v is float f) { num = f; return true; }
+        if (v is double d) { num = d; return true; }
+
+        if (v is JValue jv)
+        {
+            if (jv.Value == null) return false;
+            return TryToNumber(jv.Value, out num);
+        }
+
+        return double.TryParse(v.ToString(), out num);
+    }
+
+    void NormalizeInputActions(JArray remapped, List<ItemData> slots, int[] assign)
+    {
+        if (remapped == null) return;
+
+        for (int i = 0; i < remapped.Count; i++)
+        {
+            if (remapped[i] is not JObject act) continue;
+
+            string type = act.Value<string>("type");
+            if (string.IsNullOrEmpty(type)) continue;
+
+            if (type == "consumeMetal")
+            {
+                var amtTok = act["amount"];
+                if (amtTok == null) continue;
+
+                if (amtTok.Type == JTokenType.String)
+                {
+                    string expr = amtTok.ToString();
+                    object v = ResolveExpr(expr, slots, assign);
+                    if (TryToNumber(v, out double dn))
+                        act["amount"] = (int)Math.Round(dn);
+                }
+            }
+        }
+    }
+
+    object ResolveExpr(string expr, List<ItemData> slots, int[] assign)
+    {
+        if (string.IsNullOrEmpty(expr)) return null;
+
+        // 숫자 리터럴
+        if (int.TryParse(expr, out int iv)) return iv;
+
+        // inputs[k].xxxx 형태만 지원(현재 요구 범위)
+        if (expr.StartsWith("inputs[", StringComparison.Ordinal))
+        {
+            int close = expr.IndexOf(']');
+            if (close <= 6) return null;
+
+            string idxStr = expr.Substring(7, close - 7);
+            if (!int.TryParse(idxStr, out int recipeInputIndex)) return null;
+
+            int si = (assign != null && recipeInputIndex >= 0 && recipeInputIndex < assign.Length) ? assign[recipeInputIndex] : -1;
+            ItemData it = (si >= 0 && si < slots.Count) ? slots[si] : null;
+            if (it == null) return null;
+
+            string rest = expr.Substring(close + 1); // "" or ".xxx"
+            if (string.IsNullOrEmpty(rest)) return it;
+
+            if (rest.StartsWith(".", StringComparison.Ordinal))
+                rest = rest.Substring(1);
+
+            return ResolveOnItem(it, rest);
+        }
+
+        // (방어) 그냥 field로 들어온 경우: dst 같은 컨텍스트가 없으니 null
+        return null;
+    }
+
+    string ResolveExprToString(string expr, List<ItemData> slots, int[] assign)
+    {
+        if (string.IsNullOrEmpty(expr)) return null;
+        object v = ResolveExpr(expr, slots, assign);
+        return v?.ToString();
+    }
+
+    object ResolveOnItem(ItemData it, string path)
+    {
+        if (it == null || string.IsNullOrEmpty(path)) return null;
+
+        // top-level scalar
+        if (path == "name") return it.Name;
+        if (path == "spriteName") return it.SpriteName;
+        if (path == "itemId") return it.ItemId;
+        if (path == "durability") return it.Durability;
+        if (path == "maxDurability") return it.MaxDurability;
+        if (path == "tags") return it.Tags;
+
+        if (path.StartsWith("ToolActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(it.ToolActions, path.Substring("ToolActions.".Length));
+
+        if (path.StartsWith("WeaponActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(it.WeaponActions, path.Substring("WeaponActions.".Length));
+
+        if (path.StartsWith("BreakActions.", StringComparison.Ordinal))
+            return ReadFromActionRoot(it.BreakActions, path.Substring("BreakActions.".Length));
+
+        if (path.StartsWith("details.", StringComparison.Ordinal))
+            return ResolveFromDetails(it, path.Substring("details.".Length));
+
+        if (path == "details")
+            return it.Details;
+
+        return null;
+    }
+
+    object ResolveFromDetails(ItemData it, string path)
+    {
+        if (it?.Details == null || string.IsNullOrEmpty(path)) return null;
+
+        object curr = it.Details;
+        var parts = path.Split('.');
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            string part = parts[i];
+
+            // token: key[index]
+            string key = part;
+            int? index = null;
+
+            int lb = part.IndexOf('[');
+            if (lb >= 0)
+            {
+                int rb = part.IndexOf(']', lb + 1);
+                if (rb > lb)
+                {
+                    key = part.Substring(0, lb);
+                    string idxStr = part.Substring(lb + 1, rb - lb - 1);
+                    if (int.TryParse(idxStr, out int idx))
+                        index = idx;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(key))
+            {
+                if (curr is Dictionary<string, object> dict)
+                {
+                    if (!dict.TryGetValue(key, out curr))
+                        return null;
+                }
+                else return null;
+            }
+
+            if (index.HasValue)
+            {
+                int idx = index.Value;
+
+                if (curr is List<object> list)
+                {
+                    int real = idx < 0 ? list.Count + idx : idx;
+                    if (real < 0 || real >= list.Count) return null;
+                    curr = list[real];
+                }
+                else if (curr is JArray ja)
+                {
+                    int real = idx < 0 ? ja.Count + idx : idx;
+                    if (real < 0 || real >= ja.Count) return null;
+                    curr = ja[real];
+                }
+                else return null;
+            }
+        }
+
+        // layer가 JObject면 바로 필드 읽을 수 있게 허용 (예: amount)
+        if (curr is JValue jv) return jv.Value;
+        return curr;
+    }
+
+    string BuildId(string prefix, string metal, string suffix)
+    {
+        string p = string.IsNullOrWhiteSpace(prefix) ? null : prefix.Trim();
+        string m = string.IsNullOrWhiteSpace(metal) ? null : metal.Trim();
+        string s = string.IsNullOrWhiteSpace(suffix) ? null : suffix.Trim();
+
+        if (string.IsNullOrEmpty(m)) return null;
+
+        if (!string.IsNullOrEmpty(p) && !string.IsNullOrEmpty(s)) return $"{p} {m} {s}";
+        if (!string.IsNullOrEmpty(p)) return $"{p} {m}";
+        if (!string.IsNullOrEmpty(s)) return $"{m} {s}";
+        return m;
     }
 
     // ─────────────────────────────────────────────────────────
