@@ -352,7 +352,8 @@ public class RecipeLibrary : MonoBehaviour
         if (crucible == null || crucible.Details == null) return false;
         if (!crucible.Details.TryGetValue("layers", out var layersObj) || layersObj == null) return false;
 
-        if (layersObj is not List<object> layers) return false;
+        // ✅ List<object> 고정 캐스팅 제거: IList/ List<Dictionary<...>> 등도 허용
+        if (layersObj is not System.Collections.IList layers) return false;
 
         bool changed = false;
 
@@ -1347,12 +1348,12 @@ public class RecipeLibrary : MonoBehaviour
             switch (op)
             {
                 case ">=": return ln >= rn;
-                case ">":  return ln > rn;
+                case ">": return ln > rn;
                 case "<=": return ln <= rn;
-                case "<":  return ln < rn;
+                case "<": return ln < rn;
                 case "==": return Math.Abs(ln - rn) < 0.000001;
                 case "!=": return Math.Abs(ln - rn) >= 0.000001;
-                default:   return false;
+                default: return false;
             }
         }
 
@@ -1482,6 +1483,7 @@ public class RecipeLibrary : MonoBehaviour
         return null;
     }
 
+    // ✅ details 경로 해석: Dictionary + JObject, List<object> + IList + JArray 모두 지원
     object ResolveFromDetails(ItemData it, string path)
     {
         if (it?.Details == null || string.IsNullOrEmpty(path)) return null;
@@ -1510,39 +1512,74 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
+            // 1) key 접근 (map)
             if (!string.IsNullOrEmpty(key))
             {
-                if (curr is Dictionary<string, object> dict)
-                {
-                    if (!dict.TryGetValue(key, out curr))
-                        return null;
-                }
-                else return null;
+                if (!TryGetFromMap(curr, key, out var next))
+                    return null;
+                curr = next;
             }
 
+            // 2) index 접근 (list/array)
             if (index.HasValue)
             {
                 int idx = index.Value;
 
-                if (curr is List<object> list)
-                {
-                    int real = idx < 0 ? list.Count + idx : idx;
-                    if (real < 0 || real >= list.Count) return null;
-                    curr = list[real];
-                }
-                else if (curr is JArray ja)
+                if (curr is JArray ja)
                 {
                     int real = idx < 0 ? ja.Count + idx : idx;
                     if (real < 0 || real >= ja.Count) return null;
                     curr = ja[real];
                 }
-                else return null;
+                else if (curr is List<object> list)
+                {
+                    int real = idx < 0 ? list.Count + idx : idx;
+                    if (real < 0 || real >= list.Count) return null;
+                    curr = list[real];
+                }
+                else if (curr is System.Collections.IList ilist)
+                {
+                    int real = idx < 0 ? ilist.Count + idx : idx;
+                    if (real < 0 || real >= ilist.Count) return null;
+                    curr = ilist[real];
+                }
+                else
+                {
+                    return null;
+                }
             }
+
+            // 3) JToken unwrap (중간 단계에서도 안전)
+            if (curr is JValue jv)
+                curr = jv.Value;
         }
 
-        // layer가 JObject면 바로 필드 읽을 수 있게 허용 (예: amount)
-        if (curr is JValue jv) return jv.Value;
+        if (curr is JValue jvv) return jvv.Value;
         return curr;
+    }
+
+    // ✅ curr가 Dictionary<string,object> 또는 JObject일 때 key로 가져오기
+    bool TryGetFromMap(object curr, string key, out object value)
+    {
+        value = null;
+
+        if (curr is Dictionary<string, object> dict)
+        {
+            if (!dict.TryGetValue(key, out value))
+                return false;
+            return true;
+        }
+
+        if (curr is JObject jo)
+        {
+            if (!jo.TryGetValue(key, out var tok))
+                return false;
+
+            value = tok is JValue jv ? jv.Value : tok;
+            return true;
+        }
+
+        return false;
     }
 
     string BuildId(string prefix, string metal, string suffix)
@@ -1855,28 +1892,37 @@ public class RecipeLibrary : MonoBehaviour
             return true;
         }
 
+        if (layerObj is JObject) return false;
         return false;
     }
 
-    void SetLayerAmount(List<object> layers, int index, int newAmount)
+    // ✅ List<object> 고정에서 IList로 변경
+    void SetLayerAmount(System.Collections.IList layers, int index, int newAmount)
     {
+        if (layers == null) return;
         if (index < 0 || index >= layers.Count) return;
 
-        if (layers[index] is JObject jo)
+        var elem = layers[index];
+
+        if (elem is JObject jo)
         {
             jo["amount"] = newAmount;
             return;
         }
 
-        if (layers[index] is Dictionary<string, object> dict)
+        if (elem is Dictionary<string, object> dict)
         {
             dict["amount"] = newAmount;
             return;
         }
+
+        // List<Dictionary<string, object>> 같은 경우 (IList 원소가 Dictionary로 읽힘) → 위에서 이미 처리
     }
 
-    void ConsumeFromTop(List<object> layers, string itemId, int need)
+    void ConsumeFromTop(System.Collections.IList layers, string itemId, int need)
     {
+        if (layers == null) return;
+
         for (int i = layers.Count - 1; i >= 0 && need > 0; i--)
         {
             if (!TryReadLayer(layers[i], out var id, out var amt)) continue;
@@ -1891,8 +1937,9 @@ public class RecipeLibrary : MonoBehaviour
         }
     }
 
-    void AddOrStackAtTop(List<object> layers, string itemId, int addAmount)
+    void AddOrStackAtTop(System.Collections.IList layers, string itemId, int addAmount)
     {
+        if (layers == null) return;
         if (addAmount <= 0) return;
 
         if (layers.Count > 0 && TryReadLayer(layers[layers.Count - 1], out var id, out var amt) && id == itemId)

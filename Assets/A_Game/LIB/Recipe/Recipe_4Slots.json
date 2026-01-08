@@ -452,7 +452,7 @@
     ],
     "inputActions": [
       { "type": "consumeMetal", "amount": "inputs[1].ToolActions.Cast.requiredVolume" },
-      { "type": "durability", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
       { "itemId": "@dynamic", "count": 1 }
