@@ -718,15 +718,45 @@
     "name": "Coal Chunk",
     "spriteName": "Coal Chunk",
     "maxStack": 32,
-    "tags": ["Fuel"],
+    "tags": ["Fuel", "Cokable"],
 
     "toolActions": {
       "Fuel": {
         "burnTicks": 3600,
         "resultItem": "Ash",
-        "amount": 8
+        "amount": 4
+      },
+
+      "Coke": {
+        "cokeTicks": 400,
+        "results": [
+          { "item":"Coke", "amount": 1 },
+          { "item":"Tar",  "amount": 1 }
+        ]
       }
     }
+  },
+
+  "Coke": {
+    "name": "Coke",
+    "spriteName": "Coke",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 4800,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Tar": {
+    "name": "Tar",
+    "spriteName": "Tar",
+    "maxStack": 32,
+    "tags": []
   },
 
   "Copper Ore Chunk": {

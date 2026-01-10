@@ -23,6 +23,7 @@ public class MultiblockManager : MonoBehaviour
     public GameObject clayKilnModule;
     public GameObject brickFurnaceModule;
     public GameObject toolbenchModule;    // ✅ 추가
+    public GameObject cokeOvenModule;     // ✅ 추가
 
     [Header("VFX")]
     public VfxManager vfx;
@@ -45,6 +46,8 @@ public class MultiblockManager : MonoBehaviour
         RegisterFactory("Wooden Crate", () => new WoodenCrate());
         RegisterFactory("Brick Furnace", () => new BrickFurnace());
         RegisterFactory("Toolbench", () => new Toolbench()); // ✅ 추가
+
+        RegisterFactory("Coke Oven", () => new CokeOven());   // ✅ 추가 (Def.key와 동일해야 함)
     }
 
     void Start()
@@ -133,6 +136,7 @@ public class MultiblockManager : MonoBehaviour
             "Clay Kiln"      => clayKilnModule,
             "Brick Furnace"  => brickFurnaceModule,
             "Toolbench"      => toolbenchModule,
+            "Coke Oven"      => cokeOvenModule,   // ✅ 추가
             _ => null
         };
 
@@ -176,6 +180,14 @@ public class MultiblockManager : MonoBehaviour
                 ui.player = interaction.player;
 
                 ui.Bind(toolbench);
+            }
+        }
+        else if (moduleId == "Coke Oven" && owner is CokeOven cokeOven)
+        {
+            var ui = instGO.GetComponentInChildren<CokeOvenModule>(true);
+            if (ui != null)
+            {
+                ui.Bind(cokeOven);
             }
         }
     }

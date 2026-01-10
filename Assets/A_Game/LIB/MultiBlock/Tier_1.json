@@ -82,5 +82,20 @@
         ["Brick Furnace_BL", "Brick Furnace_BR"]
       ]
     }
+  ],
+
+  "Coke Oven": [
+    {
+      "pattern": [
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"]
+      ],
+      "result": [
+        ["Coke Oven_6", "Coke Oven_7", "Coke Oven_8"],
+        ["Coke Oven_3", "Coke Oven_4", "Coke Oven_5"],
+        ["Coke Oven_0", "Coke Oven_1", "Coke Oven_2"]
+      ]
+    }
   ]
 }

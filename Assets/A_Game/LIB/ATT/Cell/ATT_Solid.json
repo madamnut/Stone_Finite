@@ -396,6 +396,87 @@
       { "key": "Default", "meta": 0, "sprite": "Toolbench_TR" }
     ]
   },
+  "Coke Oven_0": {
+    "id": 5018,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_0" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_0",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_1": {
+    "id": 5019,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_1" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_1",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_2": {
+    "id": 5020,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_2" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_2",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_3": {
+    "id": 5021,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_3" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_3",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_4": {
+    "id": 5022,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_4" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_4",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_5": {
+    "id": 5023,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_5" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_5",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_6": {
+    "id": 5024,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_6" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_6",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_7": {
+    "id": 5025,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_7" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_7",  "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_8": {
+    "id": 5026,
+    "collidable": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_8" },
+      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_8",  "brightness_override": 15 }
+    ]
+  },
 
   "Torch": {
     "id": 50001,
