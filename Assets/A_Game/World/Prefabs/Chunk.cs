@@ -5,9 +5,14 @@ public class Chunk : MonoBehaviour
 {
     public const int ChunkSize = 16;
 
-    // ── Tilemap 레이어: 후경 + 솔리드 + 유체 ──
+    // ── Tilemap 레이어: 후경 + 솔리드(시각) + 플랫폼(콜라이더 전용) + 유체 ──
     public Tilemap bgTilemap;
     public Tilemap solidTilemap;
+
+    // ✅ 추가: 플랫폼 콜라이더 전용 타일맵 (TilemapCollider2D/Composite/PlatformEffector2D)
+    // - 렌더는 끄는 전제 (TilemapRenderer disabled)
+    public Tilemap platformTilemap;
+
     public Tilemap liquidTilemap;
 
     // ── Light Overlay (Quad) ──
@@ -17,13 +22,21 @@ public class Chunk : MonoBehaviour
     // ── 타일 버퍼(재사용) ──
     [HideInInspector] public TileBase[] bgBuffer;
     [HideInInspector] public TileBase[] solidBuffer;
+
+    // ✅ 추가: 플랫폼 콜라이더 전용 버퍼
+    [HideInInspector] public TileBase[] platformBuffer;
+
     [HideInInspector] public TileBase[] liquidBuffer;
 
     // ── Dirty 플래그 ──
-    [HideInInspector] public bool bgDirty     = false;
-    [HideInInspector] public bool solidDirty  = false;
-    [HideInInspector] public bool liquidDirty = false;
-    [HideInInspector] public bool lightDirty  = false;
+    [HideInInspector] public bool bgDirty       = false;
+    [HideInInspector] public bool solidDirty    = false;
+
+    // ✅ 추가: 플랫폼 콜라이더 더티
+    [HideInInspector] public bool platformDirty = false;
+
+    [HideInInspector] public bool liquidDirty   = false;
+    [HideInInspector] public bool lightDirty    = false;
 
     // ── Liquid Mask (청크별 렌더 분기용) ──
     [HideInInspector] public Texture2D liquidTypeTex;     // 16x16, R=liquidId(0..255)
@@ -43,9 +56,19 @@ public class Chunk : MonoBehaviour
     {
         // 타일 버퍼
         int ts = ChunkSize * ChunkSize;
-        bgBuffer     = new TileBase[ts];
-        solidBuffer  = new TileBase[ts];
-        liquidBuffer = new TileBase[ts];
+        bgBuffer       = new TileBase[ts];
+        solidBuffer    = new TileBase[ts];
+        platformBuffer = new TileBase[ts];
+        liquidBuffer   = new TileBase[ts];
+
+        // ── Platform TilemapRenderer 비활성(시각 렌더 중복 방지) ──
+        // 플랫폼은 Solid 타일맵에 "콜라이더 없는 솔리드처럼" 그리므로,
+        // platformTilemap은 콜라이더만 생성하고 렌더는 끈다.
+        if (platformTilemap != null)
+        {
+            var r = platformTilemap.GetComponent<TilemapRenderer>();
+            if (r != null) r.enabled = false;
+        }
 
         // ── Liquid Mask 기본 리소스 (청크당 1회 생성, 이후 재사용) ──
         liquidRenderer = liquidTilemap.GetComponent<TilemapRenderer>();

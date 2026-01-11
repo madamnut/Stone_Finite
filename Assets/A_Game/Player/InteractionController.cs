@@ -723,12 +723,11 @@ public class InteractionController : MonoBehaviour
             targetLayer = WorldManager.CellLayer.Solid;
         }
 
-        // 기존 기본 제약(레이어 충돌)만 유지. (실제 설치 가능 판정은 WorldManager에서)
-        if (targetLayer == WorldManager.CellLayer.Solid)
-        {
-            if (hasSolid) return false;
-        }
-        else
+        // ✅ 레이어 충돌 제약:
+        // - BG: 기존 그대로(솔리드/기존BG 있으면 불가)
+        // - Solid: "클릭 셀에 솔리드가 있으면 불가"를 제거해야,
+        //          collidable solid 클릭 시 WorldManager가 "옆 빈칸에 부착 설치"를 처리할 수 있음.
+        if (targetLayer == WorldManager.CellLayer.BG)
         {
             if (hasSolid) return false;
             if (hasBg) return false;

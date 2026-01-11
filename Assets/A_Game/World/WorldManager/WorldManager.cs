@@ -1,4 +1,8 @@
 // WorldManager.cs (전체 교체본)
+// meta 규칙:
+// 0: 일반(부착 아님)  ✅ (fallback)
+// 1: BG 부착
+// 2,3,4,5: 상/하/좌/우 부착
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -134,6 +138,14 @@ public class WorldManager : MonoBehaviour
     private readonly HashSet<Vector2Int> _lightChangedSet = new();
     private readonly List<Vector2Int> _lightChangedList = new();
 
+    // ✅ meta 규칙(고정)
+    private const ushort META_DEFAULT = 0; // ✅ 일반 셀(부착 아님) fallback
+    private const ushort META_BG = 1;
+    private const ushort META_UP = 2;
+    private const ushort META_DOWN = 3;
+    private const ushort META_LEFT = 4;
+    private const ushort META_RIGHT = 5;
+
     /*────────────────────────────────────────────────────────────
      * Read-only Query
      *────────────────────────────────────────────────────────────*/
@@ -159,12 +171,28 @@ public class WorldManager : MonoBehaviour
         return f.id;
     }
 
+    // ✅ "물리적으로 막는가" (기존 의미 유지: collidable만)
     public bool IsCollidable(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return true;
         var s = worldMap.GetSolid(x, y);
         if (s.id == 0) return false;
         return (cellLibrary.GetSolidFlags(s.id) & CellLibrary.SolidFlags.Collidable) != 0;
+    }
+
+    // ✅ 설치/지지/부착 판정에서 "고정된 지지물"로 취급할 셀
+    // - collidable OR platform
+    private bool IsSupportSolid(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+
+        var s = worldMap.GetSolid(x, y);
+        if (s.id == 0) return false;
+
+        var flags = cellLibrary.GetSolidFlags(s.id);
+        if ((flags & CellLibrary.SolidFlags.Collidable) != 0) return true;
+
+        return cellLibrary.IsPlatform(s.id);
     }
 
     private bool HasGravity(ushort solidId)
@@ -233,6 +261,15 @@ public class WorldManager : MonoBehaviour
         if (!cellLibrary.GetAttachedAt(s.id, s.meta, out string attachedAt))
             return;
 
+        // ✅ meta=1: BG 부착 처리
+        if (attachedAt == "BG")
+        {
+            // BG가 없으면 지지 상실 -> 파괴
+            if (worldMap.GetBG(x, y) == 0)
+                BreakSolid(x, y);
+            return;
+        }
+
         int sx = x;
         int sy = y;
 
@@ -246,14 +283,12 @@ public class WorldManager : MonoBehaviour
                 throw new System.Exception($"[Attachment] Unknown attachedAt='{attachedAt}' (solidId={s.id}, meta={s.meta})");
         }
 
-        // 지지 좌표가 월드 밖이면 지지 없음
         if (!worldMap.InBounds(sx, sy))
         {
             BreakSolid(x, y);
             return;
         }
 
-        // 지지 셀이 비어있으면 파괴
         if (worldMap.GetSolid(sx, sy).id == 0)
         {
             BreakSolid(x, y);
@@ -506,7 +541,8 @@ public class WorldManager : MonoBehaviour
 
             if (!solidMustBeCollidable) return true;
 
-            return (cellLibrary.GetSolidFlags(sid) & CellLibrary.SolidFlags.Collidable) != 0;
+            // ✅ 지지 판정은 "collidable OR platform"
+            return IsSupportSolid(nx, ny);
         }
 
         if (Check(x - 1, y)) return true;
@@ -517,41 +553,18 @@ public class WorldManager : MonoBehaviour
         return false;
     }
 
-    private bool TryGetSupportCellForMeta(int x, int y, ushort id, ushort meta, out int sx, out int sy)
-    {
-        sx = x; sy = y;
-
-        if (!cellLibrary.GetAttachedAt(id, meta, out string attachedAt))
-            return false;
-
-        switch (attachedAt)
-        {
-            case "Down": sx = x;     sy = y - 1; return true;
-            case "Up":   sx = x;     sy = y + 1; return true;
-            case "Left": sx = x - 1; sy = y;     return true;
-            case "Right":sx = x + 1; sy = y;     return true;
-            default:
-                return false;
-        }
-    }
-
     private bool IsValidSupportForSolidAttach(int sx, int sy)
     {
         if (!worldMap.InBounds(sx, sy)) return false;
 
-        // 지지는 BG 또는 "collidable solid"
+        // 지지는 BG 또는 "collidable OR platform"
         if (worldMap.GetBG(sx, sy) != 0) return true;
 
-        ushort sid = worldMap.GetSolid(sx, sy).id;
-        if (sid == 0) return false;
-
-        return (cellLibrary.GetSolidFlags(sid) & CellLibrary.SolidFlags.Collidable) != 0;
+        return IsSupportSolid(sx, sy);
     }
 
     private bool HasVariantMeta(ushort id, ushort meta)
     {
-        // ✅ CellLibrary에 추가된 메타 존재 체크 API 사용
-        // (함수명이 다르면 여기만 수정)
         return cellLibrary.HasSolidVariant(id, meta);
     }
 
@@ -579,8 +592,11 @@ public class WorldManager : MonoBehaviour
     public bool PlaceSolid(int x, int y, ushort id)
         => PlaceSolid(x, y, id, RelV.Neutral, RelH.Neutral);
 
-    // ✅ 신규: 상대방향 포함
-    public bool PlaceSolid(int x, int y, ushort id, RelV relV, RelH relH)
+    // ✅ 내부 공통: "빈 칸"에 실제 설치 로직
+    // 규칙:
+    // 1) meta=1..5 (부착) 먼저 시도
+    // 2) 전부 실패하면 meta=0 존재 시 그걸로 fallback 설치
+    private bool PlaceSolidAtEmpty(int x, int y, ushort id, RelV relV, RelH relH)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
@@ -591,59 +607,35 @@ public class WorldManager : MonoBehaviour
         bool hasBgHere = worldMap.GetBG(x, y) != 0;
 
         // ✅ 완전 공중(=BG 없음)이고 주변 지지(4방향 BG/솔리드)도 없으면 실패
-        //   (Solid 지지는 collidable만 인정)
+        //   (Solid 지지는 "support solid"(collidable OR platform)만 인정)
         if (!hasBgHere)
         {
             if (!HasAnyNeighborSupport_BGorSolid(x, y, solidMustBeCollidable: true))
                 return false;
         }
 
-        // 후보 meta: 0..5 중 variants 존재하는 것만
-        // 우선순위: (BG가 있으면 meta=0) > 수평 > 수직
-        var candidates = new List<ushort>(6);
+        // 후보 meta: 1..5 중 variants 존재하는 것만
+        // 우선순위: (BG가 있으면 META_BG) > 수평(플레이어 상대) > 수직(플레이어 상대)
+        var candidates = new List<ushort>(5);
 
-        if (hasBgHere && HasVariantMeta(id, 0))
-            candidates.Add(0);
+        if (hasBgHere && HasVariantMeta(id, META_BG))
+            candidates.Add(META_BG);
 
-        void AddH(string first, string second)
+        void Add(ushort first, ushort second)
         {
-            for (ushort m = 0; m <= 5; m++)
-            {
-                if (!HasVariantMeta(id, m)) continue;
-                if (!cellLibrary.GetAttachedAt(id, m, out string at)) continue;
-                if (at == first) candidates.Add(m);
-            }
-            for (ushort m = 0; m <= 5; m++)
-            {
-                if (!HasVariantMeta(id, m)) continue;
-                if (!cellLibrary.GetAttachedAt(id, m, out string at)) continue;
-                if (at == second) candidates.Add(m);
-            }
+            if (HasVariantMeta(id, first)) candidates.Add(first);
+            if (HasVariantMeta(id, second)) candidates.Add(second);
         }
 
-        if (relH == RelH.Left) AddH("Left", "Right");
-        else if (relH == RelH.Right) AddH("Right", "Left");
-        else AddH("Left", "Right");
+        // 수평 우선
+        if (relH == RelH.Left) Add(META_LEFT, META_RIGHT);
+        else if (relH == RelH.Right) Add(META_RIGHT, META_LEFT);
+        else Add(META_LEFT, META_RIGHT);
 
-        void AddV(string first, string second)
-        {
-            for (ushort m = 0; m <= 5; m++)
-            {
-                if (!HasVariantMeta(id, m)) continue;
-                if (!cellLibrary.GetAttachedAt(id, m, out string at)) continue;
-                if (at == first) candidates.Add(m);
-            }
-            for (ushort m = 0; m <= 5; m++)
-            {
-                if (!HasVariantMeta(id, m)) continue;
-                if (!cellLibrary.GetAttachedAt(id, m, out string at)) continue;
-                if (at == second) candidates.Add(m);
-            }
-        }
-
-        if (relV == RelV.Up) AddV("Up", "Down");
-        else if (relV == RelV.Down) AddV("Down", "Up");
-        else AddV("Down", "Up");
+        // 수직 차선
+        if (relV == RelV.Up) Add(META_UP, META_DOWN);
+        else if (relV == RelV.Down) Add(META_DOWN, META_UP);
+        else Add(META_DOWN, META_UP);
 
         // 순서 유지 중복 제거
         var seen = new HashSet<ushort>();
@@ -656,22 +648,36 @@ public class WorldManager : MonoBehaviour
         ushort chosenMeta = 0;
         bool found = false;
 
+        bool HasSupportFor(ushort m)
+        {
+            int sx = x, sy = y;
+
+            switch (m)
+            {
+                case META_UP: sy = y + 1; break;    // 위에 지지
+                case META_DOWN: sy = y - 1; break;  // 아래 지지
+                case META_LEFT: sx = x - 1; break;  // 왼쪽 지지
+                case META_RIGHT: sx = x + 1; break; // 오른쪽 지지
+                default: return false;
+            }
+
+            return IsValidSupportForSolidAttach(sx, sy);
+        }
+
+        // 1) 부착 메타(1..5) 우선 시도
         for (int i = 0; i < candidates.Count; i++)
         {
             ushort m = candidates[i];
 
-            // meta=0은 BG가 있을 때만 후보로 들어오므로 지지 검사 없이 허용
-            if (m == 0)
+            // BG 부착(meta=1)은 "해당 칸에 BG가 있을 때만" 후보로 들어오며 지지 검사 없이 허용
+            if (m == META_BG)
             {
-                chosenMeta = 0;
+                chosenMeta = META_BG;
                 found = true;
                 break;
             }
 
-            if (!TryGetSupportCellForMeta(x, y, id, m, out int sx, out int sy))
-                continue;
-
-            if (!IsValidSupportForSolidAttach(sx, sy))
+            if (!HasSupportFor(m))
                 continue;
 
             chosenMeta = m;
@@ -679,7 +685,16 @@ public class WorldManager : MonoBehaviour
             break;
         }
 
-        // ✅ 유효 meta 후보 없음 -> 설치 실패(요구사항 1번)
+        // 2) 전부 실패하면 meta=0 fallback (존재할 때만)
+        if (!found)
+        {
+            if (HasVariantMeta(id, META_DEFAULT))
+            {
+                chosenMeta = META_DEFAULT;
+                found = true;
+            }
+        }
+
         if (!found) return false;
 
         ushort oldSolidId = 0;
@@ -696,6 +711,70 @@ public class WorldManager : MonoBehaviour
 
         HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
         return true;
+    }
+
+    // ✅ 신규: 상대방향 포함
+    public bool PlaceSolid(int x, int y, ushort id, RelV relV, RelH relH)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+        if (id == 0) return false;
+
+        var curS = worldMap.GetSolid(x, y);
+
+        // 클릭한 곳에 솔리드가 있으면:
+        // - support solid(collidable OR platform)이면: "옆 빈칸 부착 설치"를 시도
+        // - 그 외(uncollidable non-platform)이면: 설치 명령 무시(=실패 반환)
+        if (curS.id != 0)
+        {
+            if (!IsSupportSolid(x, y))
+                return false;
+
+            bool TryNeighbor(int nx, int ny, RelV nRelV, RelH nRelH)
+            {
+                if (!worldMap.InBounds(nx, ny)) return false;
+                if (worldMap.GetSolid(nx, ny).id != 0) return false;
+                return PlaceSolidAtEmpty(nx, ny, id, nRelV, nRelH);
+            }
+
+            // 수평 우선
+            if (relH == RelH.Left)
+            {
+                if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
+                if (TryNeighbor(x - 1, y, RelV.Neutral, RelH.Right)) return true;
+            }
+            else if (relH == RelH.Right)
+            {
+                if (TryNeighbor(x - 1, y, RelV.Neutral, RelH.Right)) return true;
+                if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
+            }
+            else
+            {
+                if (TryNeighbor(x - 1, y, RelV.Neutral, RelH.Right)) return true;
+                if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
+            }
+
+            // 수직 차선
+            if (relV == RelV.Up)
+            {
+                if (TryNeighbor(x, y - 1, RelV.Up, RelH.Neutral)) return true;
+                if (TryNeighbor(x, y + 1, RelV.Down, RelH.Neutral)) return true;
+            }
+            else if (relV == RelV.Down)
+            {
+                if (TryNeighbor(x, y + 1, RelV.Down, RelH.Neutral)) return true;
+                if (TryNeighbor(x, y - 1, RelV.Up, RelH.Neutral)) return true;
+            }
+            else
+            {
+                if (TryNeighbor(x, y - 1, RelV.Up, RelH.Neutral)) return true;
+                if (TryNeighbor(x, y + 1, RelV.Down, RelH.Neutral)) return true;
+            }
+
+            return false;
+        }
+
+        // 클릭 칸이 비어있으면: 내부 규칙대로 설치
+        return PlaceSolidAtEmpty(x, y, id, relV, relH);
     }
 
     public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
@@ -731,21 +810,17 @@ public class WorldManager : MonoBehaviour
         return insert > 0;
     }
 
-    // ✅ 기존 시그니처 유지(호환)
     public bool PlaceBG(int x, int y, ushort id)
         => PlaceBG(x, y, id, RelV.Neutral, RelH.Neutral);
 
-    // ✅ 신규: 상대방향 포함(현재는 BG 설치에선 rel 무시)
     public bool PlaceBG(int x, int y, ushort id, RelV relV, RelH relH)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        // 기존 레이어 제약 유지
         if (worldMap.GetSolid(x, y).id != 0) return false;
         if (worldMap.GetBG(x, y) != 0) return false;
 
-        // ✅ BG 설치 규칙: 상하좌우에 BG 또는 Solid가 있으면 설치 가능
         if (!HasAnyNeighborSupport_BGorSolid(x, y, solidMustBeCollidable: false))
             return false;
 
@@ -774,14 +849,12 @@ public class WorldManager : MonoBehaviour
 
         HandleSourceLightChangeAt(x, y, oldSolidId, oldMeta, oldFluidId);
 
-        // 드랍은 기존 규칙 유지 (id -> name)
         string key = cellLibrary.GetSolidName(oldSolidId);
 
         if (!string.IsNullOrEmpty(key))
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
-            // VFX는 meta-variant 스프라이트로
             var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
             vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
 
@@ -971,7 +1044,6 @@ public class WorldManager : MonoBehaviour
         ApplyTimeSyncedBrightness(forceDirty: true);
         chunkSystem.ResetLastPlayerChunk(player.position);
 
-        // ✅ 멀티블럭 복원 (월드/청크 시스템 준비 이후)
         if (multiblockManager != null)
         {
             if (WorldLoadContext.loadType == WorldLoadContext.LoadType.LoadWorld)
@@ -1362,7 +1434,6 @@ public class WorldManager : MonoBehaviour
             MarkLightDirtyCells(_lightChangedList);
     }
 
-    // ✅ meta 반영
     private byte GetSourceBrightness(ushort solidId, ushort solidMeta, ushort fluidId)
     {
         byte sb = cellLibrary.GetSolidBrightness(solidId, solidMeta);
@@ -1370,7 +1441,6 @@ public class WorldManager : MonoBehaviour
         return (sb >= lb) ? sb : lb;
     }
 
-    // ✅ meta 반영
     private void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldSolidMeta, ushort oldFluidId)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return;

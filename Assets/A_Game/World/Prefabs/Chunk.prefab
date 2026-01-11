@@ -51,13 +51,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bgTilemap: {fileID: 8818952934124294160}
   solidTilemap: {fileID: 1808911237036534731}
+  platformTilemap: {fileID: 1262243010076457472}
   liquidTilemap: {fileID: 4053945747947020837}
   lightOverlayRenderer: {fileID: 4590196786752794780}
   bgBuffer: []
   solidBuffer: []
+  platformBuffer: []
   liquidBuffer: []
   bgDirty: 0
   solidDirty: 0
+  platformDirty: 0
   liquidDirty: 0
   lightDirty: 0
   liquidTypeTex: {fileID: 0}
@@ -639,7 +642,7 @@ GameObject:
   - component: {fileID: 3496898182684102}
   - component: {fileID: 5782928237645698411}
   - component: {fileID: 6533882120368412962}
-  m_Layer: 25
+  m_Layer: 27
   m_Name: PlatformCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -822,7 +825,7 @@ PlatformEffector2D:
   m_RotationalOffset: 0
   m_UseOneWay: 1
   m_UseOneWayGrouping: 0
-  m_SurfaceArc: 180
+  m_SurfaceArc: 170
   m_UseSideFriction: 0
   m_UseSideBounce: 0
   m_SideArc: 1

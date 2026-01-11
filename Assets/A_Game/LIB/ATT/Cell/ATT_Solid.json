@@ -148,7 +148,7 @@
   },
   "Wooden Platform": {
     "id": 16,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [
@@ -274,7 +274,7 @@
   },
   "Copper Platform": {
     "id": 30,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [
@@ -283,7 +283,7 @@
   },
   "Tin Platform": {
     "id": 31,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [
@@ -292,7 +292,7 @@
   },
   "Bronze Platform": {
     "id": 32,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [
@@ -301,7 +301,7 @@
   },
   "Iron Platform": {
     "id": 33,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [
@@ -310,7 +310,7 @@
   },
   "Steel Platform": {
     "id": 34,
-    "collidable": true,
+    "collidable": false,
     "isPlatform": true,
     "gravity": false,
     "variants": [

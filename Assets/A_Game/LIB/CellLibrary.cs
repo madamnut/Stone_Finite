@@ -8,13 +8,17 @@ using UnityEngine.U2D;
 /// <summary>
 /// Solid / Fluid 정의 JSON + 단일 SpriteAtlas를 받아서
 /// - 런타임 조회: id/meta -> sprite, attachedAt, interaction 등 제공
-/// - 타일(Tile) 캐싱 제공: BG/Solid/Fluid
+/// - 타일(Tile) 캐싱 제공: BG/Solid/Fluid (+ PlatformCollider 전용)
 ///
 /// JSON 규칙:
 /// - 기재되지 않은 속성은 0/false/null 취급
 /// - brightness는 0~15 클램프
 /// - variants[].brightness_override는 0~15 클램프 (미기재면 미오버라이드)
-/// - isPlatform(선택): true/false (현재는 "읽기만" 하고 로직에는 사용하지 않음)
+/// - isPlatform(선택): true/false
+///
+/// 추가 규칙(사용자 전제):
+/// - isPlatform 과 collidable 은 서로 배타적 (둘 다 true 금지)
+/// - 둘 다 false 가능
 ///
 /// Sprite 규칙(권장):
 /// - Solid variants Sprite 이름 = variants[].sprite
@@ -24,6 +28,7 @@ using UnityEngine.U2D;
 /// Tile 정책(확정):
 /// - BG: 항상 collider 없음 (Tile.colliderType = None)
 /// - Solid(FG): collidable=true면 collider Sprite, 아니면 None
+/// - PlatformCollider: isPlatform=true면 collider Sprite (렌더는 끄는 타일맵에서 사용)
 /// - Fluid: 항상 collider 있음(Trigger는 TilemapCollider2D 인스펙터에서 처리),
 ///          따라서 Tile.colliderType = Sprite
 /// </summary>
@@ -66,7 +71,7 @@ public class CellLibrary : MonoBehaviour
         public byte brightness;
         public SolidFlags flags;
 
-        // ✅ JSON: isPlatform (선택) - 현재는 읽기만
+        // ✅ JSON: isPlatform (선택)
         public bool isPlatform;
 
         public string interaction; // 없으면 null
@@ -98,8 +103,11 @@ public class CellLibrary : MonoBehaviour
     // BG는 meta 개념 없음 (bg는 ushort id만 가진다고 가정)
     readonly Dictionary<ushort, Tile> _bgTileById = new Dictionary<ushort, Tile>(256);
 
-    // Solid(FG): (id, meta) -> Tile (colliderType은 collidable 고정이므로 키에 불필요)
+    // Solid(FG): (id, meta) -> Tile
     readonly Dictionary<uint, Tile> _solidTileByKey = new Dictionary<uint, Tile>(512);
+
+    // ✅ PlatformCollider: (id, meta) -> Tile (항상 collider Sprite)
+    readonly Dictionary<uint, Tile> _platformColliderTileByKey = new Dictionary<uint, Tile>(256);
 
     // Fluid: (id, level) -> Tile (level 1..16)
     readonly Dictionary<uint, Tile> _fluidTileByKey = new Dictionary<uint, Tile>(256);
@@ -166,8 +174,14 @@ public class CellLibrary : MonoBehaviour
             bool collidable = o["collidable"]?.Value<bool>() ?? false;
             bool gravity = o["gravity"]?.Value<bool>() ?? false;
 
-            // ✅ isPlatform (선택) - 현재는 읽기만
             bool isPlatform = o["isPlatform"]?.Value<bool>() ?? false;
+
+            // ✅ 데이터 검증: 배타 규칙 위반 감지
+            if (collidable && isPlatform)
+            {
+                Debug.LogError($"[CellLibrary] invalid solid def: both collidable and isPlatform are true (name={name}, id={id})");
+                // 계속 진행은 하되, 충돌이 나기 쉬우니 여기서 collidable을 무시하는 식의 보정은 하지 않음.
+            }
 
             SolidFlags flags = SolidFlags.None;
             if (collidable) flags |= SolidFlags.Collidable;
@@ -196,7 +210,6 @@ public class CellLibrary : MonoBehaviour
 
                     string attachedAt = vObj["attachedAt"]?.Value<string>(); // optional
 
-                    // ✅ brightness_override (optional)
                     sbyte brightnessOverride = -1;
                     if (vObj.TryGetValue("brightness_override", out JToken boTok) && boTok != null && boTok.Type != JTokenType.Null)
                     {
@@ -324,10 +337,8 @@ public class CellLibrary : MonoBehaviour
     {
         _bgTileById.Clear();
         _solidTileByKey.Clear();
+        _platformColliderTileByKey.Clear();
         _fluidTileByKey.Clear();
-
-        // BG/Solid/Fluid 타일은 필요 시 Lazy 생성해도 되지만,
-        // 지금은 API 경로 단순화를 위해 캐시 딕셔너리만 초기화.
     }
 
     // ─────────────────────────────────────────────────────────
@@ -363,18 +374,11 @@ public class CellLibrary : MonoBehaviour
         return _solidById.TryGetValue(id, out var def) ? def.flags : SolidFlags.None;
     }
 
-    /// <summary>
-    /// ✅ JSON isPlatform (현재는 읽기만)
-    /// </summary>
     public bool IsPlatform(ushort id)
     {
         return _solidById.TryGetValue(id, out var def) && def.isPlatform;
     }
 
-    /// <summary>
-    /// ✅ (id, meta) 배리언트 존재 여부
-    /// - 설치 로직에서 "해당 meta로 설치 가능한가" 판단용
-    /// </summary>
     public bool HasSolidVariant(ushort id, ushort meta)
     {
         return _solidById.TryGetValue(id, out var def) &&
@@ -382,19 +386,11 @@ public class CellLibrary : MonoBehaviour
                def.variants.ContainsKey(meta);
     }
 
-    /// <summary>
-    /// ✅ id 기준 기본 brightness (meta 무시)
-    /// </summary>
     public byte GetSolidBrightness(ushort id)
     {
         return _solidById.TryGetValue(id, out var def) ? def.brightness : (byte)0;
     }
 
-    /// <summary>
-    /// ✅ (id, meta) 기준 brightness
-    /// - variants[].brightness_override가 있으면 그 값을 사용
-    /// - 없으면 def.brightness 사용
-    /// </summary>
     public byte GetSolidBrightness(ushort id, ushort meta)
     {
         if (!_solidById.TryGetValue(id, out var def))
@@ -522,6 +518,7 @@ public class CellLibrary : MonoBehaviour
 
     /// <summary>
     /// Solid(FG) 타일: collidable 속성에 따라 collider 결정.
+    /// - isPlatform은 여기서 collider에 관여하지 않음 (플랫폼 콜라이더는 별도 타일맵에서 생성)
     /// </summary>
     public TileBase GetSolidTile(ushort id, ushort meta)
     {
@@ -546,6 +543,32 @@ public class CellLibrary : MonoBehaviour
     }
 
     /// <summary>
+    /// ✅ PlatformCollider 타일:
+    /// - isPlatform=true 인 셀의 "콜라이더 전용" 타일
+    /// - 반드시 Platform 전용 타일맵(렌더러 OFF)에서만 사용
+    /// - colliderType은 항상 Sprite
+    /// </summary>
+    public TileBase GetPlatformColliderTile(ushort id, ushort meta)
+    {
+        if (id == 0) return null;
+
+        uint key = MakeKey(id, meta);
+        if (_platformColliderTileByKey.TryGetValue(key, out var t))
+            return t;
+
+        var sp = GetSolidSprite(id, meta);
+        if (sp == null) return null;
+
+        var tile = ScriptableObject.CreateInstance<Tile>();
+        tile.sprite = sp;
+        tile.name = sp.name;
+        tile.colliderType = Tile.ColliderType.Sprite;
+
+        _platformColliderTileByKey[key] = tile;
+        return tile;
+    }
+
+    /// <summary>
     /// Fluid 타일: 전역 정책으로 항상 collider 있음(Trigger는 TilemapCollider2D에서).
     /// amount(1..128) → level(1..16)로 캐시(16단계 고정).
     /// </summary>
@@ -560,7 +583,6 @@ public class CellLibrary : MonoBehaviour
         if (_fluidTileByKey.TryGetValue(key, out var t))
             return t;
 
-        // level 스프라이트 직접 조회 (없으면 base로 폴백)
         Sprite sp = null;
         if (_fluidLevelSpritesById.TryGetValue(fluidId, out var arr))
             sp = arr[lvl];
@@ -573,7 +595,7 @@ public class CellLibrary : MonoBehaviour
         var tile = ScriptableObject.CreateInstance<Tile>();
         tile.sprite = sp;
         tile.name = sp.name;
-        tile.colliderType = Tile.ColliderType.Sprite; // ✅ Fluid는 항상 collider 생성
+        tile.colliderType = Tile.ColliderType.Sprite;
 
         _fluidTileByKey[key] = tile;
         return tile;
@@ -582,7 +604,6 @@ public class CellLibrary : MonoBehaviour
     public void RebuildSpriteCache()
     {
         BuildSpriteCache();
-        // 스프라이트가 바뀌면 타일도 스프라이트를 다시 매핑해야 하므로 타일 캐시도 비움
         BuildTileCache();
     }
 }

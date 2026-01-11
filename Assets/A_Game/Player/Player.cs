@@ -15,6 +15,15 @@ public class Player : MonoBehaviour
     [SerializeField] private Collider2D groundCheckCollider; // 발밑 그라운드 체크(Trigger)
     [SerializeField] private LayerMask groundLayerMask;      // Ground 레이어
 
+    // ✅ 플랫폼 내려가기(드롭 스루): "플레이어 물리 콜라이더" <-> "현재 접촉 중인 플랫폼 콜라이더들"만 0.1초 Ignore
+    [Header("Platform Drop-Through")]
+    [SerializeField] private float dropThroughTime = 0.10f;   // S 눌렀을 때 이 시간만큼만 무시 (유지해도 0.1초)
+    [SerializeField] private LayerMask platformLayerMask;     // ✅ 플랫폼 레이어(들) 지정
+    [SerializeField] private Collider2D playerPhysicsCollider; // ✅ 직접 할당: Trigger 아닌 "실제" 물리 콜라이더
+    private Coroutine _dropCo;
+    private readonly List<Collider2D> _dropPlatforms = new List<Collider2D>(16);
+    private ContactFilter2D _platformContactFilter;
+
     [Header("Fluid (Triggers)")]
     [SerializeField] private Collider2D bodyTriggerCollider; // 몸통 트리거(유체 접촉 판정)
     [SerializeField] private Collider2D headTriggerCollider; // 머리 트리거(잠김/숨 참기 판정)
@@ -150,6 +159,15 @@ public class Player : MonoBehaviour
         rb = rb != null ? rb : GetComponent<Rigidbody2D>();
         _defaultGravityScale = rb.gravityScale;
 
+        // ✅ 플랫폼 드롭 필터 준비
+        _platformContactFilter = new ContactFilter2D();
+        _platformContactFilter.useLayerMask = true;
+        _platformContactFilter.layerMask = platformLayerMask;
+        _platformContactFilter.useTriggers = false;
+
+        if (playerPhysicsCollider == null)
+            Debug.LogError("[Player] playerPhysicsCollider is not assigned. Assign the non-trigger collider used for physics.");
+
         var s = skinRoot.localScale;
         _baseSkinScaleX = Mathf.Abs(s.x);
         _baseSkinScaleY = s.y;
@@ -190,26 +208,30 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        /*────────────── 이동 입력 ──────────────*/
         _moveInput = Input.GetAxisRaw("Horizontal");
 
         if (_moveInput > 0.01f) SetFacing(1);
         else if (_moveInput < -0.01f) SetFacing(-1);
 
-        /*────────────── 그라운드 체크 ──────────────*/
         _isGrounded = groundCheckCollider.IsTouchingLayers(groundLayerMask);
 
-        /*────────────── 유체 체크(OverlapCollider) ──────────────*/
         _fluidHits.Clear();
         _isInFluid = bodyTriggerCollider.OverlapCollider(_fluidFilter, _fluidHits) > 0;
 
         _fluidHits.Clear();
         _isHeadSubmerged = headTriggerCollider.OverlapCollider(_fluidFilter, _fluidHits) > 0;
 
-        // ✅ 물속에서는 중력 끔(gravityScale=9.8 같은 값이면 수영이 못 이김)
         rb.gravityScale = _isInFluid ? 0f : _defaultGravityScale;
 
-        /*────────────── 점프/수영 입력 ──────────────*/
+        // ✅ 플랫폼 내려가기:
+        // - S 키 "KeyDown 1회"에만 반응
+        // - 누르고 있어도 dropThroughTime(0.1s)만 무시 후 자동 복구
+        // - 계속 내려가려면 S를 반복해서 눌러야 함
+        if (!_isInFluid && _isGrounded && Input.GetKeyDown(KeyCode.S))
+        {
+            TryDropThroughPlatform();
+        }
+
         bool jumpDown = Input.GetButtonDown("Jump");
         bool jumpHeld = Input.GetButton("Jump");
 
@@ -235,7 +257,6 @@ public class Player : MonoBehaviour
             }
         }
 
-        /*────────────── 낙하 거리 측정 ──────────────*/
         if (_wasGrounded && !_isGrounded)
         {
             _isFalling = true;
@@ -265,10 +286,8 @@ public class Player : MonoBehaviour
 
         _wasGrounded = _isGrounded;
 
-        /*────────────── 걷기 애니메이션 ──────────────*/
         UpdateWalkAnimation();
 
-        /*────────────── 스태미너 회복/소모 ──────────────*/
         float dt = Time.deltaTime;
 
         stamina += staminaRegenPerSecond * dt;
@@ -279,13 +298,11 @@ public class Player : MonoBehaviour
 
         stamina = Mathf.Clamp(stamina, 0f, 100f);
 
-        /*────────────── 공기(산소) 감소/회복 ──────────────*/
         if (_isHeadSubmerged) oxygen -= oxygenDrainPerSecond * dt;
         else                  oxygen += oxygenRecoverPerSecond * dt;
 
         oxygen = Mathf.Clamp(oxygen, 0f, 100f);
 
-        /*────────────── 익사 데미지 ──────────────*/
         if (oxygen <= 0f && _isHeadSubmerged)
         {
             _drownTickTimer -= dt;
@@ -300,11 +317,9 @@ public class Player : MonoBehaviour
             _drownTickTimer = 0f;
         }
 
-        /*────────────── 공격 쿨다운 감소 ──────────────*/
         if (_attackCooldownTimer > 0f)
             _attackCooldownTimer -= dt;
 
-        /*────────────── UI 갱신 ──────────────*/
         UpdateSurvivalUI();
         UpdateHeartsUI();
     }
@@ -319,7 +334,6 @@ public class Player : MonoBehaviour
             float targetX = _moveInput * moveSpeed * fluidMoveSpeedMultiplier;
             v.x = Mathf.Lerp(v.x, targetX, 1f - Mathf.Exp(-fluidHorizontalDamping * fdt));
 
-            // ✅ 상하: 목표 속도 수렴 방식(중력은 Update에서 0으로 꺼둠)
             if (_swimUpHeld)
             {
                 float targetY = maxSwimUpSpeed;
@@ -345,6 +359,57 @@ public class Player : MonoBehaviour
         }
 
         rb.velocity = v;
+    }
+
+    // ✅ 플랫폼 내려가기: "현재 플레이어와 접촉 중인 플랫폼 콜라이더들"과만 0.1초 IgnoreCollision
+    private void TryDropThroughPlatform()
+    {
+        if (playerPhysicsCollider == null) return;
+
+        // 0.1초 중에는 추가 입력은 무시 (원하면 Stop/Restart로 바꿔도 됨)
+        if (_dropCo != null) return;
+
+        _dropPlatforms.Clear();
+
+        // rb의 현재 접촉 콜라이더 중 platformLayerMask에 해당하는 것만 수집
+        // (레이캐스트로 "밟고 있는 것" 찾는 방식 아님)
+        var contacts = new Collider2D[16];
+        int n = rb.GetContacts(_platformContactFilter, contacts);
+        for (int i = 0; i < n; i++)
+        {
+            var c = contacts[i];
+            if (c == null) continue;
+            if (!_dropPlatforms.Contains(c))
+                _dropPlatforms.Add(c);
+        }
+
+        if (_dropPlatforms.Count == 0) return;
+
+        _dropCo = StartCoroutine(CoDropThroughPlatforms());
+    }
+
+    private IEnumerator CoDropThroughPlatforms()
+    {
+        // Ignore ON
+        for (int i = 0; i < _dropPlatforms.Count; i++)
+        {
+            var p = _dropPlatforms[i];
+            if (p != null)
+                Physics2D.IgnoreCollision(playerPhysicsCollider, p, true);
+        }
+
+        yield return new WaitForSeconds(dropThroughTime);
+
+        // Ignore OFF
+        for (int i = 0; i < _dropPlatforms.Count; i++)
+        {
+            var p = _dropPlatforms[i];
+            if (p != null)
+                Physics2D.IgnoreCollision(playerPhysicsCollider, p, false);
+        }
+
+        _dropPlatforms.Clear();
+        _dropCo = null;
     }
 
     void OnTriggerEnter2D(Collider2D other)
