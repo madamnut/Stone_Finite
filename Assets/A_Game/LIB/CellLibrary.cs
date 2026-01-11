@@ -14,6 +14,7 @@ using UnityEngine.U2D;
 /// - 기재되지 않은 속성은 0/false/null 취급
 /// - brightness는 0~15 클램프
 /// - variants[].brightness_override는 0~15 클램프 (미기재면 미오버라이드)
+/// - isPlatform(선택): true/false (현재는 "읽기만" 하고 로직에는 사용하지 않음)
 ///
 /// Sprite 규칙(권장):
 /// - Solid variants Sprite 이름 = variants[].sprite
@@ -64,6 +65,10 @@ public class CellLibrary : MonoBehaviour
         public ushort id;
         public byte brightness;
         public SolidFlags flags;
+
+        // ✅ JSON: isPlatform (선택) - 현재는 읽기만
+        public bool isPlatform;
+
         public string interaction; // 없으면 null
         public string name;        // JSON key
         public Dictionary<ushort, SolidVariantDef> variants; // meta -> variant (필수라고 가정)
@@ -161,6 +166,9 @@ public class CellLibrary : MonoBehaviour
             bool collidable = o["collidable"]?.Value<bool>() ?? false;
             bool gravity = o["gravity"]?.Value<bool>() ?? false;
 
+            // ✅ isPlatform (선택) - 현재는 읽기만
+            bool isPlatform = o["isPlatform"]?.Value<bool>() ?? false;
+
             SolidFlags flags = SolidFlags.None;
             if (collidable) flags |= SolidFlags.Collidable;
             if (gravity) flags |= SolidFlags.HasGravity;
@@ -218,6 +226,7 @@ public class CellLibrary : MonoBehaviour
                 id = id,
                 brightness = brightness,
                 flags = flags,
+                isPlatform = isPlatform,
                 interaction = interaction,
                 name = name,
                 variants = variants
@@ -352,6 +361,25 @@ public class CellLibrary : MonoBehaviour
     public SolidFlags GetSolidFlags(ushort id)
     {
         return _solidById.TryGetValue(id, out var def) ? def.flags : SolidFlags.None;
+    }
+
+    /// <summary>
+    /// ✅ JSON isPlatform (현재는 읽기만)
+    /// </summary>
+    public bool IsPlatform(ushort id)
+    {
+        return _solidById.TryGetValue(id, out var def) && def.isPlatform;
+    }
+
+    /// <summary>
+    /// ✅ (id, meta) 배리언트 존재 여부
+    /// - 설치 로직에서 "해당 meta로 설치 가능한가" 판단용
+    /// </summary>
+    public bool HasSolidVariant(ushort id, ushort meta)
+    {
+        return _solidById.TryGetValue(id, out var def) &&
+               def.variants != null &&
+               def.variants.ContainsKey(meta);
     }
 
     /// <summary>

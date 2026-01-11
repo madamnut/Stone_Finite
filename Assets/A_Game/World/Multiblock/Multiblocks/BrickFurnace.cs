@@ -1,5 +1,10 @@
 // BrickFurnace.cs (전체 교체본)
-// - 온도(레벨) 1로 Smelt
+// - 온도 시스템 적용
+//   - 연료 toolActions["Fuel"].temperature 를 읽어 "현재 온도"로 사용
+//   - BrickFurnace는 최대 지원 온도 MAX_TEMPERATURE=3 (연료가 4여도 3으로 cap)
+//   - 점화 전(연료 없음)에도 "FuelIn에 들어있는 연료"의 temperature를 미리 읽어
+//     예약/hasWork 계산에 사용(=점화 가능 여부 판단)
+//
 // - 입력 9슬롯 + Crucible 1슬롯 + FuelIn/FuelOut
 // - 조건:
 //   1) Crucible 없거나(툴액션 "Crucible") 가득 차면: 재료 녹이기 중단 / 연료 투입(점화) 중단
@@ -25,7 +30,7 @@ public class BrickFurnace : Multiblock
         In0, In1, In2, In3, In4, In5, In6, In7, In8
     }
 
-    const int SMELT_LEVEL = 1;
+    const int MAX_TEMPERATURE = 3;
     const int FIRE_HOLD_TICKS = 5;
 
     // Slots
@@ -37,6 +42,9 @@ public class BrickFurnace : Multiblock
     // Fuel state
     int _fuelTicksLeft = 0;
     int _fuelTicksMax  = 0;
+
+    // 현재 타고 있는 "연료 1개"의 온도(연료 투입 시 캐시)
+    int _burningFuelTemperature = 0;
 
     string _fuelResultItemId = null;
     int    _fuelResultAmount = 1;
@@ -58,6 +66,43 @@ public class BrickFurnace : Multiblock
     bool IsFireActiveFx => IsBurning || _fireHoldTicksLeft > 0;
 
     // ─────────────────────────────────────────────
+    // Temperature
+    // ─────────────────────────────────────────────
+    int CurrentTemperatureLevel
+    {
+        get
+        {
+            if (!IsBurning) return 0;
+            int t = _burningFuelTemperature;
+            if (t < 0) t = 0;
+            if (t > MAX_TEMPERATURE) t = MAX_TEMPERATURE;
+            return t;
+        }
+    }
+
+    int PeekFuelTemperatureLevel()
+    {
+        if (_fuelIn == null) return 0;
+        if (_fuelIn.ToolActions == null) return 0;
+        if (!_fuelIn.ToolActions.TryGetValue("Fuel", out Dictionary<string, object> cfg) || cfg == null)
+            return 0;
+
+        // schema: burnTicks, temperature, resultItem, amount
+        int t = 1; // 안전 기본값
+        if (cfg.TryGetValue("temperature", out var tempObj) && tempObj != null)
+            t = ToInt(tempObj, 1);
+
+        if (t < 0) t = 0;
+        if (t > MAX_TEMPERATURE) t = MAX_TEMPERATURE;
+        return t;
+    }
+
+    // 예약/hasWork 판단에 쓰는 "계획 온도"
+    // - 이미 타는 중: 현재 온도
+    // - 꺼져있음: FuelIn에 들어있는 연료로 점화하면 도달 가능한 온도
+    int PlannedTemperatureLevel => IsBurning ? CurrentTemperatureLevel : PeekFuelTemperatureLevel();
+
+    // ─────────────────────────────────────────────
     // Public read API (Module용)
     // ─────────────────────────────────────────────
     public float FuelProgress01
@@ -68,6 +113,8 @@ public class BrickFurnace : Multiblock
             return Mathf.Clamp01((float)_fuelTicksLeft / (float)_fuelTicksMax);
         }
     }
+
+    public int TemperatureLevel => CurrentTemperatureLevel;
 
     /// <summary>
     /// 입력 슬롯 index(0~8)의 smelt 진행도(0~1).
@@ -112,6 +159,8 @@ public class BrickFurnace : Multiblock
         {
             case SlotKind.FuelIn:
                 _fuelIn = item;
+                // 연료 바뀌면 "점화 전 계획 온도"가 바뀌므로 예약 정합성 맞춤
+                RecomputeReservationsByPriority();
                 break;
 
             case SlotKind.FuelOut:
@@ -150,10 +199,8 @@ public class BrickFurnace : Multiblock
 
     void SetInputSlot(int i, ItemData item)
     {
-        // 기존 입력 스냅샷
         var prev = _ins[i];
 
-        // "종류/내구도 동일"이면 count 변화만으로는 진행도/예약을 깨지 않음
         bool sameKind =
             prev != null &&
             item != null &&
@@ -164,7 +211,6 @@ public class BrickFurnace : Multiblock
 
         _ins[i] = item;
 
-        // 종류가 바뀌었거나, null/0이 되었으면 그 슬롯 진행도/예약 무효
         if (!sameKind)
         {
             ClearReservationForSlot(i);
@@ -172,8 +218,6 @@ public class BrickFurnace : Multiblock
             _smeltTicksNeed[i] = 0;
         }
 
-        // 우선순위(0→8) 보장: 전체 재예약
-        // sameKind면 Recompute 내부의 "같은 예약(spec 동일)" 로직이 진행도를 유지해줌
         RecomputeReservationsByPriority();
     }
 
@@ -189,7 +233,7 @@ public class BrickFurnace : Multiblock
             _droppedOnDestroy = true;
             DropAllInternalItems();
         }
-        base.OnCellBroken(brokenCell); // 기본 구현: Despawn + 원복
+        base.OnCellBroken(brokenCell);
     }
 
     public override void GetVfxRequests(List<VfxRequest> outList)
@@ -217,21 +261,22 @@ public class BrickFurnace : Multiblock
 
         bool wasBurning = IsBurning;
 
+        // 틱 시작 기준 온도(진행 규칙은 "틱 시작 시 불꽃 ON"=wasBurning 기준)
+        int tempAtTickStart = wasBurning ? CurrentTemperatureLevel : 0;
+
         bool crucibleOk = TryGetCrucibleCapacity(_crucible, out int cap) && cap > 0;
         int  curAmt     = crucibleOk ? GetCrucibleCurrentAmount(_crucible) : 0;
         bool crucibleFull = crucibleOk && curAmt >= cap;
 
-        // 조건 1) Crucible 없거나 가득 차면: 녹이기 중단 / 연료 투입(점화) 중단
         bool allowWork = crucibleOk && !crucibleFull;
 
         if (!allowWork)
         {
-            // 진행도는 예약과 동치 규칙이므로 전부 0
             ClearAllReservationsAndProgressBecauseNoWork();
         }
         else
         {
-            // allowWork일 때만 "진행도 유지" 방식으로 재계산
+            // 온도(현재/계획)에 맞춰 예약 정합성 유지
             RecomputeReservationsByPriority();
         }
 
@@ -247,10 +292,12 @@ public class BrickFurnace : Multiblock
             {
                 if (!IsFuelOutBlockedForNewFuel())
                 {
-                    if (TryConsumeFuelOne(out int gainedTicks, out string fuelResultItem, out int fuelResultAmount))
+                    if (TryConsumeFuelOne(out int gainedTicks, out int fuelTemp, out string fuelResultItem, out int fuelResultAmount))
                     {
                         _fuelTicksLeft = gainedTicks;
                         _fuelTicksMax  = gainedTicks;
+
+                        _burningFuelTemperature = fuelTemp;
 
                         _fuelResultItemId = fuelResultItem;
                         _fuelResultAmount = Mathf.Max(1, fuelResultAmount);
@@ -282,59 +329,60 @@ public class BrickFurnace : Multiblock
         // 3) Smelt 진행 (틱 시작 시 연료가 타고 있었다면 진행)
         if (wasBurning && allowWork)
         {
-            for (int i = 0; i < 9; i++)
+            // 온도 미달이면 진행 자체가 "예약=진행" 규칙에 위배되므로:
+            // - 이 틱에서는 진행만 막고,
+            // - 예약은 Recompute가 다음에 정리한다(온도 기반).
+            if (tempAtTickStart > 0)
             {
-                if (!_reserved[i]) continue;
-
-                var input = _ins[i];
-                if (input == null || input.Count <= 0)
+                for (int i = 0; i < 9; i++)
                 {
-                    ClearReservationForSlot(i);
-                    _smeltTicksDone[i] = 0;
-                    _smeltTicksNeed[i] = 0;
-                    continue;
-                }
+                    if (!_reserved[i]) continue;
 
-                // 예약과 동일한 spec인지 확인
-                if (!TryReadSmeltSpecForOne(input, out int needTicks, out string resId, out int resAmt))
-                {
-                    ClearReservationForSlot(i);
-                    _smeltTicksDone[i] = 0;
-                    _smeltTicksNeed[i] = 0;
-                    continue;
-                }
-
-                if (_reservedFluidId[i] != resId || _reservedAmount[i] != resAmt)
-                {
-                    ClearReservationForSlot(i);
-                    _smeltTicksDone[i] = 0;
-                    _smeltTicksNeed[i] = 0;
-                    continue;
-                }
-
-                _smeltTicksNeed[i] = needTicks;
-
-                // 진행도 증가
-                _smeltTicksDone[i] += 1;
-                if (_smeltTicksDone[i] > _smeltTicksNeed[i])
-                    _smeltTicksDone[i] = _smeltTicksNeed[i];
-
-                // 완료 커밋
-                if (_smeltTicksNeed[i] > 0 && _smeltTicksDone[i] >= _smeltTicksNeed[i])
-                {
-                    if (ConsumeOneFromInput(i))
+                    var input = _ins[i];
+                    if (input == null || input.Count <= 0)
                     {
-                        AddFluidToCrucibleLayers(_crucible, _reservedFluidId[i], _reservedAmount[i]);
-
-                        // ✅ 커밋 직후 합금 판정 (WorldManager 경유)
-                        if (World != null && World.recipeLibrary != null)
-                            World.recipeLibrary.TryApplyAlloysToCrucible(_crucible);
+                        ClearReservationForSlot(i);
+                        _smeltTicksDone[i] = 0;
+                        _smeltTicksNeed[i] = 0;
+                        continue;
                     }
 
-                    // 1개 처리 완료 -> 예약 해제 + 진행 리셋
-                    ClearReservationForSlot(i);
-                    _smeltTicksDone[i] = 0;
-                    _smeltTicksNeed[i] = 0;
+                    if (!TryReadSmeltSpecForOne(input, tempAtTickStart, out int needTicks, out string resId, out int resAmt))
+                    {
+                        ClearReservationForSlot(i);
+                        _smeltTicksDone[i] = 0;
+                        _smeltTicksNeed[i] = 0;
+                        continue;
+                    }
+
+                    if (_reservedFluidId[i] != resId || _reservedAmount[i] != resAmt)
+                    {
+                        ClearReservationForSlot(i);
+                        _smeltTicksDone[i] = 0;
+                        _smeltTicksNeed[i] = 0;
+                        continue;
+                    }
+
+                    _smeltTicksNeed[i] = needTicks;
+
+                    _smeltTicksDone[i] += 1;
+                    if (_smeltTicksDone[i] > _smeltTicksNeed[i])
+                        _smeltTicksDone[i] = _smeltTicksNeed[i];
+
+                    if (_smeltTicksNeed[i] > 0 && _smeltTicksDone[i] >= _smeltTicksNeed[i])
+                    {
+                        if (ConsumeOneFromInput(i))
+                        {
+                            AddFluidToCrucibleLayers(_crucible, _reservedFluidId[i], _reservedAmount[i]);
+
+                            if (World != null && World.recipeLibrary != null)
+                                World.recipeLibrary.TryApplyAlloysToCrucible(_crucible);
+                        }
+
+                        ClearReservationForSlot(i);
+                        _smeltTicksDone[i] = 0;
+                        _smeltTicksNeed[i] = 0;
+                    }
                 }
             }
 
@@ -357,7 +405,7 @@ public class BrickFurnace : Multiblock
     void RequestApplyFurnaceMeta(bool burning)
     {
         if (Manager == null) return;
-        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 1 : 0));
+        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
     }
 
     // ─────────────────────────────────────────────
@@ -422,6 +470,15 @@ public class BrickFurnace : Multiblock
             return;
         }
 
+        // 현재/계획 온도
+        int tempForPlanning = PlannedTemperatureLevel;
+        if (tempForPlanning <= 0)
+        {
+            // 온도 0이면 smelt 예약 불가(진행도=0)
+            ResetAllSmeltProgressAndReservations();
+            return;
+        }
+
         // 기존 상태 스냅샷
         bool[] oldRes = new bool[9];
         int[] oldDone = new int[9];
@@ -438,7 +495,7 @@ public class BrickFurnace : Multiblock
             oldId[i]   = _reservedFluidId[i];
         }
 
-        // 새로 확정할 상태(우선순위 0→8 단방향 확정)
+        // 새로 확정할 상태
         for (int i = 0; i < 9; i++)
         {
             _reserved[i] = false;
@@ -454,15 +511,12 @@ public class BrickFurnace : Multiblock
             var input = _ins[i];
             if (input == null || input.Count <= 0) continue;
 
-            if (!TryReadSmeltSpecForOne(input, out int needTicks, out string resId, out int resAmt))
+            if (!TryReadSmeltSpecForOne(input, tempForPlanning, out int needTicks, out string resId, out int resAmt))
                 continue;
 
             int remainingForReserve = capacity - current - _reservedTotal;
             if (remainingForReserve < resAmt)
-            {
-                // 예약 실패 -> 시작 자체 안 함(진행도 0)
                 continue;
-            }
 
             _reserved[i] = true;
             _reservedAmount[i] = resAmt;
@@ -471,7 +525,6 @@ public class BrickFurnace : Multiblock
 
             _smeltTicksNeed[i] = needTicks;
 
-            // "같은 예약(spec 동일)"이면 기존 진행도 유지
             if (oldRes[i] && oldId[i] == resId && oldAmt[i] == resAmt && oldNeed[i] == needTicks)
             {
                 int keep = oldDone[i];
@@ -486,7 +539,7 @@ public class BrickFurnace : Multiblock
         }
     }
 
-    bool TryReadSmeltSpecForOne(ItemData input, out int smeltNeed, out string resultItemId, out int amount)
+    bool TryReadSmeltSpecForOne(ItemData input, int availableTemp, out int smeltNeed, out string resultItemId, out int amount)
     {
         smeltNeed = 0;
         resultItemId = null;
@@ -499,15 +552,14 @@ public class BrickFurnace : Multiblock
         if (!input.ToolActions.TryGetValue("Smelt", out Dictionary<string, object> cfg) || cfg == null)
             return false;
 
-        // 네 "정식 양식" 강제:
-        // temperature, smeltTicks, resultItem, amount 전부 필수
-
         if (!cfg.TryGetValue("temperature", out var tempObj) || tempObj == null)
             return false;
 
         int reqTemp = ToInt(tempObj, -1);
         if (reqTemp <= 0) return false;
-        if (reqTemp > SMELT_LEVEL) return false;
+
+        // ✅ 현재(또는 계획) 온도 기반으로 판정
+        if (reqTemp > availableTemp) return false;
 
         if (!cfg.TryGetValue("smeltTicks", out var stObj) || stObj == null)
             return false;
@@ -691,8 +743,7 @@ public class BrickFurnace : Multiblock
     }
 
     // ─────────────────────────────────────────────
-    // Fuel helpers (네 Fuel 양식)
-    // Fuel: { burnTicks, resultItem, amount }
+    // Fuel helpers (Fuel: { burnTicks, temperature, resultItem, amount })
     // ─────────────────────────────────────────────
     bool IsFuelOutBlockedForNewFuel()
     {
@@ -719,9 +770,10 @@ public class BrickFurnace : Multiblock
         return IsOutputFullOrBlocked(_fuelOut, resId, resAmt);
     }
 
-    bool TryConsumeFuelOne(out int gainedTicks, out string resultItemId, out int resultAmount)
+    bool TryConsumeFuelOne(out int gainedTicks, out int fuelTemperature, out string resultItemId, out int resultAmount)
     {
         gainedTicks = 0;
+        fuelTemperature = 0;
         resultItemId = null;
         resultAmount = 1;
 
@@ -732,12 +784,20 @@ public class BrickFurnace : Multiblock
         if (!_fuelIn.ToolActions.TryGetValue("Fuel", out Dictionary<string, object> cfg) || cfg == null)
             return false;
 
-        // 네 양식: burnTicks
         if (!cfg.TryGetValue("burnTicks", out var btObj) || btObj == null)
             return false;
 
         gainedTicks = ToInt(btObj, 0);
         if (gainedTicks <= 0) return false;
+
+        // temperature (필수로 넣을 예정이지만, 안전 기본값 1)
+        int t = 1;
+        if (cfg.TryGetValue("temperature", out var tempObj) && tempObj != null)
+            t = ToInt(tempObj, 1);
+
+        if (t < 0) t = 0;
+        if (t > MAX_TEMPERATURE) t = MAX_TEMPERATURE;
+        fuelTemperature = t;
 
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
             resultItemId = riObj.ToString();
@@ -857,7 +917,7 @@ public class BrickFurnace : Multiblock
             weaponActions: slot.WeaponActions,
             breakActions:  slot.BreakActions,
             tags:          slot.Tags,
-            details:       slot.Details,   // Crucible layers 포함
+            details:       slot.Details,
             icon:          slot.Icon,
             count:         slot.Count
         );
@@ -867,8 +927,7 @@ public class BrickFurnace : Multiblock
     }
 
     // ─────────────────────────────────────────────
-    // Save/Load (ClayKiln 스타일 + Crucible layers 별도 저장)
-    // + OriginalSolidIds 저장 (로드된 멀티블럭 분해 원복용)
+    // Save/Load (PayloadJson + OriginalSolidIds)
     // ─────────────────────────────────────────────
     public override SaveData ToSaveData()
     {
@@ -894,14 +953,14 @@ public class BrickFurnace : Multiblock
             ins.Add(PackItem(_ins[i]));
         root["inputs"] = ins;
 
-        // fuel state
         root["fuelTicksLeft"] = _fuelTicksLeft;
         root["fuelTicksMax"]  = _fuelTicksMax;
+        root["burningFuelTemperature"] = _burningFuelTemperature;
+
         root["fuelResultItemId"] = _fuelResultItemId;
         root["fuelResultAmount"] = _fuelResultAmount;
         root["fireHoldTicksLeft"] = _fireHoldTicksLeft;
 
-        // smelt state
         var doneArr = new JArray();
         var needArr = new JArray();
         var resArr  = new JArray();
@@ -924,7 +983,6 @@ public class BrickFurnace : Multiblock
         root["reservedFluidId"] = resIdArr;
         root["reservedTotal"] = _reservedTotal;
 
-        // Crucible layers 저장 (ItemData.Details 자체를 저장하지 않는 프로젝트 패턴이므로 별도)
         if (_crucible != null && _crucible.Count > 0)
         {
             if (_crucible.Details.TryGetValue("layers", out var layersObj) && layersObj != null)
@@ -933,7 +991,6 @@ public class BrickFurnace : Multiblock
             }
         }
 
-        // ✅ OriginalSolidIds (row-major)
         ushort[] orig = new ushort[Width * Height];
         for (int y = 0; y < Height; y++)
         for (int x = 0; x < Width; x++)
@@ -983,6 +1040,8 @@ public class BrickFurnace : Multiblock
         for (int i = 0; i < 9; i++) _ins[i] = null;
 
         _fuelTicksLeft = _fuelTicksMax = 0;
+        _burningFuelTemperature = 0;
+
         _fuelResultItemId = null;
         _fuelResultAmount = 1;
         _fireHoldTicksLeft = 0;
@@ -1031,6 +1090,8 @@ public class BrickFurnace : Multiblock
 
                 _fuelTicksLeft = root.Value<int?>("fuelTicksLeft") ?? 0;
                 _fuelTicksMax  = root.Value<int?>("fuelTicksMax") ?? 0;
+                _burningFuelTemperature = root.Value<int?>("burningFuelTemperature") ?? 0;
+
                 _fuelResultItemId = root.Value<string>("fuelResultItemId");
                 _fuelResultAmount = root.Value<int?>("fuelResultAmount") ?? 1;
                 if (_fuelResultAmount < 1) _fuelResultAmount = 1;
@@ -1063,7 +1124,6 @@ public class BrickFurnace : Multiblock
                 _reservedTotal = root.Value<int?>("reservedTotal") ?? 0;
                 if (_reservedTotal < 0) _reservedTotal = 0;
 
-                // Crucible layers 복원
                 if (_crucible != null && root["crucible_layers"] != null && root["crucible_layers"].Type != JTokenType.Null)
                 {
                     var list = root["crucible_layers"].ToObject<List<object>>();
@@ -1075,10 +1135,9 @@ public class BrickFurnace : Multiblock
 
         CleanupZeroCountSlots();
 
-        // 로드 후에도 우선순위/예약 규칙을 강제해서 모순 제거(진행도 유지 방식)
+        // 로드 후에도 우선순위/예약 규칙 강제
         RecomputeReservationsByPriority();
 
-        // meta는 "연료가 타는중" 기준으로 맞춤
         RequestApplyFurnaceMeta(IsBurning);
     }
 

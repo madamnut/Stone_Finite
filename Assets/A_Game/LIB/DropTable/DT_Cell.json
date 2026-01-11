@@ -3,9 +3,33 @@
     { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 }
   ],
 
-  "Grass": [
+  "Grass_Top": [
     { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
     { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_Left": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_Right": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_TopLeft": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_TopRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_LeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_TopLeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 3, "max": 6 }
   ],
   "Clay": [
     { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
@@ -75,15 +99,15 @@
   ],
   "Ore_Copper": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Copper Ore Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Copper Ore Chunk", "probability": 1, "min": 2, "max": 4 }
   ],
   "Ore_Iron": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Iron Ore Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Iron Ore Chunk", "probability": 1, "min": 2, "max": 4 }
   ],
   "Ore_Tin": [
     { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
-    { "itemId": "Tin Ore Chunk", "probability": 1, "min": 2, "max": 2 }
+    { "itemId": "Tin Ore Chunk", "probability": 1, "min": 2, "max": 4 }
   ],
 
   "Primal Workbench_L": [
@@ -111,12 +135,6 @@
 
 
   
-  "Mud Furnace_0": [
-    { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
-  ],
-  "Mud Furnace_1": [
-    { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
-  ],
   "Campfire_L": [
     { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
   ],
@@ -156,7 +174,54 @@
   "Clay Brick Cell": [
     { "itemId": "Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
   ],
+  "Coke Oven_0": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_1": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_2": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_3": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_4": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_5": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_6": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_7": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_8": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+
   "Refractory Clay Brick Cell": [
     { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+
+
+  "Copper Cell": [
+    { "itemId": "Copper Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Cell": [
+    { "itemId": "Tin Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Cell": [
+    { "itemId": "Bronze Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Cell": [
+    { "itemId": "Iron Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Cell": [
+    { "itemId": "Steel Plate", "probability": 1, "min": 1, "max": 1 }
   ]
 }

@@ -324,8 +324,8 @@ public class ClayKiln : Multiblock
     void RequestApplyKilnMeta(bool burning)
     {
         if (Manager == null) return;
-        // ✅ 연료 타는중이면 meta=1, 아니면 meta=0
-        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 1 : 0));
+        // ✅ 연료 타는중이면 meta=6, 아니면 meta=0
+        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
     }
 
     void CleanupZeroCountSlots()

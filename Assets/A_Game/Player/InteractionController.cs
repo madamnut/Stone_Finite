@@ -1,4 +1,4 @@
-// InteractionController.cs
+// InteractionController.cs (전체 교체본)
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -176,7 +176,6 @@ public class InteractionController : MonoBehaviour
         {
             if (_state == GameState.Ingame)
             {
-                // ✅ 공통 처리로 통일
                 OpenModule(handcraftModule);
             }
             else if (_state == GameState.Inpanel)
@@ -673,6 +672,29 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
+    // ✅ 추가: 플레이어의 "해당 좌표에 대한 상대 위치(2축)" 계산
+    void ComputeRelativeDirs(int cx, int cy, out WorldManager.RelV relV, out WorldManager.RelH relH)
+    {
+        float half = cellSize * 0.5f;
+        float cellCenterX = cx * cellSize + half;
+        float cellCenterY = cy * cellSize + half;
+
+        Vector3 p = player.transform.position;
+
+        float dx = p.x - cellCenterX;
+        float dy = p.y - cellCenterY;
+
+        const float EPS = 0.001f;
+
+        if (dy > EPS) relV = WorldManager.RelV.Up;
+        else if (dy < -EPS) relV = WorldManager.RelV.Down;
+        else relV = WorldManager.RelV.Neutral;
+
+        if (dx > EPS) relH = WorldManager.RelH.Right;
+        else if (dx < -EPS) relH = WorldManager.RelH.Left;
+        else relH = WorldManager.RelH.Neutral;
+    }
+
     bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
         string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
@@ -701,6 +723,7 @@ public class InteractionController : MonoBehaviour
             targetLayer = WorldManager.CellLayer.Solid;
         }
 
+        // 기존 기본 제약(레이어 충돌)만 유지. (실제 설치 가능 판정은 WorldManager에서)
         if (targetLayer == WorldManager.CellLayer.Solid)
         {
             if (hasSolid) return false;
@@ -712,12 +735,14 @@ public class InteractionController : MonoBehaviour
         }
 
         worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId);
+        if (placeId == 0) return false;
 
-        bool placed;
-        if (targetLayer == WorldManager.CellLayer.Solid)
-            placed = worldManager.PlaceSolid(cx, cy, placeId);
-        else
-            placed = worldManager.PlaceBG(cx, cy, placeId);
+        ComputeRelativeDirs(cx, cy, out var relV, out var relH);
+
+        bool placed =
+            (targetLayer == WorldManager.CellLayer.Solid)
+                ? worldManager.PlaceSolid(cx, cy, placeId, relV, relH)
+                : worldManager.PlaceBG(cx, cy, placeId, relV, relH);
 
         if (!placed) return false;
 
@@ -732,6 +757,7 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
+    // (이하 HandleBuildMultiblock ~ 끝까지 기존 그대로)
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         ushort solidId = worldManager.GetSolidId(cx, cy);
@@ -748,13 +774,11 @@ public class InteractionController : MonoBehaviour
         int worldW = worldManager.settings.width;
         int worldH = worldManager.settings.height;
 
-        // ✅ 후보 수집: (def, originX, originY, area)
         MultiblockLibrary.Def bestDef = null;
         int bestOx = 0;
         int bestOy = 0;
         int bestArea = -1;
 
-        // defs 순서가 tie-breaker(면적 동일하면 먼저 나온 것 유지)
         for (int di = 0; di < defs.Count; di++)
         {
             var def = defs[di];
@@ -762,10 +786,8 @@ public class InteractionController : MonoBehaviour
             int patternWidth = def.width;
             int patternHeight = def.height;
 
-            // 방어
             if (patternWidth <= 0 || patternHeight <= 0) continue;
 
-            // 클릭한 셀이 패턴 내부 어느 좌표(px,py)일 수 있는지 전부 시도
             for (int py = 0; py < patternHeight; py++)
             {
                 for (int px = 0; px < patternWidth; px++)
@@ -811,7 +833,6 @@ public class InteractionController : MonoBehaviour
                     {
                         int area = patternWidth * patternHeight;
 
-                        // ✅ 큰 것 우선
                         if (area > bestArea)
                         {
                             bestArea = area;
@@ -819,9 +840,6 @@ public class InteractionController : MonoBehaviour
                             bestOx = originX;
                             bestOy = originY;
                         }
-
-                        // 같은 def에서 다른 origin이 또 매칭될 수 있는데
-                        // 동일 면적이므로 tie-breaker 유지하려면 여기서 continue만
                     }
                 }
             }
@@ -836,7 +854,6 @@ public class InteractionController : MonoBehaviour
 
         return false;
     }
-
 
     bool GetMouseCell(out int x, out int y)
     {
@@ -883,8 +900,6 @@ public class InteractionController : MonoBehaviour
         SceneManager.LoadScene("Loby");
     }
 
-    // ✅ 멀티블럭이 UI 열 때 호출할 공용 메서드
-    // 변경: 생성된 인스턴스를 반환
     public GameObject OpenModule(GameObject modulePrefab)
     {
         _state = GameState.Inpanel;

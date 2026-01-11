@@ -224,8 +224,8 @@ public class Campfire : Multiblock
     void RequestApplyCampfireMeta(bool burning)
     {
         if (Manager == null) return;
-        // Campfire는 모든 파트가 같이 변함: Default(meta=0), Burning(meta=1)
-        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 1 : 0));
+        // Campfire는 모든 파트가 같이 변함: Default(meta=0), Burning(meta=6)
+        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
     }
 
     void CleanupZeroCountSlots()

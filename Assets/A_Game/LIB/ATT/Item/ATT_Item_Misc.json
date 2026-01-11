@@ -11,7 +11,6 @@
     "spriteName": "Dirt",
     "maxStack": 32,
     "tags": ["Placeable"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
@@ -32,7 +31,6 @@
     "spriteName": "Mud",
     "maxStack": 32,
     "tags": ["Placeable"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
@@ -60,7 +58,6 @@
     "spriteName": "Unfired Clay Slab",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 250,
@@ -75,7 +72,6 @@
     "spriteName": "Unfired Clay Brick",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 200,
@@ -90,7 +86,6 @@
     "spriteName": "Unfired Clay Bowl",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 300,
@@ -105,7 +100,6 @@
     "spriteName": "Unfired Clay Pot",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 400,
@@ -134,7 +128,6 @@
     "spriteName": "Clay Brick Cell",
     "maxStack": 32,
     "tags": ["Placeable"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
@@ -176,7 +169,6 @@
     "spriteName": "Unfired Refractory Clay Brick",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 500,
@@ -191,7 +183,6 @@
     "spriteName": "Unfired Refractory Clay Slab",
     "maxStack": 32,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 550,
@@ -214,12 +205,12 @@
     "maxStack": 32,
     "tags": []
   },
+
   "Refractory Clay Brick Cell": {
     "name": "Refractory Clay Brick Cell",
     "spriteName": "Refractory Clay Brick Cell",
     "maxStack": 32,
     "tags": ["Placeable"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
@@ -233,7 +224,6 @@
     "spriteName": "Unfired Refractory Clay Crucible",
     "maxStack": 16,
     "tags": ["Fireable"],
-
     "toolActions": {
       "Fire": {
         "fireTicks": 600,
@@ -248,25 +238,21 @@
     "spriteName": "Refractory Clay Crucible",
     "maxStack": 1,
     "tags": ["Crucible"],
-
     "toolActions": {
       "Crucible": {
         "capacity": 50
       }
     },
-
     "details": {
       "layers": []
     }
   },
-
 
   "Clay": {
     "name": "Clay",
     "spriteName": "Clay",
     "maxStack": 32,
     "tags": ["Placeable"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
@@ -280,10 +266,10 @@
     "spriteName": "Grass Scrap",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 20,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -295,10 +281,10 @@
     "spriteName": "Leaf",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 20,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -310,10 +296,10 @@
     "spriteName": "Plant",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 40,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -325,10 +311,10 @@
     "spriteName": "Plant Fiber",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 40,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -340,7 +326,6 @@
     "spriteName": "Plant Twine",
     "maxStack": 32,
     "tags": ["Binding", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -349,6 +334,7 @@
       },
       "Fuel": {
         "burnTicks": 60,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -360,7 +346,6 @@
     "spriteName": "Short Plant Twine",
     "maxStack": 32,
     "tags": ["Binding", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -369,6 +354,7 @@
       },
       "Fuel": {
         "burnTicks": 40,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -380,7 +366,6 @@
     "spriteName": "Long Plant Twine",
     "maxStack": 32,
     "tags": ["Binding", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -389,6 +374,7 @@
       },
       "Fuel": {
         "burnTicks": 80,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -400,10 +386,10 @@
     "spriteName": "Twig",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 80,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -415,10 +401,10 @@
     "spriteName": "Branch",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 240,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -430,10 +416,10 @@
     "spriteName": "Bough",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 340,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -445,19 +431,17 @@
     "spriteName": "Log",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Log"
       },
-
       "Fuel": {
         "burnTicks": 600,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 2
       },
-
       "Fire": {
         "fireTicks": 600,
         "resultItem": "Charcoal",
@@ -471,10 +455,10 @@
     "spriteName": "Bark Strip",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 100,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -486,19 +470,17 @@
     "spriteName": "Stripped Log",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Stripped Log"
       },
-
       "Fuel": {
         "burnTicks": 520,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 2
       },
-
       "Fire": {
         "fireTicks": 520,
         "resultItem": "Charcoal",
@@ -512,14 +494,13 @@
     "spriteName": "Half Stripped Log",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 380,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       },
-
       "Fire": {
         "fireTicks": 380,
         "resultItem": "Charcoal",
@@ -533,19 +514,17 @@
     "spriteName": "Quarter Stripped Log",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Solid",
         "cell": "Firewood"
       },
-
       "Fuel": {
         "burnTicks": 220,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       },
-
       "Fire": {
         "fireTicks": 220,
         "resultItem": "Charcoal",
@@ -559,10 +538,10 @@
     "spriteName": "Wood Shavings",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 140,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -574,15 +553,14 @@
     "spriteName": "Wooden Plank",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Wooden Plank"
       },
-
       "Fuel": {
         "burnTicks": 460,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -594,15 +572,14 @@
     "spriteName": "Wooden Frame",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Dynamic",
         "cell": "Wooden Frame"
       },
-
       "Fuel": {
         "burnTicks": 680,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 2
       }
@@ -614,15 +591,14 @@
     "spriteName": "Wooden Platform",
     "maxStack": 32,
     "tags": ["Placeable", "Fuel"],
-
     "toolActions": {
       "Place": {
         "layer": "Default",
         "cell": "Wooden Platform"
       },
-
       "Fuel": {
         "burnTicks": 520,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 2
       }
@@ -634,10 +610,10 @@
     "spriteName": "Charcoal",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 1800,
+        "temperature": 2,
         "resultItem": "Ash",
         "amount": 4
       }
@@ -649,16 +625,15 @@
     "spriteName": "Wooden Stick",
     "maxStack": 32,
     "tags": ["Handle", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Handle",
         "type": "Standard",
         "potentialDurability": 16
       },
-
       "Fuel": {
         "burnTicks": 120,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -670,16 +645,15 @@
     "spriteName": "Short Wooden Stick",
     "maxStack": 32,
     "tags": ["Handle", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Handle",
         "type": "Short",
         "potentialDurability": 16
       },
-
       "Fuel": {
         "burnTicks": 80,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -691,16 +665,15 @@
     "spriteName": "Long Wooden Stick",
     "maxStack": 32,
     "tags": ["Handle", "Fuel"],
-
     "toolActions": {
       "Combine": {
         "partType": "Handle",
         "type": "Long",
         "potentialDurability": 16
       },
-
       "Fuel": {
         "burnTicks": 160,
+        "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -719,19 +692,18 @@
     "spriteName": "Coal Chunk",
     "maxStack": 32,
     "tags": ["Fuel", "Cokable"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 3600,
+        "temperature": 2,
         "resultItem": "Ash",
         "amount": 4
       },
-
       "Coke": {
         "cokeTicks": 400,
         "results": [
-          { "item":"Coke", "amount": 1 },
-          { "item":"Tar",  "amount": 1 }
+          { "item": "Coke", "amount": 1 },
+          { "item": "Tar", "amount": 1 }
         ]
       }
     }
@@ -742,10 +714,10 @@
     "spriteName": "Coke",
     "maxStack": 32,
     "tags": ["Fuel"],
-
     "toolActions": {
       "Fuel": {
         "burnTicks": 4800,
+        "temperature": 3,
         "resultItem": "Ash",
         "amount": 1
       }
@@ -764,10 +736,9 @@
     "spriteName": "Copper Ore Chunk",
     "maxStack": 32,
     "tags": ["Smeltable"],
-
     "toolActions": {
       "Smelt": {
-        "temperature": 1,
+        "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 5
@@ -780,10 +751,9 @@
     "spriteName": "Iron Ore Chunk",
     "maxStack": 32,
     "tags": ["Smeltable"],
-
     "toolActions": {
       "Smelt": {
-        "temperature": 2,
+        "temperature": 3,
         "smeltTicks": 260,
         "resultItem": "Molten Iron",
         "amount": 5
@@ -796,7 +766,6 @@
     "spriteName": "Tin Ore Chunk",
     "maxStack": 32,
     "tags": ["Smeltable"],
-
     "toolActions": {
       "Smelt": {
         "temperature": 1,
@@ -833,7 +802,6 @@
     "spriteName": "Raw Beef",
     "maxStack": 16,
     "tags": ["Cookable"],
-
     "toolActions": {
       "Cook": {
         "cookTicks": 300,
@@ -848,7 +816,6 @@
     "spriteName": "Cooked Beef",
     "maxStack": 16,
     "tags": ["Eatable"],
-
     "toolActions": {
       "Eat": {
         "Hunger": 25
@@ -1081,12 +1048,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Large",
         "resultShapeSuffix": "Plate",
-        "requiredVolume": 5
+        "requiredVolume": 15
       }
     }
   },
@@ -1097,12 +1063,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": null,
         "resultShapeSuffix": "Plate",
-        "requiredVolume": 5
+        "requiredVolume": 10
       }
     }
   },
@@ -1113,7 +1078,6 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Small",
@@ -1129,12 +1093,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Long",
         "resultShapeSuffix": "Rod",
-        "requiredVolume": 5
+        "requiredVolume": 15
       }
     }
   },
@@ -1145,12 +1108,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": null,
         "resultShapeSuffix": "Rod",
-        "requiredVolume": 5
+        "requiredVolume": 10
       }
     }
   },
@@ -1161,7 +1123,6 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Short",
@@ -1177,12 +1138,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Large",
         "resultShapeSuffix": "Preform",
-        "requiredVolume": 5
+        "requiredVolume": 20
       }
     }
   },
@@ -1193,12 +1153,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": null,
         "resultShapeSuffix": "Preform",
-        "requiredVolume": 5
+        "requiredVolume": 15
       }
     }
   },
@@ -1209,12 +1168,11 @@
     "maxStack": 1,
     "maxDurability": 128,
     "tags": ["Mold"],
-
     "toolActions": {
       "Cast": {
         "resultSizePrefix": "Small",
         "resultShapeSuffix": "Preform",
-        "requiredVolume": 5
+        "requiredVolume": 10
       }
     }
   }

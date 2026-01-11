@@ -1,7 +1,9 @@
 // CokeOven.cs (전체 교체본)
 // - FuelIn/FuelOut + MaterialIn + MaterialOut0/1
 // - MaterialIn 아이템의 toolActions["Coke"] 수행 (cokeTicks + results[])
-// - 연료는 toolActions["Fuel"] 사용 (burnTicks + resultItem + amount)
+// - 연료는 toolActions["Fuel"] 사용 (burnTicks + temperature + resultItem + amount)
+// - 내부 온도 시스템: "현재 연소 중인 연료"의 temperature를 캐시해서 사용 (CokeOven cap=3)
+//   - Coke 작업은 최소 온도 2 이상일 때만 진행 (Wood temp=1 같은 연료로는 진행 불가)
 // - VFX: Fire_02 (root 기준 local offset 1.5, 0.67) / 연료 타는 중 + hold 동안 표시
 // - Save/Load: Multiblock.SaveData.PayloadJson 사용 (CustomJson 없음)
 // - Drop: World.itemDropper.SpawnDroppedItem 사용 (WorldManager.DropItemToGround 없음)
@@ -22,6 +24,10 @@ public class CokeOven : Multiblock
 
     const int FIRE_HOLD_TICKS = 5;
 
+    // 온도 룰
+    const int MAX_TEMP = 3;        // CokeOven cap
+    const int MIN_COKE_TEMP = 2;   // Coke 공정 최소 온도
+
     // Slots
     ItemData _fuelIn;
     ItemData _fuelOut;
@@ -33,6 +39,9 @@ public class CokeOven : Multiblock
     // Fuel state
     int _fuelTicksLeft = 0;
     int _fuelTicksMax = 0;
+
+    // 현재 연소 중인 연료로부터 캐시된 온도
+    int _currentTemp = 0;
 
     // 연료 부산물은 "연료 1개가 다 타는 순간" FuelOut으로 푸시 (막히면 pending 유지)
     string _fuelResultItemId = null;
@@ -106,6 +115,17 @@ public class CokeOven : Multiblock
         }
     }
 
+    public int CurrentTemperature => _currentTemp;
+
+    public float Temperature01
+    {
+        get
+        {
+            if (MAX_TEMP <= 0) return 0f;
+            return Mathf.Clamp01((float)_currentTemp / MAX_TEMP);
+        }
+    }
+
     // ─────────────────────────────────────────────
     // Interaction / VFX
     // ─────────────────────────────────────────────
@@ -175,16 +195,24 @@ public class CokeOven : Multiblock
                 // FuelOut 막힘이면 새 연료 점화 금지
                 if (!IsFuelOutBlockedForNewFuel())
                 {
-                    if (TryConsumeFuelOne(out int gainedTicks, out string fuelResId, out int fuelResAmt))
+                    // 점화 전에 "이번 연료가 제공할 온도"를 확인해서,
+                    // MIN_COKE_TEMP 미만이면 연료를 낭비하지 않음
+                    int peekTemp = PeekFuelTemperatureClamped();
+                    if (peekTemp >= MIN_COKE_TEMP)
                     {
-                        _fuelTicksLeft = gainedTicks;
-                        _fuelTicksMax = gainedTicks;
+                        if (TryConsumeFuelOne(out int gainedTicks, out string fuelResId, out int fuelResAmt, out int fuelTemp))
+                        {
+                            _fuelTicksLeft = gainedTicks;
+                            _fuelTicksMax = gainedTicks;
 
-                        _fuelResultItemId = fuelResId;
-                        _fuelResultAmount = Mathf.Max(1, fuelResAmt);
+                            _currentTemp = Mathf.Clamp(fuelTemp, 0, MAX_TEMP);
 
-                        // 점화되면 hold는 꺼짐
-                        _fireHoldTicksLeft = 0;
+                            _fuelResultItemId = fuelResId;
+                            _fuelResultAmount = Mathf.Max(1, fuelResAmt);
+
+                            // 점화되면 hold는 꺼짐
+                            _fireHoldTicksLeft = 0;
+                        }
                     }
                 }
             }
@@ -197,10 +225,11 @@ public class CokeOven : Multiblock
             if (_fuelTicksLeft < 0) _fuelTicksLeft = 0;
         }
 
-        // (3) 연료가 방금 꺼졌으면 hold 시작
+        // (3) 연료가 방금 꺼졌으면 hold 시작 + 온도 리셋
         if (wasBurning && _fuelTicksLeft <= 0)
         {
             _fireHoldTicksLeft = FIRE_HOLD_TICKS;
+            _currentTemp = 0;
         }
 
         // (4) hold 감소
@@ -210,8 +239,8 @@ public class CokeOven : Multiblock
             if (_fireHoldTicksLeft < 0) _fireHoldTicksLeft = 0;
         }
 
-        // (5) Coke 진행: "틱 시작 시 불꽃 ON" 기준(= wasBurning)
-        if (wasBurning && hasWork)
+        // (5) Coke 진행: "틱 시작 시 불꽃 ON" 기준(= wasBurning) + 최소 온도 충족
+        if (wasBurning && hasWork && _currentTemp >= MIN_COKE_TEMP)
         {
             // 캐시 갱신
             _cokeTicksNeed = needTicks;
@@ -246,8 +275,8 @@ public class CokeOven : Multiblock
         }
         else
         {
-            // 출력 막힘/입력 없음/작업 불가면 진행도는 0 유지
-            if (!hasWork)
+            // 출력 막힘/입력 없음/작업 불가/온도 부족이면 진행도는 0 유지
+            if (!hasWork || _currentTemp < MIN_COKE_TEMP)
                 ResetCokeProgress();
         }
 
@@ -260,7 +289,7 @@ public class CokeOven : Multiblock
     void RequestApplyCokeOvenMeta(bool burning)
     {
         if (Manager == null) return;
-        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 1 : 0));
+        Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
     }
 
     // ─────────────────────────────────────────────
@@ -372,6 +401,20 @@ public class CokeOven : Multiblock
     // ─────────────────────────────────────────────
     // Fuel
     // ─────────────────────────────────────────────
+    int PeekFuelTemperatureClamped()
+    {
+        if (_fuelIn == null) return 0;
+        if (_fuelIn.ToolActions == null) return 0;
+        if (!_fuelIn.ToolActions.TryGetValue("Fuel", out Dictionary<string, object> cfg) || cfg == null)
+            return 0;
+
+        int t = 0;
+        if (cfg.TryGetValue("temperature", out var tObj) && tObj != null)
+            t = ToInt(tObj, 0);
+
+        return Mathf.Clamp(t, 0, MAX_TEMP);
+    }
+
     bool IsFuelOutBlockedForNewFuel()
     {
         if (_fuelIn == null) return true;
@@ -397,11 +440,12 @@ public class CokeOven : Multiblock
         return IsOutputFullOrBlocked(_fuelOut, resId, resAmt);
     }
 
-    bool TryConsumeFuelOne(out int gainedTicks, out string resultItemId, out int resultAmount)
+    bool TryConsumeFuelOne(out int gainedTicks, out string resultItemId, out int resultAmount, out int temperature)
     {
         gainedTicks = 0;
         resultItemId = null;
         resultAmount = 1;
+        temperature = 0;
 
         if (_fuelIn == null) return false;
         if (_fuelIn.Count <= 0) return false;
@@ -415,6 +459,9 @@ public class CokeOven : Multiblock
 
         gainedTicks = ToInt(btObj, 0);
         if (gainedTicks <= 0) return false;
+
+        if (cfg.TryGetValue("temperature", out var tObj) && tObj != null)
+            temperature = ToInt(tObj, 0);
 
         if (cfg.TryGetValue("resultItem", out var riObj) && riObj != null)
             resultItemId = riObj.ToString();
@@ -601,6 +648,8 @@ public class CokeOven : Multiblock
         root["fuelLeft"] = _fuelTicksLeft;
         root["fuelMax"] = _fuelTicksMax;
 
+        root["temp"] = _currentTemp;
+
         root["fuelResId"] = _fuelResultItemId;
         root["fuelResAmt"] = _fuelResultAmount;
 
@@ -635,13 +684,13 @@ public class CokeOven : Multiblock
 
     public override void FromSaveData(SaveData data)
     {
-        // 기본 필드들은 MultiblockManager가 Initialize+배치로 맞춰주고,
-        // 여기서는 payload만 복원 (ClayKiln/BrickFurnace 패턴)
         _fuelIn = _fuelOut = null;
         _matIn = _matOut0 = _matOut1 = null;
 
         _fuelTicksLeft = 0;
         _fuelTicksMax = 0;
+
+        _currentTemp = 0;
 
         _fuelResultItemId = null;
         _fuelResultAmount = 1;
@@ -687,6 +736,8 @@ public class CokeOven : Multiblock
 
         _fuelTicksLeft = root.Value<int?>("fuelLeft") ?? 0;
         _fuelTicksMax = root.Value<int?>("fuelMax") ?? 0;
+
+        _currentTemp = Mathf.Clamp(root.Value<int?>("temp") ?? 0, 0, MAX_TEMP);
 
         _fuelResultItemId = root.Value<string>("fuelResId");
         _fuelResultAmount = root.Value<int?>("fuelResAmt") ?? 1;

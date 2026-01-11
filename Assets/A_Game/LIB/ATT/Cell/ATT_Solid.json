@@ -2,6 +2,7 @@
   "Air": {
     "id": 0,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Air" }
@@ -11,6 +12,7 @@
   "Rock": {
     "id": 1,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Rock" }
@@ -19,112 +21,307 @@
   "Dirt": {
     "id": 2,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Dirt" }
     ]
   },
 
-  "Grass": {
+  "Grass_Top": {
     "id": 3,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Top",          "meta": 0, "sprite": "Grass_Top" },
-      { "key": "Left",         "meta": 1, "sprite": "Grass_Left" },
-      { "key": "Right",        "meta": 2, "sprite": "Grass_Right" },
-      { "key": "TopLeft",      "meta": 3, "sprite": "Grass_TopLeft" },
-      { "key": "TopRight",     "meta": 4, "sprite": "Grass_TopRight" },
-      { "key": "LeftRight",    "meta": 5, "sprite": "Grass_LeftRight" },
-      { "key": "TopLeftRight", "meta": 6, "sprite": "Grass_TopLeftRight" }
+      { "key": "Default", "meta": 0, "sprite": "Grass_Top" }
+    ]
+  },
+  "Grass_Left": {
+    "id": 4,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_Left" }
+    ]
+  },
+  "Grass_Right": {
+    "id": 5,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_Right" }
+    ]
+  },
+  "Grass_TopLeft": {
+    "id": 6,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopLeft" }
+    ]
+  },
+  "Grass_TopRight": {
+    "id": 7,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopRight" }
+    ]
+  },
+  "Grass_LeftRight": {
+    "id": 8,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_LeftRight" }
+    ]
+  },
+  "Grass_TopLeftRight": {
+    "id": 9,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopLeftRight" }
     ]
   },
 
   "Clay": {
-    "id": 4,
+    "id": 10,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay" }
     ]
   },
   "Mud": {
-    "id": 5,
+    "id": 11,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Mud" }
     ]
   },
   "Log": {
-    "id": 6,
+    "id": 12,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Log" }
     ]
   },
   "Stripped Log": {
-    "id": 7,
+    "id": 13,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Stripped Log" }
     ]
   },
   "Firewood": {
-    "id": 8,
+    "id": 14,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Firewood" }
     ]
   },
   "Wooden Plank": {
-    "id": 9,
+    "id": 15,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Plank" }
     ]
   },
   "Wooden Platform": {
-    "id": 10,
+    "id": 16,
     "collidable": true,
+    "isPlatform": true,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
     ]
   },
   "Wooden Frame": {
-    "id": 11,
+    "id": 17,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Frame" }
     ]
   },
   "Clay Brick Cell": {
-    "id": 12,
+    "id": 18,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Brick Cell" }
     ]
   },
   "Refractory Clay Brick Cell": {
-    "id": 13,
+    "id": 19,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Refractory Clay Brick Cell" }
     ]
   },
-
+  "Copper Cell": {
+    "id": 20,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Cell" }
+    ]
+  },
+  "Tin Cell": {
+    "id": 21,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Cell" }
+    ]
+  },
+  "Bronze Cell": {
+    "id": 22,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Cell" }
+    ]
+  },
+  "Iron Cell": {
+    "id": 23,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Cell" }
+    ]
+  },
+  "Steel Cell": {
+    "id": 24,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Cell" }
+    ]
+  },
+  "Copper Frame": {
+    "id": 25,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Frame" }
+    ]
+  },
+  "Tin Frame": {
+    "id": 26,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Frame" }
+    ]
+  },
+  "Bronze Frame": {
+    "id": 27,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Frame" }
+    ]
+  },
+  "Iron Frame": {
+    "id": 28,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Frame" }
+    ]
+  },
+  "Steel Frame": {
+    "id": 29,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Frame" }
+    ]
+  },
+  "Copper Platform": {
+    "id": 30,
+    "collidable": true,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Platform" }
+    ]
+  },
+  "Tin Platform": {
+    "id": 31,
+    "collidable": true,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Platform" }
+    ]
+  },
+  "Bronze Platform": {
+    "id": 32,
+    "collidable": true,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Platform" }
+    ]
+  },
+  "Iron Platform": {
+    "id": 33,
+    "collidable": true,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Platform" }
+    ]
+  },
+  "Steel Platform": {
+    "id": 34,
+    "collidable": true,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Platform" }
+    ]
+  },
 
   "Sand": {
     "id": 1000,
     "collidable": true,
+    "isPlatform": false,
     "gravity": true,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Sand" }
@@ -133,6 +330,7 @@
   "Gravel": {
     "id": 1001,
     "collidable": true,
+    "isPlatform": false,
     "gravity": true,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Gravel" }
@@ -142,6 +340,7 @@
   "Trunk": {
     "id": 2000,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Trunk" }
@@ -150,6 +349,7 @@
   "Leaf": {
     "id": 2001,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Leaf" }
@@ -159,6 +359,7 @@
   "Plant": {
     "id": 2002,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Plant", "attachedAt": "Down" }
@@ -167,6 +368,7 @@
   "Bush": {
     "id": 2003,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Bush", "attachedAt": "Down" }
@@ -175,6 +377,7 @@
   "Stone_Pile": {
     "id": 2004,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Stone_Pile", "attachedAt": "Down" }
@@ -183,6 +386,7 @@
   "Small_Stone_Pile": {
     "id": 2005,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Small_Stone_Pile", "attachedAt": "Down" }
@@ -192,6 +396,7 @@
   "Ore_Coal": {
     "id": 3000,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Ore_Coal" }
@@ -200,6 +405,7 @@
   "Ore_Copper": {
     "id": 3001,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Ore_Copper" }
@@ -208,6 +414,7 @@
   "Ore_Iron": {
     "id": 3002,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Ore_Iron" }
@@ -216,6 +423,7 @@
   "Ore_Tin": {
     "id": 3003,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Ore_Tin" }
@@ -225,6 +433,7 @@
   "Granite": {
     "id": 4000,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Granite" }
@@ -233,16 +442,17 @@
   "Amphibolite": {
     "id": 4001,
     "collidable": true,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Amphibolite" }
     ]
   },
 
-
   "Primal Workbench_L": {
     "id": 5000,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Primal Workbench_L" }
@@ -251,6 +461,7 @@
   "Primal Workbench_R": {
     "id": 5001,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
@@ -259,26 +470,29 @@
   "Campfire_L": {
     "id": 5002,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "brightness": 0,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Campfire_L" },
-      { "key": "Burning", "meta": 1, "sprite": "Campfire_L", "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Campfire_L", "brightness_override": 15 }
     ]
   },
   "Campfire_R": {
     "id": 5003,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "brightness": 0,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Campfire_R" },
-      { "key": "Burning", "meta": 1, "sprite": "Campfire_R", "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Campfire_R", "brightness_override": 15 }
     ]
   },
   "Wooden Crate_L": {
     "id": 5004,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Crate_L" }
@@ -287,6 +501,7 @@
   "Wooden Crate_R": {
     "id": 5005,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Wooden Crate_R" }
@@ -295,78 +510,87 @@
   "Clay Kiln_BL": {
     "id": 5006,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BL" },
-      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_BL",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_BL", "brightness_override": 15 }
     ]
   },
   "Clay Kiln_BR": {
     "id": 5007,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BR" },
-      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_BR",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_BR", "brightness_override": 15 }
     ]
   },
   "Clay Kiln_TL": {
     "id": 5008,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TL" },
-      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_TL",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_TL", "brightness_override": 15 }
     ]
   },
   "Clay Kiln_TR": {
     "id": 5009,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TR" },
-      { "key": "Firing",  "meta": 1, "sprite": "Clay Kiln_TR",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_TR", "brightness_override": 15 }
     ]
   },
   "Brick Furnace_BL": {
     "id": 5010,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BL" },
-      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_BL",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_BL", "brightness_override": 15 }
     ]
   },
   "Brick Furnace_BR": {
     "id": 5011,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BR" },
-      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_BR",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_BR", "brightness_override": 15 }
     ]
   },
   "Brick Furnace_TL": {
     "id": 5012,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TL" },
-      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_TL",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_TL", "brightness_override": 15 }
     ]
   },
   "Brick Furnace_TR": {
     "id": 5013,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TR" },
-      { "key": "Firing",  "meta": 1, "sprite": "Brick Furnace_TR",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_TR", "brightness_override": 15 }
     ]
   },
   "Toolbench_BL": {
     "id": 5014,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Toolbench_BL" }
@@ -375,6 +599,7 @@
   "Toolbench_BR": {
     "id": 5015,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Toolbench_BR" }
@@ -383,6 +608,7 @@
   "Toolbench_TL": {
     "id": 5016,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Toolbench_TL" }
@@ -391,6 +617,7 @@
   "Toolbench_TR": {
     "id": 5017,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Toolbench_TR" }
@@ -399,95 +626,105 @@
   "Coke Oven_0": {
     "id": 5018,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_0" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_0",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_0", "brightness_override": 15 }
     ]
   },
   "Coke Oven_1": {
     "id": 5019,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_1" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_1",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_1", "brightness_override": 15 }
     ]
   },
   "Coke Oven_2": {
     "id": 5020,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_2" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_2",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_2", "brightness_override": 15 }
     ]
   },
   "Coke Oven_3": {
     "id": 5021,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_3" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_3",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_3", "brightness_override": 15 }
     ]
   },
   "Coke Oven_4": {
     "id": 5022,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_4" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_4",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_4", "brightness_override": 15 }
     ]
   },
   "Coke Oven_5": {
     "id": 5023,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_5" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_5",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_5", "brightness_override": 15 }
     ]
   },
   "Coke Oven_6": {
     "id": 5024,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_6" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_6",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_6", "brightness_override": 15 }
     ]
   },
   "Coke Oven_7": {
     "id": 5025,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_7" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_7",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_7", "brightness_override": 15 }
     ]
   },
   "Coke Oven_8": {
     "id": 5026,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Coke Oven_8" },
-      { "key": "Active",  "meta": 1, "sprite": "Coke Oven_8",  "brightness_override": 15 }
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_8", "brightness_override": 15 }
     ]
   },
 
   "Torch": {
     "id": 50001,
     "collidable": false,
+    "isPlatform": false,
     "gravity": false,
     "brightness": 15,
     "variants": [
-      { "key": "Down",  "meta": 0, "sprite": "Torch_Down",  "attachedAt": "Down" },
-      { "key": "Left",  "meta": 1, "sprite": "Torch_Left",  "attachedAt": "Left" },
-      { "key": "Right", "meta": 2, "sprite": "Torch_Right", "attachedAt": "Right" },
-      { "key": "Back",  "meta": 3, "sprite": "Torch_BG",    "attachedAt": "Back" }
+      { "key": "BG",    "meta": 1, "sprite": "Torch_BG",    "attachedAt": "BG" },
+      { "key": "Down",  "meta": 3, "sprite": "Torch_Down",  "attachedAt": "Down" },
+      { "key": "Left",  "meta": 4, "sprite": "Torch_Left",  "attachedAt": "Left" },
+      { "key": "Right", "meta": 5, "sprite": "Torch_Right", "attachedAt": "Right" }
     ]
   }
 }

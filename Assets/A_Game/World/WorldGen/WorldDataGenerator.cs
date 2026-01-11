@@ -9,9 +9,18 @@ public static class WorldDataGenerator
     private const ushort ID_AIR          = 0;
     private const ushort ID_ROCK         = 1;
     private const ushort ID_DIRT         = 2;
-    private const ushort ID_GRASS        = 3;   // ✅ Grass는 id=3 고정, meta로 변형
-    private const ushort ID_CLAY         = 4;
-    private const ushort ID_MUD          = 5;
+
+    // ✅ Grass 분리: id=3~9, meta=0 고정
+    private const ushort ID_GRASS_TOP            = 3;
+    private const ushort ID_GRASS_LEFT           = 4;
+    private const ushort ID_GRASS_RIGHT          = 5;
+    private const ushort ID_GRASS_TOPLEFT        = 6;
+    private const ushort ID_GRASS_TOPRIGHT       = 7;
+    private const ushort ID_GRASS_LEFTRIGHT      = 8;
+    private const ushort ID_GRASS_TOPLEFTRIGHT   = 9;
+
+    private const ushort ID_CLAY         = 10;
+    private const ushort ID_MUD          = 11;
 
     private const ushort ID_SAND         = 1000;
     private const ushort ID_GRAVEL       = 1001;
@@ -37,16 +46,6 @@ public static class WorldDataGenerator
 
     // ── Light ──
     private const byte NATURAL_MAX = 15;
-
-    // ── Grass meta (ATT_Solid.json variants.meta) ──
-    // 0: Top, 1: Left, 2: Right, 3: TopLeft, 4: TopRight, 5: LeftRight, 6: TopLeftRight
-    private const ushort GRASS_META_TOP              = 0;
-    private const ushort GRASS_META_LEFT             = 1;
-    private const ushort GRASS_META_RIGHT            = 2;
-    private const ushort GRASS_META_TOPLEFT          = 3;
-    private const ushort GRASS_META_TOPRIGHT         = 4;
-    private const ushort GRASS_META_LEFTRIGHT        = 5;
-    private const ushort GRASS_META_TOPLEFTRIGHT     = 6;
 
     // 로그 유틸
     private static void StepLog(string label, float stepStart, float totalStart)
@@ -149,7 +148,7 @@ public static class WorldDataGenerator
         float t0 = totalStart;
 
         commonSolid = new ushort[w, h];
-        commonMeta  = new ushort[w, h]; // ✅ meta 병행
+        commonMeta  = new ushort[w, h];
         bg          = new ushort[w, h];
         commonFluid = new ushort[w, h];
 
@@ -255,20 +254,20 @@ public static class WorldDataGenerator
         StepLog("Step 8 - Sand/Gravel/Clay", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
-        // Step 9) Grass variants (id=GRASS, meta=0..6)
+        // Step 9) Grass variants (✅ 분리 ID로 교체, meta=0)
         for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
         {
             if (commonSolid[x, y] != ID_DIRT) continue;
 
-            if (TryComputeGrassMeta(x, y, commonSolid, out ushort meta))
+            if (TryComputeGrassId(x, y, commonSolid, out ushort grassId))
             {
-                commonSolid[x, y] = ID_GRASS;
-                commonMeta[x, y]  = meta;
+                commonSolid[x, y] = grassId;
+                commonMeta[x, y]  = 0;
             }
         }
 
-        StepLog("Step 9 - Grass variants (meta)", t0, totalStart);
+        StepLog("Step 9 - Grass variants (split IDs)", t0, totalStart);
         t0 = Time.realtimeSinceStartup;
 
         // Step 10) Trees
@@ -631,10 +630,10 @@ public static class WorldDataGenerator
     }
 
     // ─────────────────────────────────────────────────────────
-    // 내부: Grass meta 계산 (Dirt인 셀을 Grass로 바꿀지 + meta)
+    // 내부: Grass ID 계산 (Dirt인 셀을 Grass로 바꿀지 + 어떤 Grass ID)
     // 기존 로직 유지: "위로 어떤 솔리드라도 있으면" grass 안 됨.
     // ─────────────────────────────────────────────────────────
-    private static bool TryComputeGrassMeta(int x, int y, ushort[,] commonSolid, out ushort meta)
+    private static bool TryComputeGrassId(int x, int y, ushort[,] commonSolid, out ushort grassId)
     {
         int w = commonSolid.GetLength(0);
         int h = commonSolid.GetLength(1);
@@ -644,7 +643,7 @@ public static class WorldDataGenerator
         {
             if (commonSolid[x, yy] != ID_AIR)
             {
-                meta = 0;
+                grassId = 0;
                 return false;
             }
         }
@@ -657,15 +656,15 @@ public static class WorldDataGenerator
 
         switch (mask)
         {
-            case 1: meta = GRASS_META_TOP;          return true;
-            case 2: meta = GRASS_META_LEFT;         return true;
-            case 3: meta = GRASS_META_TOPLEFT;      return true;
-            case 4: meta = GRASS_META_RIGHT;        return true;
-            case 5: meta = GRASS_META_TOPRIGHT;     return true;
-            case 6: meta = GRASS_META_LEFTRIGHT;    return true;
-            case 7: meta = GRASS_META_TOPLEFTRIGHT; return true;
+            case 1: grassId = ID_GRASS_TOP;          return true;
+            case 2: grassId = ID_GRASS_LEFT;         return true;
+            case 3: grassId = ID_GRASS_TOPLEFT;      return true;
+            case 4: grassId = ID_GRASS_RIGHT;        return true;
+            case 5: grassId = ID_GRASS_TOPRIGHT;     return true;
+            case 6: grassId = ID_GRASS_LEFTRIGHT;    return true;
+            case 7: grassId = ID_GRASS_TOPLEFTRIGHT; return true;
             default:
-                meta = 0;
+                grassId = 0;
                 return false; // 기존 로직: 아무 조건도 아니면 Dirt 유지
         }
     }
@@ -694,8 +693,9 @@ public static class WorldDataGenerator
             int y = h - 1;
             while (y > 0 && commonSolid[x, y] == ID_AIR) y--;
 
-            // ✅ 기존: grass variant id 비교 → 이제 grass id=3이면 통과
-            if (commonSolid[x, y] != ID_GRASS) continue;
+            // ✅ Grass(3~9)면 통과
+            ushort ground = commonSolid[x, y];
+            if (ground < ID_GRASS_TOP || ground > ID_GRASS_TOPLEFTRIGHT) continue;
 
             int seedY = y + 1;
             int worldOx = x - ax;
@@ -754,7 +754,8 @@ public static class WorldDataGenerator
             int ya = y + 1;
             if (commonSolid[x, ya] != ID_AIR) continue;
 
-            if (here == ID_GRASS)
+            // ✅ Grass(3~9) 위에만 풀/덤불/돌 배치
+            if (here >= ID_GRASS_TOP && here <= ID_GRASS_TOPLEFTRIGHT)
             {
                 double r = rand.NextDouble();
                 if (r < 0.60)

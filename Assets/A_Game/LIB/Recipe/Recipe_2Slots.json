@@ -554,7 +554,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Grog", "count": 1 }
+      { "itemId": "Grog", "count": 4 }
     ],
     "outputActions": []
   },
@@ -571,7 +571,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Grog", "count": 1 }
+      { "itemId": "Grog", "count": 4 }
     ],
     "outputActions": []
   },
@@ -588,7 +588,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Grog", "count": 2 }
+      { "itemId": "Grog", "count": 8 }
     ],
     "outputActions": []
   },
