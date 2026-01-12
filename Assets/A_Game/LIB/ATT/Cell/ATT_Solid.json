@@ -713,6 +713,25 @@
       { "key": "Active",  "meta": 6, "sprite": "Coke Oven_8", "brightness_override": 15 }
     ]
   },
+  "Forge Workbench_L": {
+    "id": 5027,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Forge Workbench_L" }
+    ]
+  },
+  "Forge Workbench_R": {
+    "id": 5028,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Forge Workbench_R" }
+    ]
+  },
+
 
   "Torch": {
     "id": 50001,

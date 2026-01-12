@@ -116,6 +116,13 @@
   "Primal Workbench_R": [
     { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
   ],
+  "Forge Workbench_L": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Forge Workbench_R": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+
   "Toolbench_TL": [
     { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
   ],
@@ -147,6 +154,13 @@
   "Wooden Crate_R": [
     { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
   ],
+  "Iron Crate_L": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Crate_R": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+
   "Clay Kiln_BL": [
     { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
   ],
@@ -210,19 +224,49 @@
 
 
   "Copper Cell": [
-    { "itemId": "Copper Plate", "probability": 1, "min": 1, "max": 1 }
+    { "itemId": "Large Copper Plate", "probability": 1, "min": 1, "max": 1 }
   ],
   "Tin Cell": [
-    { "itemId": "Tin Plate", "probability": 1, "min": 1, "max": 1 }
+    { "itemId": "Large Tin Plate", "probability": 1, "min": 1, "max": 1 }
   ],
   "Bronze Cell": [
-    { "itemId": "Bronze Plate", "probability": 1, "min": 1, "max": 1 }
+    { "itemId": "Large Bronze Plate", "probability": 1, "min": 1, "max": 1 }
   ],
   "Iron Cell": [
-    { "itemId": "Iron Plate", "probability": 1, "min": 1, "max": 1 }
+    { "itemId": "Large Iron Plate", "probability": 1, "min": 1, "max": 1 }
   ],
   "Steel Cell": [
-    { "itemId": "Steel Plate", "probability": 1, "min": 1, "max": 1 }
+    { "itemId": "Large Steel Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Copper Platform": [
+    { "itemId": "Copper Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Platform": [
+    { "itemId": "Tin Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Platform": [
+    { "itemId": "Bronze Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Platform": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Platform": [
+    { "itemId": "Steel Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Copper Frame": [
+    { "itemId": "Copper Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Frame": [
+    { "itemId": "Tin Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Frame": [
+    { "itemId": "Bronze Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Frame": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Frame": [
+    { "itemId": "Steel Frame", "probability": 1, "min": 1, "max": 1 }
   ],
 
   "Torch": [

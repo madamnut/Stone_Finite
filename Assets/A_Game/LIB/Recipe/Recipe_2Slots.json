@@ -246,7 +246,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Wooden Stick", "count": 2 },
+      { "itemId": "Long Wooden Stick", "count": 4 },
       { "itemId": "Wood Shavings", "count": 1 }
     ],
     "outputActions": []

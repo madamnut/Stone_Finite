@@ -40,5 +40,145 @@
         "cell": "Torch"
       }
     }
+  },
+
+  "Copper Platform": {
+    "name": "Copper Platform",
+    "spriteName": "Copper Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Copper Platform"
+      }
+    }
+  },
+
+  "Tin Platform": {
+    "name": "Tin Platform",
+    "spriteName": "Tin Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Tin Platform"
+      }
+    }
+  },
+
+  "Bronze Platform": {
+    "name": "Bronze Platform",
+    "spriteName": "Bronze Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Bronze Platform"
+      }
+    }
+  },
+
+  "Iron Platform": {
+    "name": "Iron Platform",
+    "spriteName": "Iron Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Iron Platform"
+      }
+    }
+  },
+
+  "Steel Platform": {
+    "name": "Steel Platform",
+    "spriteName": "Steel Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Steel Platform"
+      }
+    }
+  },
+
+  "Copper Frame": {
+    "name": "Copper Frame",
+    "spriteName": "Copper Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Copper Frame"
+      }
+    }
+  },
+
+  "Tin Frame": {
+    "name": "Tin Frame",
+    "spriteName": "Tin Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Tin Frame"
+      }
+    }
+  },
+
+  "Bronze Frame": {
+    "name": "Bronze Frame",
+    "spriteName": "Bronze Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Bronze Frame"
+      }
+    }
+  },
+
+  "Iron Frame": {
+    "name": "Iron Frame",
+    "spriteName": "Iron Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Iron Frame"
+      }
+    }
+  },
+
+  "Steel Frame": {
+    "name": "Steel Frame",
+    "spriteName": "Steel Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Steel Frame"
+      }
+    }
   }
 }

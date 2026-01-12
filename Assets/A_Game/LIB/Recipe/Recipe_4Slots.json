@@ -353,10 +353,10 @@
   {
     "isOrdered": true,
     "inputs": [
-      { "itemId": "Wooden Platform", "count": 1 },
-      { "itemId": "Wooden Platform", "count": 1 },
-      { "itemId": "Wooden Platform", "count": 1 },
-      { "itemId": "Wooden Platform", "count": 1 }
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 }
     ],
     "inputConditions": [],
     "inputActions": [
@@ -468,5 +468,207 @@
         }
       ]
     ]
+  },
+
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Hot Large Copper Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Copper Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Hot Large Tin Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Tin Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Hot Large Bronze Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Bronze Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Hot Large Iron Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Iron Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": false,
+    "inputs": [
+      { "itemId": "Hot Large Steel Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Steel Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Copper Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Tin Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Bronze Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Iron Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isOrdered": true,
+    "inputs": [
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Steel Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
   }
+
 ]

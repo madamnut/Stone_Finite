@@ -20,6 +20,16 @@
       ]
     }
   ],
+  "Forge Workbench": [
+    {
+      "pattern": [
+        ["Iron Platform", "Iron Platform"]
+      ],
+      "result": [
+        ["Forge Workbench_L", "Forge Workbench_R"]
+      ]
+    }
+  ],
 
   "Toolbench": [
     {
@@ -41,6 +51,16 @@
       ],
       "result": [
         ["Wooden Crate_L", "Wooden Crate_R"]
+      ]
+    }
+  ],
+  "Iron Crate": [
+    {
+      "pattern": [
+        ["Iron Frame", "Iron Frame"]
+      ],
+      "result": [
+        ["Iron Crate_L", "Iron Crate_R"]
       ]
     }
   ],

@@ -18,6 +18,7 @@ public class MultiblockManager : MonoBehaviour
 
     [Header("Modules (Prefabs)")]
     public GameObject primalCraftModule;
+    public GameObject forgeCraftModule; // ✅ 추가
     public GameObject campfireModule;
     public GameObject woodenCrateModule;
     public GameObject clayKilnModule;
@@ -42,6 +43,7 @@ public class MultiblockManager : MonoBehaviour
     {
         RegisterFactory("Clay Kiln", () => new ClayKiln());
         RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
+        RegisterFactory("Forge Workbench", () => new ForgeWorkbench()); // ✅ 추가
         RegisterFactory("Campfire", () => new Campfire());
         RegisterFactory("Wooden Crate", () => new WoodenCrate());
         RegisterFactory("Brick Furnace", () => new BrickFurnace());
@@ -130,13 +132,14 @@ public class MultiblockManager : MonoBehaviour
     {
         GameObject prefab = moduleId switch
         {
-            "PrimalCraft"    => primalCraftModule,
-            "Campfire"       => campfireModule,
-            "Wooden Crate"   => woodenCrateModule,
-            "Clay Kiln"      => clayKilnModule,
-            "Brick Furnace"  => brickFurnaceModule,
-            "Toolbench"      => toolbenchModule,
-            "Coke Oven"      => cokeOvenModule,   // ✅ 추가
+            "PrimalCraft"     => primalCraftModule,
+            "ForgeCraft"  => forgeCraftModule, // ✅ 추가
+            "Campfire"        => campfireModule,
+            "Wooden Crate"    => woodenCrateModule,
+            "Clay Kiln"       => clayKilnModule,
+            "Brick Furnace"   => brickFurnaceModule,
+            "Toolbench"       => toolbenchModule,
+            "Coke Oven"       => cokeOvenModule,   // ✅ 추가
             _ => null
         };
 
@@ -190,6 +193,8 @@ public class MultiblockManager : MonoBehaviour
                 ui.Bind(cokeOven);
             }
         }
+        // ✅ ForgeWorkbench는 PrimalCraft와 동일하게 "모듈 내부에서" recipeLibrary/player 등을 처리한다고 가정
+        // (추가 바인딩 필요 시 여기서 케이스 추가)
     }
 
     public Multiblock Create(MultiblockLibrary.Def def, int originX, int originY)

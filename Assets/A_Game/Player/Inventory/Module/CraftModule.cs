@@ -8,16 +8,18 @@ public class CraftModule : MonoBehaviour
 {
     public enum TableType
     {
-        Hand,   // 2-slot handcraft
-        Primal  // 4-slot primal workbench
+        Hand,       // 2-slot handcraft
+        Primal,     // 4-slot primal workbench
+        Forge,      // 9-slot forge workbench
+        Industrial  // 16-slot industrial workbench
     }
 
     [Header("Table")]
     public TableType tableType = TableType.Hand;
 
     [Header("Inputs / Preview")]
-    public List<ItemSlot> inputs  = new List<ItemSlot>(4); // 인풋 슬롯(최대 4)
-    public List<ItemSlot> outputs = new List<ItemSlot>(2); // 결과 프리뷰 슬롯(2슬롯)
+    public List<ItemSlot> inputs  = new List<ItemSlot>(16); // 인풋 슬롯(최대 16)
+    public List<ItemSlot> outputs = new List<ItemSlot>(2);  // 결과 프리뷰 슬롯(2슬롯)
 
     [Header("UI")]
     public Button craftButton; // 크래프팅 실행 버튼
@@ -43,9 +45,11 @@ public class CraftModule : MonoBehaviour
             int max = inputs?.Count ?? 0;
             switch (tableType)
             {
-                case TableType.Hand:   return Mathf.Min(2, max);
-                case TableType.Primal: return Mathf.Min(4, max);
-                default:               return max;
+                case TableType.Hand:       return Mathf.Min(2, max);
+                case TableType.Primal:     return Mathf.Min(4, max);
+                case TableType.Forge:      return Mathf.Min(9, max);
+                case TableType.Industrial: return Mathf.Min(16, max);
+                default:                   return max;
             }
         }
     }
@@ -53,8 +57,9 @@ public class CraftModule : MonoBehaviour
     void Awake()
     {
         // 인풋 슬롯 초기화
-        if (inputs == null) inputs = new List<ItemSlot>(4);
+        if (inputs == null) inputs = new List<ItemSlot>(16);
         int active = ActiveInputCount;
+
         for (int i = 0; i < inputs.Count; i++)
         {
             var s = inputs[i];
@@ -68,6 +73,8 @@ public class CraftModule : MonoBehaviour
             // 테이블 타입 기준으로 사용하지 않는 슬롯은 비활성화
             if (i >= active)
                 s.gameObject.SetActive(false);
+            else
+                s.gameObject.SetActive(true);
         }
 
         // 출력(프리뷰) 슬롯 초기화

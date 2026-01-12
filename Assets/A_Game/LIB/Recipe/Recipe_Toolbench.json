@@ -19,5 +19,59 @@
       {"itemId":"Unfired Preform Mold","count":1},
       {"itemId":"Unfired Small Preform Mold","count":1}
     ]
+  },
+
+
+
+  
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Small Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Blade Head", "count": 1 },
+      { "itemId": "Bronze Awl Head", "count": 1 },
+      { "itemId": "Bronze Scraper Head", "count": 1 },
+      { "itemId": "Bronze Chisel Head", "count": 1 },
+      { "itemId": "Bronze Graver Head", "count": 1 },
+      { "itemId": "Bronze Notch Chisel Head", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Axe Head", "count": 1 },
+      { "itemId": "Bronze Adze Head", "count": 1 },
+      { "itemId": "Bronze Pestle Head", "count": 1 },
+      { "itemId": "Bronze Hammer Head", "count": 1 },
+      { "itemId": "Bronze Pickaxe Head", "count": 1 },
+      { "itemId": "Bronze Shovel Head", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Large Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Wedge Head", "count": 1 },
+      { "itemId": "Bronze Maul Head", "count": 1 }
+    ]
   }
 ]

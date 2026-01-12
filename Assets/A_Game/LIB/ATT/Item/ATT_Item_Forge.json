@@ -3,13 +3,22 @@
     "name": "Large Copper Plate",
     "spriteName": "Large Copper Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Placeable", "Smeltable", "Firable"],
     "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Copper Cell"
+      },
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Copper Plate",
+        "amount": 1
       }
     }
   },
@@ -18,7 +27,7 @@
     "name": "Copper Plate",
     "spriteName": "Copper Plate",
     "maxStack": 32,
-    "tags": ["Smeltable", "Placeable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
@@ -26,9 +35,10 @@
         "resultItem": "Molten Copper",
         "amount": 10
       },
-      "Place": {
-        "layer": "Dynamic",
-        "cell": "Copper Cell"
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Plate",
+        "amount": 1
       }
     }
   },
@@ -37,13 +47,18 @@
     "name": "Small Copper Plate",
     "spriteName": "Small Copper Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Copper Plate",
+        "amount": 1
       }
     }
   },
@@ -52,7 +67,7 @@
     "name": "Long Copper Rod",
     "spriteName": "Long Copper Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -64,6 +79,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Copper Rod",
+        "amount": 1
       }
     }
   },
@@ -72,7 +92,7 @@
     "name": "Copper Rod",
     "spriteName": "Copper Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -84,6 +104,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Rod",
+        "amount": 1
       }
     }
   },
@@ -92,7 +117,7 @@
     "name": "Short Copper Rod",
     "spriteName": "Short Copper Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -104,6 +129,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Copper Rod",
+        "amount": 1
       }
     }
   },
@@ -112,13 +142,18 @@
     "name": "Large Copper Preform",
     "spriteName": "Large Copper Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Copper Preform",
+        "amount": 1
       }
     }
   },
@@ -127,13 +162,18 @@
     "name": "Copper Preform",
     "spriteName": "Copper Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Preform",
+        "amount": 1
       }
     }
   },
@@ -142,13 +182,18 @@
     "name": "Small Copper Preform",
     "spriteName": "Small Copper Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Copper",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Copper Preform",
+        "amount": 1
       }
     }
   },
@@ -157,13 +202,22 @@
     "name": "Large Tin Plate",
     "spriteName": "Large Tin Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Placeable", "Smeltable", "Firable"],
     "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Tin Cell"
+      },
       "Smelt": {
         "temperature": 1,
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Tin Plate",
+        "amount": 1
       }
     }
   },
@@ -172,7 +226,7 @@
     "name": "Tin Plate",
     "spriteName": "Tin Plate",
     "maxStack": 32,
-    "tags": ["Smeltable", "Placeable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 1,
@@ -180,9 +234,10 @@
         "resultItem": "Molten Tin",
         "amount": 10
       },
-      "Place": {
-        "layer": "Dynamic",
-        "cell": "Tin Cell"
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Plate",
+        "amount": 1
       }
     }
   },
@@ -191,13 +246,18 @@
     "name": "Small Tin Plate",
     "spriteName": "Small Tin Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 1,
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Tin Plate",
+        "amount": 1
       }
     }
   },
@@ -206,7 +266,7 @@
     "name": "Long Tin Rod",
     "spriteName": "Long Tin Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -218,6 +278,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Tin Rod",
+        "amount": 1
       }
     }
   },
@@ -226,7 +291,7 @@
     "name": "Tin Rod",
     "spriteName": "Tin Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -238,6 +303,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Rod",
+        "amount": 1
       }
     }
   },
@@ -246,7 +316,7 @@
     "name": "Short Tin Rod",
     "spriteName": "Short Tin Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -258,6 +328,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Tin Rod",
+        "amount": 1
       }
     }
   },
@@ -266,13 +341,18 @@
     "name": "Large Tin Preform",
     "spriteName": "Large Tin Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 1,
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Tin Preform",
+        "amount": 1
       }
     }
   },
@@ -281,13 +361,18 @@
     "name": "Tin Preform",
     "spriteName": "Tin Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 1,
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Preform",
+        "amount": 1
       }
     }
   },
@@ -296,13 +381,18 @@
     "name": "Small Tin Preform",
     "spriteName": "Small Tin Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 1,
         "smeltTicks": 200,
         "resultItem": "Molten Tin",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Tin Preform",
+        "amount": 1
       }
     }
   },
@@ -311,13 +401,22 @@
     "name": "Large Bronze Plate",
     "spriteName": "Large Bronze Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Placeable", "Smeltable", "Firable"],
     "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Bronze Cell"
+      },
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Bronze Plate",
+        "amount": 1
       }
     }
   },
@@ -326,7 +425,7 @@
     "name": "Bronze Plate",
     "spriteName": "Bronze Plate",
     "maxStack": 32,
-    "tags": ["Smeltable", "Placeable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
@@ -334,9 +433,10 @@
         "resultItem": "Molten Bronze",
         "amount": 10
       },
-      "Place": {
-        "layer": "Dynamic",
-        "cell": "Bronze Cell"
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Plate",
+        "amount": 1
       }
     }
   },
@@ -345,13 +445,18 @@
     "name": "Small Bronze Plate",
     "spriteName": "Small Bronze Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Bronze Plate",
+        "amount": 1
       }
     }
   },
@@ -360,7 +465,7 @@
     "name": "Long Bronze Rod",
     "spriteName": "Long Bronze Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -372,6 +477,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Bronze Rod",
+        "amount": 1
       }
     }
   },
@@ -380,7 +490,7 @@
     "name": "Bronze Rod",
     "spriteName": "Bronze Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -392,6 +502,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Rod",
+        "amount": 1
       }
     }
   },
@@ -400,7 +515,7 @@
     "name": "Short Bronze Rod",
     "spriteName": "Short Bronze Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -412,6 +527,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Bronze Rod",
+        "amount": 1
       }
     }
   },
@@ -420,13 +540,18 @@
     "name": "Large Bronze Preform",
     "spriteName": "Large Bronze Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Bronze Preform",
+        "amount": 1
       }
     }
   },
@@ -435,13 +560,18 @@
     "name": "Bronze Preform",
     "spriteName": "Bronze Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Preform",
+        "amount": 1
       }
     }
   },
@@ -450,13 +580,18 @@
     "name": "Small Bronze Preform",
     "spriteName": "Small Bronze Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 2,
         "smeltTicks": 200,
         "resultItem": "Molten Bronze",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Bronze Preform",
+        "amount": 1
       }
     }
   },
@@ -465,13 +600,22 @@
     "name": "Large Iron Plate",
     "spriteName": "Large Iron Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Placeable", "Smeltable", "Firable"],
     "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Iron Cell"
+      },
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Iron Plate",
+        "amount": 1
       }
     }
   },
@@ -480,7 +624,7 @@
     "name": "Iron Plate",
     "spriteName": "Iron Plate",
     "maxStack": 32,
-    "tags": ["Smeltable", "Placeable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
@@ -488,9 +632,10 @@
         "resultItem": "Molten Iron",
         "amount": 10
       },
-      "Place": {
-        "layer": "Dynamic",
-        "cell": "Iron Cell"
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Plate",
+        "amount": 1
       }
     }
   },
@@ -499,13 +644,18 @@
     "name": "Small Iron Plate",
     "spriteName": "Small Iron Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Iron Plate",
+        "amount": 1
       }
     }
   },
@@ -514,7 +664,7 @@
     "name": "Long Iron Rod",
     "spriteName": "Long Iron Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -526,6 +676,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Iron Rod",
+        "amount": 1
       }
     }
   },
@@ -534,7 +689,7 @@
     "name": "Iron Rod",
     "spriteName": "Iron Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -546,6 +701,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Rod",
+        "amount": 1
       }
     }
   },
@@ -554,7 +714,7 @@
     "name": "Short Iron Rod",
     "spriteName": "Short Iron Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -566,6 +726,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Iron Rod",
+        "amount": 1
       }
     }
   },
@@ -574,13 +739,18 @@
     "name": "Large Iron Preform",
     "spriteName": "Large Iron Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Iron Preform",
+        "amount": 1
       }
     }
   },
@@ -589,13 +759,18 @@
     "name": "Iron Preform",
     "spriteName": "Iron Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Preform",
+        "amount": 1
       }
     }
   },
@@ -604,13 +779,18 @@
     "name": "Small Iron Preform",
     "spriteName": "Small Iron Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Iron",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Iron Preform",
+        "amount": 1
       }
     }
   },
@@ -619,13 +799,22 @@
     "name": "Large Steel Plate",
     "spriteName": "Large Steel Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Placeable", "Smeltable", "Firable"],
     "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Steel Cell"
+      },
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Steel Plate",
+        "amount": 1
       }
     }
   },
@@ -634,7 +823,7 @@
     "name": "Steel Plate",
     "spriteName": "Steel Plate",
     "maxStack": 32,
-    "tags": ["Smeltable", "Placeable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
@@ -642,9 +831,10 @@
         "resultItem": "Molten Steel",
         "amount": 10
       },
-      "Place": {
-        "layer": "Dynamic",
-        "cell": "Steel Cell"
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Plate",
+        "amount": 1
       }
     }
   },
@@ -653,13 +843,18 @@
     "name": "Small Steel Plate",
     "spriteName": "Small Steel Plate",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Steel Plate",
+        "amount": 1
       }
     }
   },
@@ -668,7 +863,7 @@
     "name": "Long Steel Rod",
     "spriteName": "Long Steel Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -680,6 +875,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Steel Rod",
+        "amount": 1
       }
     }
   },
@@ -688,7 +888,7 @@
     "name": "Steel Rod",
     "spriteName": "Steel Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -700,6 +900,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Rod",
+        "amount": 1
       }
     }
   },
@@ -708,7 +913,7 @@
     "name": "Short Steel Rod",
     "spriteName": "Short Steel Rod",
     "maxStack": 32,
-    "tags": ["Handle", "Smeltable"],
+    "tags": ["Handle", "Smeltable", "Firable"],
     "toolActions": {
       "Combine": {
         "partType": "Handle",
@@ -720,6 +925,11 @@
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Steel Rod",
+        "amount": 1
       }
     }
   },
@@ -728,13 +938,18 @@
     "name": "Large Steel Preform",
     "spriteName": "Large Steel Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Steel Preform",
+        "amount": 1
       }
     }
   },
@@ -743,13 +958,18 @@
     "name": "Steel Preform",
     "spriteName": "Steel Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Preform",
+        "amount": 1
       }
     }
   },
@@ -758,14 +978,79 @@
     "name": "Small Steel Preform",
     "spriteName": "Small Steel Preform",
     "maxStack": 32,
-    "tags": ["Smeltable"],
+    "tags": ["Smeltable", "Firable"],
     "toolActions": {
       "Smelt": {
         "temperature": 3,
         "smeltTicks": 200,
         "resultItem": "Molten Steel",
         "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Steel Preform",
+        "amount": 1
       }
     }
-  }
+  },
+
+  "Hot Large Copper Plate": { "name": "Hot Large Copper Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Copper Plate": { "name": "Hot Copper Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Copper Plate": { "name": "Hot Small Copper Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Copper Rod": { "name": "Hot Long Copper Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Copper Rod": { "name": "Hot Copper Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Copper Rod": { "name": "Hot Short Copper Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Copper Preform": { "name": "Hot Large Copper Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Copper Preform": { "name": "Hot Copper Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Copper Preform": { "name": "Hot Small Copper Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Tin Plate": { "name": "Hot Large Tin Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Tin Plate": { "name": "Hot Tin Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Tin Plate": { "name": "Hot Small Tin Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Tin Rod": { "name": "Hot Long Tin Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Tin Rod": { "name": "Hot Tin Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Tin Rod": { "name": "Hot Short Tin Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Tin Preform": { "name": "Hot Large Tin Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Tin Preform": { "name": "Hot Tin Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Tin Preform": { "name": "Hot Small Tin Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Bronze Plate": { "name": "Hot Large Bronze Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Bronze Plate": { "name": "Hot Bronze Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Bronze Plate": { "name": "Hot Small Bronze Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Bronze Rod": { "name": "Hot Long Bronze Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Bronze Rod": { "name": "Hot Bronze Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Bronze Rod": { "name": "Hot Short Bronze Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Bronze Preform": { "name": "Hot Large Bronze Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Bronze Preform": { "name": "Hot Bronze Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Bronze Preform": { "name": "Hot Small Bronze Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Iron Plate": { "name": "Hot Large Iron Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Iron Plate": { "name": "Hot Iron Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Iron Plate": { "name": "Hot Small Iron Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Iron Rod": { "name": "Hot Long Iron Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Iron Rod": { "name": "Hot Iron Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Iron Rod": { "name": "Hot Short Iron Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Iron Preform": { "name": "Hot Large Iron Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Iron Preform": { "name": "Hot Iron Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Iron Preform": { "name": "Hot Small Iron Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Steel Plate": { "name": "Hot Large Steel Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Steel Plate": { "name": "Hot Steel Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Steel Plate": { "name": "Hot Small Steel Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Steel Rod": { "name": "Hot Long Steel Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Steel Rod": { "name": "Hot Steel Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Steel Rod": { "name": "Hot Short Steel Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Steel Preform": { "name": "Hot Large Steel Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Steel Preform": { "name": "Hot Steel Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Steel Preform": { "name": "Hot Small Steel Preform", "spriteName": "Hot Small Preform", "maxStack": 32 }
 }

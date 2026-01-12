@@ -76,34 +76,34 @@ public class Player : MonoBehaviour
     private Heart[] heartObjects;
 
     private float _moveInput;
-    private bool  _isGrounded;
-    private bool  _wasGrounded;
-    private bool  _jumpRequested;
+    private bool _isGrounded;
+    private bool _wasGrounded;
+    private bool _jumpRequested;
 
     // 낙하 거리 측정
-    private bool  _isFalling;
+    private bool _isFalling;
     private float _fallStartY;
-    public  float currentFallDistance; // 진행 중 낙하 거리
-    public  float lastFallDistance;    // 마지막 착지 때의 낙하 거리
+    public float currentFallDistance; // 진행 중 낙하 거리
+    public float lastFallDistance;    // 마지막 착지 때의 낙하 거리
 
     // 생존 스탯
     [Header("Survival Stats")]
-    [Range(0, 40)]  public int   health  = 40;   // 최대 체력 40
-    [Range(0,100)]  public int   hunger  = 100;
-    [Range(0,100)]  public int   thirst  = 100;
-    [Range(0,100)]  public float stamina = 100f; // 스태미너 (0~100, 시간 기반 회복/소모)
+    [Range(0, 40)] public int health = 40;   // 최대 체력 40
+    [Range(0, 100)] public int hunger = 100;
+    [Range(0, 100)] public int thirst = 100;
+    [Range(0, 100)] public float stamina = 100f; // 스태미너 (0~100, 시간 기반 회복/소모)
 
     [Header("Oxygen")]
-    [Range(0,100)]  public float oxygen = 100f;
-    [SerializeField] private float oxygenDrainPerSecond   = 6f;   // 머리 잠김 시 천천히 감소
+    [Range(0, 100)] public float oxygen = 100f;
+    [SerializeField] private float oxygenDrainPerSecond = 6f;   // 머리 잠김 시 천천히 감소
     [SerializeField] private float oxygenRecoverPerSecond = 10f;  // 머리 안 잠기면(물속이어도) 더 빠르게 회복
-    [SerializeField] private float drownDamageInterval    = 1.0f; // oxygen==0일 때 데미지 틱 간격
-    [SerializeField] private int   drownDamage            = 5;    // 틱당 5 피해
+    [SerializeField] private float drownDamageInterval = 1.0f; // oxygen==0일 때 데미지 틱 간격
+    [SerializeField] private int drownDamage = 5;    // 틱당 5 피해
 
     [Header("Stamina Settings")]
-    [SerializeField] private float staminaRegenPerSecond      = 2f;  // 초당 2 회복
-    [SerializeField] private float staminaMoveCostPerSecond   = 4f;  // 이동 중 초당 4 소모
-    [SerializeField] private float staminaJumpCost            = 5f;  // 점프 시 5 소모
+    [SerializeField] private float staminaRegenPerSecond = 2f;  // 초당 2 회복
+    [SerializeField] private float staminaMoveCostPerSecond = 4f;  // 이동 중 초당 4 소모
+    [SerializeField] private float staminaJumpCost = 5f;  // 점프 시 5 소모
 
     // 공격 쿨다운
     float _attackCooldownTimer = 0f;  // 0 이하일 때 공격 가능
@@ -114,11 +114,11 @@ public class Player : MonoBehaviour
 
     // 내부용 (데미지 플래시용)
     SpriteRenderer[] _allRenderers;
-    Color[]          _originalColors;
-    Coroutine        _flashCo;
+    Color[] _originalColors;
+    Coroutine _flashCo;
 
     // 좌우 방향 (-1: 왼쪽, 1: 오른쪽)
-    int   _facing = -1;
+    int _facing = -1;
     float _baseSkinScaleX = 1f;
     float _baseSkinScaleY = 1f;
     float _baseSkinScaleZ = 1f;
@@ -173,9 +173,9 @@ public class Player : MonoBehaviour
         _baseSkinScaleY = s.y;
         _baseSkinScaleZ = s.z;
 
-        _leftArmOrder  = leftArmRenderer.sortingOrder;
+        _leftArmOrder = leftArmRenderer.sortingOrder;
         _rightArmOrder = rightArmRenderer.sortingOrder;
-        _leftLegOrder  = leftLegRenderer.sortingOrder;
+        _leftLegOrder = leftLegRenderer.sortingOrder;
         _rightLegOrder = rightLegRenderer.sortingOrder;
         _rightHandItemOrder = rightHandItemRenderer.sortingOrder;
 
@@ -192,9 +192,9 @@ public class Player : MonoBehaviour
         for (int i = 0; i < _allRenderers.Length; i++)
             _originalColors[i] = _allRenderers[i].color;
 
-        _leftArmBaseRot  = leftArmRenderer.transform.localRotation;
+        _leftArmBaseRot = leftArmRenderer.transform.localRotation;
         _rightArmBaseRot = rightArmRenderer.transform.localRotation;
-        _leftLegBaseRot  = leftLegRenderer.transform.localRotation;
+        _leftLegBaseRot = leftLegRenderer.transform.localRotation;
         _rightLegBaseRot = rightLegRenderer.transform.localRotation;
 
         _fluidFilter = new ContactFilter2D();
@@ -250,7 +250,9 @@ public class Player : MonoBehaviour
                 stamina -= staminaJumpCost;
             }
 
-            if (jumpHeld && _isGrounded && !_wasGrounded && stamina >= staminaJumpCost)
+            // ✅ 점프 홀드(버니홉) 유지하되, "상승 중 플랫폼 스침"으로 재점프가 걸려 무한상승하는 것 방지:
+            //    자동 재점프는 하강 중(또는 거의 정지)일 때만 허용
+            if (jumpHeld && _isGrounded && !_wasGrounded && rb.velocity.y <= 0.01f && stamina >= staminaJumpCost)
             {
                 _jumpRequested = true;
                 stamina -= staminaJumpCost;
@@ -299,7 +301,7 @@ public class Player : MonoBehaviour
         stamina = Mathf.Clamp(stamina, 0f, 100f);
 
         if (_isHeadSubmerged) oxygen -= oxygenDrainPerSecond * dt;
-        else                  oxygen += oxygenRecoverPerSecond * dt;
+        else oxygen += oxygenRecoverPerSecond * dt;
 
         oxygen = Mathf.Clamp(oxygen, 0f, 100f);
 
@@ -466,18 +468,18 @@ public class Player : MonoBehaviour
 
         if (_facing == -1)
         {
-            leftArmRenderer.sortingOrder  = _leftArmOrder;
+            leftArmRenderer.sortingOrder = _leftArmOrder;
             rightArmRenderer.sortingOrder = _rightArmOrder;
-            leftLegRenderer.sortingOrder  = _leftLegOrder;
+            leftLegRenderer.sortingOrder = _leftLegOrder;
             rightLegRenderer.sortingOrder = _rightLegOrder;
 
             rightHandItemRenderer.sortingOrder = _rightHandItemOrder;
         }
         else
         {
-            leftArmRenderer.sortingOrder  = _rightArmOrder;
+            leftArmRenderer.sortingOrder = _rightArmOrder;
             rightArmRenderer.sortingOrder = _leftArmOrder;
-            leftLegRenderer.sortingOrder  = _rightLegOrder;
+            leftLegRenderer.sortingOrder = _rightLegOrder;
             rightLegRenderer.sortingOrder = _leftLegOrder;
 
             rightHandItemRenderer.sortingOrder = -_rightHandItemOrder;
@@ -496,20 +498,20 @@ public class Player : MonoBehaviour
             float armAngle = sin * walkArmAmplitude;
             float legAngle = sin * walkLegAmplitude;
 
-            leftLegRenderer.transform.localRotation  = _leftLegBaseRot  * Quaternion.Euler(0f, 0f, +legAngle);
+            leftLegRenderer.transform.localRotation = _leftLegBaseRot * Quaternion.Euler(0f, 0f, +legAngle);
             rightLegRenderer.transform.localRotation = _rightLegBaseRot * Quaternion.Euler(0f, 0f, -legAngle);
 
             rightArmRenderer.transform.localRotation = _rightArmBaseRot * Quaternion.Euler(0f, 0f, +armAngle);
-            leftArmRenderer.transform.localRotation  = _leftArmBaseRot  * Quaternion.Euler(0f, 0f, -armAngle);
+            leftArmRenderer.transform.localRotation = _leftArmBaseRot * Quaternion.Euler(0f, 0f, -armAngle);
         }
         else
         {
             float t = Time.deltaTime * walkReturnSpeed;
 
-            leftLegRenderer.transform.localRotation  = Quaternion.Lerp(leftLegRenderer.transform.localRotation,  _leftLegBaseRot,  t);
+            leftLegRenderer.transform.localRotation = Quaternion.Lerp(leftLegRenderer.transform.localRotation, _leftLegBaseRot, t);
             rightLegRenderer.transform.localRotation = Quaternion.Lerp(rightLegRenderer.transform.localRotation, _rightLegBaseRot, t);
             rightArmRenderer.transform.localRotation = Quaternion.Lerp(rightArmRenderer.transform.localRotation, _rightArmBaseRot, t);
-            leftArmRenderer.transform.localRotation  = Quaternion.Lerp(leftArmRenderer.transform.localRotation,  _leftArmBaseRot,  t);
+            leftArmRenderer.transform.localRotation = Quaternion.Lerp(leftArmRenderer.transform.localRotation, _leftArmBaseRot, t);
         }
     }
 
@@ -518,7 +520,7 @@ public class Player : MonoBehaviour
         if (damage <= 0) return;
 
         health -= damage;
-        if (health < 0)  health = 0;
+        if (health < 0) health = 0;
         if (health > 40) health = 40;
 
         UpdateHeartsUI();
@@ -545,10 +547,10 @@ public class Player : MonoBehaviour
 
     void UpdateSurvivalUI()
     {
-        hungerFillImage.fillAmount  = Mathf.Clamp01(hunger  / 100f);
-        thirstFillImage.fillAmount  = Mathf.Clamp01(thirst  / 100f);
+        hungerFillImage.fillAmount = Mathf.Clamp01(hunger / 100f);
+        thirstFillImage.fillAmount = Mathf.Clamp01(thirst / 100f);
         staminaFillImage.fillAmount = Mathf.Clamp01(stamina / 100f);
-        oxygenFillImage.fillAmount  = Mathf.Clamp01(oxygen  / 100f);
+        oxygenFillImage.fillAmount = Mathf.Clamp01(oxygen / 100f);
     }
 
     void InitHeartsUI()
