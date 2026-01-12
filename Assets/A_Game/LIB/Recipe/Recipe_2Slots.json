@@ -1,6 +1,6 @@
 [
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Plant", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
@@ -17,7 +17,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Plant Fiber", "count": 1 },
       { "itemId": "Plant Fiber", "count": 1 }
@@ -34,7 +34,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
@@ -51,7 +51,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 }
     ],
@@ -66,7 +66,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Short Plant Twine", "count": 1 },
       { "itemId": "Short Plant Twine", "count": 1 }
@@ -83,7 +83,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Plant Twine", "count": 1 },
       { "itemId": "Plant Twine", "count": 1 }
@@ -100,7 +100,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Long Plant Twine", "count": 1 }
     ],
@@ -115,7 +115,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Branch", "count": 1 },
       { "ToolActions": { "Cutting": {} }, "count": 1 }
@@ -132,7 +132,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Bough", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
@@ -149,7 +149,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Long Wooden Stick", "count": 1 },
       { "ToolActions": { "Chopping": {} }, "count": 1 }
@@ -166,7 +166,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Wooden Stick", "count": 1 },
       { "ToolActions": { "Chopping": {} }, "count": 1 }
@@ -183,7 +183,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Log", "count": 1 },
       { "ToolActions": { "Scraping": {} }, "count": 1 }
@@ -201,7 +201,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stripped Log", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -218,7 +218,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Half Stripped Log", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -235,7 +235,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Quarter Stripped Log", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
@@ -253,7 +253,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Half Stripped Log", "count": 1 },
       { "ToolActions": { "Hewing": {} }, "count": 1 }
@@ -271,7 +271,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Wooden Plank", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -288,7 +288,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Leaf", "count": 1 },
       { "itemId": "Leaf", "count": 1 }
@@ -305,7 +305,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -322,7 +322,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -339,7 +339,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Chopper", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -356,7 +356,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Chopper", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -373,7 +373,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Pounder", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -390,7 +390,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Stone Pounder", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -407,7 +407,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -424,7 +424,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -441,7 +441,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Blade", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -458,7 +458,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Blade", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -475,7 +475,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Scraper", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -492,7 +492,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Flint Scraper", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -509,7 +509,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Bough", "count": 1 },
       { "ToolActions": { "Carving": {} }, "count": 1 }
@@ -526,7 +526,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Wooden Club", "count": 1 },
       { "ToolActions": { "Carving": {} }, "count": 1 }
@@ -543,7 +543,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Brick", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
@@ -560,7 +560,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Bowl", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
@@ -577,7 +577,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Pot", "count": 1 },
       { "ToolActions": { "Smashing": {} }, "count": 1 }
@@ -594,7 +594,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
@@ -607,8 +607,6 @@
     "outputs": [
       { "itemId": "Mold Base", "count": 1 }
     ],
-    "outputActions": [
-      []
-    ]
+    "outputActions": []
   }
 ]

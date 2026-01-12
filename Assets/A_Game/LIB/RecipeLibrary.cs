@@ -1,4 +1,14 @@
 // RecipeLibrary.cs (전체 교체본)
+// - isOrdered 제거, isShapeless(true/false)로 통일
+// - shapeless: inputs는 "존재하는 만큼만" 나열(빈칸 null 불필요), filledCount == inputs.Count 일 때만 매칭
+// - shaped(isShapeless=false):
+//   * inputs는 "레시피 격자 크기(2/4/9/16) 그대로" 나열 (빈칸은 null로 표시)
+//   * 회전/대칭(미러) 항상 허용
+//   * 큰 테이블(9/16)에서 작은 격자(2/4/9) 레시피는 "슬라이딩" 가능
+//   * 정책 A: 레시피 격자 밖(윈도우 밖) 슬롯은 전부 null 이어야 매칭
+//
+// - 2-slot shaped 레시피는 1x2(가로)로 취급하며, 회전으로 2x1(세로)도 허용됨.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -11,66 +21,30 @@ public class RecipeLibrary : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     [Header("Recipe Jsons")]
-    public TextAsset recipe2Json; // 2-slot
-    public TextAsset recipe4Json; // 4-slot
+    public TextAsset recipe2Json;  // 2-slot
+    public TextAsset recipe4Json;  // 4-slot
+    public TextAsset recipe9Json;  // 9-slot (Forge)
+    public TextAsset recipe16Json; // 16-slot (Industrial)
 
     [Header("Alloy Jsons")]
-    public TextAsset alloyJson;   // ✅ 합금(크루시블) 전용
+    public TextAsset alloyJson;   // 합금(크루시블) 전용
 
     [Header("Toolbench Jsons")]
-    public TextAsset toolbenchJson; // ✅ Toolbench 전용 (candidates 스키마)
+    public TextAsset toolbenchJson; // Toolbench 전용 (candidates 스키마)
 
     JArray _r2;
     JArray _r4;
+    JArray _r9;
+    JArray _r16;
 
-    // ✅ Toolbench 레시피(별도 스키마) - NEW(권장)
-    // [
-    //   {
-    //     "inputs":{
-    //       "material":{ "itemId":"Unfired Refractory Clay Slab", "count":1 },
-    //       "tool":{ "ToolActions":{ "Carving":{} }, "count":1 }
-    //     },
-    //     "inputActions":{
-    //       "material":{ "type":"consume", "amount":1 },
-    //       "tool":{ "type":"durability", "amount":-1 }
-    //     },
-    //     "candidates":[ { "itemId":"Unfired Ingot Mold", "count":1 } ]
-    //   }
-    // ]
-    //
-    // ✅ Toolbench 레시피(LEGACY 호환)
-    // [
-    //   {
-    //     "isOrdered": true,
-    //     "inputs": [
-    //       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
-    //       { "ToolActions": { "Carving": {} }, "count": 1 }
-    //     ],
-    //     "inputActions": [
-    //       { "type": "consume", "amount": 1 },
-    //       { "type": "durability", "amount": -1 }
-    //     ],
-    //     "candidates": [
-    //       { "itemId": "Unfired Ingot Mold", "count": 1 }
-    //     ]
-    //   }
-    // ]
     JArray _toolbench;
 
-    // ✅ 합금 레시피(별도 스키마)
-    // [
-    //   {
-    //     "inputs": [ { "id":"Molten Tin", "amount":1 }, { "id":"Molten Copper", "amount":9 } ],
-    //     "output": { "id":"Molten Bronze", "amount":10 }
-    //   }
-    // ]
     class AlloyEntry
     {
         public readonly List<(string id, int amount)> inputs = new List<(string, int)>();
         public string outId;
         public int outAmount;
     }
-
     readonly List<AlloyEntry> _alloys = new List<AlloyEntry>();
 
     void Awake()
@@ -79,33 +53,32 @@ public class RecipeLibrary : MonoBehaviour
             _r2 = JArray.Parse(recipe2Json.text);
         if (recipe4Json != null && !string.IsNullOrEmpty(recipe4Json.text))
             _r4 = JArray.Parse(recipe4Json.text);
+        if (recipe9Json != null && !string.IsNullOrEmpty(recipe9Json.text))
+            _r9 = JArray.Parse(recipe9Json.text);
+        if (recipe16Json != null && !string.IsNullOrEmpty(recipe16Json.text))
+            _r16 = JArray.Parse(recipe16Json.text);
 
-        LoadAlloys();     // ✅ 추가
-        LoadToolbench();  // ✅ 추가
+        LoadAlloys();
+        LoadToolbench();
     }
 
     void LoadToolbench()
     {
         _toolbench = null;
-
         if (toolbenchJson == null || string.IsNullOrEmpty(toolbenchJson.text))
             return;
 
         try
         {
-            // 1) 배열 루트 지원: [ {...}, ... ]
             _toolbench = JArray.Parse(toolbenchJson.text);
         }
         catch
         {
-            // 2) 오브젝트 루트 지원: { "Toolbench": [ ... ] } 같은 케이스도 흡수
             try
             {
                 var jo = JObject.Parse(toolbenchJson.text);
                 if (jo.TryGetValue("Toolbench", out var tok) && tok is JArray arr)
                     _toolbench = arr;
-                else
-                    _toolbench = null;
             }
             catch
             {
@@ -150,8 +123,8 @@ public class RecipeLibrary : MonoBehaviour
 
                 string inId = inp.Value<string>("id");
                 int inAmt = inp.Value<int?>("amount") ?? 0;
-
                 if (string.IsNullOrEmpty(inId) || inAmt <= 0) { ok = false; break; }
+
                 e.inputs.Add((inId, inAmt));
             }
 
@@ -160,13 +133,9 @@ public class RecipeLibrary : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ✅ Toolbench 전용: (재료 1슬롯 + 툴 1슬롯)에서 가능한 결과 후보(candidates)를 반환.
-    /// - NEW 스키마(inputs/material+tool, inputActions/material+tool) 지원
-    /// - LEGACY 스키마(inputs 배열, inputActions 배열, isOrdered)도 호환
-    /// - matchedRecipe: 매칭된 레시피 JObject
-    /// - remappedInputActions: 슬롯 인덱스 기준으로 리맵된 inputActions (null 허용)
-    /// </summary>
+    // ─────────────────────────────────────────────────────────
+    // Toolbench candidates
+    // ─────────────────────────────────────────────────────────
     public bool TryGetToolbenchCandidates(
         List<ItemData> slots,
         out List<ItemData> candidates,
@@ -181,7 +150,6 @@ public class RecipeLibrary : MonoBehaviour
         if (slots.Count != 2) return false;
         if (_toolbench == null || _toolbench.Count == 0) return false;
 
-        // Toolbench는 2슬롯 고정: slots[0]=material, slots[1]=tool
         return TryMatchToolbenchSet(_toolbench, slots, out candidates, out remappedInputActions, out matchedRecipe);
     }
 
@@ -204,93 +172,70 @@ public class RecipeLibrary : MonoBehaviour
             var r = recipeSet[rix] as JObject;
             if (r == null) continue;
 
-            // candidates 또는 outputs(호환)
             var candArray = r["candidates"] as JArray;
             if (candArray == null) candArray = r["outputs"] as JArray;
             if (candArray == null || candArray.Count == 0) continue;
 
-            // ───────── NEW: inputs object ─────────
-            // "inputs": { "material":{...}, "tool":{...} }
+            // NEW: inputs object
             if (r["inputs"] is JObject inObj)
             {
                 var matSpec = inObj["material"] as JObject;
                 var toolSpec = inObj["tool"] as JObject;
 
-                // NEW 스키마가 아니면 아래 LEGACY로 내려감
                 if (matSpec != null && toolSpec != null)
                 {
                     if (mat == null || tool == null) continue;
                     if (!MatchSpecWithCount(mat, matSpec)) continue;
                     if (!MatchSpecWithCount(tool, toolSpec)) continue;
 
-                    // inputActions: { material:{...}, tool:{...} } (null 허용)
                     remappedInputActions = new JArray { null, null };
-
                     if (r["inputActions"] is JObject actObj)
                     {
                         remappedInputActions[0] = actObj.TryGetValue("material", out var am) ? am : null;
                         remappedInputActions[1] = actObj.TryGetValue("tool", out var at) ? at : null;
                     }
 
-                    // candidates 생성
-                    var resultsNew = new List<ItemData>();
-                    for (int ci = 0; ci < candArray.Count; ci++)
-                    {
-                        var c = candArray[ci] as JObject;
-                        if (c == null) continue;
+                    var results = CreateItemsFromArray(candArray);
+                    if (results.Count == 0) { remappedInputActions = null; continue; }
 
-                        string id = c.Value<string>("itemId");
-                        int cnt = c.Value<int?>("count") ?? 1;
-                        if (string.IsNullOrEmpty(id) || cnt <= 0) continue;
-
-                        var it = itemLibrary.Create(id, cnt);
-                        if (it != null)
-                            resultsNew.Add(it);
-                    }
-
-                    if (resultsNew.Count == 0)
-                    {
-                        remappedInputActions = null;
-                        continue;
-                    }
-
-                    candidates = resultsNew;
+                    candidates = results;
                     matchedRecipe = r;
                     return true;
                 }
             }
 
-            // ───────── LEGACY: inputs array ─────────
+            // LEGACY: inputs array
             var inputs = r["inputs"] as JArray;
-            if (inputs == null || inputs.Count == 0) continue;
+            if (inputs == null || inputs.Count != 2) continue;
 
             var inActs = r["inputActions"] as JArray;
-            bool isOrdered = r.Value<bool?>("isOrdered") ?? false;
 
-            // Toolbench는 2개 인풋만 의미 있음
-            if (inputs.Count != 2) continue;
+            // isShapeless 우선, 없으면 isOrdered(legacy)로 환산
+            bool isShapeless = r.Value<bool?>("isShapeless")
+                               ?? !(r.Value<bool?>("isOrdered") ?? true);
 
             if (mat == null || tool == null) continue;
 
             int[] assign = null;
 
-            if (isOrdered)
+            if (!isShapeless)
             {
+                // shaped: inputs[0] -> slot0, inputs[1] -> slot1
                 if (!MatchSpecWithCount(mat, inputs[0] as JObject)) continue;
                 if (!MatchSpecWithCount(tool, inputs[1] as JObject)) continue;
                 assign = new[] { 0, 1 };
             }
             else
             {
+                // shapeless: 두 슬롯 무순서
                 var presentIdx = new List<int>(2);
                 if (slots[0] != null) presentIdx.Add(0);
                 if (slots[1] != null) presentIdx.Add(1);
 
-                assign = TryUnordered(inputs, slots, presentIdx);
+                assign = TryUnorderedShapeless(inputs, slots, presentIdx);
                 if (assign == null) continue;
             }
 
-            // 입력액션 리맵(슬롯 인덱스 기준)
             remappedInputActions = new JArray { null, null };
             if (inActs != null)
             {
@@ -302,29 +247,10 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
-            // candidates 생성
-            var results = new List<ItemData>();
-            for (int ci = 0; ci < candArray.Count; ci++)
-            {
-                var c = candArray[ci] as JObject;
-                if (c == null) continue;
+            var resultsLegacy = CreateItemsFromArray(candArray);
+            if (resultsLegacy.Count == 0) { remappedInputActions = null; continue; }
 
-                string id = c.Value<string>("itemId");
-                int cnt = c.Value<int?>("count") ?? 1;
-                if (string.IsNullOrEmpty(id) || cnt <= 0) continue;
-
-                var it = itemLibrary.Create(id, cnt);
-                if (it != null)
-                    results.Add(it);
-            }
-
-            if (results.Count == 0)
-            {
-                remappedInputActions = null;
-                continue;
-            }
-
-            candidates = results;
+            candidates = resultsLegacy;
             matchedRecipe = r;
             return true;
         }
@@ -332,92 +258,27 @@ public class RecipeLibrary : MonoBehaviour
         return false;
     }
 
-    bool MatchSpecWithCount(ItemData it, JObject spec)
+    List<ItemData> CreateItemsFromArray(JArray arr)
     {
-        if (!MatchSpec(it, spec)) return false;
-        int need = spec?.Value<int?>("count") ?? 1;
-        if (it == null || it.Count < need) return false;
-        return true;
-    }
-
-    /// <summary>
-    /// ✅ 크루시블 layers에 합금 레시피를 적용한다.
-    /// - BrickFurnace 등에서 "Molten X"를 layers에 커밋한 직후 호출.
-    /// - 합금 레시피는 alloyJson 스키마를 사용(크래프팅 레시피와 별도).
-    /// - 우선순위는 alloyJson 배열 순서(앞쪽이 우선).
-    /// </summary>
-    public bool TryApplyAlloysToCrucible(ItemData crucible)
-    {
-        if (_alloys.Count == 0) return false;
-        if (crucible == null || crucible.Details == null) return false;
-        if (!crucible.Details.TryGetValue("layers", out var layersObj) || layersObj == null) return false;
-
-        // ✅ List<object> 고정 캐스팅 제거: IList/ List<Dictionary<...>> 등도 허용
-        if (layersObj is not System.Collections.IList layers) return false;
-
-        bool changed = false;
-
-        // 레시피 우선순위: 하나라도 적용되면 처음부터 다시 스캔(연쇄 합금)
-        while (true)
+        var results = new List<ItemData>();
+        for (int i = 0; i < arr.Count; i++)
         {
-            bool applied = false;
+            var o = arr[i] as JObject;
+            if (o == null) continue;
 
-            for (int r = 0; r < _alloys.Count; r++)
-            {
-                var recipe = _alloys[r];
+            string id = o.Value<string>("itemId");
+            int cnt = o.Value<int?>("count") ?? 1;
+            if (string.IsNullOrEmpty(id) || cnt <= 0) continue;
 
-                // 1) totals 집계
-                var totals = new Dictionary<string, int>();
-                for (int i = 0; i < layers.Count; i++)
-                {
-                    if (!TryReadLayer(layers[i], out var id, out var amt)) continue;
-                    if (string.IsNullOrEmpty(id) || amt <= 0) continue;
-
-                    if (totals.TryGetValue(id, out var cur)) totals[id] = cur + amt;
-                    else totals[id] = amt;
-                }
-
-                // 2) batches 계산
-                int batches = int.MaxValue;
-                for (int i = 0; i < recipe.inputs.Count; i++)
-                {
-                    var (id, amt) = recipe.inputs[i];
-                    totals.TryGetValue(id, out int have);
-
-                    int b = have / amt;
-                    if (b < batches) batches = b;
-                    if (batches == 0) break;
-                }
-
-                if (batches <= 0 || batches == int.MaxValue)
-                    continue;
-
-                // 3) 소모(Top layer부터)
-                for (int i = 0; i < recipe.inputs.Count; i++)
-                {
-                    var (id, amt) = recipe.inputs[i];
-                    ConsumeFromTop(layers, id, batches * amt);
-                }
-
-                // 4) 결과 추가(Top 누적)
-                AddOrStackAtTop(layers, recipe.outId, batches * recipe.outAmount);
-
-                applied = true;
-                changed = true;
-                break;
-            }
-
-            if (!applied) break;
+            var it = itemLibrary.Create(id, cnt);
+            if (it != null) results.Add(it);
         }
-
-        return changed;
+        return results;
     }
 
-    /// <summary>
-    /// 슬롯 스냅샷 그대로 입력.
-    /// - resultItems: 출력액션까지 적용된 결과 아이템 배열(멀티 아웃풋).
-    /// - remappedInputActions: 슬롯 인덱스별 인풋액션(JArray, null 허용).
-    /// </summary>
+    // ─────────────────────────────────────────────────────────
+    // Craft
+    // ─────────────────────────────────────────────────────────
     public bool TryCraft(
         List<ItemData> slots,
         out List<ItemData> resultItems,
@@ -427,108 +288,48 @@ public class RecipeLibrary : MonoBehaviour
         resultItems = null;
         remappedInputActions = null;
         matchedRecipe = null;
+
         if (itemLibrary == null || slots == null) return false;
 
         int n = slots.Count;
 
-        // ───────── 4슬롯 테이블 (Primal 등) ─────────
-        if (n == 4)
+        // 우선순위: 현재 테이블 크기 레시피 → 더 작은 격자 레시피(슬라이딩)
+        if (n == 16)
         {
-            int filled = 0;
-            for (int i = 0; i < 4; i++)
-                if (slots[i] != null) filled++;
-
-            // 1) 4-slot 레시피(_r4) 우선
-            if (_r4 != null)
-            {
-                if (filled == 4)
-                {
-                    var set = FilterByInputCount(_r4, 4);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-
-                    return false; // filled=4면 여기서 결론
-                }
-
-                if (filled == 3)
-                {
-                    var set = FilterByInputCount(_r4, 3);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-
-                    return false; // filled=3면 여기서 결론
-                }
-
-                if (filled == 2)
-                {
-                    var set = FilterByInputCount(_r4, 2);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-                }
-                else if (filled == 1)
-                {
-                    var set = FilterByInputCount(_r4, 1);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-                }
-                else
-                {
-                    return false; // filled==0
-                }
-            }
-
-            // 2) 실패 시 2-slot 레시피(_r2) fallback (상위→하위 허용)
-            if (_r2 != null)
-            {
-                if (filled == 2)
-                {
-                    var set = FilterByInputCount(_r2, 2);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-                }
-                else if (filled == 1)
-                {
-                    var set = FilterByInputCount(_r2, 1);
-                    if (set.Count > 0 &&
-                        TryMatchSet(set, slots, fourContext: true,
-                                   out resultItems, out remappedInputActions, out matchedRecipe))
-                        return true;
-                }
-            }
-
+            if (TryMatchSet(_r16, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r9,  slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r4,  slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r2,  slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
             return false;
         }
 
-        // ───────── 2슬롯 테이블 (Hand 등) ─────────
+        if (n == 9)
+        {
+            if (TryMatchSet(_r9, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r4, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r2, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            return false;
+        }
+
+        if (n == 4)
+        {
+            if (TryMatchSet(_r4, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            if (TryMatchSet(_r2, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
+            return false;
+        }
+
         if (n == 2)
         {
-            // 하위(2슬롯)가 상위(4슬롯) 레시피를 매칭하는 일은 없어야 함 → _r2만 본다
-            if (_r2 != null &&
-                TryMatchSet(_r2, slots, fourContext: false,
-                            out resultItems, out remappedInputActions, out matchedRecipe))
-                return true;
-
+            if (TryMatchSet(_r2, slots, out resultItems, out remappedInputActions, out matchedRecipe)) return true;
             return false;
         }
 
         return false;
     }
 
-    // 세트 매칭(슬롯 수/인덱스 그대로, null 슬롯 유지) + 멀티 아웃풋
     bool TryMatchSet(
         JArray recipeSet,
         List<ItemData> slots,
-        bool fourContext,
         out List<ItemData> resultItems,
         out JArray remappedInputActions,
         out JObject matchedRecipe)
@@ -537,73 +338,46 @@ public class RecipeLibrary : MonoBehaviour
         remappedInputActions = null;
         matchedRecipe = null;
 
+        if (recipeSet == null || recipeSet.Count == 0) return false;
+
         var presentIdx = new List<int>(slots.Count);
         for (int i = 0; i < slots.Count; i++)
             if (slots[i] != null) presentIdx.Add(i);
 
         for (int rix = 0; rix < recipeSet.Count; rix++)
         {
-            var r = recipeSet[rix] as JObject; if (r == null) continue;
+            var r = recipeSet[rix] as JObject;
+            if (r == null) continue;
 
             var inputs = r["inputs"] as JArray;
             if (inputs == null || inputs.Count == 0) continue;
 
-            bool isOrdered = r.Value<bool?>("isOrdered") ?? false;
+            bool isShapeless = r.Value<bool?>("isShapeless") ?? false;
 
             var outputsArray = r["outputs"] as JArray;
             if (outputsArray == null || outputsArray.Count == 0) continue;
 
             var inActs = r["inputActions"] as JArray;
-            var oaRoot = r["outputActions"] as JArray; // null 가능
-
-            int filledCount = presentIdx.Count;
-            if (filledCount != inputs.Count)
-                continue;
+            var oaRoot = r["outputActions"] as JArray; // output별 action list (null 가능)
 
             int[] assign = null;
 
-            if (isOrdered)
+            if (isShapeless)
             {
-                if (slots.Count == inputs.Count)
-                {
-                    if (!MatchOrderedAll(inputs, slots)) continue;
-                    assign = Enumerable.Range(0, inputs.Count).ToArray();
-                }
-                else if (fourContext && inputs.Count == 2 && slots.Count == 4)
-                {
-                    if (!TryOrderedWindow(inputs, slots, new[] { 0, 1 }, out assign) &&
-                        !TryOrderedWindow(inputs, slots, new[] { 2, 3 }, out assign))
-                        continue;
-                }
-                else
-                {
-                    continue;
-                }
+                // shapeless: inputs는 "존재하는 만큼만" → filledCount == inputs.Count
+                if (presentIdx.Count != inputs.Count) continue;
+
+                assign = TryUnorderedShapeless(inputs, slots, presentIdx);
+                if (assign == null) continue;
             }
             else
             {
-                if (fourContext && inputs.Count == 2 && slots.Count == 4)
-                {
-                    if (presentIdx.Count == 2)
-                    {
-                        assign = TryUnordered(inputs, slots, presentIdx);
-                        if (assign == null) continue;
-                    }
-                    else
-                    {
-                        if (!TryUnorderedInAllowed(inputs, slots, new[] { 0, 1 }, out assign) &&
-                            !TryUnorderedInAllowed(inputs, slots, new[] { 2, 3 }, out assign))
-                            continue;
-                    }
-                }
-                else
-                {
-                    assign = TryUnordered(inputs, slots, presentIdx);
-                    if (assign == null) continue;
-                }
+                // shaped: inputs는 격자 크기(2/4/9/16) 그대로. null로 빈칸 표현 가능.
+                if (!TryMatchShapedWithSlidingAndTransforms(inputs, slots, out assign))
+                    continue;
             }
 
-            // ✅ inputConditions 평가(매칭 필터)
+            // inputConditions 평가
             var conds = r["inputConditions"] as JArray;
             if (conds != null && conds.Count > 0)
             {
@@ -611,22 +385,23 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
             }
 
-            // 입력액션 리맵
+            // inputActions 리맵 (슬롯 인덱스 기준)
             remappedInputActions = new JArray();
             for (int i = 0; i < slots.Count; i++) remappedInputActions.Add(null);
+
             if (inActs != null)
             {
-                for (int k = 0; k < inputs.Count; k++)
+                for (int k = 0; k < Math.Min(inputs.Count, inActs.Count); k++)
                 {
-                    int si = assign[k];
-                    if (si >= 0 && si < slots.Count) remappedInputActions[si] = inActs[k];
+                    int si = (assign != null && k < assign.Length) ? assign[k] : -1;
+                    if (si >= 0 && si < slots.Count)
+                        remappedInputActions[si] = inActs[k];
                 }
             }
 
-            // ✅ inputActions 내 amount가 식(string)인 경우 평가해서 숫자로 고정 (현재는 consumeMetal 우선)
             NormalizeInputActions(remappedInputActions, slots, assign);
 
-            // 멀티 아웃풋 생성
+            // outputs 생성 + outputActions 적용
             var results = new List<ItemData>();
 
             for (int oi = 0; oi < outputsArray.Count; oi++)
@@ -638,14 +413,11 @@ public class RecipeLibrary : MonoBehaviour
                 int outCnt = outSpec.Value<int?>("count") ?? 1;
                 if (string.IsNullOrEmpty(outId) || outCnt <= 0) continue;
 
-                // outputActions[oi] 는 JArray(액션 리스트)
                 JArray perActs = null;
                 if (oaRoot != null && oi < oaRoot.Count && oaRoot[oi] is JArray ja)
                     perActs = ja;
 
                 ItemData baseItem = null;
-
-                // ✅ @dynamic: baseItem 생성하지 않고 create 액션이 최종 itemId를 만든다
                 if (!string.Equals(outId, "@dynamic", StringComparison.Ordinal))
                 {
                     baseItem = itemLibrary.Create(outId, outCnt);
@@ -671,61 +443,10 @@ public class RecipeLibrary : MonoBehaviour
         return false;
     }
 
-    // inputs.Count == cnt 필터
-    JArray FilterByInputCount(JArray src, int cnt)
-    {
-        var arr = new JArray();
-        if (src == null) return arr;
-
-        for (int i = 0; i < src.Count; i++)
-        {
-            var r = src[i] as JObject;
-            if (r == null) continue;
-            var ins = r["inputs"] as JArray;
-            if (ins != null && ins.Count == cnt) arr.Add(r);
-        }
-        return arr;
-    }
-
-    // 정형: 인덱스 일치 전체 검사
-    bool MatchOrderedAll(JArray inputs, List<ItemData> slots)
-    {
-        if (inputs.Count > slots.Count) return false;
-        for (int i = 0; i < inputs.Count; i++)
-        {
-            var spec = inputs[i] as JObject;
-            var it = slots[i];
-            if (!MatchSpec(it, spec)) return false;
-
-            int need = spec?.Value<int?>("count") ?? 1;
-            if (it == null || it.Count < need) return false;
-        }
-        return true;
-    }
-
-    // 정형: 주어진 윈도우 검사
-    bool TryOrderedWindow(JArray inputs, List<ItemData> slots, int[] win, out int[] assign)
-    {
-        assign = null;
-        if (inputs.Count != win.Length) return false;
-
-        for (int k = 0; k < win.Length; k++)
-        {
-            int si = win[k];
-            var it = slots[si];
-            var spec = inputs[k] as JObject;
-            if (!MatchSpec(it, spec)) return false;
-
-            int need = spec?.Value<int?>("count") ?? 1;
-            if (it == null || it.Count < need) return false;
-        }
-
-        assign = (int[])win.Clone();
-        return true;
-    }
-
-    // 무형: presentIdx 내에서 백트래킹
-    int[] TryUnordered(JArray inputs, List<ItemData> slots, List<int> presentIdx)
+    // ─────────────────────────────────────────────────────────
+    // Matching: Shapeless
+    // ─────────────────────────────────────────────────────────
+    int[] TryUnorderedShapeless(JArray inputs, List<ItemData> slots, List<int> presentIdx)
     {
         var used = new HashSet<int>();
         var res = new int[inputs.Count];
@@ -733,16 +454,16 @@ public class RecipeLibrary : MonoBehaviour
         bool Dfs(int idx)
         {
             if (idx >= inputs.Count) return true;
+
             var spec = inputs[idx] as JObject;
+            if (spec == null) return false;
 
             foreach (var si in presentIdx)
             {
                 if (used.Contains(si)) continue;
-                var it = slots[si];
-                if (!MatchSpec(it, spec)) continue;
 
-                int need = spec?.Value<int?>("count") ?? 1;
-                if (it == null || it.Count < need) continue;
+                var it = slots[si];
+                if (!MatchSpecWithCount(it, spec)) continue;
 
                 used.Add(si);
                 res[idx] = si;
@@ -755,18 +476,244 @@ public class RecipeLibrary : MonoBehaviour
         return Dfs(0) ? res : null;
     }
 
-    // 무형: 허용된 윈도우 내에서만 무순서 매칭
-    bool TryUnorderedInAllowed(JArray inputs, List<ItemData> slots, int[] allowed, out int[] assign)
+    // ─────────────────────────────────────────────────────────
+    // Matching: Shaped (Sliding + Rotate/Reflect)
+    // ─────────────────────────────────────────────────────────
+    struct GridSpec
+    {
+        public int w, h;
+        public JObject[] cells; // length = w*h (null allowed)
+    }
+
+    bool TryMatchShapedWithSlidingAndTransforms(JArray recipeInputs, List<ItemData> slots, out int[] assign)
     {
         assign = null;
-        var present = allowed.Where(i => i >= 0 && i < slots.Count && slots[i] != null).ToList();
-        var res = TryUnordered(inputs, slots, present);
-        if (res == null) return false;
-        assign = res;
+
+        if (!TryGetGridSizeFromCount(recipeInputs.Count, out int rw, out int rh))
+            return false;
+
+        if (!TryGetGridSizeFromCount(slots.Count, out int tw, out int th))
+            return false;
+
+        if (rw > tw || rh > th) return false;
+
+        // recipe grid parse
+        var baseGrid = new GridSpec
+        {
+            w = rw,
+            h = rh,
+            cells = new JObject[rw * rh]
+        };
+
+        for (int i = 0; i < rw * rh; i++)
+        {
+            // shaped: null은 "빈칸" 의미
+            if (i >= recipeInputs.Count) { baseGrid.cells[i] = null; continue; }
+            baseGrid.cells[i] = recipeInputs[i] as JObject; // null 가능
+        }
+
+        // generate unique transforms
+        var variants = GenerateUniqueTransforms(baseGrid);
+
+        // slide over target grid
+        for (int oy = 0; oy <= th - rh; oy++)
+        {
+            for (int ox = 0; ox <= tw - rw; ox++)
+            {
+                for (int vi = 0; vi < variants.Count; vi++)
+                {
+                    var g = variants[vi];
+
+                    if (TryMatchShapedAt(slots, tw, th, g, ox, oy, out assign))
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool TryMatchShapedAt(List<ItemData> slots, int tw, int th, GridSpec g, int ox, int oy, out int[] assign)
+    {
+        assign = new int[g.w * g.h];
+        for (int i = 0; i < assign.Length; i++) assign[i] = -1;
+
+        // 정책 A: 윈도우 밖은 전부 null이어야 함
+        for (int ty = 0; ty < th; ty++)
+        {
+            for (int tx = 0; tx < tw; tx++)
+            {
+                int tIndex = ToIndex(tx, ty, tw);
+                var tItem = slots[tIndex];
+
+                bool inside = (tx >= ox && tx < ox + g.w && ty >= oy && ty < oy + g.h);
+                if (!inside)
+                {
+                    if (tItem != null) return false;
+                    continue;
+                }
+
+                int rx = tx - ox;
+                int ry = ty - oy;
+                int rIndex = ToIndex(rx, ry, g.w);
+                var spec = g.cells[rIndex];
+
+                if (spec == null)
+                {
+                    if (tItem != null) return false;
+                    continue;
+                }
+
+                if (!MatchSpecWithCount(tItem, spec))
+                    return false;
+
+                // assign: recipe-input-index(=rIndex) -> target-slot-index
+                assign[rIndex] = tIndex;
+            }
+        }
+
         return true;
     }
 
-    // 스펙 매칭(itemId/name/hasTag/ToolActions 조건)
+    int ToIndex(int x, int y, int w) => y * w + x;
+
+    bool TryGetGridSizeFromCount(int count, out int w, out int h)
+    {
+        w = h = 0;
+
+        // 2-slot shaped는 1x2(가로)로 취급
+        if (count == 2) { w = 2; h = 1; return true; }
+
+        int s = Mathf.RoundToInt(Mathf.Sqrt(count));
+        if (s * s == count)
+        {
+            w = s; h = s; return true;
+        }
+
+        return false;
+    }
+
+    List<GridSpec> GenerateUniqueTransforms(GridSpec baseGrid)
+    {
+        var list = new List<GridSpec>();
+        var seen = new HashSet<string>();
+
+        // 4 rotations x (mirror or not) = up to 8 variants
+        for (int rot = 0; rot < 4; rot++)
+        {
+            var r = Rotate(baseGrid, rot);
+
+            for (int mir = 0; mir < 2; mir++)
+            {
+                var v = (mir == 0) ? r : MirrorX(r);
+                var key = SerializeSpec(v);
+                if (seen.Add(key))
+                    list.Add(v);
+            }
+        }
+
+        return list;
+    }
+
+    GridSpec Rotate(GridSpec g, int rot90Count)
+    {
+        rot90Count = ((rot90Count % 4) + 4) % 4;
+        if (rot90Count == 0) return g;
+
+        GridSpec cur = g;
+        for (int t = 0; t < rot90Count; t++)
+            cur = Rotate90(cur);
+
+        return cur;
+    }
+
+    GridSpec Rotate90(GridSpec g)
+    {
+        // (x,y) -> (h-1-y, x)
+        var ng = new GridSpec
+        {
+            w = g.h,
+            h = g.w,
+            cells = new JObject[g.w * g.h]
+        };
+
+        for (int y = 0; y < g.h; y++)
+        {
+            for (int x = 0; x < g.w; x++)
+            {
+                int src = ToIndex(x, y, g.w);
+                int nx = g.h - 1 - y;
+                int ny = x;
+                int dst = ToIndex(nx, ny, ng.w);
+                ng.cells[dst] = g.cells[src];
+            }
+        }
+
+        return ng;
+    }
+
+    GridSpec MirrorX(GridSpec g)
+    {
+        // horizontal mirror: (x,y) -> (w-1-x, y)
+        var ng = new GridSpec
+        {
+            w = g.w,
+            h = g.h,
+            cells = new JObject[g.w * g.h]
+        };
+
+        for (int y = 0; y < g.h; y++)
+        {
+            for (int x = 0; x < g.w; x++)
+            {
+                int src = ToIndex(x, y, g.w);
+                int nx = g.w - 1 - x;
+                int dst = ToIndex(nx, y, g.w);
+                ng.cells[dst] = g.cells[src];
+            }
+        }
+
+        return ng;
+    }
+
+    string SerializeSpec(GridSpec g)
+    {
+        // null/비-null 및 핵심 키만으로 간단 fingerprint
+        // (충돌 가능성은 낮고, 충돌 시 중복 variant만 늘어남)
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append(g.w).Append("x").Append(g.h).Append("|");
+        for (int i = 0; i < g.cells.Length; i++)
+        {
+            var s = g.cells[i];
+            if (s == null) { sb.Append("_;"); continue; }
+
+            sb.Append(s.Value<string>("itemId") ?? "");
+            sb.Append("#");
+            sb.Append(s.Value<int?>("count") ?? 1);
+            sb.Append("#");
+
+            // ToolActions 존재 유무/이름
+            if (s["ToolActions"] is JObject ta)
+            {
+                foreach (var p in ta.Properties())
+                    sb.Append("TA:").Append(p.Name).Append(",");
+            }
+            sb.Append(";");
+        }
+        return sb.ToString();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Spec matching
+    // ─────────────────────────────────────────────────────────
+    bool MatchSpecWithCount(ItemData it, JObject spec)
+    {
+        if (!MatchSpec(it, spec)) return false;
+        int need = spec?.Value<int?>("count") ?? 1;
+        if (it == null || it.Count < need) return false;
+        return true;
+    }
+
     bool MatchSpec(ItemData it, JObject spec)
     {
         if (spec == null) return false;
@@ -794,7 +741,6 @@ public class RecipeLibrary : MonoBehaviour
                 return false;
         }
 
-        // 태그 매칭
         var tagSpec = spec["hasTag"] as JArray;
         if (tagSpec != null && tagSpec.Count > 0)
         {
@@ -808,7 +754,6 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
-        // ✅ 신규 고정 키: ToolActions
         var toolSpec = spec["ToolActions"];
         if (toolSpec != null && toolSpec.Type != JTokenType.Null)
         {
@@ -817,13 +762,9 @@ public class RecipeLibrary : MonoBehaviour
             if (!MatchToolActions(it, toolSpec)) return false;
         }
 
-        if (constraints == 0) return false;
-        return true;
+        return constraints > 0;
     }
 
-    /// <summary>
-    /// ToolActions 스펙 매칭.
-    /// </summary>
     bool MatchToolActions(ItemData it, JToken toolSpec)
     {
         if (it.ToolActions == null || it.ToolActions.Count == 0)
@@ -877,75 +818,14 @@ public class RecipeLibrary : MonoBehaviour
         return true;
     }
 
-    // 액션 딕셔너리 변환
-    Dictionary<string, Dictionary<string, object>> ToActionDict(object v)
-    {
-        if (v == null)
-            return null;
-
-        if (v is Dictionary<string, Dictionary<string, object>> dd)
-        {
-            return dd.ToDictionary(kv => kv.Key,
-                                   kv => kv.Value != null
-                                       ? new Dictionary<string, object>(kv.Value)
-                                       : new Dictionary<string, object>());
-        }
-
-        if (v is Dictionary<string, object> d0)
-        {
-            var res = new Dictionary<string, Dictionary<string, object>>();
-            foreach (var kv in d0)
-            {
-                if (kv.Value is Dictionary<string, object> inner)
-                    res[kv.Key] = new Dictionary<string, object>(inner);
-                else
-                    res[kv.Key] = new Dictionary<string, object>();
-            }
-            return res;
-        }
-
-        if (v is JArray ja)
-        {
-            var res = new Dictionary<string, Dictionary<string, object>>();
-            foreach (var x in ja)
-            {
-                string name = x.ToString();
-                if (string.IsNullOrEmpty(name)) continue;
-                if (!res.ContainsKey(name))
-                    res[name] = new Dictionary<string, object>();
-            }
-            return res;
-        }
-
-        if (v is System.Collections.IEnumerable ien && v is not string)
-        {
-            var res = new Dictionary<string, Dictionary<string, object>>();
-            foreach (var x in ien)
-            {
-                string name = x?.ToString();
-                if (string.IsNullOrEmpty(name)) continue;
-                if (!res.ContainsKey(name))
-                    res[name] = new Dictionary<string, object>();
-            }
-            return res;
-        }
-
-        string single = v.ToString();
-        if (string.IsNullOrEmpty(single))
-            return null;
-
-        return new Dictionary<string, Dictionary<string, object>>
-        {
-            { single, new Dictionary<string, object>() }
-        };
-    }
-
-    // 출력액션 적용 (신규 스키마: consume/set/copy/sum/delete + create)
+    // ─────────────────────────────────────────────────────────
+    // output actions / conditions / expressions (기존 유지)
+    // ─────────────────────────────────────────────────────────
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign, int outCount)
     {
         if (outActs == null || outActs.Count == 0) return dst;
 
-        // ✅ dst가 null(@dynamic)인 경우: create 액션으로 먼저 생성
+        // @dynamic: create 먼저
         if (dst == null)
         {
             ItemData created = null;
@@ -954,9 +834,7 @@ public class RecipeLibrary : MonoBehaviour
             {
                 var act = outActs[i] as JObject;
                 if (act == null) continue;
-
-                string type = act.Value<string>("type");
-                if (type != "create") continue;
+                if (act.Value<string>("type") != "create") continue;
 
                 string from = act.Value<string>("from");
                 if (string.IsNullOrEmpty(from)) continue;
@@ -982,9 +860,10 @@ public class RecipeLibrary : MonoBehaviour
             }
 
             dst = created;
-            if (dst == null) return null; // create 실패
+            if (dst == null) return null;
         }
 
+        // 이 아래 로직은 사용하던 스키마 그대로 유지 (set/copy/sum/delete)
         string overrideName = null;
         string overrideSprite = null;
         string overrideItemId = null;
@@ -997,15 +876,13 @@ public class RecipeLibrary : MonoBehaviour
 
         for (int i = 0; i < outActs.Count; i++)
         {
-            var act = outActs[i] as JObject; if (act == null) continue;
+            var act = outActs[i] as JObject;
+            if (act == null) continue;
+
             string type = act.Value<string>("type");
             if (string.IsNullOrEmpty(type)) continue;
 
-            if (type == "create")
-            {
-                // 이미 @dynamic 처리에서 반영했으므로 스킵
-                continue;
-            }
+            if (type == "create") continue;
 
             if (type == "set")
             {
@@ -1015,7 +892,6 @@ public class RecipeLibrary : MonoBehaviour
                 object val = null;
                 bool hasVal = false;
 
-                // 1) value
                 if (act.TryGetValue("value", out var jv))
                 {
                     hasVal = true;
@@ -1025,7 +901,6 @@ public class RecipeLibrary : MonoBehaviour
 
                     if (val is string sv) val = ExpandTokens(sv);
                 }
-                // 2) fromInput + inputField
                 else if (act.TryGetValue("fromInput", out var jf) && act.TryGetValue("inputField", out var jif))
                 {
                     int? from = jf.Type == JTokenType.Null ? (int?)null : jf.Value<int?>();
@@ -1044,7 +919,6 @@ public class RecipeLibrary : MonoBehaviour
                             val = s0.Substring(0, s0.Length - strip.Length);
                     }
                 }
-                // 3) valueFromFields (join)
                 else if (act["valueFromFields"] is JArray vff)
                 {
                     string sep = act.Value<string>("separator") ?? "";
@@ -1070,7 +944,6 @@ public class RecipeLibrary : MonoBehaviour
 
                 if (!hasVal) continue;
 
-                // top-level scalar
                 if (field == "name") { overrideName = val?.ToString(); continue; }
                 if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
                 if (field == "itemId") { overrideItemId = val?.ToString(); continue; }
@@ -1089,7 +962,6 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                // top-level dict replace
                 if (field == "ToolActions" || field == "WeaponActions" || field == "BreakActions")
                 {
                     var dict = ToActionDict(val);
@@ -1099,10 +971,9 @@ public class RecipeLibrary : MonoBehaviour
                     continue;
                 }
 
-                // nested dict set
                 if (field.StartsWith("details.", StringComparison.Ordinal))
                 {
-                    dst.SetDetailPath(field.Substring("details.".Length), val);
+                    SetDetailPath(dst, field.Substring("details.".Length), val);
                     continue;
                 }
 
@@ -1166,7 +1037,7 @@ public class RecipeLibrary : MonoBehaviour
 
                 if (toField.StartsWith("details.", StringComparison.Ordinal))
                 {
-                    dst.SetDetailPath(toField.Substring("details.".Length), val);
+                    SetDetailPath(dst, toField.Substring("details.".Length), val);
                     continue;
                 }
 
@@ -1223,7 +1094,7 @@ public class RecipeLibrary : MonoBehaviour
 
                 if (outField.StartsWith("details.", StringComparison.Ordinal))
                 {
-                    dst.SetDetailPath(outField.Substring("details.".Length), sum);
+                    SetDetailPath(dst, outField.Substring("details.".Length), sum);
                     continue;
                 }
             }
@@ -1339,7 +1210,6 @@ public class RecipeLibrary : MonoBehaviour
 
     bool Compare(object left, string op, object right)
     {
-        // numeric 우선
         bool lNum = TryToNumber(left, out double ln);
         bool rNum = TryToNumber(right, out double rn);
 
@@ -1357,7 +1227,6 @@ public class RecipeLibrary : MonoBehaviour
             }
         }
 
-        // string 비교(==/!=만)
         string ls = left?.ToString();
         string rs = right?.ToString();
 
@@ -1417,10 +1286,8 @@ public class RecipeLibrary : MonoBehaviour
     {
         if (string.IsNullOrEmpty(expr)) return null;
 
-        // 숫자 리터럴
         if (int.TryParse(expr, out int iv)) return iv;
 
-        // inputs[k].xxxx 형태만 지원(현재 요구 범위)
         if (expr.StartsWith("inputs[", StringComparison.Ordinal))
         {
             int close = expr.IndexOf(']');
@@ -1433,7 +1300,7 @@ public class RecipeLibrary : MonoBehaviour
             ItemData it = (si >= 0 && si < slots.Count) ? slots[si] : null;
             if (it == null) return null;
 
-            string rest = expr.Substring(close + 1); // "" or ".xxx"
+            string rest = expr.Substring(close + 1);
             if (string.IsNullOrEmpty(rest)) return it;
 
             if (rest.StartsWith(".", StringComparison.Ordinal))
@@ -1442,7 +1309,6 @@ public class RecipeLibrary : MonoBehaviour
             return ResolveOnItem(it, rest);
         }
 
-        // (방어) 그냥 field로 들어온 경우: dst 같은 컨텍스트가 없으니 null
         return null;
     }
 
@@ -1457,7 +1323,6 @@ public class RecipeLibrary : MonoBehaviour
     {
         if (it == null || string.IsNullOrEmpty(path)) return null;
 
-        // top-level scalar
         if (path == "name") return it.Name;
         if (path == "spriteName") return it.SpriteName;
         if (path == "itemId") return it.ItemId;
@@ -1483,7 +1348,6 @@ public class RecipeLibrary : MonoBehaviour
         return null;
     }
 
-    // ✅ details 경로 해석: Dictionary + JObject, List<object> + IList + JArray 모두 지원
     object ResolveFromDetails(ItemData it, string path)
     {
         if (it?.Details == null || string.IsNullOrEmpty(path)) return null;
@@ -1495,7 +1359,6 @@ public class RecipeLibrary : MonoBehaviour
         {
             string part = parts[i];
 
-            // token: key[index]
             string key = part;
             int? index = null;
 
@@ -1512,7 +1375,6 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
-            // 1) key 접근 (map)
             if (!string.IsNullOrEmpty(key))
             {
                 if (!TryGetFromMap(curr, key, out var next))
@@ -1520,7 +1382,6 @@ public class RecipeLibrary : MonoBehaviour
                 curr = next;
             }
 
-            // 2) index 접근 (list/array)
             if (index.HasValue)
             {
                 int idx = index.Value;
@@ -1549,7 +1410,6 @@ public class RecipeLibrary : MonoBehaviour
                 }
             }
 
-            // 3) JToken unwrap (중간 단계에서도 안전)
             if (curr is JValue jv)
                 curr = jv.Value;
         }
@@ -1558,7 +1418,6 @@ public class RecipeLibrary : MonoBehaviour
         return curr;
     }
 
-    // ✅ curr가 Dictionary<string,object> 또는 JObject일 때 key로 가져오기
     bool TryGetFromMap(object curr, string key, out object value)
     {
         value = null;
@@ -1597,13 +1456,12 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────
-    // Field Path (신규 고정 루트)
+    // Field reads + mutations
     // ─────────────────────────────────────────────────────────
     object ReadField(ItemData src, string field)
     {
         if (src == null || string.IsNullOrEmpty(field)) return null;
 
-        // top-level scalar
         if (field == "name") return src.Name;
         if (field == "spriteName") return src.SpriteName;
         if (field == "itemId") return src.ItemId;
@@ -1611,17 +1469,14 @@ public class RecipeLibrary : MonoBehaviour
         if (field == "maxDurability") return src.MaxDurability;
         if (field == "tags") return src.Tags;
 
-        // top-level dict roots
         if (field == "details") return src.Details;
         if (field == "ToolActions") return src.ToolActions;
         if (field == "WeaponActions") return src.WeaponActions;
         if (field == "BreakActions") return src.BreakActions;
 
-        // nested: details.*
         if (field.StartsWith("details.", StringComparison.Ordinal))
-            return ReadFromDetails(src, field.Substring("details.".Length));
+            return ResolveFromDetails(src, field.Substring("details.".Length));
 
-        // nested: ToolActions.* / WeaponActions.* / BreakActions.*
         if (field.StartsWith("ToolActions.", StringComparison.Ordinal))
             return ReadFromActionRoot(src.ToolActions, field.Substring("ToolActions.".Length));
 
@@ -1634,30 +1489,6 @@ public class RecipeLibrary : MonoBehaviour
         return null;
     }
 
-    object ReadFromDetails(ItemData dst, string path)
-    {
-        if (dst?.Details == null || string.IsNullOrEmpty(path)) return null;
-
-        var parts = path.Split('.');
-        object curr = dst.Details;
-
-        for (int i = 0; i < parts.Length; i++)
-        {
-            string key = parts[i];
-            if (curr is Dictionary<string, object> dict)
-            {
-                if (!dict.TryGetValue(key, out curr))
-                    return null;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        return curr;
-    }
-
     object ReadFromActionRoot(Dictionary<string, Dictionary<string, object>> root, string path)
     {
         if (root == null || string.IsNullOrEmpty(path)) return null;
@@ -1665,7 +1496,6 @@ public class RecipeLibrary : MonoBehaviour
         var parts = path.Split('.');
         if (parts.Length == 0) return null;
 
-        // 1) action name
         string actionName = parts[0];
         if (!root.TryGetValue(actionName, out var paramDict) || paramDict == null)
             return null;
@@ -1675,7 +1505,6 @@ public class RecipeLibrary : MonoBehaviour
 
         object curr = paramDict;
 
-        // 2) inside param dict (Dictionary<string, object>) chain
         for (int i = 1; i < parts.Length; i++)
         {
             string key = parts[i];
@@ -1694,9 +1523,134 @@ public class RecipeLibrary : MonoBehaviour
         return curr;
     }
 
+    void SetDetailPath(ItemData dst, string path, object value)
+    {
+        if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
+
+        var parts = path.Split('.');
+        object curr = dst.Details;
+
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            string key = parts[i];
+
+            if (curr is Dictionary<string, object> d)
+            {
+                if (!d.TryGetValue(key, out var next) || next == null)
+                {
+                    var created = new Dictionary<string, object>();
+                    d[key] = created;
+                    curr = created;
+                }
+                else if (next is Dictionary<string, object> nd)
+                {
+                    curr = nd;
+                }
+                else
+                {
+                    var created = new Dictionary<string, object>();
+                    d[key] = created;
+                    curr = created;
+                }
+            }
+            else return;
+        }
+
+        if (curr is Dictionary<string, object> last)
+            last[parts[^1]] = value;
+    }
+
+    void DeleteFromDetails(ItemData dst, string path)
+    {
+        if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
+
+        var parts = path.Split('.');
+        if (parts.Length == 0) return;
+
+        if (parts.Length == 1)
+        {
+            dst.Details.Remove(parts[0]);
+            return;
+        }
+
+        object curr = dst.Details;
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (curr is Dictionary<string, object> d)
+            {
+                if (!d.TryGetValue(parts[i], out curr) || curr == null)
+                    return;
+            }
+            else return;
+        }
+
+        if (curr is Dictionary<string, object> last)
+            last.Remove(parts[^1]);
+    }
+
     // ─────────────────────────────────────────────────────────
-    // Action dict mutation (copy-on-write)
+    // Action dict helpers (copy-on-write)
     // ─────────────────────────────────────────────────────────
+    Dictionary<string, Dictionary<string, object>> ToActionDict(object v)
+    {
+        if (v == null) return null;
+
+        if (v is Dictionary<string, Dictionary<string, object>> dd)
+        {
+            return dd.ToDictionary(kv => kv.Key,
+                                   kv => kv.Value != null
+                                       ? new Dictionary<string, object>(kv.Value)
+                                       : new Dictionary<string, object>());
+        }
+
+        if (v is Dictionary<string, object> d0)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var kv in d0)
+            {
+                if (kv.Value is Dictionary<string, object> inner)
+                    res[kv.Key] = new Dictionary<string, object>(inner);
+                else
+                    res[kv.Key] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        if (v is JArray ja)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var x in ja)
+            {
+                string name = x.ToString();
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!res.ContainsKey(name))
+                    res[name] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        if (v is System.Collections.IEnumerable ien && v is not string)
+        {
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var x in ien)
+            {
+                string name = x?.ToString();
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!res.ContainsKey(name))
+                    res[name] = new Dictionary<string, object>();
+            }
+            return res;
+        }
+
+        string single = v.ToString();
+        if (string.IsNullOrEmpty(single)) return null;
+
+        return new Dictionary<string, Dictionary<string, object>>
+        {
+            { single, new Dictionary<string, object>() }
+        };
+    }
+
     Dictionary<string, Dictionary<string, object>> SetInActionRoot(
         Dictionary<string, Dictionary<string, object>> root,
         string path,
@@ -1751,10 +1705,7 @@ public class RecipeLibrary : MonoBehaviour
                     curr = created;
                 }
             }
-            else
-            {
-                return newRoot;
-            }
+            else return newRoot;
         }
 
         if (curr is Dictionary<string, object> last)
@@ -1776,14 +1727,12 @@ public class RecipeLibrary : MonoBehaviour
         var parts = path.Split('.');
         if (parts.Length == 0) return newRoot;
 
-        // 1) ToolActions.Combine (액션 자체 제거)
         if (parts.Length == 1)
         {
             newRoot.Remove(parts[0]);
             return newRoot;
         }
 
-        // 2) ToolActions.Combine.xxx (param 내부 키 제거)
         string actionName = parts[0];
         if (!newRoot.TryGetValue(actionName, out var param) || param == null)
             return newRoot;
@@ -1806,15 +1755,9 @@ public class RecipeLibrary : MonoBehaviour
                     dict[key] = copied;
                     curr = copied;
                 }
-                else
-                {
-                    return newRoot;
-                }
+                else return newRoot;
             }
-            else
-            {
-                return newRoot;
-            }
+            else return newRoot;
         }
 
         if (curr is Dictionary<string, object> lastDict)
@@ -1822,34 +1765,6 @@ public class RecipeLibrary : MonoBehaviour
 
         newRoot[actionName] = newParam;
         return newRoot;
-    }
-
-    void DeleteFromDetails(ItemData dst, string path)
-    {
-        if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
-
-        var parts = path.Split('.');
-        if (parts.Length == 0) return;
-
-        if (parts.Length == 1)
-        {
-            dst.Details.Remove(parts[0]);
-            return;
-        }
-
-        object curr = dst.Details;
-        for (int i = 0; i < parts.Length - 1; i++)
-        {
-            if (curr is Dictionary<string, object> d)
-            {
-                if (!d.TryGetValue(parts[i], out curr) || curr == null)
-                    return;
-            }
-            else return;
-        }
-
-        if (curr is Dictionary<string, object> last)
-            last.Remove(parts[^1]);
     }
 
     string ExpandTokens(string s)
@@ -1861,11 +1776,68 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────
-    // ✅ Crucible layers helpers (합금 전용)
-    // layers 원소 형태:
-    //   - JObject: { "itemId": "Molten Copper", "amount": 9 }
-    //   - Dictionary<string, object> 동일 키
+    // Alloy / Crucible layers (원본 유지)
     // ─────────────────────────────────────────────────────────
+    public bool TryApplyAlloysToCrucible(ItemData crucible)
+    {
+        if (_alloys.Count == 0) return false;
+        if (crucible == null || crucible.Details == null) return false;
+        if (!crucible.Details.TryGetValue("layers", out var layersObj) || layersObj == null) return false;
+        if (layersObj is not System.Collections.IList layers) return false;
+
+        bool changed = false;
+
+        while (true)
+        {
+            bool applied = false;
+
+            for (int r = 0; r < _alloys.Count; r++)
+            {
+                var recipe = _alloys[r];
+
+                var totals = new Dictionary<string, int>();
+                for (int i = 0; i < layers.Count; i++)
+                {
+                    if (!TryReadLayer(layers[i], out var id, out var amt)) continue;
+                    if (string.IsNullOrEmpty(id) || amt <= 0) continue;
+
+                    if (totals.TryGetValue(id, out var cur)) totals[id] = cur + amt;
+                    else totals[id] = amt;
+                }
+
+                int batches = int.MaxValue;
+                for (int i = 0; i < recipe.inputs.Count; i++)
+                {
+                    var (id, amt) = recipe.inputs[i];
+                    totals.TryGetValue(id, out int have);
+
+                    int b = have / amt;
+                    if (b < batches) batches = b;
+                    if (batches == 0) break;
+                }
+
+                if (batches <= 0 || batches == int.MaxValue)
+                    continue;
+
+                for (int i = 0; i < recipe.inputs.Count; i++)
+                {
+                    var (id, amt) = recipe.inputs[i];
+                    ConsumeFromTop(layers, id, batches * amt);
+                }
+
+                AddOrStackAtTop(layers, recipe.outId, batches * recipe.outAmount);
+
+                applied = true;
+                changed = true;
+                break;
+            }
+
+            if (!applied) break;
+        }
+
+        return changed;
+    }
+
     bool TryReadLayer(object layerObj, out string itemId, out int amount)
     {
         itemId = null;
@@ -1892,11 +1864,9 @@ public class RecipeLibrary : MonoBehaviour
             return true;
         }
 
-        if (layerObj is JObject) return false;
         return false;
     }
 
-    // ✅ List<object> 고정에서 IList로 변경
     void SetLayerAmount(System.Collections.IList layers, int index, int newAmount)
     {
         if (layers == null) return;
@@ -1915,8 +1885,6 @@ public class RecipeLibrary : MonoBehaviour
             dict["amount"] = newAmount;
             return;
         }
-
-        // List<Dictionary<string, object>> 같은 경우 (IList 원소가 Dictionary로 읽힘) → 위에서 이미 처리
     }
 
     void ConsumeFromTop(System.Collections.IList layers, string itemId, int need)

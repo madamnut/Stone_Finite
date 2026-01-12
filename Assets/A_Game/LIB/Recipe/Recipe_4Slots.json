@@ -1,6 +1,6 @@
 [
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "ToolActions": { "Combine": { "partType": "Head", "type": "Heavy" } }, "count": 1 },
       { "ToolActions": { "Combine": { "partType": "Binding", "type": "Long" } }, "count": 1 },
@@ -49,7 +49,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "ToolActions": { "Combine": { "partType": "Head", "type": "Light" } }, "count": 1 },
       { "ToolActions": { "Combine": { "partType": "Binding", "type": "Short" } }, "count": 1 },
@@ -98,7 +98,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "ToolActions": { "Combine": { "partType": "Head", "type": "Standard" } }, "count": 1 },
       { "ToolActions": { "Combine": { "partType": "Binding", "type": "Standard" } }, "count": 1 },
@@ -147,7 +147,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Chunk", "count": 1 },
       { "ToolActions": { "Hammering": {} }, "count": 1 }
@@ -155,7 +155,7 @@
     "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
       { "itemId": "Unfired Clay Brick", "count": 1 }
@@ -166,7 +166,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Chunk", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
@@ -174,7 +174,7 @@
     "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
       { "itemId": "Unfired Clay Slab", "count": 1 }
@@ -185,7 +185,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Refractory Clay Chunk", "count": 1 },
       { "ToolActions": { "Hammering": {} }, "count": 1 }
@@ -193,7 +193,7 @@
     "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
       { "itemId": "Unfired Refractory Clay Brick", "count": 1 }
@@ -204,7 +204,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Refractory Clay Chunk", "count": 1 },
       { "ToolActions": { "Pounding": {} }, "count": 1 }
@@ -212,7 +212,7 @@
     "inputConditions": [],
     "inputActions": [
       { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": 1 }
+      { "type": "durability", "amount": -1 }
     ],
     "outputs": [
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
@@ -223,7 +223,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Unfired Clay Slab", "count": 1 }
     ],
@@ -240,7 +240,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Unfired Clay Slab", "count": 1 },
       { "itemId": "Unfired Clay Slab", "count": 1 }
@@ -259,7 +259,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
       { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
@@ -282,7 +282,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Dirt Pile", "count": 1 },
       { "itemId": "Dirt Pile", "count": 1 },
@@ -305,7 +305,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Mud Chunk", "count": 1 },
       { "itemId": "Mud Chunk", "count": 1 },
@@ -328,7 +328,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Clay Chunk", "count": 1 },
       { "itemId": "Clay Chunk", "count": 1 },
@@ -351,7 +351,7 @@
   },
 
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Long Wooden Stick", "count": 1 },
       { "itemId": "Long Wooden Stick", "count": 1 },
@@ -374,7 +374,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Grog", "count": 1 },
       { "itemId": "Clay Chunk", "count": 1 },
@@ -382,7 +382,6 @@
     ],
     "inputConditions": [],
     "inputActions": [
-      { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 },
       { "type": "consume", "amount": 1 }
@@ -396,7 +395,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Clay Brick", "count": 1 },
       { "itemId": "Clay Brick", "count": 1 },
@@ -417,7 +416,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Refractory Clay Brick", "count": 1 },
       { "itemId": "Refractory Clay Brick", "count": 1 },
@@ -438,7 +437,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "ToolActions": { "Crucible": {} }, "count": 1 },
       { "ToolActions": { "Cast": {} }, "count": 1 }
@@ -471,7 +470,7 @@
   },
 
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Hot Large Copper Plate", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -489,7 +488,7 @@
     ]
   },
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Hot Large Tin Plate", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -507,7 +506,7 @@
     ]
   },
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Hot Large Bronze Plate", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -525,7 +524,7 @@
     ]
   },
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Hot Large Iron Plate", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -543,7 +542,7 @@
     ]
   },
   {
-    "isOrdered": false,
+    "isShapeless": true,
     "inputs": [
       { "itemId": "Hot Large Steel Plate", "count": 1 },
       { "ToolActions": { "Splitting": {} }, "count": 1 }
@@ -561,7 +560,7 @@
     ]
   },
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Hot Long Copper Rod", "count": 1 },
       { "itemId": "Hot Long Copper Rod", "count": 1 },
@@ -583,7 +582,7 @@
     ]
   },
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Hot Long Tin Rod", "count": 1 },
       { "itemId": "Hot Long Tin Rod", "count": 1 },
@@ -605,7 +604,7 @@
     ]
   },
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Hot Long Bronze Rod", "count": 1 },
       { "itemId": "Hot Long Bronze Rod", "count": 1 },
@@ -627,7 +626,7 @@
     ]
   },
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Hot Long Iron Rod", "count": 1 },
       { "itemId": "Hot Long Iron Rod", "count": 1 },
@@ -649,7 +648,7 @@
     ]
   },
   {
-    "isOrdered": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Hot Long Steel Rod", "count": 1 },
       { "itemId": "Hot Long Steel Rod", "count": 1 },
