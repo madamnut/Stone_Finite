@@ -152,7 +152,7 @@
     "isShapeless": true,
     "inputs": [
       { "itemId": "Long Wooden Stick", "count": 1 },
-      { "ToolActions": { "Chopping": {} }, "count": 1 }
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
     ],
     "inputConditions": [],
     "inputActions": [
@@ -169,7 +169,7 @@
     "isShapeless": true,
     "inputs": [
       { "itemId": "Wooden Stick", "count": 1 },
-      { "ToolActions": { "Chopping": {} }, "count": 1 }
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
     ],
     "inputConditions": [],
     "inputActions": [
