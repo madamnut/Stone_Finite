@@ -305,7 +305,7 @@
   },
 
   {
-    "isShapeless": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -322,7 +322,7 @@
   },
 
   {
-    "isShapeless": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Stone Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
@@ -407,7 +407,7 @@
   },
 
   {
-    "isShapeless": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
@@ -424,7 +424,7 @@
   },
 
   {
-    "isShapeless": true,
+    "isShapeless": false,
     "inputs": [
       { "itemId": "Flint Shard", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }

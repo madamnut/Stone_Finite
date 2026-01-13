@@ -7,7 +7,7 @@
 //   * 큰 테이블(9/16)에서 작은 격자(2/4/9) 레시피는 "슬라이딩" 가능
 //   * 정책 A: 레시피 격자 밖(윈도우 밖) 슬롯은 전부 null 이어야 매칭
 //
-// - 2-slot shaped 레시피는 1x2(가로)로 취급하며, 회전으로 2x1(세로)도 허용됨.
+// - ✅ 2-slot shaped 레시피는 2x1(가로)로 취급하며, "유형 제작법(재료/툴 역할)" 보호를 위해 회전/대칭(미러) 변환을 허용하지 않음.
 
 using System;
 using System.Linq;
@@ -512,8 +512,16 @@ public class RecipeLibrary : MonoBehaviour
             baseGrid.cells[i] = recipeInputs[i] as JObject; // null 가능
         }
 
-        // generate unique transforms
-        var variants = GenerateUniqueTransforms(baseGrid);
+        // ✅ 2-slot shaped는 "유형 제작법" 보호: transforms(회전/대칭) 금지
+        List<GridSpec> variants;
+        if (recipeInputs.Count == 2)
+        {
+            variants = new List<GridSpec>(1) { baseGrid };
+        }
+        else
+        {
+            variants = GenerateUniqueTransforms(baseGrid);
+        }
 
         // slide over target grid
         for (int oy = 0; oy <= th - rh; oy++)
@@ -581,7 +589,7 @@ public class RecipeLibrary : MonoBehaviour
     {
         w = h = 0;
 
-        // 2-slot shaped는 1x2(가로)로 취급
+        // 2-slot shaped는 2x1(가로)로 취급
         if (count == 2) { w = 2; h = 1; return true; }
 
         int s = Mathf.RoundToInt(Mathf.Sqrt(count));
