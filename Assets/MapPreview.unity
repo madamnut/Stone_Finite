@@ -284,8 +284,8 @@ MonoBehaviour:
   targetUI: {fileID: 1960623954}
   filterMode: 0
   flipY: 0
-  unknownColor: {r: 1, g: 0, b: 1, a: 1}
-  air: {r: 1, g: 0, b: 1, a: 1}
+  unknownColor: {r: 1, g: 0.3647059, b: 0.16470589, a: 1}
+  air: {r: 1, g: 1, b: 1, a: 1}
   rock: {r: 0.35, g: 0.35, b: 0.35, a: 1}
   dirt: {r: 0.47, g: 0.28, b: 0.19, a: 1}
   grass: {r: 0.2, g: 0.71, b: 0.27, a: 1}

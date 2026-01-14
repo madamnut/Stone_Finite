@@ -316,7 +316,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Stone Chopper", "count": 1 }
+      { "itemId": "Stone Adze", "count": 1 }
     ],
     "outputActions": []
   },
@@ -333,40 +333,6 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Stone Pounder", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Stone Chopper", "count": 1 },
-      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Stone Adze", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Stone Chopper", "count": 1 },
-      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
       { "itemId": "Stone Cleaver", "count": 1 }
     ],
     "outputActions": []
@@ -375,24 +341,7 @@
   {
     "isShapeless": true,
     "inputs": [
-      { "itemId": "Stone Pounder", "count": 1 },
-      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Stone Maul", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Stone Pounder", "count": 1 },
+      { "itemId": "Stone Cleaver", "count": 1 },
       { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
     ],
     "inputConditions": [],
@@ -418,7 +367,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Flint Blade", "count": 1 }
+      { "itemId": "Flint Graver", "count": 1 }
     ],
     "outputActions": []
   },
@@ -436,74 +385,6 @@
     ],
     "outputs": [
       { "itemId": "Flint Scraper", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Flint Blade", "count": 1 },
-      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Flint Awl", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Flint Blade", "count": 1 },
-      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Flint Burin", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Flint Scraper", "count": 1 },
-      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Flint Graver", "count": 1 }
-    ],
-    "outputActions": []
-  },
-
-  {
-    "isShapeless": true,
-    "inputs": [
-      { "itemId": "Flint Scraper", "count": 1 },
-      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
-    ],
-    "inputConditions": [],
-    "inputActions": [
-      { "type": "consume", "amount": 1 },
-      { "type": "durability", "amount": -1 }
-    ],
-    "outputs": [
-      { "itemId": "Flint Denticulate", "count": 1 }
     ],
     "outputActions": []
   },

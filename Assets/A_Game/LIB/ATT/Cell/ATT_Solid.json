@@ -317,6 +317,24 @@
       { "key": "Default", "meta": 0, "sprite": "Steel Platform" }
     ]
   },
+  "SandStone": {
+    "id": 35,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "SandStone" }
+    ]
+  },
+  "SandStone Brick Cell": {
+    "id": 36,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "SandStone Brick Cell" }
+    ]
+  },
 
   "Sand": {
     "id": 1000,
@@ -390,6 +408,69 @@
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Small_Stone_Pile", "attachedAt": "Down" }
+    ]
+  },
+  "Dead_Bush": {
+    "id": 2006,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Dead_Bush", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_0": {
+    "id": 2007,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_0", "attachedAt": "Right" }
+    ]
+  },
+  "Agave_1": {
+    "id": 2008,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_1", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_2": {
+    "id": 2009,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_2", "attachedAt": "Left" }
+    ]
+  },
+  "Agave_3": {
+    "id": 2010,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_3", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_4": {
+    "id": 2011,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_4", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_5": {
+    "id": 2012,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_5", "attachedAt": "Down" }
     ]
   },
 

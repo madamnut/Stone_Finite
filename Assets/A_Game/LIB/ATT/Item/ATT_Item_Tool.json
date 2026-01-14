@@ -3,30 +3,28 @@
     "name": "Stone Shard",
     "spriteName": "Stone Shard",
     "maxStack": 1,
-    "tags": ["Tool"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "PercussionFlaking": {}
-    }
-  },
-
-  "Stone Chopper": {
-    "name": "Stone Chopper",
-    "spriteName": "Stone Chopper",
-    "maxStack": 1,
     "tags": ["Tool", "Head"],
 
     "maxDurability": 32,
 
     "toolActions": {
-      "Chopping": {},
-
+      "PercussionFlaking": {},
+      "Smashing": {},
       "Combine": {
         "partType": "Head",
         "type": "Heavy",
-        "potentialName": "Stone Chopper"
+        "potentialName": "Stone Axe"
+      }
+    },
+
+    "breakActions": {
+      "Chopping": {
+        "tier": 1,
+        "speed": 1.5
+      },
+      "Mining": {
+        "tier": 1,
+        "speed": 1.5
       }
     }
   },
@@ -45,7 +43,7 @@
       "Combine": {
         "partType": "Head",
         "type": "Standard",
-        "potentialName": "Stone Handaxe"
+        "potentialName": "Stone Adze"
       }
     }
   },
@@ -65,44 +63,6 @@
         "partType": "Head",
         "type": "Standard",
         "potentialName": "Stone Cleaver"
-      }
-    }
-  },
-
-  "Stone Pounder": {
-    "name": "Stone Pounder",
-    "spriteName": "Stone Pounder",
-    "maxStack": 1,
-    "tags": ["Tool", "Head"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "Pounding": {},
-
-      "Combine": {
-        "partType": "Head",
-        "type": "Light",
-        "potentialName": "Stone Pounder"
-      }
-    }
-  },
-
-  "Stone Maul": {
-    "name": "Stone Maul",
-    "spriteName": "Stone Maul",
-    "maxStack": 1,
-    "tags": ["Tool", "Head"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "Smashing": {},
-
-      "Combine": {
-        "partType": "Head",
-        "type": "Heavy",
-        "potentialName": "Stone Sledgehammer"
       }
     }
   },
@@ -132,24 +92,13 @@
     "name": "Flint Shard",
     "spriteName": "Flint Shard",
     "maxStack": 1,
-    "tags": ["Tool"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "PressureFlaking": {}
-    }
-  },
-
-  "Flint Blade": {
-    "name": "Flint Blade",
-    "spriteName": "Flint Blade",
-    "maxStack": 1,
     "tags": ["Tool", "Head"],
 
     "maxDurability": 32,
 
     "toolActions": {
+      "PressureFlaking": {},
+
       "Cutting": {},
 
       "Combine": {
@@ -157,43 +106,12 @@
         "type": "Light",
         "potentialName": "Flint Knife"
       }
-    }
-  },
+    },
 
-  "Flint Awl": {
-    "name": "Flint Awl",
-    "spriteName": "Flint Awl",
-    "maxStack": 1,
-    "tags": ["Tool", "Head"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "Piercing": {},
-
-      "Combine": {
-        "partType": "Head",
-        "type": "Light",
-        "potentialName": "Flint Awl"
-      }
-    }
-  },
-
-  "Flint Burin": {
-    "name": "Flint Burin",
-    "spriteName": "Flint Burin",
-    "maxStack": 1,
-    "tags": ["Tool", "Head"],
-
-    "maxDurability": 32,
-
-    "toolActions": {
-      "Engraving": {},
-
-      "Combine": {
-        "partType": "Head",
-        "type": "Light",
-        "potentialName": "Flint Burin"
+    "breakActions": {
+      "Slashing": {
+        "tier": 1,
+        "speed": 1.5
       }
     }
   },
@@ -213,6 +131,13 @@
         "partType": "Head",
         "type": "Light",
         "potentialName": "Flint Scraper"
+      }
+    },
+
+    "breakActions": {
+      "Digging": {
+        "tier": 1,
+        "speed": 1.5
       }
     }
   },
@@ -236,21 +161,44 @@
     }
   },
 
-  "Flint Denticulate": {
-    "name": "Flint Denticulate",
-    "spriteName": "Flint Denticulate",
+  "Wooden Club": {
+    "name": "Wooden Club",
+    "spriteName": "Wooden Club",
     "maxStack": 1,
-    "tags": ["Tool", "Head"],
+    "tags": ["Weapon", "Tool"],
 
     "maxDurability": 32,
 
     "toolActions": {
-      "Notching": {},
+      "Pounding": {}
+    },
 
-      "Combine": {
-        "partType": "Head",
-        "type": "Light",
-        "potentialName": "Flint Denticulate"
+    "weaponActions": {
+      "Swing": {
+        "damage": 1,
+        "knockback": 1.0,
+        "staminaCost": 5,
+        "cooldown": 0.7,
+        "reach": 1.0
+      }
+    }
+  },
+
+  "Wooden Spear": {
+    "name": "Wooden Spear",
+    "spriteName": "Wooden Spear",
+    "maxStack": 1,
+    "tags": ["Weapon"],
+
+    "maxDurability": 32,
+
+    "weaponActions": {
+      "Thrust": {
+        "damage": 2,
+        "knockback": 0.6,
+        "staminaCost": 7,
+        "cooldown": 0.7,
+        "reach": 1.0
       }
     }
   }
