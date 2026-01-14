@@ -102,4 +102,12 @@ MonoBehaviour:
   useCaveDepthMask: 0
   caveDepthStart: 0.25
   caveDepthEnd: 0.9
+  desertStartMinX: 2910
+  desertStartMaxX: 3010
+  desertTransitionLen: 10
+  desertTransitionChance: 0.5
+  snowEndMinX: 2110
+  snowEndMaxX: 2210
+  snowTransitionLen: 10
+  snowTransitionChance: 0.5
   treeDensity: 0.12

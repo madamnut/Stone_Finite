@@ -335,6 +335,96 @@
       { "key": "Default", "meta": 0, "sprite": "SandStone Brick Cell" }
     ]
   },
+  "Frozen Grass_Top": {
+    "id": 37,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Top" }
+    ]
+  },
+  "Frozen Grass_Left": {
+    "id": 38,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Left" }
+    ]
+  },
+  "Frozen Grass_Right": {
+    "id": 39,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Right" }
+    ]
+  },
+  "Frozen Grass_TopLeft": {
+    "id": 40,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopLeft" }
+    ]
+  },
+  "Frozen Grass_TopRight": {
+    "id": 41,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopRight" }
+    ]
+  },
+  "Frozen Grass_LeftRight": {
+    "id": 42,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_LeftRight" }
+    ]
+  },
+  "Frozen Grass_TopLeftRight": {
+    "id": 43,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopLeftRight" }
+    ]
+  },
+  "Ice Cell": {
+    "id": 44,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ice Cell" }
+    ]
+  },
+  "Snow Cell": {
+    "id": 45,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Snow Cell" }
+    ]
+  },
+  "Frozen Dirt": {
+    "id": 46,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Dirt" }
+    ]
+  },
 
   "Sand": {
     "id": 1000,
@@ -473,6 +563,53 @@
       { "key": "Default", "meta": 0, "sprite": "Agave_5", "attachedAt": "Down" }
     ]
   },
+  "Cactus": {
+    "id": 2013,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Cactus", "attachedAt": "Down" }
+    ]
+  },
+  "Snow": {
+    "id": 2014,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Snow", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Bush": {
+    "id": 2015,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Bush", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Plant": {
+    "id": 2016,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Plant", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Trunk": {
+    "id": 2017,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Trunk" }
+    ]
+  },
+
+
 
   "Ore_Coal": {
     "id": 3000,

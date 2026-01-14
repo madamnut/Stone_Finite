@@ -19,7 +19,7 @@ public class WorldGenSettings : ScriptableObject
 
     public float dirtNoiseBaseFrequency = 0.005f;
     public int   dirtNoiseOctaves       = 4;
-    [Range(0f,1f)] public float dirtNoisePersistence = 0.5f;
+    [Range(0f, 1f)] public float dirtNoisePersistence = 0.5f;
     public float dirtNoiseLacunarity    = 2f;
 
     // ─────────────────────────────────────────────────────────
@@ -31,88 +31,88 @@ public class WorldGenSettings : ScriptableObject
 
     public float rockNoiseBaseFrequency = 0.005f;
     public int   rockNoiseOctaves       = 4;
-    [Range(0f,1f)] public float rockNoisePersistence = 0.5f;
+    [Range(0f, 1f)] public float rockNoisePersistence = 0.5f;
     public float rockNoiseLacunarity    = 2f;
 
     // ─────────────────────────────────────────────────────────
     // Granite
     // ─────────────────────────────────────────────────────────
     [Header("Granite Settings")]
-    public float graniteBaseHeight      = 1100f;
-    public float graniteRange           = 80f;
+    public float graniteBaseHeight = 1100f;
+    public float graniteRange      = 80f;
 
     public float graniteNoiseBaseFrequency = 0.006f;
     public int   graniteNoiseOctaves       = 3;
-    [Range(0f,1f)] public float graniteNoisePersistence = 0.5f;
+    [Range(0f, 1f)] public float graniteNoisePersistence = 0.5f;
     public float graniteNoiseLacunarity    = 2.2f;
 
     // ─────────────────────────────────────────────────────────
     // Amphibolite
     // ─────────────────────────────────────────────────────────
     [Header("Amphibolite Settings")]
-    public float amphibBaseHeight       = 1000f;
-    public float amphibRange            = 60f;
+    public float amphibBaseHeight = 1000f;
+    public float amphibRange      = 60f;
 
     public float amphibNoiseBaseFrequency = 0.007f;
     public int   amphibNoiseOctaves       = 3;
-    [Range(0f,1f)] public float amphibNoisePersistence = 0.5f;
+    [Range(0f, 1f)] public float amphibNoisePersistence = 0.5f;
     public float amphibNoiseLacunarity    = 2.4f;
 
     // ─────────────────────────────────────────────────────────
     // Clay clusters
     // ─────────────────────────────────────────────────────────
     [Header("Clay Cluster Settings")]
-    public int   clayMinHeight          = 200;
-    public int   clayMaxHeight          = 900;
-    public float clayClusterSizeMean    = 70f;
-    public float clayClusterSizeStdDev  = 18f;
-    public float claySeedDensity        = 0.0018f;
-    public float clayExpansionProb      = 0.45f;
-    public float clayMaxGrowthFactor    = 1.4f;
+    public int   clayMinHeight         = 200;
+    public int   clayMaxHeight         = 900;
+    public float clayClusterSizeMean   = 70f;
+    public float clayClusterSizeStdDev = 18f;
+    public float claySeedDensity       = 0.0018f;
+    public float clayExpansionProb     = 0.45f;
+    public float clayMaxGrowthFactor   = 1.4f;
 
     // ─────────────────────────────────────────────────────────
     // Ores
     // ─────────────────────────────────────────────────────────
     [Header("Ore: Coal Cluster Settings")]
-    public int coalMinHeight = 200;
-    public int coalMaxHeight = 600;
-    public float coalClusterSizeMean = 80f;
+    public int   coalMinHeight         = 200;
+    public int   coalMaxHeight         = 600;
+    public float coalClusterSizeMean   = 80f;
     public float coalClusterSizeStdDev = 20f;
-    public float coalSeedDensity = 0.002f;
-    public float coalExpansionProb = 0.5f;
-    public float coalMaxGrowthFactor = 1.5f;
+    public float coalSeedDensity       = 0.002f;
+    public float coalExpansionProb     = 0.5f;
+    public float coalMaxGrowthFactor   = 1.5f;
 
     [Header("Ore: Tin Cluster Settings")]
-    public int tinMinHeight = 300;
-    public int tinMaxHeight = 700;
-    public float tinClusterSizeMean = 60f;
+    public int   tinMinHeight         = 300;
+    public int   tinMaxHeight         = 700;
+    public float tinClusterSizeMean   = 60f;
     public float tinClusterSizeStdDev = 15f;
-    public float tinSeedDensity = 0.0015f;
-    public float tinExpansionProb = 0.4f;
-    public float tinMaxGrowthFactor = 1.4f;
+    public float tinSeedDensity       = 0.0015f;
+    public float tinExpansionProb     = 0.4f;
+    public float tinMaxGrowthFactor   = 1.4f;
 
     [Header("Ore: Copper Cluster Settings")]
-    public int copperMinHeight = 300;
-    public int copperMaxHeight = 700;
-    public float copperClusterSizeMean = 60f;
+    public int   copperMinHeight         = 300;
+    public int   copperMaxHeight         = 700;
+    public float copperClusterSizeMean   = 60f;
     public float copperClusterSizeStdDev = 15f;
-    public float copperSeedDensity = 0.0015f;
-    public float copperExpansionProb = 0.4f;
-    public float copperMaxGrowthFactor = 1.4f;
+    public float copperSeedDensity       = 0.0015f;
+    public float copperExpansionProb     = 0.4f;
+    public float copperMaxGrowthFactor   = 1.4f;
 
     [Header("Ore: Iron Cluster Settings")]
-    public int ironMinHeight = 400;
-    public int ironMaxHeight = 800;
-    public float ironClusterSizeMean = 50f;
+    public int   ironMinHeight         = 400;
+    public int   ironMaxHeight         = 800;
+    public float ironClusterSizeMean   = 50f;
     public float ironClusterSizeStdDev = 12f;
-    public float ironSeedDensity = 0.001f;
-    public float ironExpansionProb = 0.3f;
-    public float ironMaxGrowthFactor = 1.3f;
+    public float ironSeedDensity       = 0.001f;
+    public float ironExpansionProb     = 0.3f;
+    public float ironMaxGrowthFactor   = 1.3f;
 
     // 클러스터 공통
     [Header("Cluster Behavior")]
     public int minInterClusterDist = 10;
-    public int clusterJitter = 5;
+    public int clusterJitter       = 5;
 
     public enum NeighborMode { FourDir, EightDir }
     public NeighborMode neighborMode = NeighborMode.EightDir;
@@ -135,10 +135,10 @@ public class WorldGenSettings : ScriptableObject
     public float caveA_PersDetail = 0.5f;
     public float caveA_LacDetail  = 2.2f;
 
-    [Range(0f,1f)] 
+    [Range(0f, 1f)]
     public float caveA_DetailWeight = 0.5f;
 
-    [Range(-1f,1f)]
+    [Range(-1f, 1f)]
     public float caveA_Threshold = -0.10f;
 
     // ─────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ public class WorldGenSettings : ScriptableObject
     public float caveB_PersBase = 0.5f;
     public float caveB_LacBase  = 2.0f;
 
-    [Range(-1f,1f)]
+    [Range(-1f, 1f)]
     public float caveB_Threshold = -0.10f;
 
     // ─────────────────────────────────────────────────────────
@@ -168,15 +168,35 @@ public class WorldGenSettings : ScriptableObject
     [Header("Cave Depth Mask")]
     public bool useCaveDepthMask = true;
 
-    [Range(0f,1f)]
+    [Range(0f, 1f)]
     public float caveDepthStart = 0.25f;
 
-    [Range(0f,1f)]
+    [Range(0f, 1f)]
     public float caveDepthEnd = 0.90f;
+
+    // ─────────────────────────────────────────────────────────
+    // Biome Pass: Desert (NEW)
+    // ─────────────────────────────────────────────────────────
+    [Header("Biome Pass: Desert")]
+    [Min(0)] public int desertStartMinX = 0;
+    [Min(0)] public int desertStartMaxX = 0;
+
+    [Min(0)] public int desertTransitionLen = 10;
+    [Range(0f, 1f)] public float desertTransitionChance = 0.5f;
+
+    // ─────────────────────────────────────────────────────────
+    // Biome Pass: Snow (NEW)
+    // ─────────────────────────────────────────────────────────
+    [Header("Biome Pass: Snow")]
+    [Min(0)] public int snowEndMinX = 0;
+    [Min(0)] public int snowEndMaxX = 0;
+
+    [Min(0)] public int snowTransitionLen = 10;
+    [Range(0f, 1f)] public float snowTransitionChance = 0.5f;
 
     // ─────────────────────────────────────────────────────────
     // Trees
     // ─────────────────────────────────────────────────────────
     [Header("Tree Settings")]
-    [Range(0f,1f)] public float treeDensity = 0.02f;
+    [Range(0f, 1f)] public float treeDensity = 0.02f;
 }

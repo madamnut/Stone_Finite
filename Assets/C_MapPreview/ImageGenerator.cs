@@ -1,8 +1,9 @@
 // ImageGenerator.cs (전체 교체본)
 // - WorldDataGenerator.GenerateCommonSolid() 기반 프리뷰
-// - Solid ID는 ATT_Solid.json 기준 (WorldDataGenerator 상수와 동일)
+// - Solid ID는 ATT_Solid.json 기준
 // - Fluid는 commonFluid(ATT_Fluid.json) 기준: 0 none, 1 water
-// - Grass는 이제 id=3 + meta 변형인데, meta가 프리뷰 API로 안 나와서 단일 색으로 표시
+// - Grass는 id=3~9 (분리 ID)라서 대표색 1개로 표시
+// - FrozenGrass는 id=37~43 대표색 1개로 표시
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,44 +24,75 @@ public class ImageGenerator : MonoBehaviour
     public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 미지정 또는 예외
 
     [Header("Name → Color (인스펙터에서 직접 지정)")]
-    public Color air                = new Color(0, 0, 0, 0);
-    public Color rock               = new Color(0.35f, 0.35f, 0.35f, 1);
-    public Color dirt               = new Color(0.47f, 0.28f, 0.19f, 1);
+    public Color air  = new Color(0, 0, 0, 0);
+    public Color rock = new Color(0.35f, 0.35f, 0.35f, 1);
+    public Color dirt = new Color(0.47f, 0.28f, 0.19f, 1);
 
-    // Grass는 이제 id=3 고정 + meta 변형인데, 여기선 meta 없으므로 대표색 1개만 사용
-    public Color grass              = new Color(0.20f, 0.71f, 0.27f, 1);
+    // Grass(3~9) 대표색
+    public Color grass = new Color(0.20f, 0.71f, 0.27f, 1);
 
-    // ✅ 변경: Clay id=4, Mud id=5
-    public Color clay               = new Color(0.62f, 0.40f, 0.33f, 1);
-    public Color mud                = new Color(0.35f, 0.25f, 0.20f, 1);
+    public Color clay = new Color(0.62f, 0.40f, 0.33f, 1);
+    public Color mud  = new Color(0.35f, 0.25f, 0.20f, 1);
 
-    public Color sand               = new Color(0.82f, 0.75f, 0.47f, 1);
-    public Color gravel             = new Color(0.55f, 0.51f, 0.47f, 1);
-    public Color trunk              = new Color(0.43f, 0.27f, 0.12f, 1);
-    public Color leaf               = new Color(0.16f, 0.63f, 0.24f, 1);
-    public Color plant              = new Color(0.24f, 0.67f, 0.31f, 1);
-    public Color bush               = new Color(0.27f, 0.59f, 0.27f, 1);
-    public Color stone_Pile         = new Color(0.51f, 0.51f, 0.51f, 1);
-    public Color small_Stone_Pile   = new Color(0.59f, 0.59f, 0.59f, 1);
-    public Color ore_Coal           = new Color(0.12f, 0.12f, 0.12f, 1);
-    public Color ore_Copper         = new Color(0.78f, 0.47f, 0.20f, 1);
-    public Color ore_Iron           = new Color(0.71f, 0.71f, 0.78f, 1);
-    public Color ore_Tin            = new Color(0.71f, 0.78f, 0.86f, 1);
-    public Color granite            = new Color(0.59f, 0.59f, 0.67f, 1);
-    public Color amphibolite        = new Color(0.55f, 0.63f, 0.71f, 1);
+    public Color sand   = new Color(0.82f, 0.75f, 0.47f, 1);
+    public Color gravel = new Color(0.55f, 0.51f, 0.47f, 1);
+
+    public Color trunk            = new Color(0.43f, 0.27f, 0.12f, 1);
+    public Color leaf             = new Color(0.16f, 0.63f, 0.24f, 1);
+    public Color plant            = new Color(0.24f, 0.67f, 0.31f, 1);
+    public Color bush             = new Color(0.27f, 0.59f, 0.27f, 1);
+    public Color stone_Pile       = new Color(0.51f, 0.51f, 0.51f, 1);
+    public Color small_Stone_Pile = new Color(0.59f, 0.59f, 0.59f, 1);
+
+    // ✅ Desert additions
+    public Color dead_Bush = new Color(0.45f, 0.36f, 0.22f, 1);
+
+    // Agave(6타일) 대표색(프리뷰에서 한 색으로)
+    public Color agave  = new Color(0.22f, 0.58f, 0.24f, 1);
+    public Color cactus = new Color(0.15f, 0.55f, 0.18f, 1);
+
+    // ✅ Sandstone / Pyramid
+    public Color sandstone      = new Color(0.78f, 0.70f, 0.45f, 1);
+    public Color sandstoneBrick = new Color(0.73f, 0.64f, 0.40f, 1);
+
+    // ✅ Snow biome additions
+    public Color frozenDirt   = new Color(0.40f, 0.33f, 0.30f, 1);
+    public Color frozenGrass  = new Color(0.70f, 0.92f, 0.78f, 1);
+    public Color iceCell      = new Color(0.70f, 0.85f, 0.95f, 0.95f);
+    public Color snowCell     = new Color(0.92f, 0.95f, 0.98f, 1f);
+    public Color snow         = new Color(0.95f, 0.97f, 1.00f, 1f);
+    public Color frozenTrunk  = new Color(0.60f, 0.60f, 0.62f, 1f);
+    public Color frozenPlant  = new Color(0.78f, 0.92f, 0.88f, 1f);
+    public Color frozenBush   = new Color(0.74f, 0.88f, 0.84f, 1f);
+
+    public Color ore_Coal   = new Color(0.12f, 0.12f, 0.12f, 1);
+    public Color ore_Copper = new Color(0.78f, 0.47f, 0.20f, 1);
+    public Color ore_Iron   = new Color(0.71f, 0.71f, 0.78f, 1);
+    public Color ore_Tin    = new Color(0.71f, 0.78f, 0.86f, 1);
+    public Color granite    = new Color(0.59f, 0.59f, 0.67f, 1);
+    public Color amphibolite= new Color(0.55f, 0.63f, 0.71f, 1);
 
     [Header("Fluid")]
-    public Color water              = new Color(0.20f, 0.43f, 0.82f, 0.78f);
+    public Color water = new Color(0.20f, 0.43f, 0.82f, 0.78f);
 
     Texture2D tex;
 
     // ── Solid IDs (ATT_Solid.json 기준) ──
-    const ushort ID_AIR   = 0;
-    const ushort ID_ROCK  = 1;
-    const ushort ID_DIRT  = 2;
-    const ushort ID_GRASS = 3;
-    const ushort ID_CLAY  = 4;
-    const ushort ID_MUD   = 5;
+    const ushort ID_AIR  = 0;
+    const ushort ID_ROCK = 1;
+    const ushort ID_DIRT = 2;
+
+    // Grass 3~9
+    const ushort ID_GRASS_TOP          = 3;
+    const ushort ID_GRASS_LEFT         = 4;
+    const ushort ID_GRASS_RIGHT        = 5;
+    const ushort ID_GRASS_TOPLEFT      = 6;
+    const ushort ID_GRASS_TOPRIGHT     = 7;
+    const ushort ID_GRASS_LEFTRIGHT    = 8;
+    const ushort ID_GRASS_TOPLEFTRIGHT = 9;
+
+    const ushort ID_CLAY = 10;
+    const ushort ID_MUD  = 11;
 
     const ushort ID_SAND   = 1000;
     const ushort ID_GRAVEL = 1001;
@@ -69,8 +101,46 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_LEAF  = 2001;
     const ushort ID_PLANT = 2002;
     const ushort ID_BUSH  = 2003;
-    const ushort ID_STONE_PILE = 2004;
+    const ushort ID_STONE_PILE       = 2004;
     const ushort ID_SMALL_STONE_PILE = 2005;
+
+    // ✅ Desert additions
+    const ushort ID_DEAD_BUSH = 2006;
+
+    // ✅ Agave 6 tiles
+    const ushort ID_AGAVE_0 = 2007;
+    const ushort ID_AGAVE_1 = 2008;
+    const ushort ID_AGAVE_2 = 2009;
+    const ushort ID_AGAVE_3 = 2010;
+    const ushort ID_AGAVE_4 = 2011;
+    const ushort ID_AGAVE_5 = 2012;
+    const ushort ID_CACTUS  = 2013;
+
+    // ✅ Snow additions (ATT_Solid.json 기준)
+    // NOTE: Frozen Dirt 실제 ID로 맞춰야 함 (여기선 46 가정)
+    const ushort ID_FROZEN_DIRT = 46;
+
+    // Frozen Grass 37~43
+    const ushort ID_FROZEN_GRASS_TOP          = 37;
+    const ushort ID_FROZEN_GRASS_LEFT         = 38;
+    const ushort ID_FROZEN_GRASS_RIGHT        = 39;
+    const ushort ID_FROZEN_GRASS_TOPLEFT      = 40;
+    const ushort ID_FROZEN_GRASS_TOPRIGHT     = 41;
+    const ushort ID_FROZEN_GRASS_LEFTRIGHT    = 42;
+    const ushort ID_FROZEN_GRASS_TOPLEFTRIGHT = 43;
+
+    const ushort ID_ICE_CELL  = 44;
+    const ushort ID_SNOW_CELL = 45;
+
+    // Snow decor
+    const ushort ID_SNOW         = 2014;
+    const ushort ID_FROZEN_BUSH  = 2015;
+    const ushort ID_FROZEN_PLANT = 2016;
+    const ushort ID_FROZEN_TRUNK = 2017;
+
+    // ✅ Sandstone + Pyramid brick
+    const ushort ID_SANDSTONE       = 35;
+    const ushort ID_SANDSTONE_BRICK = 36;
 
     const ushort ID_ORE_COAL   = 3000;
     const ushort ID_ORE_COPPER = 3001;
@@ -98,7 +168,6 @@ public class ImageGenerator : MonoBehaviour
     {
         if (settings == null || targetUI == null) return;
 
-        // ✅ 변경: GenerateCommonSolid + commonFluid 같이 받기
         ushort[,] bg;
         ushort[,] commonFluid;
         ushort[,] commonSolid = WorldDataGenerator.GenerateCommonSolid(settings, seed, out bg, out commonFluid);
@@ -133,7 +202,6 @@ public class ImageGenerator : MonoBehaviour
 
         for (int y = 0; y < h; y++)
         {
-            // ✅ flipY=true면 y를 뒤집어서 표시
             int yy = flipY ? (h - 1 - y) : y;
             int row = yy * w;
 
@@ -157,12 +225,8 @@ public class ImageGenerator : MonoBehaviour
 
     Color ResolveColor(ushort solidId, ushort fluidId)
     {
-        // 기본은 Solid
         Color baseC = ResolveSolidColorById(solidId);
 
-        // Fluid overlay 규칙(간단):
-        // - 공기 위에 물 있으면 물 색
-        // - 그 외는 Solid 유지 (물 색을 섞고 싶으면 여기서 Lerp로 바꾸면 됨)
         if (fluidId == FLUID_WATER && solidId == ID_AIR)
             return water;
 
@@ -173,14 +237,22 @@ public class ImageGenerator : MonoBehaviour
     {
         switch (id)
         {
-            case ID_AIR:   return air;
-            case ID_ROCK:  return rock;
+            case ID_AIR:  return air;
+            case ID_ROCK: return rock;
+            case ID_DIRT: return dirt;
 
-            case ID_DIRT:  return dirt;
-            case ID_GRASS: return grass;
+            // Grass 3~9
+            case ID_GRASS_TOP:
+            case ID_GRASS_LEFT:
+            case ID_GRASS_RIGHT:
+            case ID_GRASS_TOPLEFT:
+            case ID_GRASS_TOPRIGHT:
+            case ID_GRASS_LEFTRIGHT:
+            case ID_GRASS_TOPLEFTRIGHT:
+                return grass;
 
-            case ID_CLAY:  return clay;
-            case ID_MUD:   return mud;
+            case ID_CLAY: return clay;
+            case ID_MUD:  return mud;
 
             case ID_SAND:   return sand;
             case ID_GRAVEL: return gravel;
@@ -189,8 +261,44 @@ public class ImageGenerator : MonoBehaviour
             case ID_LEAF:  return leaf;
             case ID_PLANT: return plant;
             case ID_BUSH:  return bush;
-            case ID_STONE_PILE: return stone_Pile;
+            case ID_STONE_PILE:       return stone_Pile;
             case ID_SMALL_STONE_PILE: return small_Stone_Pile;
+
+            case ID_DEAD_BUSH: return dead_Bush;
+
+            // Agave 6 tiles
+            case ID_AGAVE_0:
+            case ID_AGAVE_1:
+            case ID_AGAVE_2:
+            case ID_AGAVE_3:
+            case ID_AGAVE_4:
+            case ID_AGAVE_5:
+                return agave;
+            case ID_CACTUS:
+                return cactus;
+
+            case ID_SANDSTONE:       return sandstone;
+            case ID_SANDSTONE_BRICK: return sandstoneBrick;
+
+            // ✅ Snow biome solids/decor
+            case ID_FROZEN_DIRT: return frozenDirt;
+
+            case ID_FROZEN_GRASS_TOP:
+            case ID_FROZEN_GRASS_LEFT:
+            case ID_FROZEN_GRASS_RIGHT:
+            case ID_FROZEN_GRASS_TOPLEFT:
+            case ID_FROZEN_GRASS_TOPRIGHT:
+            case ID_FROZEN_GRASS_LEFTRIGHT:
+            case ID_FROZEN_GRASS_TOPLEFTRIGHT:
+                return frozenGrass;
+
+            case ID_ICE_CELL:  return iceCell;
+            case ID_SNOW_CELL: return snowCell;
+
+            case ID_SNOW:         return snow;
+            case ID_FROZEN_TRUNK: return frozenTrunk;
+            case ID_FROZEN_PLANT: return frozenPlant;
+            case ID_FROZEN_BUSH:  return frozenBush;
 
             case ID_ORE_COAL:   return ore_Coal;
             case ID_ORE_COPPER: return ore_Copper;
