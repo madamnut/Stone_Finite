@@ -425,6 +425,33 @@
       { "key": "Default", "meta": 0, "sprite": "Frozen Dirt" }
     ]
   },
+  "Basalt": {
+    "id": 47,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Basalt" }
+    ]
+  },
+  "Tuff": {
+    "id": 48,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tuff" }
+    ]
+  },
+  "Andesite": {
+    "id": 49,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Andesite" }
+    ]
+  },
 
   "Sand": {
     "id": 1000,
@@ -606,6 +633,24 @@
     "gravity": false,
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Frozen Trunk" }
+    ]
+  },
+  "Ash": {
+    "id": 2018,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ash", "attachedAt": "Down" }
+    ]
+  },
+  "Sulfur Crystal": {
+    "id": 2019,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Sulfur Crystal", "attachedAt": "Down" }
     ]
   },
 

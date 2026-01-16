@@ -39,6 +39,24 @@ MonoBehaviour:
   amphibNoiseOctaves: 5
   amphibNoisePersistence: 0.5
   amphibNoiseLacunarity: 2.4
+  tuffBaseHeight: 810
+  tuffRange: 30
+  tuffNoiseBaseFrequency: 0.005
+  tuffNoiseOctaves: 4
+  tuffNoisePersistence: 0.5
+  tuffNoiseLacunarity: 2
+  andesiteBaseHeight: 50
+  andesiteRange: 5
+  andesiteNoiseBaseFrequency: 0.005
+  andesiteNoiseOctaves: 4
+  andesiteNoisePersistence: 0.5
+  andesiteNoiseLacunarity: 2
+  basaltBaseHeight: 50
+  basaltRange: 5
+  basaltNoiseBaseFrequency: 0.005
+  basaltNoiseOctaves: 4
+  basaltNoisePersistence: 0.5
+  basaltNoiseLacunarity: 2
   clayMinHeight: 700
   clayMaxHeight: 900
   clayClusterSizeMean: 35
@@ -110,4 +128,44 @@ MonoBehaviour:
   snowEndMaxX: 2210
   snowTransitionLen: 10
   snowTransitionChance: 0.5
+  crevasseWidth: 1360
+  crevasseTransitionLen: 10
+  crevasseTransitionChance: 0.5
+  crevasseMaxDepth: 600
+  crevasseLeftCurve: 10
+  crevasseRightCurve: 30
+  crevasseWallSharpnessLeft: 10
+  crevasseWallSharpnessRight: 10
+  crevasseRidgeJagAmp: 8
+  crevasseRidgeJagFreq: 1.5
+  crevasseWallNoiseAmp: 6
+  crevasseWallNoiseFreq: 1
+  volcanoWidth: 1360
+  volcanoTransitionLen: 10
+  volcanoTransitionChance: 0.5
+  volcanoPeakAddHeight: 300
+  volcanoShapeSharpness: 2
+  volcanoDetailAmp: 12
+  volcanoDetailFreq: 0.02
+  volcanoDetailCenterBoost: 0.6
+  magmaMainRadiusX: 150
+  magmaMainRadiusY: 100
+  magmaTopSquash: 0.175
+  magmaEdgeJitter: 3
+  magmaTrunkWidthStart: 150
+  magmaTrunkWidthEnd: 20
+  magmaBranchChancePerStep: 0.02
+  magmaBranchWidthStartMin: 30
+  magmaBranchWidthStartMax: 40
+  magmaBranchWidthEndMin: 10
+  magmaBranchWidthEndMax: 15
+  magmaPocketChanceAtBranchEnd: 0.283
+  magmaPocketChanceAlongBranch: 0.1
+  magmaPocketCountNearTrunkMin: 3
+  magmaPocketCountNearTrunkMax: 10
+  magmaPocketRadiusXMin: 50
+  magmaPocketRadiusXMax: 60
+  magmaPocketRadiusYMin: 20
+  magmaPocketRadiusYMax: 30
+  magmaPocketEdgeJitter: 1
   treeDensity: 0.12

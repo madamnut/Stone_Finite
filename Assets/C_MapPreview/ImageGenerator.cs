@@ -1,9 +1,5 @@
-// ImageGenerator.cs (전체 교체본)
-// - WorldDataGenerator.GenerateCommonSolid() 기반 프리뷰
-// - Solid ID는 ATT_Solid.json 기준
-// - Fluid는 commonFluid(ATT_Fluid.json) 기준: 0 none, 1 water
-// - Grass는 id=3~9 (분리 ID)라서 대표색 1개로 표시
-// - FrozenGrass는 id=37~43 대표색 1개로 표시
+// ImageGenerator.cs
+// ✅ 변경: Lava(FLUID_LAVA)가 AIR에 있을 때 빨간색으로 표시
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -65,6 +61,11 @@ public class ImageGenerator : MonoBehaviour
     public Color frozenPlant  = new Color(0.78f, 0.92f, 0.88f, 1f);
     public Color frozenBush   = new Color(0.74f, 0.88f, 0.84f, 1f);
 
+    // ✅ Volcano biome additions
+    public Color basalt   = new Color(0.18f, 0.18f, 0.20f, 1f);
+    public Color tuff     = new Color(0.58f, 0.55f, 0.50f, 1f);
+    public Color andesite = new Color(0.45f, 0.45f, 0.48f, 1f);
+
     public Color ore_Coal   = new Color(0.12f, 0.12f, 0.12f, 1);
     public Color ore_Copper = new Color(0.78f, 0.47f, 0.20f, 1);
     public Color ore_Iron   = new Color(0.71f, 0.71f, 0.78f, 1);
@@ -74,6 +75,9 @@ public class ImageGenerator : MonoBehaviour
 
     [Header("Fluid")]
     public Color water = new Color(0.20f, 0.43f, 0.82f, 0.78f);
+
+    // ✅ Lava preview color
+    public Color lava  = new Color(0.95f, 0.15f, 0.05f, 0.95f);
 
     Texture2D tex;
 
@@ -132,6 +136,11 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_ICE_CELL  = 44;
     const ushort ID_SNOW_CELL = 45;
 
+    // ✅ Volcano solids
+    const ushort ID_BASALT   = 47;
+    const ushort ID_TUFF     = 48;
+    const ushort ID_ANDESITE = 49;
+
     // Snow decor
     const ushort ID_SNOW         = 2014;
     const ushort ID_FROZEN_BUSH  = 2015;
@@ -153,6 +162,7 @@ public class ImageGenerator : MonoBehaviour
     // ── Fluid IDs (ATT_Fluid.json 기준) ──
     const ushort FLUID_NONE  = 0;
     const ushort FLUID_WATER = 1;
+    const ushort FLUID_LAVA  = 2;
 
     void Start()
     {
@@ -225,12 +235,14 @@ public class ImageGenerator : MonoBehaviour
 
     Color ResolveColor(ushort solidId, ushort fluidId)
     {
-        Color baseC = ResolveSolidColorById(solidId);
+        // ✅ fluid 우선 처리 (AIR 위에만 보이도록)
+        if (solidId == ID_AIR)
+        {
+            if (fluidId == FLUID_LAVA)  return lava;
+            if (fluidId == FLUID_WATER) return water;
+        }
 
-        if (fluidId == FLUID_WATER && solidId == ID_AIR)
-            return water;
-
-        return baseC;
+        return ResolveSolidColorById(solidId);
     }
 
     Color ResolveSolidColorById(ushort id)
@@ -279,6 +291,11 @@ public class ImageGenerator : MonoBehaviour
 
             case ID_SANDSTONE:       return sandstone;
             case ID_SANDSTONE_BRICK: return sandstoneBrick;
+
+            // ✅ Volcano solids
+            case ID_BASALT:   return basalt;
+            case ID_TUFF:     return tuff;
+            case ID_ANDESITE: return andesite;
 
             // ✅ Snow biome solids/decor
             case ID_FROZEN_DIRT: return frozenDirt;

@@ -280,7 +280,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 3b6b53cf7637e5f4eb8a86db49215045, type: 2}
-  seed: 1564
+  seed: 8135
   targetUI: {fileID: 1960623954}
   filterMode: 0
   flipY: 0
@@ -304,6 +304,17 @@ MonoBehaviour:
   cactus: {r: 0.15, g: 0.55, b: 0.18, a: 1}
   sandstone: {r: 0.78, g: 0.7, b: 0.45, a: 1}
   sandstoneBrick: {r: 0.5849056, g: 0.5116282, b: 0.31728372, a: 1}
+  frozenDirt: {r: 0.4, g: 0.33, b: 0.3, a: 1}
+  frozenGrass: {r: 0.7, g: 0.92, b: 0.78, a: 1}
+  iceCell: {r: 0.7, g: 0.85, b: 0.95, a: 0.95}
+  snowCell: {r: 0.92, g: 0.95, b: 0.98, a: 1}
+  snow: {r: 0.95, g: 0.97, b: 1, a: 1}
+  frozenTrunk: {r: 0.6, g: 0.6, b: 0.62, a: 1}
+  frozenPlant: {r: 0.78, g: 0.92, b: 0.88, a: 1}
+  frozenBush: {r: 0.74, g: 0.88, b: 0.84, a: 1}
+  basalt: {r: 0.18, g: 0.18, b: 0.2, a: 1}
+  tuff: {r: 0.58, g: 0.55, b: 0.5, a: 1}
+  andesite: {r: 0.45, g: 0.45, b: 0.48, a: 1}
   ore_Coal: {r: 0.12, g: 0.12, b: 0.12, a: 1}
   ore_Copper: {r: 0.18752226, g: 0.9245283, b: 0.32492384, a: 1}
   ore_Iron: {r: 0.8396226, g: 0.4119867, b: 0.07524917, a: 1}
@@ -311,6 +322,7 @@ MonoBehaviour:
   granite: {r: 0.20363119, g: 0.20363119, b: 0.3018868, a: 1}
   amphibolite: {r: 0.14337842, g: 0.15659486, b: 0.16981131, a: 1}
   water: {r: 0, g: 0.37341785, b: 1, a: 0.78}
+  lava: {r: 0.95, g: 0.15, b: 0.05, a: 0.95}
 --- !u!1 &1666139427
 GameObject:
   m_ObjectHideFlags: 0
