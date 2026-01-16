@@ -330,7 +330,7 @@
       "Combine": {
         "partType": "Binding",
         "type": "Standard",
-        "potentialDurability": 16
+        "durabilityMultiplier": 1.2
       },
       "Fuel": {
         "burnTicks": 60,
@@ -350,7 +350,7 @@
       "Combine": {
         "partType": "Binding",
         "type": "Short",
-        "potentialDurability": 16
+        "durabilityMultiplier": 1.2
       },
       "Fuel": {
         "burnTicks": 40,
@@ -370,7 +370,7 @@
       "Combine": {
         "partType": "Binding",
         "type": "Long",
-        "potentialDurability": 16
+        "durabilityMultiplier": 1.2
       },
       "Fuel": {
         "burnTicks": 80,
@@ -629,7 +629,7 @@
       "Combine": {
         "partType": "Handle",
         "type": "Standard",
-        "potentialDurability": 16
+        "durabilityMultiplier": 1.2
       },
       "Fuel": {
         "burnTicks": 120,
@@ -649,7 +649,7 @@
       "Combine": {
         "partType": "Handle",
         "type": "Short",
-        "potentialDurability": 16
+        "durabilityMultiplier": 1.2
       },
       "Fuel": {
         "burnTicks": 80,

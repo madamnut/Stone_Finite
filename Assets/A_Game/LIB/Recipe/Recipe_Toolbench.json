@@ -22,8 +22,6 @@
   },
 
 
-
-  
   {
     "inputs": {
       "material": { "itemId": "Hot Small Bronze Preform", "count": 1 },
@@ -34,12 +32,9 @@
       "tool": { "type": "durability", "amount": -1 }
     },
     "candidates": [
-      { "itemId": "Bronze Blade Head", "count": 1 },
-      { "itemId": "Bronze Awl Head", "count": 1 },
-      { "itemId": "Bronze Scraper Head", "count": 1 },
       { "itemId": "Bronze Chisel Head", "count": 1 },
-      { "itemId": "Bronze Graver Head", "count": 1 },
-      { "itemId": "Bronze Notch Chisel Head", "count": 1 }
+      { "itemId": "Bronze Scraper Head", "count": 1 },
+      { "itemId": "Bronze Short Blade", "count": 1 }
     ]
   },
   {
@@ -52,12 +47,8 @@
       "tool": { "type": "durability", "amount": -1 }
     },
     "candidates": [
-      { "itemId": "Bronze Axe Head", "count": 1 },
       { "itemId": "Bronze Adze Head", "count": 1 },
-      { "itemId": "Bronze Pestle Head", "count": 1 },
-      { "itemId": "Bronze Hammer Head", "count": 1 },
-      { "itemId": "Bronze Pickaxe Head", "count": 1 },
-      { "itemId": "Bronze Shovel Head", "count": 1 }
+      { "itemId": "Bronze Hammer Head", "count": 1 }
     ]
   },
   {
@@ -70,8 +61,58 @@
       "tool": { "type": "durability", "amount": -1 }
     },
     "candidates": [
-      { "itemId": "Bronze Wedge Head", "count": 1 },
-      { "itemId": "Bronze Maul Head", "count": 1 }
+      { "itemId": "Bronze Axe Head", "count": 1 },
+      { "itemId": "Bronze Pickaxe Head", "count": 1 },
+      { "itemId": "Bronze Shovel Head", "count": 1 },
+      { "itemId": "Bronze Maul Head", "count": 1 },
+      { "itemId": "Bronze Saw Blade", "count": 1 }
+    ]
+  },
+
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Small Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Chisel Head", "count": 1 },
+      { "itemId": "Iron Scraper Head", "count": 1 },
+      { "itemId": "Iron Short Blade", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Adze Head", "count": 1 },
+      { "itemId": "Iron Hammer Head", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Large Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Axe Head", "count": 1 },
+      { "itemId": "Iron Pickaxe Head", "count": 1 },
+      { "itemId": "Iron Shovel Head", "count": 1 },
+      { "itemId": "Iron Maul Head", "count": 1 },
+      { "itemId": "Iron Saw Blade", "count": 1 }
     ]
   }
 ]

@@ -8,6 +8,12 @@
 //   * 정책 A: 레시피 격자 밖(윈도우 밖) 슬롯은 전부 null 이어야 매칭
 //
 // - ✅ 2-slot shaped 레시피는 2x1(가로)로 취급하며, "유형 제작법(재료/툴 역할)" 보호를 위해 회전/대칭(미러) 변환을 허용하지 않음.
+//
+// - ✅ outputActions 신규 지원:
+//   * mul: 대상 필드(현재값) *= (value/fromInput+inputField/fromField)
+//   * floorInt: 대상 필드 = floor(대상 필드)
+//   * roundInt: 대상 필드 = round(대상 필드)
+//   * set: fromField 지원 (dst의 필드/중간 계산값을 복사)
 
 using System;
 using System.Linq;
@@ -676,7 +682,7 @@ public class RecipeLibrary : MonoBehaviour
             {
                 int src = ToIndex(x, y, g.w);
                 int nx = g.w - 1 - x;
-                int dst = ToIndex(nx, y, g.w);
+                int dst = ToIndex(nx, y, ng.w);
                 ng.cells[dst] = g.cells[src];
             }
         }
@@ -827,7 +833,7 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────
-    // output actions / conditions / expressions (기존 유지)
+    // output actions / conditions / expressions
     // ─────────────────────────────────────────────────────────
     ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign, int outCount)
     {
@@ -871,16 +877,81 @@ public class RecipeLibrary : MonoBehaviour
             if (dst == null) return null;
         }
 
-        // 이 아래 로직은 사용하던 스키마 그대로 유지 (set/copy/sum/delete)
+        // 이 아래 로직은 사용하던 스키마 그대로 유지 + mul/floorInt/roundInt/fromField 추가
         string overrideName = null;
         string overrideSprite = null;
         string overrideItemId = null;
-        int? overrideDurability = null;
-        int? overrideMaxDur = null;
+
+        double? overrideDurability = null;
+        double? overrideMaxDur = null;
 
         Dictionary<string, Dictionary<string, object>> overrideTool = null;
         Dictionary<string, Dictionary<string, object>> overrideWeapon = null;
         Dictionary<string, Dictionary<string, object>> overrideBreak = null;
+
+        double GetCurrentNumber(string field)
+        {
+            if (field == "durability")
+            {
+                if (overrideDurability.HasValue) return overrideDurability.Value;
+                return dst.Durability;
+            }
+            if (field == "maxDurability")
+            {
+                if (overrideMaxDur.HasValue) return overrideMaxDur.Value;
+                return dst.MaxDurability;
+            }
+            return 0;
+        }
+
+        void SetCurrentNumber(string field, double v)
+        {
+            if (field == "durability") overrideDurability = v;
+            else if (field == "maxDurability") overrideMaxDur = v;
+        }
+
+        bool TryToDouble(object v, out double d)
+        {
+            d = 0;
+            if (v == null) return false;
+
+            if (v is double dd) { d = dd; return true; }
+            if (v is float ff) { d = ff; return true; }
+            if (v is int ii) { d = ii; return true; }
+            if (v is long ll) { d = ll; return true; }
+
+            if (v is JValue jv)
+            {
+                if (jv.Value == null) return false;
+                return TryToDouble(jv.Value, out d);
+            }
+
+            return double.TryParse(v.ToString(), out d);
+        }
+
+        object ReadFieldWithOverrides(string fieldPath)
+        {
+            if (string.IsNullOrEmpty(fieldPath)) return null;
+
+            if (fieldPath == "durability")
+                return GetCurrentNumber("durability");
+
+            if (fieldPath == "maxDurability")
+                return GetCurrentNumber("maxDurability");
+
+            // name/sprite/itemId도 중간 override값 우선 반영
+            if (fieldPath == "name")
+                return overrideName ?? dst.Name;
+
+            if (fieldPath == "spriteName")
+                return overrideSprite ?? dst.SpriteName;
+
+            if (fieldPath == "itemId")
+                return overrideItemId ?? dst.ItemId;
+
+            // 나머지는 dst 기준
+            return ReadField(dst, fieldPath);
+        }
 
         for (int i = 0; i < outActs.Count; i++)
         {
@@ -927,6 +998,15 @@ public class RecipeLibrary : MonoBehaviour
                             val = s0.Substring(0, s0.Length - strip.Length);
                     }
                 }
+                else if (act.TryGetValue("fromField", out var jff))
+                {
+                    string fromField = jff.Type == JTokenType.Null ? null : jff.ToString();
+                    if (!string.IsNullOrEmpty(fromField))
+                    {
+                        val = ReadFieldWithOverrides(fromField);
+                        hasVal = true;
+                    }
+                }
                 else if (act["valueFromFields"] is JArray vff)
                 {
                     string sep = act.Value<string>("separator") ?? "";
@@ -938,7 +1018,7 @@ public class RecipeLibrary : MonoBehaviour
                         string key = vff[k]?.ToString();
                         if (string.IsNullOrEmpty(key)) continue;
 
-                        object v = ReadField(dst, key);
+                        object v = ReadFieldWithOverrides(key);
                         if (v == null) continue;
 
                         string s = v.ToString();
@@ -956,17 +1036,10 @@ public class RecipeLibrary : MonoBehaviour
                 if (field == "spriteName") { overrideSprite = val?.ToString(); continue; }
                 if (field == "itemId") { overrideItemId = val?.ToString(); continue; }
 
-                if (field == "durability")
+                if (field == "durability" || field == "maxDurability")
                 {
-                    if (val != null && int.TryParse(val.ToString(), out int iv))
-                        overrideDurability = iv;
-                    continue;
-                }
-
-                if (field == "maxDurability")
-                {
-                    if (val != null && int.TryParse(val.ToString(), out int iv))
-                        overrideMaxDur = iv;
+                    if (TryToDouble(val, out double dv))
+                        SetCurrentNumber(field, dv);
                     continue;
                 }
 
@@ -1020,17 +1093,10 @@ public class RecipeLibrary : MonoBehaviour
                 if (toField == "spriteName") { overrideSprite = val?.ToString(); continue; }
                 if (toField == "itemId") { overrideItemId = val?.ToString(); continue; }
 
-                if (toField == "durability")
+                if (toField == "durability" || toField == "maxDurability")
                 {
-                    if (val != null && int.TryParse(val.ToString(), out int iv))
-                        overrideDurability = iv;
-                    continue;
-                }
-
-                if (toField == "maxDurability")
-                {
-                    if (val != null && int.TryParse(val.ToString(), out int iv))
-                        overrideMaxDur = iv;
+                    if (TryToDouble(val, out double dv))
+                        SetCurrentNumber(toField, dv);
                     continue;
                 }
 
@@ -1090,13 +1156,13 @@ public class RecipeLibrary : MonoBehaviour
 
                 if (outField == "durability")
                 {
-                    overrideDurability = (overrideDurability ?? 0) + sum;
+                    overrideDurability = (overrideDurability ?? dst.Durability) + sum;
                     continue;
                 }
 
                 if (outField == "maxDurability")
                 {
-                    overrideMaxDur = (overrideMaxDur ?? 0) + sum;
+                    overrideMaxDur = (overrideMaxDur ?? dst.MaxDurability) + sum;
                     continue;
                 }
 
@@ -1105,6 +1171,72 @@ public class RecipeLibrary : MonoBehaviour
                     SetDetailPath(dst, outField.Substring("details.".Length), sum);
                     continue;
                 }
+            }
+            else if (type == "mul")
+            {
+                string field = act.Value<string>("field");
+                if (string.IsNullOrEmpty(field)) continue;
+
+                // 현재는 durability/maxDurability만 mul 지원 (필요시 details.* 확장)
+                if (field != "durability" && field != "maxDurability")
+                    continue;
+
+                object rhs = null;
+                bool hasRhs = false;
+
+                if (act.TryGetValue("value", out var jv))
+                {
+                    if (jv.Type == JTokenType.Null) rhs = null;
+                    else if (jv is JValue jvv) rhs = jvv.Value;
+                    else rhs = jv.ToString();
+                    hasRhs = true;
+                }
+                else if (act.TryGetValue("fromInput", out var jf) && act.TryGetValue("inputField", out var jif))
+                {
+                    int? from = jf.Type == JTokenType.Null ? (int?)null : jf.Value<int?>();
+                    string inputField = jif.Type == JTokenType.Null ? null : jif.ToString();
+
+                    if (from.HasValue && !string.IsNullOrEmpty(inputField))
+                    {
+                        int si = (assign != null && from.Value >= 0 && from.Value < assign.Length) ? assign[from.Value] : -1;
+                        var src = (si >= 0 && si < slots.Count) ? slots[si] : null;
+                        rhs = ReadField(src, inputField);
+                        hasRhs = true;
+                    }
+                }
+                else if (act.TryGetValue("fromField", out var jff))
+                {
+                    string fromField = jff.Type == JTokenType.Null ? null : jff.ToString();
+                    if (!string.IsNullOrEmpty(fromField))
+                    {
+                        rhs = ReadFieldWithOverrides(fromField);
+                        hasRhs = true;
+                    }
+                }
+
+                if (!hasRhs) continue;
+
+                if (!TryToDouble(rhs, out double r)) continue;
+
+                double cur = GetCurrentNumber(field);
+                SetCurrentNumber(field, cur * r);
+            }
+            else if (type == "floorInt" || type == "roundInt")
+            {
+                string field = act.Value<string>("field");
+                if (string.IsNullOrEmpty(field)) continue;
+
+                if (field != "durability" && field != "maxDurability")
+                    continue;
+
+                double cur = GetCurrentNumber(field);
+
+                if (type == "floorInt")
+                    cur = Math.Floor(cur);
+                else
+                    cur = Math.Round(cur);
+
+                SetCurrentNumber(field, cur);
             }
             else if (type == "delete")
             {
@@ -1161,8 +1293,9 @@ public class RecipeLibrary : MonoBehaviour
         string finalName = overrideName ?? dst.Name;
         string finalSprite = overrideSprite ?? dst.SpriteName;
         string finalId = overrideItemId ?? dst.ItemId;
-        int finalMaxDur = overrideMaxDur ?? dst.MaxDurability;
-        int finalDurability = overrideDurability ?? dst.Durability;
+
+        int finalMaxDur = (int)Mathf.FloorToInt((float)(overrideMaxDur ?? dst.MaxDurability));
+        int finalDurability = (int)Mathf.FloorToInt((float)(overrideDurability ?? dst.Durability));
 
         var finalTool = overrideTool ?? dst.ToolActions;
         var finalWeapon = overrideWeapon ?? dst.WeaponActions;
@@ -1624,6 +1757,30 @@ public class RecipeLibrary : MonoBehaviour
             return res;
         }
 
+        if (v is JObject jo)
+        {
+            // JObject -> Dictionary<string, Dictionary<string, object>>
+            var res = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var p in jo.Properties())
+            {
+                if (p.Value is JObject innerJo)
+                {
+                    var inner = new Dictionary<string, object>();
+                    foreach (var ip in innerJo.Properties())
+                    {
+                        if (ip.Value is JValue jv) inner[ip.Name] = jv.Value;
+                        else inner[ip.Name] = ip.Value.ToString();
+                    }
+                    res[p.Name] = inner;
+                }
+                else
+                {
+                    res[p.Name] = new Dictionary<string, object>();
+                }
+            }
+            return res;
+        }
+
         if (v is JArray ja)
         {
             var res = new Dictionary<string, Dictionary<string, object>>();
@@ -1784,7 +1941,7 @@ public class RecipeLibrary : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────
-    // Alloy / Crucible layers (원본 유지)
+    // Alloy / Crucible layers
     // ─────────────────────────────────────────────────────────
     public bool TryApplyAlloysToCrucible(ItemData crucible)
     {

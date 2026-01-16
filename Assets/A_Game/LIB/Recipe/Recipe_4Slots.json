@@ -21,19 +21,15 @@
         { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
         { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
-        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
 
-        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
 
-        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
-
-        { "type": "delete", "field": "ToolActions.Combine" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
 
         { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {
@@ -70,19 +66,15 @@
         { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
         { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
-        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
 
-        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
 
-        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
-
-        { "type": "delete", "field": "ToolActions.Combine" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
 
         { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {
@@ -119,19 +111,15 @@
         { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
         { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
 
-        { "type": "sum", "field": "durability", "fromInputs": [0], "inputField": "durability" },
-        { "type": "sum", "field": "durability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "durability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
 
-        { "type": "sum", "field": "maxDurability", "fromInputs": [0], "inputField": "maxDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [1], "inputField": "ToolActions.Combine.potentialDurability" },
-        { "type": "sum", "field": "maxDurability", "fromInputs": [2], "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
 
-        { "type": "copy", "fromInput": 0, "inputField": "BreakActions", "toField": "BreakActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "ToolActions", "toField": "ToolActions" },
-        { "type": "copy", "fromInput": 0, "inputField": "WeaponActions", "toField": "WeaponActions" },
-
-        { "type": "delete", "field": "ToolActions.Combine" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
 
         { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
         {

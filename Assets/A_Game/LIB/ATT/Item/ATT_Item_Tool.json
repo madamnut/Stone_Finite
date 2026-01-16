@@ -4,7 +4,6 @@
     "spriteName": "Stone Shard",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
@@ -13,19 +12,21 @@
       "Combine": {
         "partType": "Head",
         "type": "Heavy",
-        "potentialName": "Stone Axe"
+        "potentialName": "Stone Axe",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 1, "speed": 1.5 },
+          "Mining": { "tier": 1, "speed": 1.5 }
+        }
       }
     },
 
     "breakActions": {
-      "Chopping": {
-        "tier": 1,
-        "speed": 1.5
-      },
-      "Mining": {
-        "tier": 1,
-        "speed": 1.5
-      }
+      "Chopping": { "tier": 1, "speed": 1.5 },
+      "Mining": { "tier": 1, "speed": 1.5 }
     }
   },
 
@@ -34,16 +35,19 @@
     "spriteName": "Stone Adze",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "Hewing": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Standard",
-        "potentialName": "Stone Adze"
+        "potentialName": "Stone Adze",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
       }
     }
   },
@@ -53,16 +57,19 @@
     "spriteName": "Stone Cleaver",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "Splitting": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Standard",
-        "potentialName": "Stone Cleaver"
+        "potentialName": "Stone Cleaver",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {}
       }
     }
   },
@@ -72,18 +79,21 @@
     "spriteName": "Stone Percussor",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "Hammering": {},
-
       "BuildMultiblock": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Light",
-        "potentialName": "Stone Hammer"
+        "potentialName": "Stone Hammer",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
       }
     }
   },
@@ -93,26 +103,27 @@
     "spriteName": "Flint Shard",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "PressureFlaking": {},
-
       "Cutting": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Light",
-        "potentialName": "Flint Knife"
+        "potentialName": "Flint Knife",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 1, "speed": 1.5 }
+        }
       }
     },
 
     "breakActions": {
-      "Slashing": {
-        "tier": 1,
-        "speed": 1.5
-      }
+      "Slashing": { "tier": 1, "speed": 1.5 }
     }
   },
 
@@ -121,24 +132,26 @@
     "spriteName": "Flint Scraper",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "Scraping": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Light",
-        "potentialName": "Flint Scraper"
+        "potentialName": "Flint Scraper",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {
+          "Digging": { "tier": 1, "speed": 1.5 }
+        }
       }
     },
 
     "breakActions": {
-      "Digging": {
-        "tier": 1,
-        "speed": 1.5
-      }
+      "Digging": { "tier": 1, "speed": 1.5 }
     }
   },
 
@@ -147,16 +160,19 @@
     "spriteName": "Flint Graver",
     "maxStack": 1,
     "tags": ["Tool", "Head"],
-
     "maxDurability": 32,
 
     "toolActions": {
       "Carving": {},
-
       "Combine": {
         "partType": "Head",
         "type": "Light",
-        "potentialName": "Flint Graver"
+        "potentialName": "Flint Graver",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
       }
     }
   },
@@ -166,7 +182,6 @@
     "spriteName": "Wooden Club",
     "maxStack": 1,
     "tags": ["Weapon", "Tool"],
-
     "maxDurability": 32,
 
     "toolActions": {
@@ -189,7 +204,6 @@
     "spriteName": "Wooden Spear",
     "maxStack": 1,
     "tags": ["Weapon"],
-
     "maxDurability": 32,
 
     "weaponActions": {
@@ -199,6 +213,400 @@
         "staminaCost": 7,
         "cooldown": 0.7,
         "reach": 1.0
+      }
+    }
+  },
+
+  "Bronze Axe Head": {
+    "name": "Bronze Axe Head",
+    "spriteName": "Bronze Axe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Axe",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Pickaxe Head": {
+    "name": "Bronze Pickaxe Head",
+    "spriteName": "Bronze Pickaxe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Pickaxe",
+        "potentialDurability": 128,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Mining": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Shovel Head": {
+    "name": "Bronze Shovel Head",
+    "spriteName": "Bronze Shovel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Shovel",
+        "potentialDurability": 128,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Digging": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Adze Head": {
+    "name": "Bronze Adze Head",
+    "spriteName": "Bronze Adze Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Bronze Adze",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Hammer Head": {
+    "name": "Bronze Hammer Head",
+    "spriteName": "Bronze Hammer Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Hammer",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Maul Head": {
+    "name": "Bronze Maul Head",
+    "spriteName": "Bronze Maul Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Maul",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Chisel Head": {
+    "name": "Bronze Chisel Head",
+    "spriteName": "Bronze Chisel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Chisel",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Scraper Head": {
+    "name": "Bronze Scraper Head",
+    "spriteName": "Bronze Scraper Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Scraper",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Short Blade": {
+    "name": "Bronze Short Blade",
+    "spriteName": "Bronze Short Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Knife",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Saw Blade": {
+    "name": "Bronze Saw Blade",
+    "spriteName": "Bronze Saw Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Bronze Saw",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Sawing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Iron Axe Head": {
+    "name": "Iron Axe Head",
+    "spriteName": "Iron Axe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Axe",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Pickaxe Head": {
+    "name": "Iron Pickaxe Head",
+    "spriteName": "Iron Pickaxe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Pickaxe",
+        "potentialDurability": 256,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Mining": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Shovel Head": {
+    "name": "Iron Shovel Head",
+    "spriteName": "Iron Shovel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Shovel",
+        "potentialDurability": 256,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Digging": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Adze Head": {
+    "name": "Iron Adze Head",
+    "spriteName": "Iron Adze Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Iron Adze",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Hammer Head": {
+    "name": "Iron Hammer Head",
+    "spriteName": "Iron Hammer Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Hammer",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Maul Head": {
+    "name": "Iron Maul Head",
+    "spriteName": "Iron Maul Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Maul",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Chisel Head": {
+    "name": "Iron Chisel Head",
+    "spriteName": "Iron Chisel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Chisel",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Scraper Head": {
+    "name": "Iron Scraper Head",
+    "spriteName": "Iron Scraper Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Scraper",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Short Blade": {
+    "name": "Iron Short Blade",
+    "spriteName": "Iron Short Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Knife",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Saw Blade": {
+    "name": "Iron Saw Blade",
+    "spriteName": "Iron Saw Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Iron Saw",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Sawing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 3, "speed": 2.5 }
+        }
       }
     }
   }
