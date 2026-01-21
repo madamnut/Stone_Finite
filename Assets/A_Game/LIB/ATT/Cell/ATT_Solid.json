@@ -653,24 +653,6 @@
       { "key": "Default", "meta": 0, "sprite": "Sulfur Crystal", "attachedAt": "Down" }
     ]
   },
-  "Flax_Top": {
-    "id": 2020,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Flax_Top", "attachedAt": "Down" }
-    ]
-  },
-  "Flax_Bottom": {
-    "id": 2021,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Flax_Bottom", "attachedAt": "Down" }
-    ]
-  },
 
 
 
