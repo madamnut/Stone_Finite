@@ -306,9 +306,39 @@
     }
   },
 
+  "Flax Stalk": {
+    "name": "Flax Stalk",
+    "spriteName": "Flax Stalk",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
   "Plant Fiber": {
     "name": "Plant Fiber",
     "spriteName": "Plant Fiber",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Flax Fiber": {
+    "name": "Flax Fiber",
+    "spriteName": "Flax Fiber",
     "maxStack": 32,
     "tags": ["Fuel"],
     "toolActions": {
@@ -374,6 +404,96 @@
       },
       "Fuel": {
         "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Linen Twine": {
+    "name": "Short Linen Twine",
+    "spriteName": "Short Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Short",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+ "Linen Twine": {
+    "name": "Linen Twine",
+    "spriteName": "Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Standard",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 60,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Linen Twine": {
+    "name": "Long Linen Twine",
+    "spriteName": "Long Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Long",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Linen Thread": {
+    "name": "Linen Thread",
+    "spriteName": "Linen Thread",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 60,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Linen Cloth": {
+    "name": "Linen Cloth",
+    "spriteName": "Linen Cloth",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 100,
         "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
@@ -1173,6 +1293,84 @@
         "resultSizePrefix": "Small",
         "resultShapeSuffix": "Preform",
         "requiredVolume": 10
+      }
+    }
+  },
+
+  "Wooden Cogwheel": {
+    "name": "Wooden Cogwheel",
+    "spriteName": "Wooden Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Wooden Cogwheel"
+      }
+    }
+  },
+
+  "Big Wooden Cogwheel": {
+    "name": "Big Wooden Cogwheel",
+    "spriteName": "Big Wooden Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Big Wooden Cogwheel"
+      }
+    }
+  },
+
+  "Bronze Cogwheel": {
+    "name": "Bronze Cogwheel",
+    "spriteName": "Bronze Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Bronze Cogwheel"
+      }
+    }
+  },
+
+  "Big Bronze Cogwheel": {
+    "name": "Big Bronze Cogwheel",
+    "spriteName": "Big Bronze Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Big Bronze Cogwheel"
+      }
+    }
+  },
+
+  "Iron Cogwheel": {
+    "name": "Iron Cogwheel",
+    "spriteName": "Iron Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Iron Cogwheel"
+      }
+    }
+  },
+
+  "Big Iron Cogwheel": {
+    "name": "Big Iron Cogwheel",
+    "spriteName": "Big Iron Cogwheel",
+    "maxStack": 16,
+    "tags": ["Mechanical", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Big Iron Cogwheel"
       }
     }
   }

@@ -68,6 +68,8 @@ public static class WorldDataGenerator
     private const ushort ID_FROZEN_BUSH  = 2015;
     private const ushort ID_FROZEN_PLANT = 2016;
     private const ushort ID_FROZEN_TRUNK = 2017;
+    private const ushort ID_FLAX_TOP    = 2020;
+    private const ushort ID_FLAX_BOTTOM = 2021;
 
     private const ushort ID_ORE_COAL   = 3000;
     private const ushort ID_ORE_COPPER = 3001;
@@ -1953,22 +1955,43 @@ public static class WorldDataGenerator
 
             if (here >= ID_GRASS_TOP && here <= ID_GRASS_TOPLEFTRIGHT)
             {
+                // ===== Flax (30%) =====
+                int yb = y + 2;
+                if (yb < h &&
+                    commonSolid[x, ya] == ID_AIR &&
+                    commonSolid[x, yb] == ID_AIR &&
+                    rand.NextDouble() < 0.30)
+                {
+                    commonSolid[x, ya] = ID_FLAX_BOTTOM; // 2021
+                    commonMeta[x, ya]  = 0;
+
+                    commonSolid[x, yb] = ID_FLAX_TOP;    // 2020
+                    commonMeta[x, yb]  = 0;
+                    continue;
+                }
+
+                // ===== Single-tile decor =====
                 double r = rand.NextDouble();
-                if (r < 0.60)
+
+                if (r < 0.30)
                 {
-                    commonSolid[x, ya] = ID_PLANT;
+                    commonSolid[x, ya] = ID_PLANT;       // 30%
                     commonMeta[x, ya]  = 0;
                 }
-                else if (r < 0.75)
+                else if (r < 0.45)
                 {
-                    commonSolid[x, ya] = ID_BUSH;
+                    commonSolid[x, ya] = ID_BUSH;        // 15%
                     commonMeta[x, ya]  = 0;
                 }
-                else if (r < 0.85)
+                else if (r < 0.55)
                 {
-                    commonSolid[x, ya] = ID_SMALL_STONE_PILE;
+                    commonSolid[x, ya] = ID_SMALL_STONE_PILE; // 10%
                     commonMeta[x, ya]  = 0;
                 }
+                // else: 45% 중 남은 45%? → 실제로는
+                // flax 실패한 70% 중에서
+                // 30 + 15 + 10 = 55%, 나머지 15%는 공백
+
                 continue;
             }
 

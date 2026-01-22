@@ -656,6 +656,27 @@
     "outputActions": [
       []
     ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Cloth", "count": 1 }
+    ],
+    "outputActions": []
   }
 
 ]

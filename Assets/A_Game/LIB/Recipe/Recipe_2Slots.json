@@ -45,7 +45,7 @@
       { "type": "durability", "amount": -1 }
     ],
     "outputs": [
-      { "itemId": "Plant Fiber", "count": 2 }
+      { "itemId": "Plant Fiber", "count": 4 }
     ],
     "outputActions": []
   },
@@ -110,6 +110,121 @@
     ],
     "outputs": [
       { "itemId": "Plant Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Flax Stalk", "count": 1 },
+      { "ToolActions": { "Scraping": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Flax Fiber", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Flax Fiber", "count": 1 },
+      { "itemId": "Flax Fiber", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Thread", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Flax Thread", "count": 1 },
+      { "itemId": "Flax Thread", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Linen Twine", "count": 1 },
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Long Linen Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Long Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Short Linen Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Short Linen Twine", "count": 1 },
+      { "itemId": "Short Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 2 }
     ],
     "outputActions": []
   },
@@ -196,6 +311,23 @@
     "outputs": [
       { "itemId": "Stripped Log", "count": 1 },
       { "itemId": "Bark Strip", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "ToolActions": { "Sawing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Plank", "count": 16 }
     ],
     "outputActions": []
   },

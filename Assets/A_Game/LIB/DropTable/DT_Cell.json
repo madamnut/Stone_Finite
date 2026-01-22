@@ -83,6 +83,12 @@
   "Plant": [
     { "itemId": "Plant", "probability": 1, "min": 1, "max": 2 }
   ],
+  "Flax_Top": [
+    { "itemId": "Flax Stalk", "probability": 1, "min": 2, "max": 2 }
+  ],
+  "Flax_Bottom": [
+    { "itemId": "Flax Stalk", "probability": 1, "min": 2, "max": 2 }
+  ],
   "Leaf": [
     { "itemId": "Leaf", "probability": 1, "min": 10, "max": 15 },
     { "itemId": "Twig", "probability": 1, "min": 6, "max": 10 },
