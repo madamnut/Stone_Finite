@@ -1,0 +1,8 @@
+{
+  "Waterwheel": {
+    "stressCapacity": 32
+  },
+  "Windmill": {
+    "stressCapacity": 64
+  }
+}

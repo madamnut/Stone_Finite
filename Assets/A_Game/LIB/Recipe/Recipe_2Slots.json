@@ -151,8 +151,8 @@
   {
     "isShapeless": true,
     "inputs": [
-      { "itemId": "Flax Thread", "count": 1 },
-      { "itemId": "Flax Thread", "count": 1 }
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 }
     ],
     "inputConditions": [],
     "inputActions": [

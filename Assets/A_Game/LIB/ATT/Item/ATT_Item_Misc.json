@@ -1301,7 +1301,7 @@
     "name": "Wooden Cogwheel",
     "spriteName": "Wooden Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
@@ -1314,7 +1314,7 @@
     "name": "Big Wooden Cogwheel",
     "spriteName": "Big Wooden Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
@@ -1327,7 +1327,7 @@
     "name": "Bronze Cogwheel",
     "spriteName": "Bronze Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
@@ -1340,7 +1340,7 @@
     "name": "Big Bronze Cogwheel",
     "spriteName": "Big Bronze Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
@@ -1353,7 +1353,7 @@
     "name": "Iron Cogwheel",
     "spriteName": "Iron Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
@@ -1366,11 +1366,37 @@
     "name": "Big Iron Cogwheel",
     "spriteName": "Big Iron Cogwheel",
     "maxStack": 16,
-    "tags": ["Mechanical", "Placeable"],
+    "tags": ["GearNode", "Placeable"],
     "toolActions": {
       "Place": {
         "layer": "Solid",
         "cell": "Big Iron Cogwheel"
+      }
+    }
+  },
+
+  "Waterwheel": {
+    "name": "Waterwheel",
+    "spriteName": "Waterwheel",
+    "maxStack": 1,
+    "tags": ["SourceNode", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Waterwheel"
+      }
+    }
+  },
+
+  "Windmill": {
+    "name": "Windmill",
+    "spriteName": "Windmill",
+    "maxStack": 1,
+    "tags": ["SourceNode", "Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Windmill"
       }
     }
   }
