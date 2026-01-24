@@ -1,1 +1,64 @@
-[]
+[
+  {
+    "isShapeless": false,
+    "inputs": [
+      {"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},
+      {"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Linen Cloth", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},
+      {"itemId": "Long Wooden Stick", "count": 1},{},{}
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Windmill Blade", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      {},{"itemId": "Windmill Blade", "count": 1},{},
+      {"itemId": "Windmill Blade", "count": 1},{"itemId": "Big Wooden Cogwheel", "count": 1},{"itemId": "Windmill Blade", "count": 1},
+      {},{"itemId": "Windmill Blade", "count": 1},{}
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      {},{ "type": "consume", "amount": 1 },{},
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      {},{ "type": "consume", "amount": 1 },{}
+    ],
+    "outputs": [
+      { "itemId": "Windmill", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Big Wooden Cogwheel", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1}
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Waterwheel", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  }
+]

@@ -668,6 +668,21 @@
     }
   },
 
+  "Small Wooden Plank": {
+    "name": "Small Wooden Plank",
+    "spriteName": "Small Wooden Plank",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 115,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
   "Wooden Plank": {
     "name": "Wooden Plank",
     "spriteName": "Wooden Plank",
@@ -1386,6 +1401,13 @@
         "cell": "Waterwheel"
       }
     }
+  },
+
+  "Windmill Blade": {
+    "name": "Windmill Blade",
+    "spriteName": "Windmill Blade",
+    "maxStack": 32,
+    "tags": []
   },
 
   "Windmill": {

@@ -422,6 +422,23 @@
   {
     "isShapeless": true,
     "inputs": [
+      { "itemId": "Wooden Plank", "count": 1 },
+      { "ToolActions": { "Sawing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Small Wooden Plank", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
       { "itemId": "Leaf", "count": 1 },
       { "itemId": "Leaf", "count": 1 }
     ],

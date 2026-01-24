@@ -114,5 +114,31 @@
       { "itemId": "Iron Maul Head", "count": 1 },
       { "itemId": "Iron Saw Blade", "count": 1 }
     ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Wooden Plank", "count": 1 },
+      "tool": { "ToolActions": { "Carving": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Big Wooden Cogwheel", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Small Wooden Plank", "count": 1 },
+      "tool": { "ToolActions": { "Carving": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Wooden Cogwheel", "count": 1 }
+    ]
   }
 ]
