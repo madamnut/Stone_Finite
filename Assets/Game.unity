@@ -7468,8 +7468,8 @@ MonoBehaviour:
   itemLibrary: {fileID: 236639235}
   recipe2Json: {fileID: 4900000, guid: 7ded93dc164c3d544a58f8b90d0f8dda, type: 3}
   recipe4Json: {fileID: 4900000, guid: 3495c1fa712b8f941a421f0a1c3887d4, type: 3}
-  recipe9Json: {fileID: 0}
-  recipe16Json: {fileID: 0}
+  recipe9Json: {fileID: 4900000, guid: b8ea82faac46c05478236cfa7427060e, type: 3}
+  recipe16Json: {fileID: 4900000, guid: 353e473634f3ac24195e68663019950e, type: 3}
   alloyJson: {fileID: 4900000, guid: 8e9e1f06cd2156d46b7647539f59523c, type: 3}
   toolbenchJson: {fileID: 4900000, guid: 890e966fff46cf44ea30845927e6b13d, type: 3}
 --- !u!1001 &1185331131
@@ -9126,6 +9126,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e7c9c5a8c6fad647832941230e3d5c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attGearJson: {fileID: 0}
+  attSourceJson: {fileID: 0}
 --- !u!4 &1500385779
 Transform:
   m_ObjectHideFlags: 0
