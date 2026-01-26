@@ -5,11 +5,22 @@ using Newtonsoft.Json.Linq;
 public sealed class GearNetworkManager : MonoBehaviour
 {
     // ─────────────────────────────────────────
-    // ATT Jsons
+    // World ref (Inspector)
+    // ─────────────────────────────────────────
+    [Header("World Ref")]
+    public WorldManager world; // 인스펙터로 할당
+
+    // ─────────────────────────────────────────
+    // ATT Json (Unified)
     // ─────────────────────────────────────────
     [Header("ATT Jsons")]
-    public TextAsset attGearJson;    // ATT_Gear.json
-    public TextAsset attSourceJson;  // ATT_Source.json
+    public TextAsset attGearJson; // (통합) ATT_Gear.json : kind + gear/source
+
+    enum AttKind
+    {
+        Gear,
+        Source
+    }
 
     struct GearSpec
     {
@@ -19,6 +30,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     struct SourceSpec
     {
+        public int rpm;
         public int stressCapacity;
     }
 
@@ -44,18 +56,34 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     void Awake()
     {
-        BuildGearSpecCache();
-        BuildSourceSpecCache();
+        BuildAttCache();
     }
 
     // ─────────────────────────────────────────
-    // Public API : Gear (by gearId)
+    // Public API : Gear
     // ─────────────────────────────────────────
-    public bool TryAddGear(
-        Vector2Int center,
-        string gearId,
-        out int nodeId
-    )
+    public bool CanPlaceGear(Vector2Int center, string gearId)
+    {
+        if (!_gearSpecById.TryGetValue(gearId, out var spec))
+            return false;
+
+        var occupied = BuildOccupiedCells(center, spec.size);
+
+        foreach (var cell in occupied)
+        {
+            // 0) bounds + solid empty
+            if (!IsSolidEmptyWorld(cell))
+                return false;
+
+            // 1) network occupancy empty
+            if (_cellToGearNodeId.ContainsKey(cell))
+                return false;
+        }
+
+        return true;
+    }
+
+    public bool TryAddGear(Vector2Int center, string gearId, out int nodeId)
     {
         nodeId = -1;
 
@@ -63,8 +91,12 @@ public sealed class GearNetworkManager : MonoBehaviour
             return false;
 
         var occupied = BuildOccupiedCells(center, spec.size);
+
         foreach (var cell in occupied)
         {
+            if (!IsSolidEmptyWorld(cell))
+                return false;
+
             if (_cellToGearNodeId.ContainsKey(cell))
                 return false;
         }
@@ -92,15 +124,12 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         _gearNodes.Remove(nodeId);
 
-        // (선택) 이 기어에 붙은 소스를 같이 제거하고 싶으면 여기서 처리
-        // 지금은 소스는 그대로 두고, 리빌드에서 네트워크에서 떨어져 나가게 둠.
-
         RebuildNetworksAround(gear.Center);
         return true;
     }
 
     // ─────────────────────────────────────────
-    // Public API : Source (by sourceId)
+    // Public API : Source (2차 구현용)
     // ─────────────────────────────────────────
     public bool TryAddSource(
         Vector2Int attachedGearCenter,
@@ -186,11 +215,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
     }
 
-    void BFSBuildNetwork(
-        int startGearId,
-        GearNetwork network,
-        HashSet<int> visited
-    )
+    void BFSBuildNetwork(int startGearId, GearNetwork network, HashSet<int> visited)
     {
         var queue = new Queue<int>();
         queue.Enqueue(startGearId);
@@ -274,6 +299,18 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────
+    bool IsSolidEmptyWorld(Vector2Int cell)
+    {
+        if (world == null)
+            return false;
+
+        if (!world.InBounds(cell.x, cell.y))
+            return false;
+
+        // solidId==0 => empty
+        return world.GetSolidId(cell.x, cell.y) == 0;
+    }
+
     bool TryGetGearAtCenter(Vector2Int center, out int gearId)
     {
         if (_cellToGearNodeId.TryGetValue(center, out gearId))
@@ -283,10 +320,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         return false;
     }
 
-    static HashSet<Vector2Int> BuildOccupiedCells(
-        Vector2Int center,
-        GearNode.GearSize size
-    )
+    static HashSet<Vector2Int> BuildOccupiedCells(Vector2Int center, GearNode.GearSize size)
     {
         var set = new HashSet<Vector2Int>();
         set.Add(center);
@@ -303,11 +337,12 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // ATT parsing
+    // ATT parsing (Unified)
     // ─────────────────────────────────────────
-    void BuildGearSpecCache()
+    void BuildAttCache()
     {
         _gearSpecById.Clear();
+        _sourceSpecById.Clear();
 
         if (attGearJson == null || string.IsNullOrEmpty(attGearJson.text))
             return;
@@ -316,48 +351,63 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         foreach (var prop in root.Properties())
         {
-            string gearId = prop.Name;
+            string id = prop.Name;
             var o = prop.Value as JObject;
             if (o == null) continue;
 
-            string sizeStr = o["size"]?.Value<string>();
-            int maxRpm = o["maxRpm"]?.Value<int>() ?? 0;
-            if (maxRpm < 0) maxRpm = 0;
-
-            if (!TryParseGearSize(sizeStr, out var size))
+            string kindStr = o["kind"]?.Value<string>();
+            if (!TryParseAttKind(kindStr, out var kind))
                 continue;
 
-            _gearSpecById[gearId] = new GearSpec
+            if (kind == AttKind.Gear)
             {
-                size = size,
-                maxRpm = maxRpm
-            };
+                var g = o["gear"] as JObject;
+                if (g == null) continue;
+
+                string sizeStr = g["size"]?.Value<string>();
+                int maxRpm = g["maxRpm"]?.Value<int>() ?? 0;
+                if (maxRpm < 0) maxRpm = 0;
+
+                if (!TryParseGearSize(sizeStr, out var size))
+                    continue;
+
+                _gearSpecById[id] = new GearSpec
+                {
+                    size = size,
+                    maxRpm = maxRpm
+                };
+            }
+            else // Source
+            {
+                var s = o["source"] as JObject;
+                if (s == null) continue;
+
+                int rpm = s["rpm"]?.Value<int>() ?? 0;
+                if (rpm < 0) rpm = 0;
+
+                int cap = s["stressCapacity"]?.Value<int>() ?? 0;
+                if (cap < 0) cap = 0;
+
+                _sourceSpecById[id] = new SourceSpec
+                {
+                    rpm = rpm,
+                    stressCapacity = cap
+                };
+            }
         }
     }
 
-    void BuildSourceSpecCache()
+    static bool TryParseAttKind(string s, out AttKind kind)
     {
-        _sourceSpecById.Clear();
+        kind = AttKind.Gear;
 
-        if (attSourceJson == null || string.IsNullOrEmpty(attSourceJson.text))
-            return;
+        if (string.IsNullOrEmpty(s))
+            return false;
 
-        var root = JObject.Parse(attSourceJson.text);
+        if (s == "Gear") { kind = AttKind.Gear; return true; }
+        if (s == "Source") { kind = AttKind.Source; return true; }
 
-        foreach (var prop in root.Properties())
-        {
-            string sourceId = prop.Name;
-            var o = prop.Value as JObject;
-            if (o == null) continue;
-
-            int cap = o["stressCapacity"]?.Value<int>() ?? 0;
-            if (cap < 0) cap = 0;
-
-            _sourceSpecById[sourceId] = new SourceSpec
-            {
-                stressCapacity = cap
-            };
-        }
+        return false;
     }
 
     static bool TryParseGearSize(string s, out GearNode.GearSize size)
@@ -368,7 +418,7 @@ public sealed class GearNetworkManager : MonoBehaviour
             return false;
 
         if (s == "Small") { size = GearNode.GearSize.Small; return true; }
-        if (s == "Big")   { size = GearNode.GearSize.Big;   return true; }
+        if (s == "Big") { size = GearNode.GearSize.Big; return true; }
 
         return false;
     }
@@ -378,7 +428,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         kind = SourceNode.SourceKind.Waterwheel;
 
         if (sourceId == "Waterwheel") { kind = SourceNode.SourceKind.Waterwheel; return true; }
-        if (sourceId == "Windmill")   { kind = SourceNode.SourceKind.Windmill;   return true; }
+        if (sourceId == "Windmill") { kind = SourceNode.SourceKind.Windmill; return true; }
 
         return false;
     }

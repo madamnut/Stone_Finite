@@ -1,28 +1,67 @@
 {
   "Wooden Cogwheel": {
-    "size": "Small",
-    "maxRpm": 60
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 60
+    }
   },
   "Big Wooden Cogwheel": {
-    "size": "Big",
-    "maxRpm": 40
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 40
+    }
   },
 
   "Bronze Cogwheel": {
-    "size": "Small",
-    "maxRpm": 120
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 120
+    }
   },
   "Big Bronze Cogwheel": {
-    "size": "Big",
-    "maxRpm": 90
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 90
+    }
   },
 
   "Iron Cogwheel": {
-    "size": "Small",
-    "maxRpm": 180
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 180
+    }
   },
   "Big Iron Cogwheel": {
-    "size": "Big",
-    "maxRpm": 140
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 140
+    }
+  },
+
+  "Waterwheel": {
+    "kind": "Source",
+    "source": {
+      "rpm": 40,
+      "stressCapacity": 32
+    }
+  },
+  "Windmill": {
+    "kind": "Source",
+    "source": {
+      "rpm": 60,
+      "stressCapacity": 64
+    }
   }
 }

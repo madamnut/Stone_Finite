@@ -1318,8 +1318,7 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Wooden Cogwheel"
       }
     }
@@ -1331,8 +1330,7 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Big Wooden Cogwheel"
       }
     }
@@ -1344,8 +1342,7 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Bronze Cogwheel"
       }
     }
@@ -1357,8 +1354,7 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Big Bronze Cogwheel"
       }
     }
@@ -1370,8 +1366,7 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Iron Cogwheel"
       }
     }
@@ -1383,18 +1378,10 @@
     "maxStack": 16,
     "tags": ["Gear", "Placeable"],
     "toolActions": {
-      "Place": {
-        "layer": "Solid",
+      "PlaceGear": {
         "cell": "Big Iron Cogwheel"
       }
     }
-  },
-
-  "Waterwheel Base": {
-    "name": "Waterwheel Base",
-    "spriteName": "Waterwheel Base",
-    "maxStack": 1,
-    "tags": []
   },
 
   "Windmill Blade": {
@@ -1404,26 +1391,15 @@
     "tags": []
   },
 
-  "Windmill Base": {
-    "name": "Windmill Base",
-    "spriteName": "Windmill Base",
-    "maxStack": 1,
-    "tags": []
-  },
-
   "Windmill": {
     "name": "Windmill",
     "spriteName": "Windmill",
     "maxStack": 1,
-    "tags": ["Placeable"],
+    "tags": ["GearSource"],
     "toolActions": {
-      "Place": {
-        "layer": "Default",
-        "cell": "Windmill"
+      "AttachSource": {
+        "sourceKind": "Windmill"
       }
-    },
-    "details": {
-      "gear": null
     }
   },
 
@@ -1431,15 +1407,11 @@
     "name": "Waterwheel",
     "spriteName": "Waterwheel",
     "maxStack": 1,
-    "tags": ["Placeable"],
+    "tags": ["GearSource"],
     "toolActions": {
-      "Place": {
-        "layer": "Default",
-        "cell": "Waterwheel"
+      "AttachSource": {
+        "sourceKind": "Waterwheel"
       }
-    },
-    "details": {
-      "gear": null
     }
   }
 }

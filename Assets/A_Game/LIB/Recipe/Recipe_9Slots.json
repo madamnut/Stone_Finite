@@ -34,7 +34,7 @@
       null,{ "type": "consume", "amount": 1 },null
     ],
     "outputs": [
-      { "itemId": "Windmill Base", "count": 1 }
+      { "itemId": "Windmill", "count": 1 }
     ],
     "outputActions": [
       []
@@ -55,7 +55,7 @@
       { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 }
     ],
     "outputs": [
-      { "itemId": "Waterwheel Base", "count": 1 }
+      { "itemId": "Waterwheel", "count": 1 }
     ],
     "outputActions": [
       []
