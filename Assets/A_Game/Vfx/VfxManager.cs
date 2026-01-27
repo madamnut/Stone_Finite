@@ -1,30 +1,37 @@
 // VfxManager.cs (전체 교체본)
 // - 기존 Smoke/Fire loop VFX 유지
-// - Wooden Cogwheel, Big Wooden Cogwheel, Waterwheel, Windmill 프리팹 추가
-// - rpm/rotationDir 세팅해서 지정 좌표에 소환하는 API 추가
+// - Rotating VFX: vfxKey -> prefab 을 인스펙터에서 매핑(List)으로 등록
+// - SetRotatingLoopVfx 그대로 사용 가능(gearId를 vfxKey로 그대로 넣으면 됨)
+// - (ownerInstId, vfxKey) 재사용/중복 방지 유지
+// - Block Break Particles 코드는 그대로 유지
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class VfxManager : MonoBehaviour
 {
+    [Serializable]
+    public struct VfxKeyPrefabPair
+    {
+        public string key;
+        public GameObject prefab;
+    }
+
     [Header("Block Break Particles")]
     public Material material;       // Sprites/Default 기반 템플릿 1개
     public ParticleSystem psPrefab; // 파티클 시스템 프리팹
 
-    [Header("Loop VFX Prefabs")]
-    // 키는 string으로 고정
+    [Header("Loop VFX Prefabs (Fixed Keys)")]
     // 기존: "Smoke", "Fire_01", "Fire_02"
     public GameObject smokePrefab;
     public GameObject fire01Prefab;
     public GameObject fire02Prefab;
 
-    [Header("Rotating VFX Prefabs")]
-    // 신규: 회전 VFX (프리팹에는 RotatingVfx 컴포넌트가 붙어있어야 함)
-    // 키: "WoodenCogwheel", "BigWoodenCogwheel", "Waterwheel", "Windmill"
-    public GameObject woodenCogwheelPrefab;
-    public GameObject bigWoodenCogwheelPrefab;
-    public GameObject waterwheelPrefab;
-    public GameObject windmillPrefab;
+    [Header("Rotating VFX Prefabs (Inspector Mapping)")]
+    // 예) key="Wooden Cogwheel", prefab=WoodenCogwheelVfxPrefab
+    // 예) key="Big Iron Cogwheel", prefab=BigIronCogwheelVfxPrefab
+    public List<VfxKeyPrefabPair> rotatingPrefabs = new List<VfxKeyPrefabPair>();
 
     [Header("Loop VFX Culling")]
     public float activeRange = 40f;  // 플레이어 기준 거리 비활/활
@@ -35,7 +42,23 @@ public class VfxManager : MonoBehaviour
     // 루프 VFX 인스턴스 관리: (ownerInstId, vfxKey) -> GameObject
     readonly Dictionary<(int, string), GameObject> _loop = new Dictionary<(int, string), GameObject>();
 
+    // rotating key -> prefab cache (런타임 빌드)
+    readonly Dictionary<string, GameObject> _rotatingByKey = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+
     Transform _player;
+    bool _rotatingCacheBuilt = false;
+
+    void Awake()
+    {
+        BuildRotatingCache();
+    }
+
+    void OnValidate()
+    {
+        // 에디터에서 리스트 수정 시 갱신
+        _rotatingCacheBuilt = false;
+        BuildRotatingCache();
+    }
 
     public void SetPlayer(Transform player)
     {
@@ -79,7 +102,7 @@ public class VfxManager : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // Rotating Loop VFX API (신규)
+    // Rotating Loop VFX API (gearId 그대로 vfxKey로 사용)
     // ─────────────────────────────
     public void SetRotatingLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos, float rpm, int rotationDir)
     {
@@ -162,14 +185,30 @@ public class VfxManager : MonoBehaviour
 
     GameObject GetRotatingPrefab(string vfxKey)
     {
-        return vfxKey switch
+        if (!_rotatingCacheBuilt) BuildRotatingCache();
+
+        if (string.IsNullOrEmpty(vfxKey))
+            return null;
+
+        return _rotatingByKey.TryGetValue(vfxKey, out var prefab) ? prefab : null;
+    }
+
+    void BuildRotatingCache()
+    {
+        _rotatingByKey.Clear();
+        _rotatingCacheBuilt = true;
+
+        if (rotatingPrefabs == null) return;
+
+        for (int i = 0; i < rotatingPrefabs.Count; i++)
         {
-            "WoodenCogwheel"     => woodenCogwheelPrefab,
-            "BigWoodenCogwheel"  => bigWoodenCogwheelPrefab,
-            "Waterwheel"         => waterwheelPrefab,
-            "Windmill"           => windmillPrefab,
-            _ => null
-        };
+            var p = rotatingPrefabs[i];
+            if (string.IsNullOrEmpty(p.key)) continue;
+            if (p.prefab == null) continue;
+
+            // 동일 key 중복이면 "뒤에 있는 항목"이 덮어씀(인스펙터에서 순서로 제어)
+            _rotatingByKey[p.key] = p.prefab;
+        }
     }
 
     bool IsInRange(Vector3 p)
@@ -180,7 +219,7 @@ public class VfxManager : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // Block Break Particles (기존)  <<< 건들지 말라고 해서 그대로 둠
+    // Block Break Particles (기존)  <<< 그대로 유지
     // ─────────────────────────────
     public void EmitBlockAtCell(Sprite s, int cx, int cy, int cellSize, int grid = 2, int count = -1)
     {
@@ -203,7 +242,7 @@ public class VfxManager : MonoBehaviour
         }
         else
         {
-            for (int i = 0; i < count; i++) { rend.mesh = shards[Random.Range(0, shards.Length)]; ps.Emit(1); }
+            for (int i = 0; i < count; i++) { rend.mesh = shards[UnityEngine.Random.Range(0, shards.Length)]; ps.Emit(1); }
         }
 
         var main = ps.main;

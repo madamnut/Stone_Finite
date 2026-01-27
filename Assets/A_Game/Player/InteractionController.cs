@@ -1,4 +1,14 @@
 // InteractionController.cs (전체 교체본)
+// 핵심 수정:
+// - ToolAction "PlaceGear" 처리 추가
+// - PlaceGear는:
+//   1) GearNetworkManager.CanPlaceGear로 점유 검사(센터 포함 + 주변)
+//   2) WorldManager.PlaceSolidExact로 "센터 셀"을 실제 월드에 설치
+//   3) GearNetworkManager.TryAddGear로 네트워크 등록
+//      ※ GearNetworkManager는 "센터에 깔린 SolidName == gearId"를 강제하므로,
+//         PlaceGear는 항상 gearId 이름의 Solid를 센터에 깐다.
+//   4) (실패 시) OverwriteSolid로 롤백(드랍 없이 제거)
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,7 +24,6 @@ public class InteractionController : MonoBehaviour
 
     const string LOG_MB = "[MBUILD]";
 
-    /*────────────── UI ──────────────*/
     [Header("UI")]
     public GameObject inventoryPanel;
     public GameObject pauseMenuRoot;
@@ -37,6 +46,7 @@ public class InteractionController : MonoBehaviour
     [Header("World References")]
     public WorldManager worldManager;
     public MultiblockManager multiblockManager;
+    public GearNetworkManager gearNetworkManager; // ✅ 기어 설치/점유 체크
     public Camera worldCamera;
     public int cellSize = 1;
 
@@ -63,8 +73,6 @@ public class InteractionController : MonoBehaviour
     public GameObject handcraftModule;
 
     GameObject _moduleInstance;
-
-    // ✅ 추가: 현재 열린 모듈 인스턴스 접근용
     public GameObject CurrentModuleInstance => _moduleInstance;
 
     [Header("Audio")]
@@ -95,7 +103,6 @@ public class InteractionController : MonoBehaviour
     Vector2 _combatHotspot = new Vector2(5, 4);
 
     Coroutine _attackCo;
-
     Corpse _hoverCorpse;
 
     void Awake()
@@ -174,22 +181,13 @@ public class InteractionController : MonoBehaviour
 
         if (invDown)
         {
-            if (_state == GameState.Ingame)
-            {
-                OpenModule(handcraftModule);
-            }
-            else if (_state == GameState.Inpanel)
-            {
-                CloseInventoryPanelToIngame();
-            }
+            if (_state == GameState.Ingame) OpenModule(handcraftModule);
+            else if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
         }
 
         if (escDown)
         {
-            if (_state == GameState.Inpanel)
-            {
-                CloseInventoryPanelToIngame();
-            }
+            if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
             else if (_state == GameState.Inmenu)
             {
                 _state = GameState.Ingame;
@@ -284,6 +282,34 @@ public class InteractionController : MonoBehaviour
         if (Input.GetMouseButtonDown(1)) HandleRightClick();
     }
 
+    // PlaceGear param에서 gearId(=ATT_Gear id) / cellName(옵션) 추출
+    // ※ 실제로 월드에 박는 SolidName은 gearId로 강제(gearNetworkManager의 centerName==gearId 조건 때문)
+    bool TryGetGearPlaceInfo(Dictionary<string, object> placeParam, out string gearId, out string cellName)
+    {
+        gearId = null;
+        cellName = null;
+
+        if (gearNetworkManager == null || worldManager == null || worldManager.cellLibrary == null)
+            return false;
+
+        if (placeParam == null) return false;
+
+        if (placeParam.TryGetValue("gearId", out var g0) && g0 != null) gearId = g0.ToString();
+        else if (placeParam.TryGetValue("gear", out var g1) && g1 != null) gearId = g1.ToString();
+        else if (placeParam.TryGetValue("cell", out var c0) && c0 != null) gearId = c0.ToString();
+
+        if (placeParam.TryGetValue("cell", out var c1) && c1 != null) cellName = c1.ToString();
+        else cellName = gearId;
+
+        if (string.IsNullOrEmpty(gearId))
+            return false;
+
+        // ✅ 월드에 박는 셀은 gearId와 동일하게 강제
+        cellName = gearId;
+
+        return true;
+    }
+
     void UpdateHighlight()
     {
         if (!GetMouseCell(out int cx, out int cy))
@@ -295,6 +321,30 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
+        // ✅ 기어 설치 하이라이트 (PlaceGear)
+        ItemData held = GetHeldItem();
+        if (held != null && held.Count > 0 && held.ToolActions != null)
+        {
+            if (held.ToolActions.TryGetValue("PlaceGear", out var pObj))
+            {
+                var p = pObj as Dictionary<string, object>;
+                if (TryGetGearPlaceInfo(p, out var gearId, out _))
+                {
+                    bool can = gearNetworkManager.CanPlaceGear(new Vector2Int(cx, cy), gearId);
+                    _hlSR.sprite = can ? HighLight_Solid_CAN : HighLight_Solid_CANNOT;
+
+                    _hlGO.SetActive(true);
+                    _timer += Time.deltaTime;
+                    float t0 = (_timer / period) % 1f;
+                    float sin0 = Mathf.Sin(t0 * Mathf.PI * 2f) * 0.5f + 0.5f;
+                    float s0 = Mathf.Lerp(minScale, maxScale, sin0);
+                    _hlGO.transform.localScale = Vector3.one * s0;
+                    return;
+                }
+            }
+        }
+
+        // 기존 하이라이트(브레이크/레이어 표시)
         ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
 
@@ -385,6 +435,326 @@ public class InteractionController : MonoBehaviour
         }
     }
 
+    // ─────────────────────────────────────────
+    // Item Interaction
+    // ─────────────────────────────────────────
+    bool TryItemInteraction()
+    {
+        if (_state != GameState.Ingame) return false;
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return false;
+
+        if (!GetMouseCell(out int cx, out int cy))
+            return false;
+
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+            return false;
+
+        var held = items[_hotbarScope];
+        if (held == null || held.Count <= 0)
+            return false;
+
+        if (held.ToolActions == null || held.ToolActions.Count == 0)
+            return false;
+
+        foreach (var kv in held.ToolActions)
+        {
+            string actionName = kv.Key;
+            var param = kv.Value ?? new Dictionary<string, object>();
+
+            bool ok = false;
+
+            if (actionName == "Place")
+                ok = HandlePlace(held, cx, cy, param);
+            else if (actionName == "PlaceGear")
+                ok = HandlePlaceGear(held, cx, cy, param);
+            else if (actionName == "BuildMultiblock")
+                ok = HandleBuildMultiblock(held, cx, cy, param);
+
+            if (ok) return true;
+        }
+
+        return false;
+    }
+
+    // ✅ 기어 설치: 월드 센터 셀 박고 + 네트워크 점유/노드 등록
+    bool HandlePlaceGear(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
+    {
+        if (worldManager == null || gearNetworkManager == null)
+            return false;
+
+        if (!TryGetGearPlaceInfo(placeParam, out var gearId, out var cellName))
+            return false;
+
+        var center = new Vector2Int(cx, cy);
+
+        // 1) 네트워크 관점 설치 가능?
+        if (!gearNetworkManager.CanPlaceGear(center, gearId))
+            return false;
+
+        // 2) 월드에 "센터 셀" 실제 설치 (※ 반드시 gearId 이름의 Solid를 깐다)
+        if (!worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId))
+            return false;
+
+        if (placeId == 0)
+            return false;
+
+        if (!worldManager.PlaceSolidExact(cx, cy, placeId))
+            return false;
+
+        // 3) 네트워크 등록(센터는 이미 월드에 깔린 상태 전제 + centerName==gearId)
+        if (!gearNetworkManager.TryAddGear(center, gearId, out _))
+        {
+            // 롤백(드랍 없이 제거)
+            worldManager.OverwriteSolid(cx, cy, 0, 0);
+            return false;
+        }
+
+        sound.PlayPlace();
+
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        return true;
+    }
+
+    // ─────────────────────────────────────────
+    // (기존) Place / Multiblock / Combat 등 나머지 로직
+    // ─────────────────────────────────────────
+
+    bool TryCorpseInteraction()
+    {
+        if (_state != GameState.Ingame) return false;
+        if (_hoverCorpse == null) return false;
+
+        var items = player.Inventory.items;
+        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
+            return false;
+
+        var held = items[_hotbarScope];
+        if (held == null || held.Count <= 0)
+            return false;
+
+        if (held.ToolActions == null || held.ToolActions.Count == 0)
+            return false;
+
+        foreach (var kv in held.ToolActions)
+        {
+            string actionName = kv.Key;
+            if (string.IsNullOrEmpty(actionName))
+                continue;
+
+            if (corpseLibrary.TryProcessCorpse(_hoverCorpse, actionName))
+            {
+                _hoverCorpse.SetHovered(false);
+                _hoverCorpse = null;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool TryCellInteraction()
+    {
+        if (_state != GameState.Ingame) return false;
+        if (!GetMouseCell(out int cx, out int cy)) return false;
+
+        var mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
+        if (mb != null)
+        {
+            mb.OnInteract(player, new Vector2Int(cx, cy));
+            return true;
+        }
+
+        return false;
+    }
+
+    // ✅ 추가: 플레이어의 "해당 좌표에 대한 상대 위치(2축)" 계산
+    void ComputeRelativeDirs(int cx, int cy, out WorldManager.RelV relV, out WorldManager.RelH relH)
+    {
+        float half = cellSize * 0.5f;
+        float cellCenterX = cx * cellSize + half;
+        float cellCenterY = cy * cellSize + half;
+
+        Vector3 p = player.transform.position;
+
+        float dx = p.x - cellCenterX;
+        float dy = p.y - cellCenterY;
+
+        const float EPS = 0.001f;
+
+        if (dy > EPS) relV = WorldManager.RelV.Up;
+        else if (dy < -EPS) relV = WorldManager.RelV.Down;
+        else relV = WorldManager.RelV.Neutral;
+
+        if (dx > EPS) relH = WorldManager.RelH.Right;
+        else if (dx < -EPS) relH = WorldManager.RelH.Left;
+        else relH = WorldManager.RelH.Neutral;
+    }
+
+    bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
+    {
+        string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
+        string cellName = placeParam.TryGetValue("cell", out var cellObj) ? cellObj?.ToString() : null;
+
+        ushort solidId = worldManager.GetSolidId(cx, cy);
+        ushort bgId = worldManager.GetBGId(cx, cy);
+
+        bool hasSolid = solidId != 0;
+        bool hasBg = bgId != 0;
+
+        WorldManager.CellLayer targetLayer;
+
+        if (string.Equals(layerStr, "Dynamic", StringComparison.OrdinalIgnoreCase))
+        {
+            targetLayer = (_layerMode == LayerMode.BG)
+                ? WorldManager.CellLayer.BG
+                : WorldManager.CellLayer.Solid;
+        }
+        else if (string.Equals(layerStr, "BG", StringComparison.OrdinalIgnoreCase))
+        {
+            targetLayer = WorldManager.CellLayer.BG;
+        }
+        else
+        {
+            targetLayer = WorldManager.CellLayer.Solid;
+        }
+
+        if (targetLayer == WorldManager.CellLayer.BG)
+        {
+            if (hasSolid) return false;
+            if (hasBg) return false;
+        }
+
+        worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId);
+        if (placeId == 0) return false;
+
+        ComputeRelativeDirs(cx, cy, out var relV, out var relH);
+
+        bool placed =
+            (targetLayer == WorldManager.CellLayer.Solid)
+                ? worldManager.PlaceSolid(cx, cy, placeId, relV, relH)
+                : worldManager.PlaceBG(cx, cy, placeId, relV, relH);
+
+        if (!placed) return false;
+
+        sound.PlayPlace();
+
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        return true;
+    }
+
+    // (이하 HandleBuildMultiblock ~ 이하 기존 그대로)
+    bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
+    {
+        ushort solidId = worldManager.GetSolidId(cx, cy);
+        if (solidId == 0) return false;
+
+        if (multiblockManager.GetAtCell(new Vector2Int(cx, cy)) != null)
+            return false;
+
+        string clickedKey = worldManager.cellLibrary.GetSolidName(solidId);
+
+        if (!MultiblockLibrary.TryGetByIngredient(clickedKey, out var defs) || defs.Count == 0)
+            return false;
+
+        int worldW = worldManager.settings.width;
+        int worldH = worldManager.settings.height;
+
+        MultiblockLibrary.Def bestDef = null;
+        int bestOx = 0;
+        int bestOy = 0;
+        int bestArea = -1;
+
+        for (int di = 0; di < defs.Count; di++)
+        {
+            var def = defs[di];
+
+            int patternWidth = def.width;
+            int patternHeight = def.height;
+
+            if (patternWidth <= 0 || patternHeight <= 0) continue;
+
+            for (int py = 0; py < patternHeight; py++)
+            {
+                for (int px = 0; px < patternWidth; px++)
+                {
+                    string patternKey = def.pattern[px, py];
+                    if (patternKey != clickedKey) continue;
+
+                    int originX = cx - px;
+                    int originY = cy - py;
+
+                    if (originX < 0 || originY < 0 ||
+                        originX + patternWidth > worldW ||
+                        originY + patternHeight > worldH)
+                        continue;
+
+                    bool mismatch = false;
+
+                    for (int ly = 0; ly < patternHeight && !mismatch; ly++)
+                    {
+                        for (int lx = 0; lx < patternWidth; lx++)
+                        {
+                            int wx = originX + lx;
+                            int wy = originY + ly;
+
+                            if (multiblockManager.GetAtCell(new Vector2Int(wx, wy)) != null)
+                            {
+                                mismatch = true;
+                                break;
+                            }
+
+                            ushort wid = worldManager.GetSolidId(wx, wy);
+                            string worldKey = worldManager.cellLibrary.GetSolidName(wid);
+
+                            if (worldKey != def.pattern[lx, ly])
+                            {
+                                mismatch = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!mismatch)
+                    {
+                        int area = patternWidth * patternHeight;
+
+                        if (area > bestArea)
+                        {
+                            bestArea = area;
+                            bestDef = def;
+                            bestOx = originX;
+                            bestOy = originY;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestDef != null)
+        {
+            multiblockManager.Create(bestDef, bestOx, bestOy);
+            sound.PlayMultiblockComplete();
+            return true;
+        }
+
+        return false;
+    }
+
+    // ─────────────────────────────────────────
+    // Combat/Utility (기존 그대로)
+    // ─────────────────────────────────────────
+
     void TryWeaponAttack()
     {
         if (_attackCo != null)
@@ -427,12 +797,7 @@ public class InteractionController : MonoBehaviour
             else if (scObj is double d) staminaCost = (float)d;
             else if (scObj is int i) staminaCost = i;
             else if (scObj is long l) staminaCost = l;
-            else
-            {
-                float tmp;
-                if (float.TryParse(scObj.ToString(), out tmp))
-                    staminaCost = tmp;
-            }
+            else if (float.TryParse(scObj.ToString(), out var tmp)) staminaCost = tmp;
         }
 
         if (paramDict.TryGetValue("cooldown", out var cdObj) && cdObj != null)
@@ -441,12 +806,7 @@ public class InteractionController : MonoBehaviour
             else if (cdObj is double d) cooldown = (float)d;
             else if (cdObj is int i) cooldown = i;
             else if (cdObj is long l) cooldown = l;
-            else
-            {
-                float tmp;
-                if (float.TryParse(cdObj.ToString(), out tmp))
-                    cooldown = tmp;
-            }
+            else if (float.TryParse(cdObj.ToString(), out var tmp)) cooldown = tmp;
         }
 
         if (paramDict.TryGetValue("damage", out var dmgObj) && dmgObj != null)
@@ -455,12 +815,7 @@ public class InteractionController : MonoBehaviour
             else if (dmgObj is double d) damage = (float)d;
             else if (dmgObj is int i) damage = i;
             else if (dmgObj is long l) damage = l;
-            else
-            {
-                float tmp;
-                if (float.TryParse(dmgObj.ToString(), out tmp))
-                    damage = tmp;
-            }
+            else if (float.TryParse(dmgObj.ToString(), out var tmp)) damage = tmp;
         }
 
         if (!player.TryConsumeStaminaForAttack(staminaCost))
@@ -583,275 +938,6 @@ public class InteractionController : MonoBehaviour
         _hitMobsThisAttack.Clear();
 
         _attackCo = null;
-    }
-
-    bool TryCorpseInteraction()
-    {
-        if (_state != GameState.Ingame) return false;
-        if (_hoverCorpse == null) return false;
-
-        var items = player.Inventory.items;
-        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
-            return false;
-
-        var held = items[_hotbarScope];
-        if (held == null || held.Count <= 0)
-            return false;
-
-        if (held.ToolActions == null || held.ToolActions.Count == 0)
-            return false;
-
-        foreach (var kv in held.ToolActions)
-        {
-            string actionName = kv.Key;
-            if (string.IsNullOrEmpty(actionName))
-                continue;
-
-            if (corpseLibrary.TryProcessCorpse(_hoverCorpse, actionName))
-            {
-                _hoverCorpse.SetHovered(false);
-                _hoverCorpse = null;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool TryCellInteraction()
-    {
-        if (_state != GameState.Ingame) return false;
-        if (!GetMouseCell(out int cx, out int cy)) return false;
-
-        var mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
-        if (mb != null)
-        {
-            mb.OnInteract(player, new Vector2Int(cx, cy));
-            return true;
-        }
-
-        return false;
-    }
-
-    bool TryItemInteraction()
-    {
-        if (_state != GameState.Ingame) return false;
-
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return false;
-
-        if (!GetMouseCell(out int cx, out int cy))
-            return false;
-
-        var items = player.Inventory.items;
-        if (_hotbarScope < 0 || _hotbarScope >= items.Count)
-            return false;
-
-        var held = items[_hotbarScope];
-        if (held == null || held.Count <= 0)
-            return false;
-
-        if (held.ToolActions == null || held.ToolActions.Count == 0)
-            return false;
-
-        foreach (var kv in held.ToolActions)
-        {
-            string actionName = kv.Key;
-            var param = kv.Value ?? new Dictionary<string, object>();
-
-            bool ok = false;
-
-            if (actionName == "Place")
-                ok = HandlePlace(held, cx, cy, param);
-            else if (actionName == "BuildMultiblock")
-                ok = HandleBuildMultiblock(held, cx, cy, param);
-
-            if (ok) return true;
-        }
-
-        return false;
-    }
-
-    // ✅ 추가: 플레이어의 "해당 좌표에 대한 상대 위치(2축)" 계산
-    void ComputeRelativeDirs(int cx, int cy, out WorldManager.RelV relV, out WorldManager.RelH relH)
-    {
-        float half = cellSize * 0.5f;
-        float cellCenterX = cx * cellSize + half;
-        float cellCenterY = cy * cellSize + half;
-
-        Vector3 p = player.transform.position;
-
-        float dx = p.x - cellCenterX;
-        float dy = p.y - cellCenterY;
-
-        const float EPS = 0.001f;
-
-        if (dy > EPS) relV = WorldManager.RelV.Up;
-        else if (dy < -EPS) relV = WorldManager.RelV.Down;
-        else relV = WorldManager.RelV.Neutral;
-
-        if (dx > EPS) relH = WorldManager.RelH.Right;
-        else if (dx < -EPS) relH = WorldManager.RelH.Left;
-        else relH = WorldManager.RelH.Neutral;
-    }
-
-    bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
-    {
-        string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
-        string cellName = placeParam.TryGetValue("cell", out var cellObj) ? cellObj?.ToString() : null;
-
-        ushort solidId = worldManager.GetSolidId(cx, cy);
-        ushort bgId = worldManager.GetBGId(cx, cy);
-
-        bool hasSolid = solidId != 0;
-        bool hasBg = bgId != 0;
-
-        WorldManager.CellLayer targetLayer;
-
-        if (string.Equals(layerStr, "Dynamic", StringComparison.OrdinalIgnoreCase))
-        {
-            targetLayer = (_layerMode == LayerMode.BG)
-                ? WorldManager.CellLayer.BG
-                : WorldManager.CellLayer.Solid;
-        }
-        else if (string.Equals(layerStr, "BG", StringComparison.OrdinalIgnoreCase))
-        {
-            targetLayer = WorldManager.CellLayer.BG;
-        }
-        else
-        {
-            targetLayer = WorldManager.CellLayer.Solid;
-        }
-
-        // ✅ 레이어 충돌 제약:
-        // - BG: 기존 그대로(솔리드/기존BG 있으면 불가)
-        // - Solid: "클릭 셀에 솔리드가 있으면 불가"를 제거해야,
-        //          collidable solid 클릭 시 WorldManager가 "옆 빈칸에 부착 설치"를 처리할 수 있음.
-        if (targetLayer == WorldManager.CellLayer.BG)
-        {
-            if (hasSolid) return false;
-            if (hasBg) return false;
-        }
-
-        worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId);
-        if (placeId == 0) return false;
-
-        ComputeRelativeDirs(cx, cy, out var relV, out var relH);
-
-        bool placed =
-            (targetLayer == WorldManager.CellLayer.Solid)
-                ? worldManager.PlaceSolid(cx, cy, placeId, relV, relH)
-                : worldManager.PlaceBG(cx, cy, placeId, relV, relH);
-
-        if (!placed) return false;
-
-        sound.PlayPlace();
-
-        held.Count -= 1;
-        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-        player.Inventory.NotifyChanged();
-
-        RefreshHeldHandSprite();
-
-        return true;
-    }
-
-    // (이하 HandleBuildMultiblock ~ 끝까지 기존 그대로)
-    bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
-    {
-        ushort solidId = worldManager.GetSolidId(cx, cy);
-        if (solidId == 0) return false;
-
-        if (multiblockManager.GetAtCell(new Vector2Int(cx, cy)) != null)
-            return false;
-
-        string clickedKey = worldManager.cellLibrary.GetSolidName(solidId);
-
-        if (!MultiblockLibrary.TryGetByIngredient(clickedKey, out var defs) || defs.Count == 0)
-            return false;
-
-        int worldW = worldManager.settings.width;
-        int worldH = worldManager.settings.height;
-
-        MultiblockLibrary.Def bestDef = null;
-        int bestOx = 0;
-        int bestOy = 0;
-        int bestArea = -1;
-
-        for (int di = 0; di < defs.Count; di++)
-        {
-            var def = defs[di];
-
-            int patternWidth = def.width;
-            int patternHeight = def.height;
-
-            if (patternWidth <= 0 || patternHeight <= 0) continue;
-
-            for (int py = 0; py < patternHeight; py++)
-            {
-                for (int px = 0; px < patternWidth; px++)
-                {
-                    string patternKey = def.pattern[px, py];
-                    if (patternKey != clickedKey) continue;
-
-                    int originX = cx - px;
-                    int originY = cy - py;
-
-                    if (originX < 0 || originY < 0 ||
-                        originX + patternWidth > worldW ||
-                        originY + patternHeight > worldH)
-                        continue;
-
-                    bool mismatch = false;
-
-                    for (int ly = 0; ly < patternHeight && !mismatch; ly++)
-                    {
-                        for (int lx = 0; lx < patternWidth; lx++)
-                        {
-                            int wx = originX + lx;
-                            int wy = originY + ly;
-
-                            if (multiblockManager.GetAtCell(new Vector2Int(wx, wy)) != null)
-                            {
-                                mismatch = true;
-                                break;
-                            }
-
-                            ushort wid = worldManager.GetSolidId(wx, wy);
-                            string worldKey = worldManager.cellLibrary.GetSolidName(wid);
-
-                            if (worldKey != def.pattern[lx, ly])
-                            {
-                                mismatch = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!mismatch)
-                    {
-                        int area = patternWidth * patternHeight;
-
-                        if (area > bestArea)
-                        {
-                            bestArea = area;
-                            bestDef = def;
-                            bestOx = originX;
-                            bestOy = originY;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (bestDef != null)
-        {
-            multiblockManager.Create(bestDef, bestOx, bestOy);
-            sound.PlayMultiblockComplete();
-            return true;
-        }
-
-        return false;
     }
 
     bool GetMouseCell(out int x, out int y)

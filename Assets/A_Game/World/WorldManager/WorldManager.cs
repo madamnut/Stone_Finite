@@ -62,6 +62,9 @@ public class WorldManager : MonoBehaviour
     [Header("아이템 라이브러리(인벤 복원용)")]
     public ItemLibrary itemLibrary;
 
+    [Header("Gear Network")]
+    public GearNetworkManager gearNetworkManager; // ✅ 논리 점유(기어 점유) 체크용
+
     [Header("Time Settings")]
     public int ticksPerSecond = 20;
     public int minutesPerDay = 24 * 60;
@@ -601,6 +604,10 @@ public class WorldManager : MonoBehaviour
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
+        // ✅ 기어 논리 점유 침범 방지
+        if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(x, y)))
+            return false;
+
         var curS = worldMap.GetSolid(x, y);
         if (curS.id != 0) return false;
 
@@ -733,6 +740,11 @@ public class WorldManager : MonoBehaviour
             {
                 if (!worldMap.InBounds(nx, ny)) return false;
                 if (worldMap.GetSolid(nx, ny).id != 0) return false;
+
+                // ✅ 기어 논리 점유 침범 방지 (밀림 설치 후보도 막기)
+                if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(nx, ny)))
+                    return false;
+
                 return PlaceSolidAtEmpty(nx, ny, id, nRelV, nRelH);
             }
 
@@ -775,6 +787,33 @@ public class WorldManager : MonoBehaviour
 
         // 클릭 칸이 비어있으면: 내부 규칙대로 설치
         return PlaceSolidAtEmpty(x, y, id, relV, relH);
+    }
+
+    // 기어 전용: 밀림/부착/meta 규칙 무시하고 "해당 칸"에만 설치
+    public bool PlaceSolidExact(int x, int y, ushort id)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+        if (id == 0) return false;
+
+        // ✅ 기어 논리 점유 침범 방지
+        if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(x, y)))
+            return false;
+
+        // 딱 그 칸이 비어있어야만 설치
+        if (worldMap.GetSolid(x, y).id != 0) return false;
+
+        ushort oldFluidId = worldMap.GetFluid(x, y).id;
+
+        worldMap.SetSolid(x, y, id, 0);
+
+        if ((cellLibrary.GetSolidFlags(id) & CellLibrary.SolidFlags.Collidable) != 0)
+            worldMap.SetFluid(x, y, 0, 0);
+
+        MarkChunkDirty(x, y, markSolid: true);
+        OnCellEdited(x, y);
+
+        HandleSourceLightChangeAt(x, y, oldSolidId: 0, oldSolidMeta: 0, oldFluidId: oldFluidId);
+        return true;
     }
 
     public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
@@ -839,6 +878,10 @@ public class WorldManager : MonoBehaviour
         ushort oldSolidId = s.id;
         ushort oldMeta = s.meta;
         if (oldSolidId == 0) return 0;
+
+        // ✅ 기어 점유 셀 파괴 시 네트워크에서도 제거
+        if (gearNetworkManager != null)
+            gearNetworkManager.TryRemoveGearAt(new Vector2Int(x, y));
 
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
