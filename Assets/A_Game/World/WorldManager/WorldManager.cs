@@ -880,8 +880,9 @@ public class WorldManager : MonoBehaviour
         if (oldSolidId == 0) return 0;
 
         // ✅ 기어 점유 셀 파괴 시 네트워크에서도 제거
+        string droppedSourceId = null;
         if (gearNetworkManager != null)
-            gearNetworkManager.TryRemoveGearAt(new Vector2Int(x, y));
+            gearNetworkManager.TryRemoveGearAt(new Vector2Int(x, y), out droppedSourceId);
 
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
@@ -902,6 +903,12 @@ public class WorldManager : MonoBehaviour
             vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
 
             itemDropper.SpawnDroppedItems(key, pos3);
+            if (!string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
+            {
+                var srcData = itemLibrary.Create(droppedSourceId, 1);
+                if (srcData != null)
+                    itemDropper.SpawnDroppedItem(srcData, pos3);
+            }
         }
 
         return oldSolidId;
@@ -1121,6 +1128,10 @@ public class WorldManager : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (gearNetworkManager != null)
+            gearNetworkManager.TickSources();
+            gearNetworkManager.TickNetworks();
+
         StepTick();
         DoRandomTicks();
 

@@ -1,4 +1,8 @@
-// ItemDropper.cs
+// ItemDropper.cs (전체 교체본)
+// 변경점:
+// - "확정 드랍(확률/드랍테이블 무시)"용 API 추가: SpawnItemDirect(itemId, origin, count)
+//   (기어 파괴 시 붙은 소스는 무조건 1개 드랍 요구사항 대응)
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
@@ -27,9 +31,6 @@ public class ItemDropper : MonoBehaviour
         LoadDropTable();
     }
 
-    //────────────────────────────────────────────
-    // Drop Table 로드
-    //────────────────────────────────────────────
     void LoadDropTable()
     {
         _dropTable = new Dictionary<string, List<DropEntry>>();
@@ -73,7 +74,17 @@ public class ItemDropper : MonoBehaviour
     }
 
     //────────────────────────────────────────────
-    // (1) itemId 기반 드랍
+    // (0) 확정 드랍(드랍테이블 무시)  ✅ 신규
+    //────────────────────────────────────────────
+    public void SpawnItemDirect(string itemId, Vector3 origin, int count = 1)
+    {
+        if (string.IsNullOrEmpty(itemId)) return;
+        if (count <= 0) return;
+        SpawnSingle(itemId, origin, count);
+    }
+
+    //────────────────────────────────────────────
+    // (1) key 기반 드랍테이블
     //────────────────────────────────────────────
     public void SpawnDroppedItems(string key, Vector3 origin)
     {
@@ -129,9 +140,6 @@ public class ItemDropper : MonoBehaviour
         return SpawnDroppedItemInternal(data, position, parent);
     }
 
-    //────────────────────────────────────────────
-    // 내부 실제 생성 함수 (단일)
-    //────────────────────────────────────────────
     DroppedItem SpawnDroppedItemInternal(ItemData data, Vector3 position, Transform parent)
     {
         if (droppedItemPrefab == null || entityManager == null)
@@ -153,7 +161,6 @@ public class ItemDropper : MonoBehaviour
     }
 }
 
-//────────────────────────────────────────────
 [Serializable]
 public struct DropEntry
 {

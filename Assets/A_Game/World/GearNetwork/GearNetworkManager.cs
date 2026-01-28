@@ -1,19 +1,30 @@
 // GearNetworkManager.cs (전체 교체본)
-// 정책:
-// - "센터 셀"은 World(Solid)에 실제로 설치되어 저장/드랍/파괴 대상이 됨
-// - 점유(footprint)는 "센터 포함" (Big는 십자 5칸, Small은 1칸)
-// - CanPlaceGear: (설치 전) 센터 포함 footprint 전체가 "월드 비어있음" + "네트워크 점유 없음"
-// - Place 시나리오:
-//   1) (설치) 월드에 center solid를 먼저 깐다(PlaceSolidExact 등)
-//   2) (등록) TryAddGear(center, gearId) 호출 (센터 solid!=0 전제 + center의 solidName==gearId)
-// - TryAddGear: 센터 solid!=0, center의 solidName==gearId, footprint(center 제외) solid==0, footprint 전체 네트워크 점유==없음
-// - 제거: BreakSolid에서 gearNetworkManager.TryRemoveGearAt(...) 호출로 노드 제거됨
-// - 로드 복원: 월드 스캔해서 center solidName이 ATT_Gear(Gear)에 있으면 TryAddGear로 등록
-// - VFX:
-//   - vfxKey는 gearId(=ATT_Gear의 key 문자열) 그대로 사용
-//   - ownerInstId는 gear nodeId 사용
-//   - TryAddGear 성공 시 VFX spawn(활성), TryRemoveGearAt 시 VFX despawn
-//   - LateUpdate에서 rpm/dir 반영하여 SetRotatingLoopVfx 갱신(거리 컬링은 VfxManager가 처리)
+// 정책(2차 - Source):
+// - 소스는 "기어 센터"에 부착되며, 기어당 1개만 허용
+// - AttachSource는 "기어 점유 셀(any occupied)" 클릭해도 해당 기어 center에 부착
+// - Source 출력 갱신은 매 월드틱마다 TickSources()에서 수행
+//   * Windmill: 항상 rpm=spec.rpm, dir=CW
+//   * Waterwheel: (x-1,y-1),(x,y-1),(x+1,y-1) 3칸이 모두 water(fid==1 && amt>0)일 때만 rpm=spec.rpm, 아니면 0
+//
+// ✅ 네트워크 해석(이번 작업):
+// - 네트워크 내 기어 전파: 맞물림마다 dir 반전
+// - 크기비: Big(2x) ↔ Small(1x) 이면 속도비 2배
+//   * Big -> Small : small rpm = big rpm * 2  (k + 1)
+//   * Small -> Big : big rpm = small rpm / 2  (k - 1)
+//   * Small -> Small : 동일 (k + 0)
+// - 모순(사이클 충돌 또는 서로 다른 소스 조건)이면 네트워크 Stalled=true, 전체 rpm=0
+// - rpm이 gear.MaxRpm 초과하면 해당 gear는 파괴(world.BreakSolid(center))
+//   * 파괴는 계산 후 "일괄 처리" (중간에 Break하면 컬렉션 변경으로 위험)
+//
+// ✅ VFX:
+// - LateUpdate에서 Gear 뿐 아니라 Source도 SetRotatingLoopVfx로 갱신
+// - TryAddSource 성공 시 즉시 1회 Spawn
+// - TryRemoveSource에서 owner=sourceNodeId로 DespawnAllForOwner
+// - Gear 제거 시 소스도 같이 제거되며(이미 구현), 소스 VFX도 같이 정리됨
+//
+// ⚠️ 전제:
+// - ATT_Gear.json에서 Source key가 "Windmill", "Waterwheel"
+// - VfxManager.SetRotatingLoopVfx(ownerInstId, vfxKey, on, pos, rpm, rotationDir)
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,13 +33,13 @@ using Newtonsoft.Json.Linq;
 public sealed class GearNetworkManager : MonoBehaviour
 {
     [Header("World Ref")]
-    public WorldManager world; // 인스펙터로 할당
+    public WorldManager world;
 
     [Header("ATT Jsons")]
-    public TextAsset attGearJson; // (통합) ATT_Gear.json : kind + gear/source
+    public TextAsset attGearJson;
 
     [Header("VFX Ref (optional)")]
-    public VfxManager vfx; // 미할당이면 world.vfx 사용
+    public VfxManager vfx;
 
     enum AttKind { Gear, Source }
 
@@ -51,17 +62,24 @@ public sealed class GearNetworkManager : MonoBehaviour
     int _nextNetworkId = 1;
 
     readonly Dictionary<int, GearNode> _gearNodes = new();
-    readonly Dictionary<int, string> _gearIdByNodeId = new(); // ✅ nodeId -> gearId(ATT key)
+    readonly Dictionary<int, string> _gearIdByNodeId = new(); // nodeId -> gearId(ATT key)
 
-    readonly Dictionary<int, SourceNode> _sourceNodes = new(); // (임시) 2차 구현
+    // Source
+    readonly Dictionary<int, SourceNode> _sourceNodes = new();
+    readonly Dictionary<int, string> _sourceIdByNodeId = new();               // sourceNodeId -> "Windmill"/"Waterwheel"
+    readonly Dictionary<Vector2Int, int> _gearCenterToSourceNodeId = new();   // gear center -> sourceNodeId (1개 제한)
+
     readonly Dictionary<int, GearNetwork> _networks = new();
 
     // 점유 역인덱스(센터 포함)
     readonly Dictionary<Vector2Int, int> _cellToGearNodeId = new();
     readonly Dictionary<int, int> _nodeIdToNetworkId = new();
 
-    // 로드/대량등록 시 전체 리빌드 비용을 줄이기 위한 옵션
     bool _suppressRebuild = false;
+
+    // TickNetworks에서 오버스피드 파괴를 모아서 처리
+    readonly List<Vector2Int> _pendingBreakCenters = new();
+    readonly HashSet<Vector2Int> _pendingBreakSet = new();
 
     void Awake()
     {
@@ -73,25 +91,83 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     void LateUpdate()
     {
-        // rpm/dir이 바뀌는 경우를 대비해 매 프레임 갱신
-        // (VfxManager가 거리 기반 활성/비활을 처리)
+        EnsureVfxRef();
         if (vfx == null) return;
-        if (_gearNodes.Count == 0) return;
 
-        foreach (var kv in _gearNodes)
+        // 1) Gear VFX
+        if (_gearNodes.Count > 0)
         {
-            int nodeId = kv.Key;
-            var gear = kv.Value;
+            foreach (var kv in _gearNodes)
+            {
+                int nodeId = kv.Key;
+                var gear = kv.Value;
 
-            if (!_gearIdByNodeId.TryGetValue(nodeId, out var gearId) || string.IsNullOrEmpty(gearId))
-                continue;
+                if (!_gearIdByNodeId.TryGetValue(nodeId, out var gearId) || string.IsNullOrEmpty(gearId))
+                    continue;
 
-            Vector3 pos = CellCenterToWorld(gear.Center);
-            float rpm = Mathf.Max(0f, gear.Rpm);
-            int dir = (gear.Dir == GearNode.RotationDir.CW) ? 1 : -1;
+                Vector3 pos = CellCenterToWorld(gear.Center);
+                float rpm = Mathf.Max(0f, gear.Rpm);
+                int dir = (gear.Dir == GearNode.RotationDir.CW) ? 1 : -1;
 
-            // 항상 on=true로 호출: VfxManager가 range 밖이면 자동 비활성 처리
-            vfx.SetRotatingLoopVfx(nodeId, gearId, true, pos, rpm, dir);
+                vfx.SetRotatingLoopVfx(nodeId, gearId, true, pos, rpm, dir);
+            }
+        }
+
+        // 2) Source VFX
+        if (_sourceNodes.Count > 0)
+        {
+            foreach (var kv in _sourceNodes)
+            {
+                int sourceNodeId = kv.Key;
+                var src = kv.Value;
+
+                if (!_sourceIdByNodeId.TryGetValue(sourceNodeId, out var sourceId) || string.IsNullOrEmpty(sourceId))
+                    continue;
+
+                Vector3 pos = CellCenterToWorld(src.AttachedGearCenter);
+                float rpm = Mathf.Max(0f, src.Rpm);
+                int dir = (src.Dir == SourceNode.RotationDir.CW) ? 1 : -1;
+
+                vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm, dir);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // Public API : World Tick (✅ 네트워크 동작 핵심 엔트리)
+    // ─────────────────────────────────────────
+    // WorldManager.FixedUpdate에서 매 틱 호출 권장
+    public void TickNetworks()
+    {
+        if (world == null) return;
+
+        // 1) 소스 rpm 갱신
+        TickSources();
+
+        // 2) 네트워크 전체 재구성 + 해석
+        _pendingBreakCenters.Clear();
+        _pendingBreakSet.Clear();
+
+        ClearNetworks();
+        BuildAllNetworks(); // 내부에서 SolveNetwork가 gear.Rpm/Dir 세팅 + pendingBreak 누적
+
+        // 3) 오버스피드 파괴 일괄 처리
+        if (_pendingBreakCenters.Count > 0)
+        {
+            _suppressRebuild = true;
+
+            for (int i = 0; i < _pendingBreakCenters.Count; i++)
+            {
+                var c = _pendingBreakCenters[i];
+                // 이미 깨졌을 수 있으니 bounds/존재 체크는 world가 알아서 처리
+                world.BreakSolid(c.x, c.y);
+            }
+
+            _suppressRebuild = false;
+
+            // 파괴 후 1회 재구성(상태 안정화)
+            ClearNetworks();
+            BuildAllNetworks();
         }
     }
 
@@ -99,9 +175,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     // Public API : Gear
     // ─────────────────────────────────────────
 
-    // 설치 가능 여부(설치 전에 사용)
-    // - footprint 모든 칸이 world에서 비어있고(센터도 비어있어야 함)
-    // - 네트워크 점유도 없어야 함
     public bool CanPlaceGear(Vector2Int center, string gearId)
     {
         if (world == null) return false;
@@ -119,12 +192,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    // ✅ "센터 셀이 월드에 이미 깔린 상태" 전제
-    // - center: 월드 bounds 안
-    // - center: world solid != 0 (기어 타일이 박혀있어야 함)
-    // - center: solidName == gearId (실제 깔린 타일과 등록 id 일치 강제)
-    // - footprint: center 제외 나머지는 world solid == 0
-    // - footprint 전체 네트워크 점유 비어있어야 함
     public bool TryAddGear(Vector2Int center, string gearId, out int nodeId)
     {
         nodeId = -1;
@@ -140,7 +207,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (centerSolidId == 0)
             return false;
 
-        // ✅ 실제 깔린 셀 이름이 gearId와 일치해야만 등록
         string centerName = world.cellLibrary.GetSolidName(centerSolidId);
         if (!string.Equals(centerName, gearId, System.StringComparison.Ordinal))
             return false;
@@ -152,11 +218,9 @@ public sealed class GearNetworkManager : MonoBehaviour
             if (!world.InBounds(cell.x, cell.y))
                 return false;
 
-            // 네트워크 점유 체크(센터 포함)
             if (_cellToGearNodeId.ContainsKey(cell))
                 return false;
 
-            // 센터 제외한 footprint는 월드가 비어 있어야 함
             if (cell != center)
             {
                 if (world.GetSolidId(cell.x, cell.y) != 0)
@@ -176,7 +240,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (!_suppressRebuild)
             RebuildNetworksFrom(nodeId);
 
-        // ✅ VFX spawn (초기 rpm=0이어도 표시)
+        // Gear VFX spawn
         EnsureVfxRef();
         if (vfx != null)
         {
@@ -187,21 +251,32 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    // anyOccupiedCell(센터 포함 어느 점유 셀)로 제거
-    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell)
+    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell, out string droppedSourceId)
     {
+        droppedSourceId = null;
+
         if (!_cellToGearNodeId.TryGetValue(anyOccupiedCell, out var nodeId))
             return false;
 
         if (!_gearNodes.TryGetValue(nodeId, out var gear))
             return false;
 
+        // 1) 붙은 소스 있으면 제거 + 드랍 대상 기록
+        if (_gearCenterToSourceNodeId.TryGetValue(gear.Center, out int srcNodeId))
+        {
+            if (_sourceIdByNodeId.TryGetValue(srcNodeId, out var sid))
+                droppedSourceId = sid;
+
+            TryRemoveSource(srcNodeId);
+        }
+
+        // 2) 점유 해제
         foreach (var cell in gear.OccupiedCells)
             _cellToGearNodeId.Remove(cell);
 
         _gearNodes.Remove(nodeId);
 
-        // ✅ VFX despawn
+        // Gear VFX despawn
         EnsureVfxRef();
         if (vfx != null)
             vfx.DespawnAllForOwner(nodeId);
@@ -212,6 +287,11 @@ public sealed class GearNetworkManager : MonoBehaviour
             RebuildNetworksAround(gear.Center);
 
         return true;
+    }
+
+    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell)
+    {
+        return TryRemoveGearAt(anyOccupiedCell, out _);
     }
 
     public bool IsGearOccupiedCell(Vector2Int cell)
@@ -228,25 +308,22 @@ public sealed class GearNetworkManager : MonoBehaviour
     // Public API : Load/Restore
     // ─────────────────────────────────────────
 
-    // 월드의 Solid를 스캔해 "센터 기어 타일"을 기준으로 네트워크를 복원한다.
-    // - ATT_Gear에 등록된 Gear id와 SolidName이 동일해야 함.
     public void RebuildFromWorldFullScan()
     {
         if (world == null) return;
 
         EnsureVfxRef();
 
-        // 런타임 데이터 초기화(월드 자체는 건드리지 않음)
         _gearNodes.Clear();
         _gearIdByNodeId.Clear();
+
         _sourceNodes.Clear();
+        _sourceIdByNodeId.Clear();
+        _gearCenterToSourceNodeId.Clear();
+
         _networks.Clear();
         _cellToGearNodeId.Clear();
         _nodeIdToNetworkId.Clear();
-
-        // 기존 VFX 전부 정리(혹시 남아있다면)
-        if (vfx != null)
-            vfx.DespawnAllForOwner(-1); // 의미 없음: 안전장치로 안 씀(아래에서 개별 owner로만 관리)
 
         _nextNodeId = 1;
         _nextNetworkId = 1;
@@ -265,30 +342,43 @@ public sealed class GearNetworkManager : MonoBehaviour
             string solidName = world.cellLibrary.GetSolidName(sid);
             if (string.IsNullOrEmpty(solidName)) continue;
 
-            // ✅ Gear만 복원
             if (!_gearSpecById.ContainsKey(solidName))
                 continue;
 
             var center = new Vector2Int(x, y);
 
-            // 중복 방지(센터가 이미 다른 gear 점유로 들어갔다면 스킵)
             if (_cellToGearNodeId.ContainsKey(center))
                 continue;
 
-            // TryAddGear는 center solidName==gearId 강제
             TryAddGear(center, solidName, out _);
         }
 
         _suppressRebuild = false;
 
-        // 마지막에 1회만 네트워크 구성
         ClearNetworks();
         BuildAllNetworks();
     }
 
     // ─────────────────────────────────────────
-    // Public API : Source (2차 구현용 / 임시)
+    // Public API : Source
     // ─────────────────────────────────────────
+
+    public bool TryAttachSourceAtCell(Vector2Int anyGearOccupiedCell, string sourceId, out int sourceNodeId)
+    {
+        sourceNodeId = -1;
+
+        if (!_cellToGearNodeId.TryGetValue(anyGearOccupiedCell, out var gearNodeId))
+            return false;
+
+        if (!_gearNodes.TryGetValue(gearNodeId, out var gear))
+            return false;
+
+        if (_gearCenterToSourceNodeId.ContainsKey(gear.Center))
+            return false;
+
+        return TryAddSource(gear.Center, sourceId, out sourceNodeId);
+    }
+
     public bool TryAddSource(Vector2Int attachedGearCenter, string sourceId, out int sourceNodeId)
     {
         sourceNodeId = -1;
@@ -302,19 +392,36 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (!TryMapSourceKind(sourceId, out var kind))
             return false;
 
+        if (_gearCenterToSourceNodeId.ContainsKey(attachedGearCenter))
+            return false;
+
         sourceNodeId = _nextNodeId++;
 
         var source = new SourceNode(
             sourceNodeId,
             attachedGearCenter,
             kind,
-            spec.stressCapacity
+            spec.stressCapacity,
+            spec.rpm
         );
 
+        source.Dir = SourceNode.RotationDir.CW;
+        source.Rpm = 0;
+
         _sourceNodes.Add(sourceNodeId, source);
+        _sourceIdByNodeId[sourceNodeId] = sourceId;
+        _gearCenterToSourceNodeId[attachedGearCenter] = sourceNodeId;
 
         if (!_suppressRebuild)
             RebuildNetworksFrom(gearNodeId);
+
+        // Source VFX spawn (즉시 보이게)
+        EnsureVfxRef();
+        if (vfx != null)
+        {
+            Vector3 pos = CellCenterToWorld(attachedGearCenter);
+            vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm: 0f, rotationDir: 1);
+        }
 
         return true;
     }
@@ -324,7 +431,15 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (!_sourceNodes.TryGetValue(sourceNodeId, out var source))
             return false;
 
+        EnsureVfxRef();
+        if (vfx != null)
+            vfx.DespawnAllForOwner(sourceNodeId);
+
         _sourceNodes.Remove(sourceNodeId);
+        _sourceIdByNodeId.Remove(sourceNodeId);
+
+        if (_gearCenterToSourceNodeId.TryGetValue(source.AttachedGearCenter, out int cur) && cur == sourceNodeId)
+            _gearCenterToSourceNodeId.Remove(source.AttachedGearCenter);
 
         if (!_suppressRebuild && TryGetGearAtCenter(source.AttachedGearCenter, out var gearNodeId))
             RebuildNetworksFrom(gearNodeId);
@@ -332,8 +447,54 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
+    public void TickSources()
+    {
+        if (world == null) return;
+        if (_sourceNodes.Count == 0) return;
+
+        foreach (var kv in _sourceNodes)
+        {
+            int srcNodeId = kv.Key;
+            var src = kv.Value;
+
+            if (!_sourceIdByNodeId.TryGetValue(srcNodeId, out var sourceId))
+                continue;
+
+            if (!_sourceSpecById.TryGetValue(sourceId, out var spec))
+                continue;
+
+            src.Dir = SourceNode.RotationDir.CW;
+
+            if (src.Kind == SourceNode.SourceKind.Windmill)
+            {
+                src.Rpm = spec.rpm;
+            }
+            else // Waterwheel
+            {
+                var c = src.AttachedGearCenter;
+
+                bool ok =
+                    IsWaterAt(c.x - 1, c.y - 1) &&
+                    IsWaterAt(c.x + 0, c.y - 1) &&
+                    IsWaterAt(c.x + 1, c.y - 1);
+
+                src.Rpm = ok ? spec.rpm : 0;
+            }
+        }
+    }
+
+    bool IsWaterAt(int x, int y)
+    {
+        if (world == null) return false;
+        if (!world.InBounds(x, y)) return false;
+
+        byte amt;
+        ushort fid = world.GetFluidId(x, y, out amt);
+        return fid == 1 && amt > 0;
+    }
+
     // ─────────────────────────────────────────
-    // Network rebuild (1차: 단순 전체 리빌드)
+    // Network rebuild (현재 단계: 단순 전체 리빌드)
     // ─────────────────────────────────────────
     void RebuildNetworksFrom(int startGearNodeId)
     {
@@ -385,7 +546,7 @@ public sealed class GearNetworkManager : MonoBehaviour
             network.GearNodeIds.Add(gearId);
             _nodeIdToNetworkId[gearId] = network.NetworkId;
 
-            // Attach sources (현재는 center 매칭) - 2차 구현용
+            // Attach sources (center 매칭)
             foreach (var src in _sourceNodes)
             {
                 if (_gearNodes.TryGetValue(gearId, out var g) &&
@@ -404,8 +565,10 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
     }
 
+    // ✅ 핵심: 전파/충돌/오버스피드 파괴 예약
     void SolveNetwork(GearNetwork network)
     {
+        // stress 계산(기존)
         int capacity = 0;
         foreach (var sid in network.SourceNodeIds)
             capacity += _sourceNodes[sid].StressCapacity;
@@ -414,15 +577,187 @@ public sealed class GearNetworkManager : MonoBehaviour
         network.StressUsed = 0;
         network.Stalled = false;
 
-        // rpm/dir propagation은 이후 추가
+        if (network.GearNodeIds.Count == 0)
+            return;
+
+        // 0) 소스가 전혀 없으면 정지
+        if (network.SourceNodeIds.Count == 0)
+        {
+            foreach (int gid in network.GearNodeIds)
+            {
+                var g = _gearNodes[gid];
+                g.Rpm = 0;
+                // dir은 유지/무관
+            }
+            return;
+        }
+
+        // 1) 위상 BFS: k(2의 지수) + parity(맞물림으로 인한 방향 반전 횟수)
+        //    parity=false면 seedDir과 동일, true면 반대
+        var kByGear = new Dictionary<int, int>(network.GearNodeIds.Count);
+        var parityByGear = new Dictionary<int, bool>(network.GearNodeIds.Count);
+
+        // seed는 네트워크 첫 gear
+        int seed = -1;
+        foreach (int gid in network.GearNodeIds) { seed = gid; break; }
+
+        kByGear[seed] = 0;
+        parityByGear[seed] = false;
+
+        var q = new Queue<int>();
+        q.Enqueue(seed);
+
+        while (q.Count > 0 && !network.Stalled)
+        {
+            int aId = q.Dequeue();
+            var a = _gearNodes[aId];
+            int ka = kByGear[aId];
+            bool pa = parityByGear[aId];
+
+            foreach (int bId in FindConnectedGears(aId))
+            {
+                // 같은 네트워크에 속한 것만 (안전)
+                if (!network.GearNodeIds.Contains(bId)) continue;
+
+                var b = _gearNodes[bId];
+
+                int deltaK = GetDeltaK(a.Size, b.Size);   // rpm_b = rpm_a * 2^deltaK
+                int kb = ka + deltaK;
+                bool pb = !pa;
+
+                if (!kByGear.ContainsKey(bId))
+                {
+                    kByGear[bId] = kb;
+                    parityByGear[bId] = pb;
+                    q.Enqueue(bId);
+                }
+                else
+                {
+                    if (kByGear[bId] != kb || parityByGear[bId] != pb)
+                    {
+                        network.Stalled = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2) 소스 제약으로 seedDir 결정 + baseRpm 결정
+        // - rpm==0인 소스는 "꺼짐"으로 취급(제약에서 제외)
+        // - dir 제약: srcDir가 실제 gear dir와 맞아야 함
+        bool hasDrivingSource = false;
+
+        GearNode.RotationDir? seedDir = null;
+        float? baseRpm = null; // rpm = baseRpm * 2^k
+
+        foreach (int srcId in network.SourceNodeIds)
+        {
+            if (!_sourceNodes.TryGetValue(srcId, out var src)) continue;
+            if (src.Rpm <= 0) continue;
+
+            if (!TryGetGearAtCenter(src.AttachedGearCenter, out int gearId)) continue;
+            if (!kByGear.TryGetValue(gearId, out int k)) continue;
+            if (!parityByGear.TryGetValue(gearId, out bool p)) continue;
+
+            hasDrivingSource = true;
+
+            var srcGearDir = (src.Dir == SourceNode.RotationDir.CW) ? GearNode.RotationDir.CW : GearNode.RotationDir.CCW;
+
+            // seedDirCandidate = (parity ? Opp(srcDir) : srcDir)
+            var seedDirCand = p ? Opp(srcGearDir) : srcGearDir;
+
+            if (seedDir == null) seedDir = seedDirCand;
+            else if (seedDir.Value != seedDirCand) { network.Stalled = true; break; }
+
+            // baseRpmCandidate = srcRpm / 2^k
+            float denom = Pow2(k);
+            float baseCand = src.Rpm / denom;
+
+            if (baseRpm == null) baseRpm = baseCand;
+            else
+            {
+                if (Mathf.Abs(baseRpm.Value - baseCand) > 0.01f)
+                {
+                    network.Stalled = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasDrivingSource)
+        {
+            // 전부 꺼진 소스(물 없음 등)면 정지
+            foreach (int gid in network.GearNodeIds)
+            {
+                var g = _gearNodes[gid];
+                g.Rpm = 0;
+            }
+            return;
+        }
+
+        if (seedDir == null) seedDir = GearNode.RotationDir.CW;
+        if (baseRpm == null) baseRpm = 0f;
+
+        // 3) 결과 반영 (stall이면 전체 0)
+        if (network.Stalled)
+        {
+            foreach (int gid in network.GearNodeIds)
+            {
+                var g = _gearNodes[gid];
+                g.Rpm = 0;
+            }
+            return;
+        }
+
+        foreach (int gid in network.GearNodeIds)
+        {
+            var g = _gearNodes[gid];
+
+            int k = kByGear.TryGetValue(gid, out var kk) ? kk : 0;
+            bool p = parityByGear.TryGetValue(gid, out var pp) ? pp : false;
+
+            g.Dir = p ? Opp(seedDir.Value) : seedDir.Value;
+
+            float rpmF = baseRpm.Value * Pow2(k);
+            int rpm = Mathf.Max(0, Mathf.RoundToInt(rpmF));
+
+            g.Rpm = rpm;
+
+            // 4) 오버스피드 파괴 예약
+            if (g.MaxRpm > 0 && rpm > g.MaxRpm)
+                EnqueueBreak(g.Center);
+        }
+    }
+
+    void EnqueueBreak(Vector2Int center)
+    {
+        if (_pendingBreakSet.Add(center))
+            _pendingBreakCenters.Add(center);
+    }
+
+    static int GetDeltaK(GearNode.GearSize from, GearNode.GearSize to)
+    {
+        // rpm_to = rpm_from * 2^deltaK
+        if (from == GearNode.GearSize.Big && to == GearNode.GearSize.Small) return +1;
+        if (from == GearNode.GearSize.Small && to == GearNode.GearSize.Big) return -1;
+        return 0; // Small->Small (Big->Big은 연결 금지)
+    }
+
+    static float Pow2(int k)
+    {
+        // 2^k (k는 보통 작음)
+        if (k == 0) return 1f;
+        if (k > 0) return (float)(1 << k); // k가 너무 커질 일은 거의 없음
+        return 1f / (float)(1 << (-k));
+    }
+
+    static GearNode.RotationDir Opp(GearNode.RotationDir d)
+    {
+        return (d == GearNode.RotationDir.CW) ? GearNode.RotationDir.CCW : GearNode.RotationDir.CW;
     }
 
     // ─────────────────────────────────────────
-    // Connectivity (센터 기준 판정, 점유 접촉 판정 아님)
-    // 규칙:
-    // 1) Small ↔ Small : 상하좌우(맨해튼 1)
-    // 2) Big ↔ Small : 대각선(1,1)
-    // 3) Big ↔ Big : 금지
+    // Connectivity
     // ─────────────────────────────────────────
     IEnumerable<int> FindConnectedGears(int gearId)
     {

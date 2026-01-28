@@ -470,6 +470,8 @@ public class InteractionController : MonoBehaviour
                 ok = HandlePlace(held, cx, cy, param);
             else if (actionName == "PlaceGear")
                 ok = HandlePlaceGear(held, cx, cy, param);
+            else if (actionName == "AttachSource")
+                ok = HandleAttachSource(held, cx, cy, param);
             else if (actionName == "BuildMultiblock")
                 ok = HandleBuildMultiblock(held, cx, cy, param);
 
@@ -511,6 +513,43 @@ public class InteractionController : MonoBehaviour
             worldManager.OverwriteSolid(cx, cy, 0, 0);
             return false;
         }
+
+        sound.PlayPlace();
+
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        return true;
+    }
+
+
+    bool HandleAttachSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
+    {
+        if (worldManager == null || gearNetworkManager == null)
+            return false;
+
+        // param: { "sourceKind": "Windmill" | "Waterwheel" }
+        string sourceKind = null;
+        if (param != null)
+        {
+            if (param.TryGetValue("sourceKind", out var sk) && sk != null) sourceKind = sk.ToString();
+            else if (param.TryGetValue("kind", out var k) && k != null) sourceKind = k.ToString();
+        }
+
+        if (string.IsNullOrEmpty(sourceKind))
+            return false;
+
+        var cell = new Vector2Int(cx, cy);
+
+        // 기어 점유 셀(any occupied)이어야 함
+        if (!gearNetworkManager.IsGearOccupiedCell(cell))
+            return false;
+
+        // 부착 시도 (기어당 1개 제한은 GearNetworkManager에서 처리)
+        if (!gearNetworkManager.TryAttachSourceAtCell(cell, sourceKind, out _))
+            return false;
 
         sound.PlayPlace();
 

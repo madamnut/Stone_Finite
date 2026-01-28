@@ -1067,25 +1067,6 @@
       { "key": "Default", "meta": 0, "sprite": "Big Iron Cogwheel" }
     ]
   },
-
-  "Waterwheel": {
-    "id": 6100,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Waterwheel" }
-    ]
-  },
-  "Windmill": {
-    "id": 6101,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Windmill" }
-    ]
-  },
   
   "Torch": {
     "id": 50001,
