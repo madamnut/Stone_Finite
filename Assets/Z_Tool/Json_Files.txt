@@ -1,0 +1,6893 @@
+총 25개의 json
+ATT_Fluid.json
+ATT_Gear.json
+ATT_Item_Cell.json
+ATT_Item_Forge.json
+ATT_Item_Misc.json
+ATT_Item_Template.json
+ATT_Item_Tool.json
+ATT_Item_Weapon.json
+ATT_Item_Wearable.json
+ATT_Mob.json
+ATT_Solid.json
+DT_Cell.json
+DT_Corpse.json
+EmojiOne.json
+Recipe_16Slots.json
+Recipe_25Slots.json
+Recipe_2Slots.json
+Recipe_36Slots.json
+Recipe_4Slots.json
+Recipe_9Slots.json
+Recipe_Alloy.json
+Recipe_Toolbench.json
+Splash.json
+Tier_1.json
+Tree.json
+
+============[ATT_Fluid.json]==============
+
+{
+  "None":  { "id": 0, "brightness": 0 },
+  "Water": { "id": 1 },
+  "Lava":  { "id": 2, "brightness": 15 },
+  "Crude Oil": { "id": 3 },
+
+  "Natural Gas": { "id": 100 }
+}
+
+
+============[ATT_Gear.json]==============
+
+{
+  "Wooden Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 64
+    }
+  },
+  "Big Wooden Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 64
+    }
+  },
+
+  "Bronze Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 128
+    }
+  },
+  "Big Bronze Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 128
+    }
+  },
+
+  "Iron Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 256
+    }
+  },
+  "Big Iron Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 256
+    }
+  },
+
+  "Steel Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 512
+    }
+  },
+  "Big Steel Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 512
+    }
+  },
+
+  "Waterwheel": {
+    "kind": "Source",
+    "source": {
+      "rpm": 2,
+      "stressCapacity": 32
+    }
+  },
+  "Windmill": {
+    "kind": "Source",
+    "source": {
+      "rpm": 1,
+      "stressCapacity": 64
+    }
+  }
+}
+
+
+============[ATT_Item_Cell.json]==============
+
+{
+  "Dirt": {
+    "name": "Dirt",
+    "spriteName": "Dirt",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Dirt"
+      }
+    }
+  },
+
+  "Mud": {
+    "name": "Mud",
+    "spriteName": "Mud",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Mud"
+      }
+    }
+  },
+
+
+  "Torch": {
+    "name": "Torch",
+    "spriteName": "Torch",
+    "maxStack": 32,
+    "tags": ["Placeable", "Light"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Torch"
+      }
+    }
+  },
+
+  "Copper Platform": {
+    "name": "Copper Platform",
+    "spriteName": "Copper Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Copper Platform"
+      }
+    }
+  },
+
+  "Tin Platform": {
+    "name": "Tin Platform",
+    "spriteName": "Tin Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Tin Platform"
+      }
+    }
+  },
+
+  "Bronze Platform": {
+    "name": "Bronze Platform",
+    "spriteName": "Bronze Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Bronze Platform"
+      }
+    }
+  },
+
+  "Iron Platform": {
+    "name": "Iron Platform",
+    "spriteName": "Iron Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Iron Platform"
+      }
+    }
+  },
+
+  "Steel Platform": {
+    "name": "Steel Platform",
+    "spriteName": "Steel Platform",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Steel Platform"
+      }
+    }
+  },
+
+  "Copper Frame": {
+    "name": "Copper Frame",
+    "spriteName": "Copper Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Copper Frame"
+      }
+    }
+  },
+
+  "Tin Frame": {
+    "name": "Tin Frame",
+    "spriteName": "Tin Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Tin Frame"
+      }
+    }
+  },
+
+  "Bronze Frame": {
+    "name": "Bronze Frame",
+    "spriteName": "Bronze Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Bronze Frame"
+      }
+    }
+  },
+
+  "Iron Frame": {
+    "name": "Iron Frame",
+    "spriteName": "Iron Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Iron Frame"
+      }
+    }
+  },
+
+  "Steel Frame": {
+    "name": "Steel Frame",
+    "spriteName": "Steel Frame",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Steel Frame"
+      }
+    }
+  }
+}
+
+
+============[ATT_Item_Forge.json]==============
+
+{
+  "Large Copper Plate": {
+    "name": "Large Copper Plate",
+    "spriteName": "Large Copper Plate",
+    "maxStack": 32,
+    "tags": ["Placeable", "Smeltable", "Firable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Copper Cell"
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Copper Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Copper Plate": {
+    "name": "Copper Plate",
+    "spriteName": "Copper Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Copper Plate": {
+    "name": "Small Copper Plate",
+    "spriteName": "Small Copper Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Copper Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Copper Rod": {
+    "name": "Long Copper Rod",
+    "spriteName": "Long Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Copper Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Copper Rod": {
+    "name": "Copper Rod",
+    "spriteName": "Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Copper Rod": {
+    "name": "Short Copper Rod",
+    "spriteName": "Short Copper Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Copper Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Copper Preform": {
+    "name": "Large Copper Preform",
+    "spriteName": "Large Copper Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Copper Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Copper Preform": {
+    "name": "Copper Preform",
+    "spriteName": "Copper Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Copper Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Copper Preform": {
+    "name": "Small Copper Preform",
+    "spriteName": "Small Copper Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Copper Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Tin Plate": {
+    "name": "Large Tin Plate",
+    "spriteName": "Large Tin Plate",
+    "maxStack": 32,
+    "tags": ["Placeable", "Smeltable", "Firable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Tin Cell"
+      },
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Tin Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Tin Plate": {
+    "name": "Tin Plate",
+    "spriteName": "Tin Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Tin Plate": {
+    "name": "Small Tin Plate",
+    "spriteName": "Small Tin Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Tin Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Tin Rod": {
+    "name": "Long Tin Rod",
+    "spriteName": "Long Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Tin Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Tin Rod": {
+    "name": "Tin Rod",
+    "spriteName": "Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Tin Rod": {
+    "name": "Short Tin Rod",
+    "spriteName": "Short Tin Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 1.3
+      },
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Tin Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Tin Preform": {
+    "name": "Large Tin Preform",
+    "spriteName": "Large Tin Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Tin Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Tin Preform": {
+    "name": "Tin Preform",
+    "spriteName": "Tin Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Tin Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Tin Preform": {
+    "name": "Small Tin Preform",
+    "spriteName": "Small Tin Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 200,
+        "resultItem": "Molten Tin",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Tin Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Bronze Plate": {
+    "name": "Large Bronze Plate",
+    "spriteName": "Large Bronze Plate",
+    "maxStack": 32,
+    "tags": ["Placeable", "Smeltable", "Firable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Bronze Cell"
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Bronze Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Bronze Plate": {
+    "name": "Bronze Plate",
+    "spriteName": "Bronze Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Bronze Plate": {
+    "name": "Small Bronze Plate",
+    "spriteName": "Small Bronze Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Bronze Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Bronze Rod": {
+    "name": "Long Bronze Rod",
+    "spriteName": "Long Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "durabilityMultiplier": 2
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Bronze Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Bronze Rod": {
+    "name": "Bronze Rod",
+    "spriteName": "Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 2
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Bronze Rod": {
+    "name": "Short Bronze Rod",
+    "spriteName": "Short Bronze Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 2
+      },
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Bronze Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Bronze Preform": {
+    "name": "Large Bronze Preform",
+    "spriteName": "Large Bronze Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Bronze Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Bronze Preform": {
+    "name": "Bronze Preform",
+    "spriteName": "Bronze Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Bronze Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Bronze Preform": {
+    "name": "Small Bronze Preform",
+    "spriteName": "Small Bronze Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Bronze",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Bronze Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Iron Plate": {
+    "name": "Large Iron Plate",
+    "spriteName": "Large Iron Plate",
+    "maxStack": 32,
+    "tags": ["Placeable", "Smeltable", "Firable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Iron Cell"
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Iron Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Iron Plate": {
+    "name": "Iron Plate",
+    "spriteName": "Iron Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Iron Plate": {
+    "name": "Small Iron Plate",
+    "spriteName": "Small Iron Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Iron Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Iron Rod": {
+    "name": "Long Iron Rod",
+    "spriteName": "Long Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "durabilityMultiplier": 2.5
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Iron Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Iron Rod": {
+    "name": "Iron Rod",
+    "spriteName": "Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 2.5
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Iron Rod": {
+    "name": "Short Iron Rod",
+    "spriteName": "Short Iron Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 2.5
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Iron Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Iron Preform": {
+    "name": "Large Iron Preform",
+    "spriteName": "Large Iron Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Iron Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Iron Preform": {
+    "name": "Iron Preform",
+    "spriteName": "Iron Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Iron Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Iron Preform": {
+    "name": "Small Iron Preform",
+    "spriteName": "Small Iron Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Iron",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Iron Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Steel Plate": {
+    "name": "Large Steel Plate",
+    "spriteName": "Large Steel Plate",
+    "maxStack": 32,
+    "tags": ["Placeable", "Smeltable", "Firable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Steel Cell"
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Steel Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Steel Plate": {
+    "name": "Steel Plate",
+    "spriteName": "Steel Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Steel Plate": {
+    "name": "Small Steel Plate",
+    "spriteName": "Small Steel Plate",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Steel Plate",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Steel Rod": {
+    "name": "Long Steel Rod",
+    "spriteName": "Long Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "durabilityMultiplier": 3
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Long Steel Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Steel Rod": {
+    "name": "Steel Rod",
+    "spriteName": "Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 3
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Steel Rod": {
+    "name": "Short Steel Rod",
+    "spriteName": "Short Steel Rod",
+    "maxStack": 32,
+    "tags": ["Handle", "Smeltable", "Firable"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 3
+      },
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 5
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Short Steel Rod",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Steel Preform": {
+    "name": "Large Steel Preform",
+    "spriteName": "Large Steel Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 20
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Large Steel Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Steel Preform": {
+    "name": "Steel Preform",
+    "spriteName": "Steel Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 15
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Steel Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Steel Preform": {
+    "name": "Small Steel Preform",
+    "spriteName": "Small Steel Preform",
+    "maxStack": 32,
+    "tags": ["Smeltable", "Firable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 200,
+        "resultItem": "Molten Steel",
+        "amount": 10
+      },
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Hot Small Steel Preform",
+        "amount": 1
+      }
+    }
+  },
+
+  "Hot Large Copper Plate": { "name": "Hot Large Copper Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Copper Plate": { "name": "Hot Copper Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Copper Plate": { "name": "Hot Small Copper Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Copper Rod": { "name": "Hot Long Copper Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Copper Rod": { "name": "Hot Copper Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Copper Rod": { "name": "Hot Short Copper Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Copper Preform": { "name": "Hot Large Copper Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Copper Preform": { "name": "Hot Copper Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Copper Preform": { "name": "Hot Small Copper Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Tin Plate": { "name": "Hot Large Tin Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Tin Plate": { "name": "Hot Tin Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Tin Plate": { "name": "Hot Small Tin Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Tin Rod": { "name": "Hot Long Tin Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Tin Rod": { "name": "Hot Tin Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Tin Rod": { "name": "Hot Short Tin Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Tin Preform": { "name": "Hot Large Tin Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Tin Preform": { "name": "Hot Tin Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Tin Preform": { "name": "Hot Small Tin Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Bronze Plate": { "name": "Hot Large Bronze Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Bronze Plate": { "name": "Hot Bronze Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Bronze Plate": { "name": "Hot Small Bronze Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Bronze Rod": { "name": "Hot Long Bronze Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Bronze Rod": { "name": "Hot Bronze Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Bronze Rod": { "name": "Hot Short Bronze Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Bronze Preform": { "name": "Hot Large Bronze Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Bronze Preform": { "name": "Hot Bronze Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Bronze Preform": { "name": "Hot Small Bronze Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Iron Plate": { "name": "Hot Large Iron Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Iron Plate": { "name": "Hot Iron Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Iron Plate": { "name": "Hot Small Iron Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Iron Rod": { "name": "Hot Long Iron Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Iron Rod": { "name": "Hot Iron Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Iron Rod": { "name": "Hot Short Iron Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Iron Preform": { "name": "Hot Large Iron Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Iron Preform": { "name": "Hot Iron Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Iron Preform": { "name": "Hot Small Iron Preform", "spriteName": "Hot Small Preform", "maxStack": 32 },
+
+  "Hot Large Steel Plate": { "name": "Hot Large Steel Plate", "spriteName": "Hot Large Plate", "maxStack": 32 },
+  "Hot Steel Plate": { "name": "Hot Steel Plate", "spriteName": "Hot Plate", "maxStack": 32 },
+  "Hot Small Steel Plate": { "name": "Hot Small Steel Plate", "spriteName": "Hot Small Plate", "maxStack": 32 },
+
+  "Hot Long Steel Rod": { "name": "Hot Long Steel Rod", "spriteName": "Hot Long Rod", "maxStack": 32 },
+  "Hot Steel Rod": { "name": "Hot Steel Rod", "spriteName": "Hot Rod", "maxStack": 32 },
+  "Hot Short Steel Rod": { "name": "Hot Short Steel Rod", "spriteName": "Hot Short Rod", "maxStack": 32 },
+
+  "Hot Large Steel Preform": { "name": "Hot Large Steel Preform", "spriteName": "Hot Large Preform", "maxStack": 32 },
+  "Hot Steel Preform": { "name": "Hot Steel Preform", "spriteName": "Hot Preform", "maxStack": 32 },
+  "Hot Small Steel Preform": { "name": "Hot Small Steel Preform", "spriteName": "Hot Small Preform", "maxStack": 32 }
+}
+
+
+============[ATT_Item_Misc.json]==============
+
+{
+  "Dirt Pile": {
+    "name": "Dirt Pile",
+    "spriteName": "Dirt Pile",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Dirt": {
+    "name": "Dirt",
+    "spriteName": "Dirt",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Dirt"
+      }
+    }
+  },
+
+  "Mud Chunk": {
+    "name": "Mud Chunk",
+    "spriteName": "Mud Chunk",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Mud": {
+    "name": "Mud",
+    "spriteName": "Mud",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Mud"
+      }
+    }
+  },
+
+  "Sand Pile": {
+    "name": "Sand Pile",
+    "spriteName": "Sand Pile",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Clay Chunk": {
+    "name": "Clay Chunk",
+    "spriteName": "Clay Chunk",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Clay Slab": {
+    "name": "Unfired Clay Slab",
+    "spriteName": "Unfired Clay Slab",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 250,
+        "resultItem": "Clay Slab",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Clay Brick": {
+    "name": "Unfired Clay Brick",
+    "spriteName": "Unfired Clay Brick",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Clay Brick",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Clay Bowl": {
+    "name": "Unfired Clay Bowl",
+    "spriteName": "Unfired Clay Bowl",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 300,
+        "resultItem": "Clay Bowl",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Clay Pot": {
+    "name": "Unfired Clay Pot",
+    "spriteName": "Unfired Clay Pot",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 400,
+        "resultItem": "Clay Pot",
+        "amount": 1
+      }
+    }
+  },
+
+  "Clay Slab": {
+    "name": "Clay Slab",
+    "spriteName": "Clay Slab",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Clay Brick": {
+    "name": "Clay Brick",
+    "spriteName": "Clay Brick",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Clay Brick Cell": {
+    "name": "Clay Brick Cell",
+    "spriteName": "Clay Brick Cell",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Clay Brick Cell"
+      }
+    }
+  },
+
+  "Clay Bowl": {
+    "name": "Clay Bowl",
+    "spriteName": "Clay Bowl",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Clay Pot": {
+    "name": "Clay Pot",
+    "spriteName": "Clay Pot",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Grog": {
+    "name": "Grog",
+    "spriteName": "Grog",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Refractory Clay Chunk": {
+    "name": "Refractory Clay Chunk",
+    "spriteName": "Refractory Clay Chunk",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Refractory Clay Brick": {
+    "name": "Unfired Refractory Clay Brick",
+    "spriteName": "Unfired Refractory Clay Brick",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 500,
+        "resultItem": "Refractory Clay Brick",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Refractory Clay Slab": {
+    "name": "Unfired Refractory Clay Slab",
+    "spriteName": "Unfired Refractory Clay Slab",
+    "maxStack": 32,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 550,
+        "resultItem": "Refractory Clay Slab",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Thick Refractory Clay Slab": {
+    "name": "Unfired Thick Refractory Clay Slab",
+    "spriteName": "Unfired Thick Refractory Clay Slab",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Refractory Clay Brick": {
+    "name": "Refractory Clay Brick",
+    "spriteName": "Refractory Clay Brick",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Refractory Clay Brick Cell": {
+    "name": "Refractory Clay Brick Cell",
+    "spriteName": "Refractory Clay Brick Cell",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Refractory Clay Brick Cell"
+      }
+    }
+  },
+
+  "Unfired Refractory Clay Crucible": {
+    "name": "Unfired Refractory Clay Crucible",
+    "spriteName": "Unfired Refractory Clay Crucible",
+    "maxStack": 16,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 600,
+        "resultItem": "Refractory Clay Crucible",
+        "amount": 1
+      }
+    }
+  },
+
+  "Refractory Clay Crucible": {
+    "name": "Refractory Clay Crucible",
+    "spriteName": "Refractory Clay Crucible",
+    "maxStack": 1,
+    "tags": ["Crucible"],
+    "toolActions": {
+      "Crucible": {
+        "capacity": 50
+      }
+    },
+    "details": {
+      "layers": []
+    }
+  },
+
+  "Clay": {
+    "name": "Clay",
+    "spriteName": "Clay",
+    "maxStack": 32,
+    "tags": ["Placeable"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Clay"
+      }
+    }
+  },
+
+  "Grass Scrap": {
+    "name": "Grass Scrap",
+    "spriteName": "Grass Scrap",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 20,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Leaf": {
+    "name": "Leaf",
+    "spriteName": "Leaf",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 20,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Plant": {
+    "name": "Plant",
+    "spriteName": "Plant",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Flax Stalk": {
+    "name": "Flax Stalk",
+    "spriteName": "Flax Stalk",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Plant Fiber": {
+    "name": "Plant Fiber",
+    "spriteName": "Plant Fiber",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Flax Fiber": {
+    "name": "Flax Fiber",
+    "spriteName": "Flax Fiber",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Plant Twine": {
+    "name": "Plant Twine",
+    "spriteName": "Plant Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Standard",
+        "durabilityMultiplier": 1.2
+      },
+      "Fuel": {
+        "burnTicks": 60,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Plant Twine": {
+    "name": "Short Plant Twine",
+    "spriteName": "Short Plant Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Short",
+        "durabilityMultiplier": 1.2
+      },
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Plant Twine": {
+    "name": "Long Plant Twine",
+    "spriteName": "Long Plant Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Long",
+        "durabilityMultiplier": 1.2
+      },
+      "Fuel": {
+        "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Linen Twine": {
+    "name": "Short Linen Twine",
+    "spriteName": "Short Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Short",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 40,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+ "Linen Twine": {
+    "name": "Linen Twine",
+    "spriteName": "Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Standard",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 60,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Linen Twine": {
+    "name": "Long Linen Twine",
+    "spriteName": "Long Linen Twine",
+    "maxStack": 32,
+    "tags": ["Binding", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Binding",
+        "type": "Long",
+        "durabilityMultiplier": 1.4
+      },
+      "Fuel": {
+        "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Linen Thread": {
+    "name": "Linen Thread",
+    "spriteName": "Linen Thread",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 60,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Linen Cloth": {
+    "name": "Linen Cloth",
+    "spriteName": "Linen Cloth",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 100,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Twig": {
+    "name": "Twig",
+    "spriteName": "Twig",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Branch": {
+    "name": "Branch",
+    "spriteName": "Branch",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 240,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Bough": {
+    "name": "Bough",
+    "spriteName": "Bough",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 340,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Log": {
+    "name": "Log",
+    "spriteName": "Log",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Log"
+      },
+      "Fuel": {
+        "burnTicks": 600,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 2
+      },
+      "Fire": {
+        "fireTicks": 600,
+        "resultItem": "Charcoal",
+        "amount": 4
+      }
+    }
+  },
+
+  "Bark Strip": {
+    "name": "Bark Strip",
+    "spriteName": "Bark Strip",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 100,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Stripped Log": {
+    "name": "Stripped Log",
+    "spriteName": "Stripped Log",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Stripped Log"
+      },
+      "Fuel": {
+        "burnTicks": 520,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 2
+      },
+      "Fire": {
+        "fireTicks": 520,
+        "resultItem": "Charcoal",
+        "amount": 4
+      }
+    }
+  },
+
+  "Half Stripped Log": {
+    "name": "Half Stripped Log",
+    "spriteName": "Half Stripped Log",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 380,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      },
+      "Fire": {
+        "fireTicks": 380,
+        "resultItem": "Charcoal",
+        "amount": 2
+      }
+    }
+  },
+
+  "Quarter Stripped Log": {
+    "name": "Quarter Stripped Log",
+    "spriteName": "Quarter Stripped Log",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Solid",
+        "cell": "Firewood"
+      },
+      "Fuel": {
+        "burnTicks": 220,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      },
+      "Fire": {
+        "fireTicks": 220,
+        "resultItem": "Charcoal",
+        "amount": 1
+      }
+    }
+  },
+
+  "Wood Shavings": {
+    "name": "Wood Shavings",
+    "spriteName": "Wood Shavings",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 140,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Small Wooden Plank": {
+    "name": "Small Wooden Plank",
+    "spriteName": "Small Wooden Plank",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 115,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Wooden Plank": {
+    "name": "Wooden Plank",
+    "spriteName": "Wooden Plank",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Wooden Plank"
+      },
+      "Fuel": {
+        "burnTicks": 460,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Wooden Frame": {
+    "name": "Wooden Frame",
+    "spriteName": "Wooden Frame",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Dynamic",
+        "cell": "Wooden Frame"
+      },
+      "Fuel": {
+        "burnTicks": 680,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 2
+      }
+    }
+  },
+
+  "Wooden Platform": {
+    "name": "Wooden Platform",
+    "spriteName": "Wooden Platform",
+    "maxStack": 32,
+    "tags": ["Placeable", "Fuel"],
+    "toolActions": {
+      "Place": {
+        "layer": "Default",
+        "cell": "Wooden Platform"
+      },
+      "Fuel": {
+        "burnTicks": 520,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 2
+      }
+    }
+  },
+
+  "Charcoal": {
+    "name": "Charcoal",
+    "spriteName": "Charcoal",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 1800,
+        "temperature": 2,
+        "resultItem": "Ash",
+        "amount": 4
+      }
+    }
+  },
+
+  "Wooden Stick": {
+    "name": "Wooden Stick",
+    "spriteName": "Wooden Stick",
+    "maxStack": 32,
+    "tags": ["Handle", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Standard",
+        "durabilityMultiplier": 1.2
+      },
+      "Fuel": {
+        "burnTicks": 120,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Short Wooden Stick": {
+    "name": "Short Wooden Stick",
+    "spriteName": "Short Wooden Stick",
+    "maxStack": 32,
+    "tags": ["Handle", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Short",
+        "durabilityMultiplier": 1.2
+      },
+      "Fuel": {
+        "burnTicks": 80,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Long Wooden Stick": {
+    "name": "Long Wooden Stick",
+    "spriteName": "Long Wooden Stick",
+    "maxStack": 32,
+    "tags": ["Handle", "Fuel"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Handle",
+        "type": "Long",
+        "potentialDurability": 16
+      },
+      "Fuel": {
+        "burnTicks": 160,
+        "temperature": 1,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Rock Chunk": {
+    "name": "Rock Chunk",
+    "spriteName": "Rock Chunk",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Coal Chunk": {
+    "name": "Coal Chunk",
+    "spriteName": "Coal Chunk",
+    "maxStack": 32,
+    "tags": ["Fuel", "Cokable"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 3600,
+        "temperature": 2,
+        "resultItem": "Ash",
+        "amount": 4
+      },
+      "Coke": {
+        "cokeTicks": 400,
+        "results": [
+          { "item": "Coke", "amount": 1 },
+          { "item": "Tar", "amount": 1 }
+        ]
+      }
+    }
+  },
+
+  "Coke": {
+    "name": "Coke",
+    "spriteName": "Coke",
+    "maxStack": 32,
+    "tags": ["Fuel"],
+    "toolActions": {
+      "Fuel": {
+        "burnTicks": 4800,
+        "temperature": 3,
+        "resultItem": "Ash",
+        "amount": 1
+      }
+    }
+  },
+
+  "Tar": {
+    "name": "Tar",
+    "spriteName": "Tar",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Copper Ore Chunk": {
+    "name": "Copper Ore Chunk",
+    "spriteName": "Copper Ore Chunk",
+    "maxStack": 32,
+    "tags": ["Smeltable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 2,
+        "smeltTicks": 200,
+        "resultItem": "Molten Copper",
+        "amount": 5
+      }
+    }
+  },
+
+  "Iron Ore Chunk": {
+    "name": "Iron Ore Chunk",
+    "spriteName": "Iron Ore Chunk",
+    "maxStack": 32,
+    "tags": ["Smeltable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 3,
+        "smeltTicks": 260,
+        "resultItem": "Molten Iron",
+        "amount": 5
+      }
+    }
+  },
+
+  "Tin Ore Chunk": {
+    "name": "Tin Ore Chunk",
+    "spriteName": "Tin Ore Chunk",
+    "maxStack": 32,
+    "tags": ["Smeltable"],
+    "toolActions": {
+      "Smelt": {
+        "temperature": 1,
+        "smeltTicks": 180,
+        "resultItem": "Molten Tin",
+        "amount": 5
+      }
+    }
+  },
+
+  "Small Raw Hide": {
+    "name": "Small Raw Hide",
+    "spriteName": "Small Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Medium Raw Hide": {
+    "name": "Medium Raw Hide",
+    "spriteName": "Medium Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Raw Hide": {
+    "name": "Large Raw Hide",
+    "spriteName": "Large Raw Hide",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Raw Beef": {
+    "name": "Raw Beef",
+    "spriteName": "Raw Beef",
+    "maxStack": 16,
+    "tags": ["Cookable"],
+    "toolActions": {
+      "Cook": {
+        "cookTicks": 300,
+        "resultItem": "Cooked Beef",
+        "amount": 1
+      }
+    }
+  },
+
+  "Cooked Beef": {
+    "name": "Cooked Beef",
+    "spriteName": "Cooked Beef",
+    "maxStack": 16,
+    "tags": ["Eatable"],
+    "toolActions": {
+      "Eat": {
+        "Hunger": 25
+      }
+    }
+  },
+
+  "Beef Stomach": {
+    "name": "Beef Stomach",
+    "spriteName": "Beef Stomach",
+    "maxStack": 16,
+    "tags": []
+  },
+
+  "Beef Liver": {
+    "name": "Beef Liver",
+    "spriteName": "Beef Liver",
+    "maxStack": 16,
+    "tags": []
+  },
+
+  "Beef Intestine": {
+    "name": "Beef Intestine",
+    "spriteName": "Beef Intestine",
+    "maxStack": 16,
+    "tags": []
+  },
+
+  "Animal Fat": {
+    "name": "Animal Fat",
+    "spriteName": "Animal Fat",
+    "maxStack": 16,
+    "tags": []
+  },
+
+  "Small Bone": {
+    "name": "Small Bone",
+    "spriteName": "Small Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Medium Bone": {
+    "name": "Medium Bone",
+    "spriteName": "Medium Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Bone": {
+    "name": "Large Bone",
+    "spriteName": "Large Bone",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Small Rib": {
+    "name": "Small Rib",
+    "spriteName": "Small Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Medium Rib": {
+    "name": "Medium Rib",
+    "spriteName": "Medium Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Large Rib": {
+    "name": "Large Rib",
+    "spriteName": "Large Rib",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Horn": {
+    "name": "Horn",
+    "spriteName": "Horn",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Ash": {
+    "name": "Ash",
+    "spriteName": "Ash",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Unfired Large Plate Mold": {
+    "name": "Unfired Large Plate Mold",
+    "spriteName": "Unfired Large Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Large Plate Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Plate Mold": {
+    "name": "Unfired Plate Mold",
+    "spriteName": "Unfired Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Plate Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Small Plate Mold": {
+    "name": "Unfired Small Plate Mold",
+    "spriteName": "Unfired Small Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Small Plate Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Long Rod Mold": {
+    "name": "Unfired Long Rod Mold",
+    "spriteName": "Unfired Long Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Long Rod Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Rod Mold": {
+    "name": "Unfired Rod Mold",
+    "spriteName": "Unfired Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Rod Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Short Rod Mold": {
+    "name": "Unfired Short Rod Mold",
+    "spriteName": "Unfired Short Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Short Rod Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Large Preform Mold": {
+    "name": "Unfired Large Preform Mold",
+    "spriteName": "Unfired Large Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Large Preform Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Preform Mold": {
+    "name": "Unfired Preform Mold",
+    "spriteName": "Unfired Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Preform Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Unfired Small Preform Mold": {
+    "name": "Unfired Small Preform Mold",
+    "spriteName": "Unfired Small Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 64,
+    "tags": ["Fireable"],
+    "toolActions": {
+      "Fire": {
+        "fireTicks": 200,
+        "resultItem": "Small Preform Mold",
+        "amount": 1
+      }
+    }
+  },
+
+  "Large Plate Mold": {
+    "name": "Large Plate Mold",
+    "spriteName": "Large Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Large",
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 15
+      }
+    }
+  },
+
+  "Plate Mold": {
+    "name": "Plate Mold",
+    "spriteName": "Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 10
+      }
+    }
+  },
+
+  "Small Plate Mold": {
+    "name": "Small Plate Mold",
+    "spriteName": "Small Plate Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Small",
+        "resultShapeSuffix": "Plate",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Long Rod Mold": {
+    "name": "Long Rod Mold",
+    "spriteName": "Long Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Long",
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 15
+      }
+    }
+  },
+
+  "Rod Mold": {
+    "name": "Rod Mold",
+    "spriteName": "Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 10
+      }
+    }
+  },
+
+  "Short Rod Mold": {
+    "name": "Short Rod Mold",
+    "spriteName": "Short Rod Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Short",
+        "resultShapeSuffix": "Rod",
+        "requiredVolume": 5
+      }
+    }
+  },
+
+  "Large Preform Mold": {
+    "name": "Large Preform Mold",
+    "spriteName": "Large Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Large",
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 20
+      }
+    }
+  },
+
+  "Preform Mold": {
+    "name": "Preform Mold",
+    "spriteName": "Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": null,
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 15
+      }
+    }
+  },
+
+  "Small Preform Mold": {
+    "name": "Small Preform Mold",
+    "spriteName": "Small Preform Mold",
+    "maxStack": 1,
+    "maxDurability": 128,
+    "tags": ["Mold"],
+    "toolActions": {
+      "Cast": {
+        "resultSizePrefix": "Small",
+        "resultShapeSuffix": "Preform",
+        "requiredVolume": 10
+      }
+    }
+  },
+
+  "Wooden Cogwheel": {
+    "name": "Wooden Cogwheel",
+    "spriteName": "Wooden Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Wooden Cogwheel"
+      }
+    }
+  },
+
+  "Big Wooden Cogwheel": {
+    "name": "Big Wooden Cogwheel",
+    "spriteName": "Big Wooden Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Big Wooden Cogwheel"
+      }
+    }
+  },
+
+  "Bronze Cogwheel": {
+    "name": "Bronze Cogwheel",
+    "spriteName": "Bronze Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Bronze Cogwheel"
+      }
+    }
+  },
+
+  "Big Bronze Cogwheel": {
+    "name": "Big Bronze Cogwheel",
+    "spriteName": "Big Bronze Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Big Bronze Cogwheel"
+      }
+    }
+  },
+
+  "Iron Cogwheel": {
+    "name": "Iron Cogwheel",
+    "spriteName": "Iron Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Iron Cogwheel"
+      }
+    }
+  },
+
+  "Big Iron Cogwheel": {
+    "name": "Big Iron Cogwheel",
+    "spriteName": "Big Iron Cogwheel",
+    "maxStack": 16,
+    "tags": ["Gear"],
+    "toolActions": {
+      "PlaceGear": {
+        "cell": "Big Iron Cogwheel"
+      }
+    }
+  },
+
+  "Windmill Blade": {
+    "name": "Windmill Blade",
+    "spriteName": "Windmill Blade",
+    "maxStack": 32,
+    "tags": []
+  },
+
+  "Windmill": {
+    "name": "Windmill",
+    "spriteName": "Windmill",
+    "maxStack": 1,
+    "tags": ["GearSource"],
+    "toolActions": {
+      "AttachSource": {
+        "sourceKind": "Windmill"
+      }
+    }
+  },
+
+  "Waterwheel": {
+    "name": "Waterwheel",
+    "spriteName": "Waterwheel",
+    "maxStack": 1,
+    "tags": ["GearSource"],
+    "toolActions": {
+      "AttachSource": {
+        "sourceKind": "Waterwheel"
+      }
+    }
+  }
+}
+
+
+============[ATT_Item_Template.json]==============
+
+{
+  "Head_Binding_Handle": {
+    "name": null,
+    "spriteName": null,
+    "tags": ["Head_Binding_Handle", "Tool"],
+    "maxStack": 1,
+
+    "maxDurability": 0,
+
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
+
+    "details": {
+      "head": null,
+      "binding": null,
+      "handle": null
+    }
+  },
+
+  "Head_Binding": {
+    "name": null,
+    "spriteName": null,
+    "tags": ["Head_Binding", "Tool"],
+    "maxStack": 1,
+
+    "maxDurability": 0,
+
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
+
+    "details": {
+      "head": null,
+      "binding": null
+    }
+  },
+
+  "Example": {
+    "name": "Example",
+    "spriteName": "Example",
+    "tags": [],
+    "maxStack": 1,
+
+    "maxDurability": 0,
+
+    "weaponActions": {},
+    "breakActions": {},
+    "toolActions": {},
+
+    "details": {}
+  }
+}
+
+
+============[ATT_Item_Tool.json]==============
+
+{
+  "Stone Shard": {
+    "name": "Stone Shard",
+    "spriteName": "Stone Shard",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "PercussionFlaking": {},
+      "Smashing": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Stone Axe",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 1, "speed": 1.5 },
+          "Mining": { "tier": 1, "speed": 1.5 }
+        }
+      }
+    },
+
+    "breakActions": {
+      "Chopping": { "tier": 1, "speed": 1.5 },
+      "Mining": { "tier": 1, "speed": 1.5 }
+    }
+  },
+
+  "Stone Adze": {
+    "name": "Stone Adze",
+    "spriteName": "Stone Adze",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Hewing": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Stone Adze",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Stone Cleaver": {
+    "name": "Stone Cleaver",
+    "spriteName": "Stone Cleaver",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Splitting": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Stone Cleaver",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Stone Percussor": {
+    "name": "Stone Percussor",
+    "spriteName": "Stone Percussor",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Hammering": {},
+      "BuildMultiblock": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Stone Hammer",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Flint Shard": {
+    "name": "Flint Shard",
+    "spriteName": "Flint Shard",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "PressureFlaking": {},
+      "Cutting": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Flint Knife",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 1, "speed": 1.5 }
+        }
+      }
+    },
+
+    "breakActions": {
+      "Slashing": { "tier": 1, "speed": 1.5 }
+    }
+  },
+
+  "Flint Scraper": {
+    "name": "Flint Scraper",
+    "spriteName": "Flint Scraper",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Scraping": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Flint Scraper",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {
+          "Digging": { "tier": 1, "speed": 1.5 }
+        }
+      }
+    },
+
+    "breakActions": {
+      "Digging": { "tier": 1, "speed": 1.5 }
+    }
+  },
+
+  "Flint Graver": {
+    "name": "Flint Graver",
+    "spriteName": "Flint Graver",
+    "maxStack": 1,
+    "tags": ["Tool", "Head"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Carving": {},
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Flint Graver",
+        "potentialDurability": 32,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Wooden Club": {
+    "name": "Wooden Club",
+    "spriteName": "Wooden Club",
+    "maxStack": 1,
+    "tags": ["Weapon", "Tool"],
+    "maxDurability": 32,
+
+    "toolActions": {
+      "Pounding": {}
+    },
+
+    "weaponActions": {
+      "Swing": {
+        "damage": 1,
+        "knockback": 1.0,
+        "staminaCost": 5,
+        "cooldown": 0.7,
+        "reach": 1.0
+      }
+    }
+  },
+
+  "Wooden Spear": {
+    "name": "Wooden Spear",
+    "spriteName": "Wooden Spear",
+    "maxStack": 1,
+    "tags": ["Weapon"],
+    "maxDurability": 32,
+
+    "weaponActions": {
+      "Thrust": {
+        "damage": 2,
+        "knockback": 0.6,
+        "staminaCost": 7,
+        "cooldown": 0.7,
+        "reach": 1.0
+      }
+    }
+  },
+
+  "Bronze Axe Head": {
+    "name": "Bronze Axe Head",
+    "spriteName": "Bronze Axe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Axe",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Pickaxe Head": {
+    "name": "Bronze Pickaxe Head",
+    "spriteName": "Bronze Pickaxe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Pickaxe",
+        "potentialDurability": 128,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Mining": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Shovel Head": {
+    "name": "Bronze Shovel Head",
+    "spriteName": "Bronze Shovel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Shovel",
+        "potentialDurability": 128,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Digging": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Adze Head": {
+    "name": "Bronze Adze Head",
+    "spriteName": "Bronze Adze Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Bronze Adze",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Hammer Head": {
+    "name": "Bronze Hammer Head",
+    "spriteName": "Bronze Hammer Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Hammer",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Maul Head": {
+    "name": "Bronze Maul Head",
+    "spriteName": "Bronze Maul Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Bronze Maul",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Chisel Head": {
+    "name": "Bronze Chisel Head",
+    "spriteName": "Bronze Chisel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Chisel",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Scraper Head": {
+    "name": "Bronze Scraper Head",
+    "spriteName": "Bronze Scraper Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Scraper",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Bronze Short Blade": {
+    "name": "Bronze Short Blade",
+    "spriteName": "Bronze Short Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Bronze Knife",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Bronze Saw Blade": {
+    "name": "Bronze Saw Blade",
+    "spriteName": "Bronze Saw Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Bronze Saw",
+        "potentialDurability": 128,
+        "potentialToolActions": {
+          "Sawing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 2, "speed": 2.0 }
+        }
+      }
+    }
+  },
+
+  "Iron Axe Head": {
+    "name": "Iron Axe Head",
+    "spriteName": "Iron Axe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Axe",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Splitting": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Pickaxe Head": {
+    "name": "Iron Pickaxe Head",
+    "spriteName": "Iron Pickaxe Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Pickaxe",
+        "potentialDurability": 256,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Mining": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Shovel Head": {
+    "name": "Iron Shovel Head",
+    "spriteName": "Iron Shovel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Shovel",
+        "potentialDurability": 256,
+        "potentialToolActions": {},
+        "potentialBreakActions": {
+          "Digging": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Adze Head": {
+    "name": "Iron Adze Head",
+    "spriteName": "Iron Adze Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Iron Adze",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Hewing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Hammer Head": {
+    "name": "Iron Hammer Head",
+    "spriteName": "Iron Hammer Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Hammer",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Hammering": {},
+          "BuildMultiblock": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Maul Head": {
+    "name": "Iron Maul Head",
+    "spriteName": "Iron Maul Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Heavy",
+        "potentialName": "Iron Maul",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Smashing": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Chisel Head": {
+    "name": "Iron Chisel Head",
+    "spriteName": "Iron Chisel Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Chisel",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Carving": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Scraper Head": {
+    "name": "Iron Scraper Head",
+    "spriteName": "Iron Scraper Head",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Scraper",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Scraping": {}
+        },
+        "potentialBreakActions": {}
+      }
+    }
+  },
+
+  "Iron Short Blade": {
+    "name": "Iron Short Blade",
+    "spriteName": "Iron Short Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Light",
+        "potentialName": "Iron Knife",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Cutting": {}
+        },
+        "potentialBreakActions": {
+          "Slashing": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  },
+
+  "Iron Saw Blade": {
+    "name": "Iron Saw Blade",
+    "spriteName": "Iron Saw Blade",
+    "maxStack": 1,
+    "tags": ["Head"],
+    "toolActions": {
+      "Combine": {
+        "partType": "Head",
+        "type": "Standard",
+        "potentialName": "Iron Saw",
+        "potentialDurability": 256,
+        "potentialToolActions": {
+          "Sawing": {}
+        },
+        "potentialBreakActions": {
+          "Chopping": { "tier": 3, "speed": 2.5 }
+        }
+      }
+    }
+  }
+}
+
+
+============[ATT_Item_Weapon.json]==============
+
+{
+
+}
+
+
+============[ATT_Item_Wearable.json]==============
+
+{
+  "Leather Cap": {
+    "name": "Leather Cap",
+    "spriteName": "Leather Cap",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 20,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Head",
+        "armor": 1
+      }
+    }
+  },
+
+  "Leather Tunic": {
+    "name": "Leather Tunic",
+    "spriteName": "Leather Tunic",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 25,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Body",
+        "armor": 2
+      }
+    }
+  },
+
+  "Leather Pants": {
+    "name": "Leather Pants",
+    "spriteName": "Leather Pants",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 25,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Legs",
+        "armor": 2
+      }
+    }
+  },
+
+  "Leather Boots": {
+    "name": "Leather Boots",
+    "spriteName": "Leather Boots",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 20,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Feet",
+        "armor": 1
+      }
+    }
+  },
+
+  "Leather Gloves": {
+    "name": "Leather Gloves",
+    "spriteName": "Leather Gloves",
+    "maxStack": 1,
+    "tags": ["Armor"],
+
+    "maxDurability": 15,
+
+    "weaponActions": {},
+    "breakActions": {},
+
+    "toolActions": {
+      "Equip": {
+        "slot": "Hands",
+        "armor": 1
+      }
+    }
+  }
+}
+
+
+============[ATT_Mob.json]==============
+
+
+
+============[ATT_Solid.json]==============
+
+{
+  "Air": {
+    "id": 0,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Air" }
+    ]
+  },
+
+  "Rock": {
+    "id": 1,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Rock" }
+    ]
+  },
+  "Dirt": {
+    "id": 2,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Dirt" }
+    ]
+  },
+
+  "Grass_Top": {
+    "id": 3,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_Top" }
+    ]
+  },
+  "Grass_Left": {
+    "id": 4,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_Left" }
+    ]
+  },
+  "Grass_Right": {
+    "id": 5,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_Right" }
+    ]
+  },
+  "Grass_TopLeft": {
+    "id": 6,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopLeft" }
+    ]
+  },
+  "Grass_TopRight": {
+    "id": 7,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopRight" }
+    ]
+  },
+  "Grass_LeftRight": {
+    "id": 8,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_LeftRight" }
+    ]
+  },
+  "Grass_TopLeftRight": {
+    "id": 9,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Grass_TopLeftRight" }
+    ]
+  },
+
+  "Clay": {
+    "id": 10,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay" }
+    ]
+  },
+  "Mud": {
+    "id": 11,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Mud" }
+    ]
+  },
+  "Log": {
+    "id": 12,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Log" }
+    ]
+  },
+  "Stripped Log": {
+    "id": 13,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Stripped Log" }
+    ]
+  },
+  "Firewood": {
+    "id": 14,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Firewood" }
+    ]
+  },
+  "Wooden Plank": {
+    "id": 15,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Plank" }
+    ]
+  },
+  "Wooden Platform": {
+    "id": 16,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Platform" }
+    ]
+  },
+  "Wooden Frame": {
+    "id": 17,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Frame" }
+    ]
+  },
+  "Clay Brick Cell": {
+    "id": 18,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Brick Cell" }
+    ]
+  },
+  "Refractory Clay Brick Cell": {
+    "id": 19,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Refractory Clay Brick Cell" }
+    ]
+  },
+  "Copper Cell": {
+    "id": 20,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Cell" }
+    ]
+  },
+  "Tin Cell": {
+    "id": 21,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Cell" }
+    ]
+  },
+  "Bronze Cell": {
+    "id": 22,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Cell" }
+    ]
+  },
+  "Iron Cell": {
+    "id": 23,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Cell" }
+    ]
+  },
+  "Steel Cell": {
+    "id": 24,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Cell" }
+    ]
+  },
+  "Copper Frame": {
+    "id": 25,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Frame" }
+    ]
+  },
+  "Tin Frame": {
+    "id": 26,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Frame" }
+    ]
+  },
+  "Bronze Frame": {
+    "id": 27,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Frame" }
+    ]
+  },
+  "Iron Frame": {
+    "id": 28,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Frame" }
+    ]
+  },
+  "Steel Frame": {
+    "id": 29,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Frame" }
+    ]
+  },
+  "Copper Platform": {
+    "id": 30,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Copper Platform" }
+    ]
+  },
+  "Tin Platform": {
+    "id": 31,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tin Platform" }
+    ]
+  },
+  "Bronze Platform": {
+    "id": 32,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Platform" }
+    ]
+  },
+  "Iron Platform": {
+    "id": 33,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Platform" }
+    ]
+  },
+  "Steel Platform": {
+    "id": 34,
+    "collidable": false,
+    "isPlatform": true,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Steel Platform" }
+    ]
+  },
+  "SandStone": {
+    "id": 35,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "SandStone" }
+    ]
+  },
+  "SandStone Brick Cell": {
+    "id": 36,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "SandStone Brick Cell" }
+    ]
+  },
+  "Frozen Grass_Top": {
+    "id": 37,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Top" }
+    ]
+  },
+  "Frozen Grass_Left": {
+    "id": 38,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Left" }
+    ]
+  },
+  "Frozen Grass_Right": {
+    "id": 39,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_Right" }
+    ]
+  },
+  "Frozen Grass_TopLeft": {
+    "id": 40,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopLeft" }
+    ]
+  },
+  "Frozen Grass_TopRight": {
+    "id": 41,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopRight" }
+    ]
+  },
+  "Frozen Grass_LeftRight": {
+    "id": 42,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_LeftRight" }
+    ]
+  },
+  "Frozen Grass_TopLeftRight": {
+    "id": 43,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Grass_TopLeftRight" }
+    ]
+  },
+  "Ice Cell": {
+    "id": 44,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ice Cell" }
+    ]
+  },
+  "Snow Cell": {
+    "id": 45,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Snow Cell" }
+    ]
+  },
+  "Frozen Dirt": {
+    "id": 46,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Dirt" }
+    ]
+  },
+  "Basalt": {
+    "id": 47,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Basalt" }
+    ]
+  },
+  "Tuff": {
+    "id": 48,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Tuff" }
+    ]
+  },
+  "Andesite": {
+    "id": 49,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Andesite" }
+    ]
+  },
+
+  "Sand": {
+    "id": 1000,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": true,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Sand" }
+    ]
+  },
+  "Gravel": {
+    "id": 1001,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": true,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Gravel" }
+    ]
+  },
+
+  "Trunk": {
+    "id": 2000,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Trunk" }
+    ]
+  },
+  "Leaf": {
+    "id": 2001,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Leaf" }
+    ]
+  },
+
+  "Plant": {
+    "id": 2002,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Plant", "attachedAt": "Down" }
+    ]
+  },
+  "Bush": {
+    "id": 2003,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bush", "attachedAt": "Down" }
+    ]
+  },
+  "Stone_Pile": {
+    "id": 2004,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Stone_Pile", "attachedAt": "Down" }
+    ]
+  },
+  "Small_Stone_Pile": {
+    "id": 2005,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Small_Stone_Pile", "attachedAt": "Down" }
+    ]
+  },
+  "Dead_Bush": {
+    "id": 2006,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Dead_Bush", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_0": {
+    "id": 2007,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_0", "attachedAt": "Right" }
+    ]
+  },
+  "Agave_1": {
+    "id": 2008,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_1", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_2": {
+    "id": 2009,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_2", "attachedAt": "Left" }
+    ]
+  },
+  "Agave_3": {
+    "id": 2010,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_3", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_4": {
+    "id": 2011,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_4", "attachedAt": "Down" }
+    ]
+  },
+  "Agave_5": {
+    "id": 2012,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Agave_5", "attachedAt": "Down" }
+    ]
+  },
+  "Cactus": {
+    "id": 2013,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Cactus", "attachedAt": "Down" }
+    ]
+  },
+  "Snow": {
+    "id": 2014,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Snow", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Bush": {
+    "id": 2015,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Bush", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Plant": {
+    "id": 2016,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Plant", "attachedAt": "Down" }
+    ]
+  },
+  "Frozen Trunk": {
+    "id": 2017,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Frozen Trunk" }
+    ]
+  },
+  "Ash": {
+    "id": 2018,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ash", "attachedAt": "Down" }
+    ]
+  },
+  "Sulfur Crystal": {
+    "id": 2019,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Sulfur Crystal", "attachedAt": "Down" }
+    ]
+  },
+  "Flax_Top": {
+    "id": 2020,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Flax_Top", "attachedAt": "Down" }
+    ]
+  },
+  "Flax_Bottom": {
+    "id": 2021,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Flax_Bottom", "attachedAt": "Down" }
+    ]
+  },
+
+
+
+  "Ore_Coal": {
+    "id": 3000,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ore_Coal" }
+    ]
+  },
+  "Ore_Copper": {
+    "id": 3001,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ore_Copper" }
+    ]
+  },
+  "Ore_Iron": {
+    "id": 3002,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ore_Iron" }
+    ]
+  },
+  "Ore_Tin": {
+    "id": 3003,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Ore_Tin" }
+    ]
+  },
+
+  "Granite": {
+    "id": 4000,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Granite" }
+    ]
+  },
+  "Amphibolite": {
+    "id": 4001,
+    "collidable": true,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Amphibolite" }
+    ]
+  },
+
+  "Primal Workbench_L": {
+    "id": 5000,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_L" }
+    ]
+  },
+  "Primal Workbench_R": {
+    "id": 5001,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Primal Workbench_R" }
+    ]
+  },
+  "Campfire_L": {
+    "id": 5002,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "brightness": 0,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Campfire_L" },
+      { "key": "Active",  "meta": 6, "sprite": "Campfire_L", "brightness_override": 15 }
+    ]
+  },
+  "Campfire_R": {
+    "id": 5003,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "brightness": 0,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Campfire_R" },
+      { "key": "Active",  "meta": 6, "sprite": "Campfire_R", "brightness_override": 15 }
+    ]
+  },
+  "Wooden Crate_L": {
+    "id": 5004,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Crate_L" }
+    ]
+  },
+  "Wooden Crate_R": {
+    "id": 5005,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Crate_R" }
+    ]
+  },
+  "Clay Kiln_BL": {
+    "id": 5006,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BL" },
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_BL", "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_BR": {
+    "id": 5007,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_BR" },
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_BR", "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_TL": {
+    "id": 5008,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TL" },
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_TL", "brightness_override": 15 }
+    ]
+  },
+  "Clay Kiln_TR": {
+    "id": 5009,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Clay Kiln_TR" },
+      { "key": "Active",  "meta": 6, "sprite": "Clay Kiln_TR", "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_BL": {
+    "id": 5010,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BL" },
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_BL", "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_BR": {
+    "id": 5011,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_BR" },
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_BR", "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_TL": {
+    "id": 5012,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TL" },
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_TL", "brightness_override": 15 }
+    ]
+  },
+  "Brick Furnace_TR": {
+    "id": 5013,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Brick Furnace_TR" },
+      { "key": "Active",  "meta": 6, "sprite": "Brick Furnace_TR", "brightness_override": 15 }
+    ]
+  },
+  "Toolbench_BL": {
+    "id": 5014,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_BL" }
+    ]
+  },
+  "Toolbench_BR": {
+    "id": 5015,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_BR" }
+    ]
+  },
+  "Toolbench_TL": {
+    "id": 5016,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_TL" }
+    ]
+  },
+  "Toolbench_TR": {
+    "id": 5017,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Toolbench_TR" }
+    ]
+  },
+  "Coke Oven_0": {
+    "id": 5018,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_0" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_0", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_1": {
+    "id": 5019,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_1" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_1", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_2": {
+    "id": 5020,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_2" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_2", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_3": {
+    "id": 5021,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_3" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_3", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_4": {
+    "id": 5022,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_4" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_4", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_5": {
+    "id": 5023,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_5" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_5", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_6": {
+    "id": 5024,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_6" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_6", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_7": {
+    "id": 5025,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_7" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_7", "brightness_override": 15 }
+    ]
+  },
+  "Coke Oven_8": {
+    "id": 5026,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Coke Oven_8" },
+      { "key": "Active",  "meta": 6, "sprite": "Coke Oven_8", "brightness_override": 15 }
+    ]
+  },
+  "Forge Workbench_L": {
+    "id": 5027,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Forge Workbench_L" }
+    ]
+  },
+  "Forge Workbench_R": {
+    "id": 5028,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Forge Workbench_R" }
+    ]
+  },
+
+  "Wooden Cogwheel": {
+    "id": 6000,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Wooden Cogwheel" }
+    ]
+  },
+  "Big Wooden Cogwheel": {
+    "id": 6001,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Big Wooden Cogwheel" }
+    ]
+  },
+  "Bronze Cogwheel": {
+    "id": 6002,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Bronze Cogwheel" }
+    ]
+  },
+  "Big Bronze Cogwheel": {
+    "id": 6003,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Big Bronze Cogwheel" }
+    ]
+  },
+  "Iron Cogwheel": {
+    "id": 6004,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Iron Cogwheel" }
+    ]
+  },
+  "Big Iron Cogwheel": {
+    "id": 6005,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "variants": [
+      { "key": "Default", "meta": 0, "sprite": "Big Iron Cogwheel" }
+    ]
+  },
+  
+  "Torch": {
+    "id": 50001,
+    "collidable": false,
+    "isPlatform": false,
+    "gravity": false,
+    "brightness": 15,
+    "variants": [
+      { "key": "BG",    "meta": 1, "sprite": "Torch_BG",    "attachedAt": "BG" },
+      { "key": "Down",  "meta": 3, "sprite": "Torch_Down",  "attachedAt": "Down" },
+      { "key": "Left",  "meta": 4, "sprite": "Torch_Left",  "attachedAt": "Left" },
+      { "key": "Right", "meta": 5, "sprite": "Torch_Right", "attachedAt": "Right" }
+    ]
+  }
+}
+
+
+============[DT_Cell.json]==============
+
+{
+  "Dirt": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 }
+  ],
+
+  "Grass_Top": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_Left": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_Right": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Grass_TopLeft": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_TopRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_LeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Grass_TopLeftRight": [
+    { "itemId": "Dirt Pile", "probability": 1, "min": 4, "max": 4 },
+    { "itemId": "Grass Scrap", "probability": 1, "min": 3, "max": 6 }
+  ],
+  "Clay": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Wooden Plank": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Platform": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Frame": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Log": [
+    { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Stripped Log": [
+    { "itemId": "Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Firewood": [
+    { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+
+  "Rock": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+
+  "Gravel": [
+    { "itemId": "Flint Shard", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Pebble", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Sand": [
+    { "itemId": "Sand Pile", "probability": 1, "min": 4, "max": 8 }
+  ],
+
+  "Bush": [
+    { "itemId": "Leaf", "probability": 1, "min": 4, "max": 8 },
+    { "itemId": "Plant", "probability": 1, "min": 2, "max": 4 },
+    { "itemId": "Twig", "probability": 1, "min": 3, "max": 6 },
+    { "itemId": "Branch", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Stone_Pile": [
+    { "itemId": "Stone Shard", "probability": 1, "min": 2, "max": 3 },
+    { "itemId": "Flint Shard", "probability": 1, "min": 2, "max": 3 }
+  ],
+  "Small_Stone_Pile": [
+    { "itemId": "Stone Shard", "probability": 1, "min": 1, "max": 2 },
+    { "itemId": "Flint Shard", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Plant": [
+    { "itemId": "Plant", "probability": 1, "min": 1, "max": 2 }
+  ],
+  "Flax_Top": [
+    { "itemId": "Flax Stalk", "probability": 1, "min": 2, "max": 2 }
+  ],
+  "Flax_Bottom": [
+    { "itemId": "Flax Stalk", "probability": 1, "min": 2, "max": 2 }
+  ],
+  "Leaf": [
+    { "itemId": "Leaf", "probability": 1, "min": 10, "max": 15 },
+    { "itemId": "Twig", "probability": 1, "min": 6, "max": 10 },
+    { "itemId": "Branch", "probability": 1, "min": 3, "max": 6 },
+    { "itemId": "Bough", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Trunk": [
+    { "itemId": "Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Ore_Coal": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
+    { "itemId": "Coal Chunk", "probability": 1, "min": 2, "max": 2 }
+  ],
+  "Ore_Copper": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
+    { "itemId": "Copper Ore Chunk", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Ore_Iron": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
+    { "itemId": "Iron Ore Chunk", "probability": 1, "min": 2, "max": 4 }
+  ],
+  "Ore_Tin": [
+    { "itemId": "Rock Chunk", "probability": 1, "min": 2, "max": 2 },
+    { "itemId": "Tin Ore Chunk", "probability": 1, "min": 2, "max": 4 }
+  ],
+
+  "Primal Workbench_L": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Primal Workbench_R": [
+    { "itemId": "Wooden Plank", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Forge Workbench_L": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Forge Workbench_R": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Toolbench_TL": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_TR": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_BL": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Toolbench_BR": [
+    { "itemId": "Wooden Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Mud": [
+    { "itemId": "Mud Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+
+
+  
+  "Campfire_L": [
+    { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Campfire_R": [
+    { "itemId": "Quarter Stripped Log", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Crate_L": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Wooden Crate_R": [
+    { "itemId": "Wooden Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Crate_L": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Crate_R": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Clay Kiln_BL": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Clay Kiln_BR": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Clay Kiln_TL": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Clay Kiln_TR": [
+    { "itemId": "Clay Chunk", "probability": 1, "min": 4, "max": 4 }
+  ],
+  "Brick Furnace_BL": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_BR": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_TL": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Brick Furnace_TR": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Clay Brick Cell": [
+    { "itemId": "Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_0": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_1": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_2": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_3": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_4": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_5": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_6": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_7": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Coke Oven_8": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+
+  "Refractory Clay Brick Cell": [
+    { "itemId": "Refractory Clay Brick Cell", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+
+
+  "Copper Cell": [
+    { "itemId": "Large Copper Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Cell": [
+    { "itemId": "Large Tin Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Cell": [
+    { "itemId": "Large Bronze Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Cell": [
+    { "itemId": "Large Iron Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Cell": [
+    { "itemId": "Large Steel Plate", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Copper Platform": [
+    { "itemId": "Copper Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Platform": [
+    { "itemId": "Tin Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Platform": [
+    { "itemId": "Bronze Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Platform": [
+    { "itemId": "Iron Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Platform": [
+    { "itemId": "Steel Platform", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Copper Frame": [
+    { "itemId": "Copper Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Tin Frame": [
+    { "itemId": "Tin Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Frame": [
+    { "itemId": "Bronze Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Frame": [
+    { "itemId": "Iron Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Steel Frame": [
+    { "itemId": "Steel Frame", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Wooden Cogwheel": [
+    { "itemId": "Wooden Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Big Wooden Cogwheel": [
+    { "itemId": "Big Wooden Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Bronze Cogwheel": [
+    { "itemId": "Bronze Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Big Bronze Cogwheel": [
+    { "itemId": "Big Bronze Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Iron Cogwheel": [
+    { "itemId": "Iron Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Big Iron Cogwheel": [
+    { "itemId": "Big Iron Cogwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Windmill": [
+    { "itemId": "Windmill", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Waterwheel": [
+    { "itemId": "Waterwheel", "probability": 1, "min": 1, "max": 1 }
+  ],
+
+  "Torch": [
+    { "itemId": "Torch", "probability": 1, "min": 1, "max": 1 }
+  ]
+}
+
+
+============[DT_Corpse.json]==============
+
+{
+  "Cow_Corpse": [
+    { "itemId": "Large Raw Hide", "probability": 1.0, "min": 2, "max": 3 },
+    { "itemId": "Animal Fat",     "probability": 1.0, "min": 4, "max": 6 }
+  ],
+
+  "Cow_Corpse_Skinned": [
+    { "itemId": "Raw Beef",       "probability": 1.0, "min": 6, "max": 10 },
+    { "itemId": "Beef Stomach",   "probability": 1.0, "min": 2, "max": 2 },
+    { "itemId": "Beef Liver",     "probability": 1.0, "min": 1, "max": 1 },
+    { "itemId": "Beef Intestine", "probability": 1.0, "min": 1, "max": 1 },
+    { "itemId": "Animal Fat",     "probability": 1.0, "min": 6, "max": 10 }
+  ],
+
+  "Cow_Corpse_Bone": [
+    { "itemId": "Large Bone",   "probability": 1.0, "min": 5, "max": 10 },
+    { "itemId": "Medium Bone",  "probability": 1.0, "min": 4, "max": 8 },
+    { "itemId": "Small Bone",   "probability": 1.0, "min": 3, "max": 6 },
+
+    { "itemId": "Large Rib",    "probability": 1.0, "min": 4, "max": 8 },
+
+    { "itemId": "Horn",         "probability": 1.0, "min": 2, "max": 2 }
+  ]
+}
+
+
+============[EmojiOne.json]==============
+
+{"frames": [
+
+{
+	"filename": "1f60a.png",
+	"frame": {"x":0,"y":0,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f60b.png",
+	"frame": {"x":128,"y":0,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f60d.png",
+	"frame": {"x":256,"y":0,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f60e.png",
+	"frame": {"x":384,"y":0,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f600.png",
+	"frame": {"x":0,"y":128,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f601.png",
+	"frame": {"x":128,"y":128,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f602.png",
+	"frame": {"x":256,"y":128,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f603.png",
+	"frame": {"x":384,"y":128,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f604.png",
+	"frame": {"x":0,"y":256,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f605.png",
+	"frame": {"x":128,"y":256,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f606.png",
+	"frame": {"x":256,"y":256,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f609.png",
+	"frame": {"x":384,"y":256,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f618.png",
+	"frame": {"x":0,"y":384,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "1f923.png",
+	"frame": {"x":128,"y":384,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "263a.png",
+	"frame": {"x":256,"y":384,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "2639.png",
+	"frame": {"x":384,"y":384,"w":128,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":128},
+	"sourceSize": {"w":128,"h":128},
+	"pivot": {"x":0.5,"y":0.5}
+}],
+"meta": {
+	"app": "http://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "EmojiOne.png",
+	"format": "RGBA8888",
+	"size": {"w":512,"h":512},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:196a26a2e149d875b91ffc8fa3581e76:fc928c7e275404b7e0649307410475cb:424723c3774975ddb2053fd5c4b85f6e$"
+}
+}
+
+
+============[Recipe_16Slots.json]==============
+
+[]
+
+============[Recipe_25Slots.json]==============
+
+[]
+
+============[Recipe_2Slots.json]==============
+
+[
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Plant", "count": 1 },
+      { "ToolActions": { "Scraping": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Plant Fiber", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Plant Fiber", "count": 1 },
+      { "itemId": "Plant Fiber", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Plant Twine", "count": 1 },
+      { "ToolActions": { "Scraping": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Plant Fiber", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Short Plant Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Short Plant Twine", "count": 1 },
+      { "itemId": "Short Plant Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Plant Twine", "count": 1 },
+      { "itemId": "Plant Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Long Plant Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Long Plant Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Plant Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Flax Stalk", "count": 1 },
+      { "ToolActions": { "Scraping": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Flax Fiber", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Flax Fiber", "count": 1 },
+      { "itemId": "Flax Fiber", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Thread", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Linen Twine", "count": 1 },
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Long Linen Twine", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Long Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Short Linen Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Short Linen Twine", "count": 1 },
+      { "itemId": "Short Linen Twine", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Twine", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Branch", "count": 1 },
+      { "ToolActions": { "Cutting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Short Wooden Stick", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Bough", "count": 1 },
+      { "ToolActions": { "Hewing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Long Wooden Stick", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Stick", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Wooden Stick", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Short Wooden Stick", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Log", "count": 1 },
+      { "ToolActions": { "Scraping": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "itemId": "Bark Strip", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "ToolActions": { "Sawing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Plank", "count": 16 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Stripped Log", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Half Stripped Log", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Half Stripped Log", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Quarter Stripped Log", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Quarter Stripped Log", "count": 1 },
+      { "ToolActions": { "Hewing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Long Wooden Stick", "count": 4 },
+      { "itemId": "Wood Shavings", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Half Stripped Log", "count": 1 },
+      { "ToolActions": { "Hewing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Plank", "count": 4 },
+      { "itemId": "Wood Shavings", "count": 2 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Wooden Plank", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Platform", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Wooden Plank", "count": 1 },
+      { "ToolActions": { "Sawing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Small Wooden Plank", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Leaf", "count": 1 },
+      { "itemId": "Leaf", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Torch", "count": 10 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Stone Shard", "count": 1 },
+      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Stone Adze", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Stone Shard", "count": 1 },
+      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Stone Cleaver", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Stone Cleaver", "count": 1 },
+      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Stone Percussor", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Flint Shard", "count": 1 },
+      { "ToolActions": { "PercussionFlaking": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Flint Graver", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Flint Shard", "count": 1 },
+      { "ToolActions": { "PressureFlaking": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Flint Scraper", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Bough", "count": 1 },
+      { "ToolActions": { "Carving": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Club", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Wooden Club", "count": 1 },
+      { "ToolActions": { "Carving": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Spear", "count": 1 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Brick", "count": 1 },
+      { "ToolActions": { "Smashing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Grog", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Bowl", "count": 1 },
+      { "ToolActions": { "Smashing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Grog", "count": 4 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Pot", "count": 1 },
+      { "ToolActions": { "Smashing": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Grog", "count": 8 }
+    ],
+    "outputActions": []
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "ToolActions": { "Pounding": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Mold Base", "count": 1 }
+    ],
+    "outputActions": []
+  }
+]
+
+
+============[Recipe_36Slots.json]==============
+
+[]
+
+============[Recipe_4Slots.json]==============
+
+[
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Heavy" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Long" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Long" } }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Head_Binding_Handle", "count": 1 }
+    ],
+    "outputActions": [
+      [
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
+
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
+
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
+
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
+        {
+          "type": "set",
+          "field": "spriteName",
+          "valueFromFields": ["details.binding", "details.head", "details.handle"],
+          "separator": " + ",
+          "prefixEach": "Module_"
+        },
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
+      ]
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Light" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Short" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Short" } }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Head_Binding_Handle", "count": 1 }
+    ],
+    "outputActions": [
+      [
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
+
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
+
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
+
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
+        {
+          "type": "set",
+          "field": "spriteName",
+          "valueFromFields": ["details.binding", "details.head", "details.handle"],
+          "separator": " + ",
+          "prefixEach": "Module_"
+        },
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
+      ]
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "ToolActions": { "Combine": { "partType": "Head", "type": "Standard" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Binding", "type": "Standard" } }, "count": 1 },
+      { "ToolActions": { "Combine": { "partType": "Handle", "type": "Standard" } }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Head_Binding_Handle", "count": 1 }
+    ],
+    "outputActions": [
+      [
+        { "type": "set", "field": "details.head", "fromInput": 0, "inputField": "name" },
+        { "type": "set", "field": "details.binding", "fromInput": 1, "inputField": "name" },
+        { "type": "set", "field": "details.handle", "fromInput": 2, "inputField": "name" },
+
+        { "type": "set", "field": "maxDurability", "fromInput": 0, "inputField": "ToolActions.Combine.potentialDurability" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 1, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "mul", "field": "maxDurability", "fromInput": 2, "inputField": "ToolActions.Combine.durabilityMultiplier" },
+        { "type": "roundInt", "field": "maxDurability" },
+
+        { "type": "set", "field": "durability", "fromField": "maxDurability" },
+
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialBreakActions", "toField": "BreakActions" },
+        { "type": "copy", "fromInput": 0, "inputField": "ToolActions.Combine.potentialToolActions", "toField": "ToolActions" },
+
+        { "type": "set", "field": "name", "fromInput": 0, "inputField": "ToolActions.Combine.potentialName" },
+        {
+          "type": "set",
+          "field": "spriteName",
+          "valueFromFields": ["details.binding", "details.head", "details.handle"],
+          "separator": " + ",
+          "prefixEach": "Module_"
+        },
+        { "type": "set", "field": "itemId", "value": "$timestamp$_$rand$" }
+      ]
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "ToolActions": { "Hammering": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Clay Brick", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "ToolActions": { "Pounding": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Clay Slab", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Refractory Clay Chunk", "count": 1 },
+      { "ToolActions": { "Hammering": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Brick", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Refractory Clay Chunk", "count": 1 },
+      { "ToolActions": { "Pounding": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Unfired Clay Slab", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Clay Bowl", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Unfired Clay Slab", "count": 1 },
+      { "itemId": "Unfired Clay Slab", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Clay Pot", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 },
+      { "itemId": "Unfired Refractory Clay Slab", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Unfired Refractory Clay Crucible", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 },
+      { "itemId": "Dirt Pile", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Dirt", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Mud Chunk", "count": 1 },
+      { "itemId": "Mud Chunk", "count": 1 },
+      { "itemId": "Mud Chunk", "count": 1 },
+      { "itemId": "Mud Chunk", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Mud", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Clay", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 },
+      { "itemId": "Long Wooden Stick", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Wooden Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Grog", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 },
+      { "itemId": "Sand Pile", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Refractory Clay Chunk", "count": 2 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Clay Brick", "count": 1 },
+      { "itemId": "Clay Brick", "count": 1 },
+      { "itemId": "Clay Chunk", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Clay Brick Cell", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Refractory Clay Brick", "count": 1 },
+      { "itemId": "Refractory Clay Brick", "count": 1 },
+      { "itemId": "Refractory Clay Chunk", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Refractory Clay Brick Cell", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "ToolActions": { "Crucible": {} }, "count": 1 },
+      { "ToolActions": { "Cast": {} }, "count": 1 }
+    ],
+    "inputConditions": [
+      {
+        "path": "inputs[0].details.layers[-1].amount",
+        "op": ">=",
+        "rhs": "inputs[1].ToolActions.Cast.requiredVolume"
+      }
+    ],
+    "inputActions": [
+      { "type": "consumeMetal", "amount": "inputs[1].ToolActions.Cast.requiredVolume" },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "@dynamic", "count": 1 }
+    ],
+    "outputActions": [
+      [
+        {
+          "type": "create",
+          "from": "inputs[0].details.layers[-1].itemId",
+          "stripPrefix": "Molten ",
+          "prefixFrom": "inputs[1].ToolActions.Cast.resultSizePrefix",
+          "suffixFrom": "inputs[1].ToolActions.Cast.resultShapeSuffix"
+        }
+      ]
+    ]
+  },
+
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Hot Large Copper Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Copper Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Hot Large Tin Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Tin Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Hot Large Bronze Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Bronze Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Hot Large Iron Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Iron Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": true,
+    "inputs": [
+      { "itemId": "Hot Large Steel Plate", "count": 1 },
+      { "ToolActions": { "Splitting": {} }, "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "durability", "amount": -1 }
+    ],
+    "outputs": [
+      { "itemId": "Steel Platform", "count": 4 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 },
+      { "itemId": "Hot Long Copper Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Copper Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 },
+      { "itemId": "Hot Long Tin Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Tin Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 },
+      { "itemId": "Hot Long Bronze Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Bronze Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 },
+      { "itemId": "Hot Long Iron Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Iron Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 },
+      { "itemId": "Hot Long Steel Rod", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Steel Frame", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 },
+      { "itemId": "Linen Thread", "count": 1 }
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Linen Cloth", "count": 1 }
+    ],
+    "outputActions": []
+  }
+
+]
+
+
+============[Recipe_9Slots.json]==============
+
+[
+  {
+    "isShapeless": false,
+    "inputs": [
+      {"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},
+      {"itemId": "Long Wooden Stick", "count": 1},{"itemId": "Linen Cloth", "count": 1},{"itemId": "Long Wooden Stick", "count": 1},
+      {"itemId": "Long Wooden Stick", "count": 1}, null, null
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 }, null, null
+    ],
+    "outputs": [
+      { "itemId": "Windmill Blade", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      null,{"itemId": "Windmill Blade", "count": 1},null,
+      {"itemId": "Windmill Blade", "count": 1},{"itemId": "Big Wooden Cogwheel", "count": 1},{"itemId": "Windmill Blade", "count": 1},
+      null,{"itemId": "Windmill Blade", "count": 1},null
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      null,{ "type": "consume", "amount": 1 },null,
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      null,{ "type": "consume", "amount": 1 },null
+    ],
+    "outputs": [
+      { "itemId": "Windmill", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  },
+
+  {
+    "isShapeless": false,
+    "inputs": [
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Big Wooden Cogwheel", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},
+      {"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1},{"itemId": "Small Wooden Plank", "count": 1}
+    ],
+    "inputConditions": [],
+    "inputActions": [
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },
+      { "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 },{ "type": "consume", "amount": 1 }
+    ],
+    "outputs": [
+      { "itemId": "Waterwheel", "count": 1 }
+    ],
+    "outputActions": [
+      []
+    ]
+  }
+]
+
+============[Recipe_Alloy.json]==============
+
+[
+  {
+    "inputs": [
+      { "id": "Molten Tin", "amount": 1 },
+      { "id": "Molten Copper", "amount": 9 }
+    ],
+    "output": { "id": "Molten Bronze", "amount": 10 }
+  }
+]
+
+============[Recipe_Toolbench.json]==============
+
+[
+  {
+    "inputs":{
+      "material":{"itemId":"Unfired Refractory Clay Slab","count":1},
+      "tool":{"ToolActions":{"Carving":{}},"count":1}
+    },
+    "inputActions":{
+      "material":{"type":"consume","amount":1},
+      "tool":{"type":"durability","amount":-1}
+    },
+    "candidates":[
+      {"itemId":"Unfired Large Plate Mold","count":1},
+      {"itemId":"Unfired Plate Mold","count":1},
+      {"itemId":"Unfired Small Plate Mold","count":1},
+      {"itemId":"Unfired Long Rod Mold","count":1},
+      {"itemId":"Unfired Rod Mold","count":1},
+      {"itemId":"Unfired Short Rod Mold","count":1},
+      {"itemId":"Unfired Large Preform Mold","count":1},
+      {"itemId":"Unfired Preform Mold","count":1},
+      {"itemId":"Unfired Small Preform Mold","count":1}
+    ]
+  },
+
+
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Small Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Chisel Head", "count": 1 },
+      { "itemId": "Bronze Scraper Head", "count": 1 },
+      { "itemId": "Bronze Short Blade", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Adze Head", "count": 1 },
+      { "itemId": "Bronze Hammer Head", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Large Bronze Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Bronze Axe Head", "count": 1 },
+      { "itemId": "Bronze Pickaxe Head", "count": 1 },
+      { "itemId": "Bronze Shovel Head", "count": 1 },
+      { "itemId": "Bronze Maul Head", "count": 1 },
+      { "itemId": "Bronze Saw Blade", "count": 1 }
+    ]
+  },
+
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Small Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Chisel Head", "count": 1 },
+      { "itemId": "Iron Scraper Head", "count": 1 },
+      { "itemId": "Iron Short Blade", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Adze Head", "count": 1 },
+      { "itemId": "Iron Hammer Head", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Hot Large Iron Preform", "count": 1 },
+      "tool": { "ToolActions": { "Hammering": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Iron Axe Head", "count": 1 },
+      { "itemId": "Iron Pickaxe Head", "count": 1 },
+      { "itemId": "Iron Shovel Head", "count": 1 },
+      { "itemId": "Iron Maul Head", "count": 1 },
+      { "itemId": "Iron Saw Blade", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Wooden Plank", "count": 1 },
+      "tool": { "ToolActions": { "Carving": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Big Wooden Cogwheel", "count": 1 }
+    ]
+  },
+  {
+    "inputs": {
+      "material": { "itemId": "Small Wooden Plank", "count": 1 },
+      "tool": { "ToolActions": { "Carving": {} }, "count": 1 }
+    },
+    "inputActions": {
+      "material": { "type": "consume", "amount": 1 },
+      "tool": { "type": "durability", "amount": -1 }
+    },
+    "candidates": [
+      { "itemId": "Wooden Cogwheel", "count": 1 }
+    ]
+  }
+]
+
+
+============[Splash.json]==============
+
+[
+    "Hello World!",
+    "DEV!"
+]
+
+============[Tier_1.json]==============
+
+{
+  "Campfire": [
+    {
+      "pattern": [
+        ["Firewood", "Firewood"]
+      ],
+      "result": [
+        ["Campfire_L", "Campfire_R"]
+      ]
+    }
+  ],
+
+  "Primal Workbench": [
+    {
+      "pattern": [
+        ["Wooden Platform", "Wooden Platform"]
+      ],
+      "result": [
+        ["Primal Workbench_L", "Primal Workbench_R"]
+      ]
+    }
+  ],
+  "Forge Workbench": [
+    {
+      "pattern": [
+        ["Iron Platform", "Iron Platform"]
+      ],
+      "result": [
+        ["Forge Workbench_L", "Forge Workbench_R"]
+      ]
+    }
+  ],
+
+  "Toolbench": [
+    {
+      "pattern": [
+        ["Wooden Frame", "Wooden Frame"],
+        ["Wooden Platform", "Wooden Platform"]
+      ],
+      "result": [
+        ["Toolbench_TL", "Toolbench_TR"],
+        ["Toolbench_BL", "Toolbench_BR"]
+      ]
+    }
+  ],
+
+  "Wooden Crate": [
+    {
+      "pattern": [
+        ["Wooden Frame", "Wooden Frame"]
+      ],
+      "result": [
+        ["Wooden Crate_L", "Wooden Crate_R"]
+      ]
+    }
+  ],
+  "Iron Crate": [
+    {
+      "pattern": [
+        ["Iron Frame", "Iron Frame"]
+      ],
+      "result": [
+        ["Iron Crate_L", "Iron Crate_R"]
+      ]
+    }
+  ],
+
+  "Hearth": [
+    {
+      "pattern": [
+        ["Hearth_TL", "Hearth_TR"],
+        ["Hearth_BL", "Hearth_BR"]
+      ],
+      "result": [
+        ["Hearth_TL_Built", "Hearth_TR_Built"],
+        ["Hearth_BL_Built", "Hearth_BR_Built"]
+      ]
+    }
+  ],
+
+  "Clay Kiln": [
+    {
+      "pattern": [
+        ["Clay", "Clay"],
+        ["Clay", "Clay"]
+      ],
+      "result": [
+        ["Clay Kiln_TL", "Clay Kiln_TR"],
+        ["Clay Kiln_BL", "Clay Kiln_BR"]
+      ]
+    }
+  ],
+
+  "Brick Furnace": [
+    {
+      "pattern": [
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell"]
+      ],
+      "result": [
+        ["Brick Furnace_TL", "Brick Furnace_TR"],
+        ["Brick Furnace_BL", "Brick Furnace_BR"]
+      ]
+    }
+  ],
+
+  "Coke Oven": [
+    {
+      "pattern": [
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"],
+        ["Refractory Clay Brick Cell", "Refractory Clay Brick Cell", "Refractory Clay Brick Cell"]
+      ],
+      "result": [
+        ["Coke Oven_6", "Coke Oven_7", "Coke Oven_8"],
+        ["Coke Oven_3", "Coke Oven_4", "Coke Oven_5"],
+        ["Coke Oven_0", "Coke Oven_1", "Coke Oven_2"]
+      ]
+    }
+  ]
+}
+
+
+============[Tree.json]==============
+
+{
+  "anchor": { "x": 2, "y": 0 },
+  "writeRules": {
+    "2001": { "targets": [0] },
+    "2000": { "targets": [0, 2001] }
+  },
+  "layers": {
+    "deco": [
+      [   -1, 2001, 2001, 2001,   -1],
+      [ 2001, 2001, 2001, 2001, 2001],
+      [ 2001, 2001, 2001, 2001, 2001],
+      [   -1, 2001, 2000, 2001,   -1],
+      [   -1,   -1, 2000,   -1,   -1],
+      [   -1,   -1, 2000,   -1,   -1],
+      [   -1,   -1, 2000,   -1,   -1],
+      [   -1,   -1, 2000,   -1,   -1]
+    ]
+  }
+}
+
+

@@ -1,0 +1,890 @@
+Assets/
+├── A_Game
+│   ├── LIB
+│   │   ├── ATT
+│   │   │   ├── Cell
+│   │   │   │   ├── ATT_Fluid.json
+│   │   │   │   └── ATT_Solid.json
+│   │   │   ├── Item
+│   │   │   │   ├── ATT_Item_Cell.json
+│   │   │   │   ├── ATT_Item_Forge.json
+│   │   │   │   ├── ATT_Item_Misc.json
+│   │   │   │   ├── ATT_Item_Template.json
+│   │   │   │   ├── ATT_Item_Tool.json
+│   │   │   │   ├── ATT_Item_Weapon.json
+│   │   │   │   └── ATT_Item_Wearable.json
+│   │   │   └── Mob
+│   │   │       └── ATT_Mob.json
+│   │   ├── DropTable
+│   │   │   ├── DroppedItem.cs
+│   │   │   ├── DroppedItem.prefab
+│   │   │   ├── DT_Cell.json
+│   │   │   ├── DT_Corpse.json
+│   │   │   └── ItemDropper.cs
+│   │   ├── Mob
+│   │   │   ├── Cow
+│   │   │   │   ├── Sound
+│   │   │   │   │   ├── Cow_01.wav
+│   │   │   │   │   ├── Cow_02.wav
+│   │   │   │   │   ├── Cow_03.wav
+│   │   │   │   │   ├── Cow_Breath.wav
+│   │   │   │   │   └── Cow_Dead.wav
+│   │   │   │   ├── Body.png
+│   │   │   │   ├── Cow.cs
+│   │   │   │   ├── Cow.prefab
+│   │   │   │   ├── Cow_Corpse.png
+│   │   │   │   ├── Cow_Corpse.prefab
+│   │   │   │   ├── Cow_Corpse_Bone.png
+│   │   │   │   ├── Cow_Corpse_Bone.prefab
+│   │   │   │   ├── Cow_Corpse_Skinned.png
+│   │   │   │   ├── Cow_Corpse_Skinned.prefab
+│   │   │   │   ├── Head.png
+│   │   │   │   └── Leg.png
+│   │   │   ├── Pig
+│   │   │   ├── Corpse.cs
+│   │   │   └── Mob.cs
+│   │   ├── MultiBlock
+│   │   │   └── Tier_1.json
+│   │   ├── Recipe
+│   │   │   ├── Recipe_16Slots.json
+│   │   │   ├── Recipe_25Slots.json
+│   │   │   ├── Recipe_2Slots.json
+│   │   │   ├── Recipe_36Slots.json
+│   │   │   ├── Recipe_4Slots.json
+│   │   │   ├── Recipe_9Slots.json
+│   │   │   ├── Recipe_Alloy.json
+│   │   │   └── Recipe_Toolbench.json
+│   │   ├── Texture
+│   │   │   ├── Cell
+│   │   │   │   ├── Fluid
+│   │   │   │   │   ├── Lava.png
+│   │   │   │   │   ├── Lava_1.png
+│   │   │   │   │   ├── Lava_10.png
+│   │   │   │   │   ├── Lava_11.png
+│   │   │   │   │   ├── Lava_12.png
+│   │   │   │   │   ├── Lava_13.png
+│   │   │   │   │   ├── Lava_14.png
+│   │   │   │   │   ├── Lava_15.png
+│   │   │   │   │   ├── Lava_16.png
+│   │   │   │   │   ├── Lava_2.png
+│   │   │   │   │   ├── Lava_3.png
+│   │   │   │   │   ├── Lava_4.png
+│   │   │   │   │   ├── Lava_5.png
+│   │   │   │   │   ├── Lava_6.png
+│   │   │   │   │   ├── Lava_7.png
+│   │   │   │   │   ├── Lava_8.png
+│   │   │   │   │   ├── Lava_9.png
+│   │   │   │   │   ├── Water.png
+│   │   │   │   │   ├── Water_1.png
+│   │   │   │   │   ├── Water_10.png
+│   │   │   │   │   ├── Water_11.png
+│   │   │   │   │   ├── Water_12.png
+│   │   │   │   │   ├── Water_13.png
+│   │   │   │   │   ├── Water_14.png
+│   │   │   │   │   ├── Water_15.png
+│   │   │   │   │   ├── Water_16.png
+│   │   │   │   │   ├── Water_2.png
+│   │   │   │   │   ├── Water_3.png
+│   │   │   │   │   ├── Water_4.png
+│   │   │   │   │   ├── Water_5.png
+│   │   │   │   │   ├── Water_6.png
+│   │   │   │   │   ├── Water_7.png
+│   │   │   │   │   ├── Water_8.png
+│   │   │   │   │   └── Water_9.png
+│   │   │   │   ├── MultiBlock
+│   │   │   │   │   ├── Anvil_L.png
+│   │   │   │   │   ├── Anvil_R.png
+│   │   │   │   │   ├── Brick Furnace_BL.png
+│   │   │   │   │   ├── Brick Furnace_BR.png
+│   │   │   │   │   ├── Brick Furnace_TL.png
+│   │   │   │   │   ├── Brick Furnace_TR.png
+│   │   │   │   │   ├── Campfire_L.png
+│   │   │   │   │   ├── Campfire_R.png
+│   │   │   │   │   ├── Clay Kiln_BL.png
+│   │   │   │   │   ├── Clay Kiln_BR.png
+│   │   │   │   │   ├── Clay Kiln_TL.png
+│   │   │   │   │   ├── Clay Kiln_TR.png
+│   │   │   │   │   ├── Coke Oven_0.png
+│   │   │   │   │   ├── Coke Oven_1.png
+│   │   │   │   │   ├── Coke Oven_2.png
+│   │   │   │   │   ├── Coke Oven_3.png
+│   │   │   │   │   ├── Coke Oven_4.png
+│   │   │   │   │   ├── Coke Oven_5.png
+│   │   │   │   │   ├── Coke Oven_6.png
+│   │   │   │   │   ├── Coke Oven_7.png
+│   │   │   │   │   ├── Coke Oven_8.png
+│   │   │   │   │   ├── Forge Workbench_L.png
+│   │   │   │   │   ├── Forge Workbench_R.png
+│   │   │   │   │   ├── Primal Workbench_L.png
+│   │   │   │   │   ├── Primal Workbench_R.png
+│   │   │   │   │   ├── Toolbench_BL.png
+│   │   │   │   │   ├── Toolbench_BR.png
+│   │   │   │   │   ├── Toolbench_TL.png
+│   │   │   │   │   ├── Toolbench_TR.png
+│   │   │   │   │   ├── Wooden Crate_L.png
+│   │   │   │   │   └── Wooden Crate_R.png
+│   │   │   │   └── Solid
+│   │   │   │       ├── Agave_0.png
+│   │   │   │       ├── Agave_1.png
+│   │   │   │       ├── Agave_2.png
+│   │   │   │       ├── Agave_3.png
+│   │   │   │       ├── Agave_4.png
+│   │   │   │       ├── Agave_5.png
+│   │   │   │       ├── Air.png
+│   │   │   │       ├── Amphibolite.png
+│   │   │   │       ├── Andesite.png
+│   │   │   │       ├── Ash.png
+│   │   │   │       ├── Basalt.png
+│   │   │   │       ├── Big Wooden Cogwheel.png
+│   │   │   │       ├── Bronze Cell.png
+│   │   │   │       ├── Bronze Frame.png
+│   │   │   │       ├── Bronze Platform.png
+│   │   │   │       ├── Bush.png
+│   │   │   │       ├── Cactus.png
+│   │   │   │       ├── Clay Brick Cell.png
+│   │   │   │       ├── Clay.png
+│   │   │   │       ├── Copper Cell.png
+│   │   │   │       ├── Copper Frame.png
+│   │   │   │       ├── Copper Platform.png
+│   │   │   │       ├── Dead Bush.png
+│   │   │   │       ├── Dirt.png
+│   │   │   │       ├── Firewood.png
+│   │   │   │       ├── Flax_Bottom.png
+│   │   │   │       ├── Flax_Top.png
+│   │   │   │       ├── Frozen Bush.png
+│   │   │   │       ├── Frozen Dirt.png
+│   │   │   │       ├── Frozen Grass_Left.png
+│   │   │   │       ├── Frozen Grass_LeftRight.png
+│   │   │   │       ├── Frozen Grass_Right.png
+│   │   │   │       ├── Frozen Grass_Top.png
+│   │   │   │       ├── Frozen Grass_TopLeft.png
+│   │   │   │       ├── Frozen Grass_TopLeftRight.png
+│   │   │   │       ├── Frozen Grass_TopRight.png
+│   │   │   │       ├── Frozen Plant.png
+│   │   │   │       ├── Frozen Trunk.png
+│   │   │   │       ├── Granite.png
+│   │   │   │       ├── Grass_Left.png
+│   │   │   │       ├── Grass_LeftRight.png
+│   │   │   │       ├── Grass_Right.png
+│   │   │   │       ├── Grass_Top.png
+│   │   │   │       ├── Grass_TopLeft.png
+│   │   │   │       ├── Grass_TopLeftRight.png
+│   │   │   │       ├── Grass_TopRight.png
+│   │   │   │       ├── Gravel.png
+│   │   │   │       ├── Ice Cell.png
+│   │   │   │       ├── Iron Cell.png
+│   │   │   │       ├── Iron Frame.png
+│   │   │   │       ├── Iron Platform.png
+│   │   │   │       ├── Leaf.png
+│   │   │   │       ├── Log.png
+│   │   │   │       ├── Mud.png
+│   │   │   │       ├── Obsidian.png
+│   │   │   │       ├── Ore_Coal.png
+│   │   │   │       ├── Ore_Copper.png
+│   │   │   │       ├── Ore_Iron.png
+│   │   │   │       ├── Ore_Tin.png
+│   │   │   │       ├── Plant.png
+│   │   │   │       ├── Refractory Clay Brick Cell.png
+│   │   │   │       ├── Rock Brick.png
+│   │   │   │       ├── Rock.png
+│   │   │   │       ├── Sand.png
+│   │   │   │       ├── SandStone Brick Cell.png
+│   │   │   │       ├── SandStone.png
+│   │   │   │       ├── Small_Stone_Pile.png
+│   │   │   │       ├── Snow Cell.png
+│   │   │   │       ├── Snow.png
+│   │   │   │       ├── Stone_Pile.png
+│   │   │   │       ├── Stripped Log.png
+│   │   │   │       ├── Sulfur Crystal.png
+│   │   │   │       ├── Tin Cell.png
+│   │   │   │       ├── Tin Frame.png
+│   │   │   │       ├── Tin Platform.png
+│   │   │   │       ├── Torch_BG.png
+│   │   │   │       ├── Torch_Down.png
+│   │   │   │       ├── Torch_Left.png
+│   │   │   │       ├── Torch_Right.png
+│   │   │   │       ├── Trunk.png
+│   │   │   │       ├── Tuff.png
+│   │   │   │       ├── Water.png
+│   │   │   │       ├── Waterwheel.png
+│   │   │   │       ├── Windmill.png
+│   │   │   │       ├── Wooden Cogwheel.png
+│   │   │   │       ├── Wooden Frame.png
+│   │   │   │       ├── Wooden Plank.png
+│   │   │   │       ├── Wooden Platform.png
+│   │   │   │       └── Wooden Stair.png
+│   │   │   ├── Item
+│   │   │   │   ├── Cast Metal
+│   │   │   │   │   ├── Bronze Plate.png
+│   │   │   │   │   ├── Bronze Preform.png
+│   │   │   │   │   ├── Bronze Rod.png
+│   │   │   │   │   ├── Copper Plate.png
+│   │   │   │   │   ├── Copper Preform.png
+│   │   │   │   │   ├── Copper Rod.png
+│   │   │   │   │   ├── Hot Large Plate.png
+│   │   │   │   │   ├── Hot Large Preform.png
+│   │   │   │   │   ├── Hot Long Rod.png
+│   │   │   │   │   ├── Hot Plate.png
+│   │   │   │   │   ├── Hot Preform.png
+│   │   │   │   │   ├── Hot Rod.png
+│   │   │   │   │   ├── Hot Short Rod.png
+│   │   │   │   │   ├── Hot Small Plate.png
+│   │   │   │   │   ├── Hot Small Preform.png
+│   │   │   │   │   ├── Iron Plate.png
+│   │   │   │   │   ├── Iron Preform.png
+│   │   │   │   │   ├── Iron Rod.png
+│   │   │   │   │   ├── Large Bronze Plate.png
+│   │   │   │   │   ├── Large Bronze Preform.png
+│   │   │   │   │   ├── Large Copper Plate.png
+│   │   │   │   │   ├── Large Copper Preform.png
+│   │   │   │   │   ├── Large Iron Plate.png
+│   │   │   │   │   ├── Large Iron Preform.png
+│   │   │   │   │   ├── Large Tin Plate.png
+│   │   │   │   │   ├── Large Tin Preform.png
+│   │   │   │   │   ├── Long Bronze Rod.png
+│   │   │   │   │   ├── Long Copper Rod.png
+│   │   │   │   │   ├── Long Iron Rod.png
+│   │   │   │   │   ├── Long Tin Rod.png
+│   │   │   │   │   ├── Short Bronze Rod.png
+│   │   │   │   │   ├── Short Copper Rod.png
+│   │   │   │   │   ├── Short Iron Rod.png
+│   │   │   │   │   ├── Short Tin Rod.png
+│   │   │   │   │   ├── Small Bronze Plate.png
+│   │   │   │   │   ├── Small Bronze Preform.png
+│   │   │   │   │   ├── Small Copper Plate.png
+│   │   │   │   │   ├── Small Copper Preform.png
+│   │   │   │   │   ├── Small Iron Plate.png
+│   │   │   │   │   ├── Small Iron Preform.png
+│   │   │   │   │   ├── Small Tin Plate.png
+│   │   │   │   │   ├── Small Tin Preform.png
+│   │   │   │   │   ├── Tin Plate.png
+│   │   │   │   │   ├── Tin Preform.png
+│   │   │   │   │   └── Tin Rod.png
+│   │   │   │   ├── Cell
+│   │   │   │   │   ├── Bronze Frame.png
+│   │   │   │   │   ├── Bronze Platform.png
+│   │   │   │   │   ├── Copper Frame.png
+│   │   │   │   │   ├── Copper Platform.png
+│   │   │   │   │   ├── Dirt Cell.png
+│   │   │   │   │   ├── Iron Frame.png
+│   │   │   │   │   ├── Iron Platform.png
+│   │   │   │   │   ├── Mud Cell.png
+│   │   │   │   │   ├── Tin Frame.png
+│   │   │   │   │   └── Tin Platform.png
+│   │   │   │   ├── Cow
+│   │   │   │   │   ├── Animal Fat.png
+│   │   │   │   │   ├── Beef Intestine.png
+│   │   │   │   │   ├── Beef Liver.png
+│   │   │   │   │   ├── Beef Stomach.png
+│   │   │   │   │   ├── Cooked Beef.png
+│   │   │   │   │   ├── Cow Horn.png
+│   │   │   │   │   ├── Large Bone.png
+│   │   │   │   │   ├── Large Raw Hide.png
+│   │   │   │   │   ├── Large Rib.png
+│   │   │   │   │   ├── Medium Bone.png
+│   │   │   │   │   ├── Medium Raw Hide.png
+│   │   │   │   │   ├── Medium Rib.png
+│   │   │   │   │   ├── Raw Beef.png
+│   │   │   │   │   ├── Small Bone.png
+│   │   │   │   │   ├── Small Raw Hide.png
+│   │   │   │   │   └── Small Rib.png
+│   │   │   │   ├── Equipable
+│   │   │   │   ├── Kinetic
+│   │   │   │   │   ├── Big Wooden Cogwheel.png
+│   │   │   │   │   ├── Waterwheel.png
+│   │   │   │   │   ├── Windmill Blade.png
+│   │   │   │   │   ├── Windmill.png
+│   │   │   │   │   └── Wooden Cogwheel.png
+│   │   │   │   ├── Misc
+│   │   │   │   │   ├── Ash.png
+│   │   │   │   │   ├── Bark Strip.png
+│   │   │   │   │   ├── Bough.png
+│   │   │   │   │   ├── Branch.png
+│   │   │   │   │   ├── Charcoal.png
+│   │   │   │   │   ├── Clay Bowl.png
+│   │   │   │   │   ├── Clay Brick Cell.png
+│   │   │   │   │   ├── Clay Brick.png
+│   │   │   │   │   ├── Clay Chunk.png
+│   │   │   │   │   ├── Clay Pot.png
+│   │   │   │   │   ├── Clay.png
+│   │   │   │   │   ├── Coal Chunk.png
+│   │   │   │   │   ├── Coke.png
+│   │   │   │   │   ├── Copper Ore Chunk.png
+│   │   │   │   │   ├── Dirt Pile.png
+│   │   │   │   │   ├── Dirt.png
+│   │   │   │   │   ├── Flax Fiber.png
+│   │   │   │   │   ├── Flax Stalk.png
+│   │   │   │   │   ├── Grass Scrap.png
+│   │   │   │   │   ├── Grog.png
+│   │   │   │   │   ├── Half Stripped Log.png
+│   │   │   │   │   ├── Horn.png
+│   │   │   │   │   ├── Iron Ore Chunk.png
+│   │   │   │   │   ├── Leaf.png
+│   │   │   │   │   ├── Linen Cloth.png
+│   │   │   │   │   ├── Linen Thread.png
+│   │   │   │   │   ├── Linen Twine.png
+│   │   │   │   │   ├── Log.png
+│   │   │   │   │   ├── Long Linen Twine.png
+│   │   │   │   │   ├── Long Plant Twine.png
+│   │   │   │   │   ├── Long Wooden Stick.png
+│   │   │   │   │   ├── Mold Base.png
+│   │   │   │   │   ├── Mud Chunk.png
+│   │   │   │   │   ├── Mud.png
+│   │   │   │   │   ├── Pebble.png
+│   │   │   │   │   ├── Plant Fiber.png
+│   │   │   │   │   ├── Plant Twine.png
+│   │   │   │   │   ├── Plant.png
+│   │   │   │   │   ├── Primal Workbench.png
+│   │   │   │   │   ├── Quarter Stripped Log.png
+│   │   │   │   │   ├── Refractory Clay Brick Cell.png
+│   │   │   │   │   ├── Refractory Clay Brick.png
+│   │   │   │   │   ├── Refractory Clay Chunk.png
+│   │   │   │   │   ├── Refractory Clay Crucible.png
+│   │   │   │   │   ├── Refractory Clay Slab.png
+│   │   │   │   │   ├── Rock Brick.png
+│   │   │   │   │   ├── Rock Chunk.png
+│   │   │   │   │   ├── Sand Pile.png
+│   │   │   │   │   ├── Seed.png
+│   │   │   │   │   ├── Short Linen Twine.png
+│   │   │   │   │   ├── Short Plant Twine.png
+│   │   │   │   │   ├── Short Wooden Stick.png
+│   │   │   │   │   ├── Slag.png
+│   │   │   │   │   ├── Small Wooden Plank.png
+│   │   │   │   │   ├── Stripped Log.png
+│   │   │   │   │   ├── Tar.png
+│   │   │   │   │   ├── Tin Ore Chunk.png
+│   │   │   │   │   ├── Torch.png
+│   │   │   │   │   ├── Twig.png
+│   │   │   │   │   ├── Unfired Clay Bowl.png
+│   │   │   │   │   ├── Unfired Clay Brick.png
+│   │   │   │   │   ├── Unfired Clay Pot.png
+│   │   │   │   │   ├── Unfired Clay Slab.png
+│   │   │   │   │   ├── Unfired Refractory Clay Brick.png
+│   │   │   │   │   ├── Unfired Refractory Clay Crucible.png
+│   │   │   │   │   ├── Unfired Refractory Clay Slab.png
+│   │   │   │   │   ├── Wood Shavings.png
+│   │   │   │   │   ├── Wooden Frame.png
+│   │   │   │   │   ├── Wooden Plank.png
+│   │   │   │   │   ├── Wooden Platform.png
+│   │   │   │   │   ├── Wooden Stair.png
+│   │   │   │   │   └── Wooden Stick.png
+│   │   │   │   ├── Mold
+│   │   │   │   │   ├── Large Plate Mold.png
+│   │   │   │   │   ├── Large Preform Mold.png
+│   │   │   │   │   ├── Long Rod Mold.png
+│   │   │   │   │   ├── Plate Mold.png
+│   │   │   │   │   ├── Preform Mold.png
+│   │   │   │   │   ├── Rod Mold.png
+│   │   │   │   │   ├── Short Rod Mold.png
+│   │   │   │   │   ├── Small Plate Mold.png
+│   │   │   │   │   ├── Small Preform Mold.png
+│   │   │   │   │   ├── Unfired Large Plate Mold.png
+│   │   │   │   │   ├── Unfired Large Preform Mold.png
+│   │   │   │   │   ├── Unfired Long Rod Mold.png
+│   │   │   │   │   ├── Unfired Plate Mold.png
+│   │   │   │   │   ├── Unfired Preform Mold.png
+│   │   │   │   │   ├── Unfired Rod Mold.png
+│   │   │   │   │   ├── Unfired Short Rod Mold.png
+│   │   │   │   │   ├── Unfired Small Plate Mold.png
+│   │   │   │   │   └── Unfired Small Preform Mold.png
+│   │   │   │   ├── Molten
+│   │   │   │   │   ├── Molten Bronze.png
+│   │   │   │   │   ├── Molten Copper.png
+│   │   │   │   │   ├── Molten Iron.png
+│   │   │   │   │   └── Molten Tin.png
+│   │   │   │   ├── Tool
+│   │   │   │   │   ├── Bronze Adze Head.png
+│   │   │   │   │   ├── Bronze Axe Head.png
+│   │   │   │   │   ├── Bronze Chisel Head.png
+│   │   │   │   │   ├── Bronze Hammer Head.png
+│   │   │   │   │   ├── Bronze Maul Head.png
+│   │   │   │   │   ├── Bronze Pickaxe Head.png
+│   │   │   │   │   ├── Bronze Saw Blade.png
+│   │   │   │   │   ├── Bronze Scraper Head.png
+│   │   │   │   │   ├── Bronze Short Blade.png
+│   │   │   │   │   ├── Bronze Shovel Head.png
+│   │   │   │   │   ├── Flint Graver.png
+│   │   │   │   │   ├── Flint Scraper.png
+│   │   │   │   │   ├── Flint Shard.png
+│   │   │   │   │   ├── Iron Adze Head.png
+│   │   │   │   │   ├── Iron Axe Head.png
+│   │   │   │   │   ├── Iron Chisel Head.png
+│   │   │   │   │   ├── Iron Hammer Head.png
+│   │   │   │   │   ├── Iron Maul Head.png
+│   │   │   │   │   ├── Iron Pickaxe Head.png
+│   │   │   │   │   ├── Iron Saw Blade.png
+│   │   │   │   │   ├── Iron Scraper Head.png
+│   │   │   │   │   ├── Iron Short Blade.png
+│   │   │   │   │   ├── Iron Shovel Head.png
+│   │   │   │   │   ├── Stone Adze.png
+│   │   │   │   │   ├── Stone Cleaver.png
+│   │   │   │   │   ├── Stone Percussor.png
+│   │   │   │   │   ├── Stone Shard.png
+│   │   │   │   │   ├── Wooden Club.png
+│   │   │   │   │   └── Wooden Spear.png
+│   │   │   │   └── Weapon
+│   │   │   ├── Cell.spriteatlasv2
+│   │   │   └── Item.spriteatlasv2
+│   │   ├── CellLibrary.cs
+│   │   ├── CorpseLibrary.cs
+│   │   ├── ItemLibrary.cs
+│   │   ├── MobLibrary.cs
+│   │   ├── MultiBlockLibrary.cs
+│   │   └── RecipeLibrary.cs
+│   ├── Player
+│   │   ├── BackGround
+│   │   │   ├── Sample
+│   │   │   │   ├── Bottom.png
+│   │   │   │   ├── Mid.png
+│   │   │   │   └── Top.png
+│   │   │   ├── Sprites
+│   │   │   │   ├── background1.png
+│   │   │   │   ├── background2.png
+│   │   │   │   ├── background3.png
+│   │   │   │   ├── cloud1.png
+│   │   │   │   ├── cloud2.png
+│   │   │   │   ├── cloud3.png
+│   │   │   │   ├── cloud4.png
+│   │   │   │   ├── cloud5.png
+│   │   │   │   ├── cloud6.png
+│   │   │   │   ├── cloud7.png
+│   │   │   │   ├── Moon.png
+│   │   │   │   └── Sun.png
+│   │   │   └── BackGround.cs
+│   │   ├── Character
+│   │   │   ├── arm.png
+│   │   │   ├── body.png
+│   │   │   ├── leg.png
+│   │   │   ├── Player.prefab
+│   │   │   └── PlayerPhysicsMat.physicsMaterial2D
+│   │   ├── Cursor
+│   │   │   ├── Cursor.cs
+│   │   │   ├── Cursor_Attack.png
+│   │   │   ├── Cursor_Hand.png
+│   │   │   ├── Cursor_Mining.png
+│   │   │   ├── HighLight_BG.png
+│   │   │   ├── HighLight_BG_CAN.png
+│   │   │   ├── HighLight_BG_CANNOT.png
+│   │   │   ├── HighLight_Solid.png
+│   │   │   ├── HighLight_Solid_CAN.png
+│   │   │   ├── HighLight_Solid_CANNOT.png
+│   │   │   └── Tooltip_BG.png
+│   │   ├── Inventory
+│   │   │   ├── Module
+│   │   │   │   ├── 16Slot_BlaBlaCraft
+│   │   │   │   ├── 2Slot_HandCraft
+│   │   │   │   │   ├── HandCraft.png
+│   │   │   │   │   └── HandCraftPrefab.prefab
+│   │   │   │   ├── 4Slot_PrimalCraft
+│   │   │   │   │   ├── PrimalCraft.png
+│   │   │   │   │   └── PrimalCraftPrefab.prefab
+│   │   │   │   ├── 9Slot_ForgeCraft
+│   │   │   │   │   ├── ForgeCraft.png
+│   │   │   │   │   └── ForgeCraftPrefab.prefab
+│   │   │   │   ├── Brick Furnace
+│   │   │   │   │   ├── Brick Furnace_Module.png
+│   │   │   │   │   ├── BrickFurnaceModule.cs
+│   │   │   │   │   └── BrickFurnaceModule.prefab
+│   │   │   │   ├── Campfire
+│   │   │   │   │   ├── Campfire.png
+│   │   │   │   │   ├── CampfireModule.cs
+│   │   │   │   │   └── CampfireModule.prefab
+│   │   │   │   ├── Clay Kiln
+│   │   │   │   │   ├── Clay Kiln_Module.png
+│   │   │   │   │   ├── ClayKilnModule.cs
+│   │   │   │   │   └── ClayKilnModule.prefab
+│   │   │   │   ├── Coke Oven
+│   │   │   │   │   ├── Coke Oven_Module.png
+│   │   │   │   │   ├── CokeOvenModule.cs
+│   │   │   │   │   └── CokeOvenModule.prefab
+│   │   │   │   ├── Crucible
+│   │   │   │   │   ├── Crucible.prefab
+│   │   │   │   │   └── Crucible_Module.png
+│   │   │   │   ├── Toolbench
+│   │   │   │   │   ├── Toolbench_Module.png
+│   │   │   │   │   ├── ToolbenchModule.cs
+│   │   │   │   │   └── ToolbenchModule.prefab
+│   │   │   │   ├── Wooden Crate
+│   │   │   │   │   ├── Wooden Crate.png
+│   │   │   │   │   ├── WoodenCrateModule.cs
+│   │   │   │   │   └── WoodenCrateModule.prefab
+│   │   │   │   ├── Button_Crafting.png
+│   │   │   │   ├── Button_Crafting.prefab
+│   │   │   │   ├── Button_Crafting_Big.prefab
+│   │   │   │   ├── Button_Crafting_Bigger.png
+│   │   │   │   ├── CraftModule.cs
+│   │   │   │   ├── CrucibleSmelts.cs
+│   │   │   │   ├── CrucibleSmelts.prefab
+│   │   │   │   ├── CrucibleView.cs
+│   │   │   │   ├── ICursorTooltipSource.cs
+│   │   │   │   ├── UI_Fire.png
+│   │   │   │   └── UI_Progress.png
+│   │   │   ├── Sprites
+│   │   │   │   ├── Hotbarscope.png
+│   │   │   │   ├── PlayerEquipment.png
+│   │   │   │   ├── PlayerHotbar.png
+│   │   │   │   ├── PlayerInventory.png
+│   │   │   │   ├── PlayerInventory_Craft.png
+│   │   │   │   └── White.png
+│   │   │   ├── Hotbar.cs
+│   │   │   ├── InventoryData.cs
+│   │   │   ├── ItemData.cs
+│   │   │   ├── ItemSlot.cs
+│   │   │   ├── ItemSlot.prefab
+│   │   │   └── PlayerInventory.cs
+│   │   ├── Status
+│   │   │   ├── Hearts
+│   │   │   │   ├── 0.png
+│   │   │   │   ├── 1.png
+│   │   │   │   ├── 2.png
+│   │   │   │   ├── 3.png
+│   │   │   │   └── 4.png
+│   │   │   ├── Air.png
+│   │   │   ├── Air_BG.png
+│   │   │   ├── Heart.cs
+│   │   │   ├── Heart.prefab
+│   │   │   ├── Heart_BG.png
+│   │   │   ├── Hearts.spriteatlasv2
+│   │   │   ├── Hunger.png
+│   │   │   ├── Hunger_BG.png
+│   │   │   ├── Stamina.png
+│   │   │   ├── Stamina_BG.png
+│   │   │   ├── Thirst.png
+│   │   │   └── Thirst_BG.png
+│   │   ├── CameraFollow.cs
+│   │   ├── InteractionController.cs
+│   │   └── Player.cs
+│   ├── Sound
+│   │   ├── Animal
+│   │   │   ├── Cow
+│   │   │   └── Pig
+│   │   │       ├── Pig_01.wav
+│   │   │       ├── Pig_02.wav
+│   │   │       ├── Pig_03.wav
+│   │   │       └── Pig_Dead.wav
+│   │   ├── BGM
+│   │   │   ├── Another August.ogg
+│   │   │   ├── Aquaria.ogg
+│   │   │   ├── Calm Ambient 1 (Synthwave 4k).ogg
+│   │   │   ├── Calm Ambient 2 (Synthwave 15k).ogg
+│   │   │   ├── Calm Ambient 3 (Lifewave 2k).ogg
+│   │   │   ├── Calm Piano 1 (Vaporware).ogg
+│   │   │   ├── Calm Relax 1 (Synthwave 421k).ogg
+│   │   │   ├── Crystal Cave (song18).ogg
+│   │   │   ├── Enchanted Tiki 86.ogg
+│   │   │   ├── Happy Lullaby (song17).ogg
+│   │   │   ├── Icy Realm - (Seven and Eight).ogg
+│   │   │   ├── Mysterious Ambience (song21).ogg
+│   │   │   └── Sirens in Darkness.ogg
+│   │   ├── Sfx
+│   │   │   ├── Break.wav
+│   │   │   ├── Button_Click.wav
+│   │   │   ├── Craft.wav
+│   │   │   ├── Damage.wav
+│   │   │   ├── Dig.wav
+│   │   │   ├── Inventory_0.wav
+│   │   │   ├── Inventory_1.wav
+│   │   │   ├── Inventory_2.wav
+│   │   │   ├── Multiblock_Complete.wav
+│   │   │   ├── Place.wav
+│   │   │   ├── PlayerTookDamage.wav
+│   │   │   ├── Pop.wav
+│   │   │   ├── Swing_01.wav
+│   │   │   ├── Swing_02.wav
+│   │   │   ├── Swing_03.wav
+│   │   │   └── Thrust.wav
+│   │   └── AudioManager.cs
+│   ├── Vfx
+│   │   ├── CogWheels
+│   │   │   ├── Big Wooden CogWheel.png
+│   │   │   ├── Big Wooden Cogwheel.prefab
+│   │   │   ├── RotatingVfx.cs
+│   │   │   ├── Waterwheel.png
+│   │   │   ├── Waterwheel.prefab
+│   │   │   ├── Windmill.png
+│   │   │   ├── Windmill.prefab
+│   │   │   ├── Wooden CogWheel.png
+│   │   │   └── Wooden Cogwheel.prefab
+│   │   ├── Effects
+│   │   │   ├── FIre
+│   │   │   │   ├── Fire_01
+│   │   │   │   │   ├── FIre_01.controller
+│   │   │   │   │   ├── FIre_01.prefab
+│   │   │   │   │   ├── Group 7 - 1_1.png
+│   │   │   │   │   ├── Group 7 - 1_2.png
+│   │   │   │   │   ├── Group 7 - 1_3.png
+│   │   │   │   │   ├── Group 7 - 1_4.png
+│   │   │   │   │   ├── Group 7 - 1_5.png
+│   │   │   │   │   ├── Group 7 - 1_6.png
+│   │   │   │   │   ├── Group 7 - 1_7.png
+│   │   │   │   │   ├── Group 7 - 1_8.png
+│   │   │   │   │   └── New Animation.anim
+│   │   │   │   └── Fire_02
+│   │   │   │       ├── Fire_0.png
+│   │   │   │       ├── Fire_02.controller
+│   │   │   │       ├── FIre_02.prefab
+│   │   │   │       ├── Fire_1.png
+│   │   │   │       ├── Fire_2.png
+│   │   │   │       ├── Fire_3.png
+│   │   │   │       ├── Fire_4.png
+│   │   │   │       ├── Fire_5.png
+│   │   │   │       ├── Fire_6.png
+│   │   │   │       ├── Fire_7.png
+│   │   │   │       └── New Animation.anim
+│   │   │   ├── Break.prefab
+│   │   │   ├── Glowing.mat
+│   │   │   ├── Glowing.shader
+│   │   │   ├── Smoke.png
+│   │   │   ├── Smoke.prefab
+│   │   │   └── SmokeMat.mat
+│   │   ├── GodRay
+│   │   │   ├── BG.renderTexture
+│   │   │   ├── BGGodRayMat.mat
+│   │   │   ├── FG.renderTexture
+│   │   │   ├── GodRay.shader
+│   │   │   └── GodRayBG.cs
+│   │   ├── SharedMat.mat
+│   │   └── VfxManager.cs
+│   ├── World
+│   │   ├── GearNetwork
+│   │   │   ├── ATT_Gear.json
+│   │   │   ├── GearNetwork.cs
+│   │   │   ├── GearNetworkManager.cs
+│   │   │   ├── GearNode.cs
+│   │   │   └── SourceNode.cs
+│   │   ├── Multiblock
+│   │   │   ├── Multiblocks
+│   │   │   │   ├── BrickFurnace.cs
+│   │   │   │   ├── Campfire.cs
+│   │   │   │   ├── ClayKiln.cs
+│   │   │   │   ├── CokeOven.cs
+│   │   │   │   ├── ForgeWorkbench.cs
+│   │   │   │   ├── Hearth.cs
+│   │   │   │   ├── PrimalWorkbench.cs
+│   │   │   │   ├── Toolbench.cs
+│   │   │   │   └── WoodenCrate.cs
+│   │   │   ├── Multiblock.cs
+│   │   │   └── MultiblockManager.cs
+│   │   ├── Prefabs
+│   │   │   ├── Chunk.cs
+│   │   │   ├── Chunk.prefab
+│   │   │   ├── FallingBlock.cs
+│   │   │   ├── FallingBlock.prefab
+│   │   │   ├── Fluid.mat
+│   │   │   ├── Fluid.shader
+│   │   │   ├── Light.mat
+│   │   │   └── Light.shader
+│   │   ├── WorldGen
+│   │   │   ├── ProceduralUtil.cs
+│   │   │   ├── StructureTemplate.cs
+│   │   │   ├── WorldData.cs
+│   │   │   ├── WorldDataGenerator.cs
+│   │   │   ├── WorldGenSettings.asset
+│   │   │   └── WorldGenSettings.cs
+│   │   ├── WorldManager
+│   │   │   ├── Util
+│   │   │   │   ├── WorldChunkSystem.cs
+│   │   │   │   └── WorldSaveSystem.cs
+│   │   │   └── WorldManager.cs
+│   │   ├── Entity.cs
+│   │   └── EntityManager.cs
+│   └── Debugger.cs
+├── B_Loby
+│   ├── Button.png
+│   ├── LobyManager.cs
+│   ├── Logo3.png
+│   ├── Logo_5.png
+│   ├── Panel.png
+│   ├── Splash.json
+│   ├── TitleImage_0.0.2.5.png
+│   ├── TitleImage_0.0.2.5_1.png
+│   ├── TitleImage_0.0.2.7.png
+│   ├── TitleImage_0.0.2.8.png
+│   ├── TitleImage_0.0.2.8_1.png
+│   ├── TitleLogo.png
+│   ├── WorldLoadContext.cs
+│   └── WorldPrefab.prefab
+├── C_MapPreview
+│   └── ImageGenerator.cs
+├── ClassDiagramGenerator
+│   ├── Editor
+│   │   ├── ClassDiagramGenerator.cs
+│   │   └── ScriptSelectionManager.cs
+│   ├── Resources
+│   │   ├── Icon 160x160 - Diagram Generator.png
+│   │   ├── inspector_bg.png
+│   │   └── settings_bg.png
+│   ├── ClassDiagramGenerator_Documentation.pdf
+│   └── README.txt
+├── Resources
+│   ├── Structures
+│   │   └── Tree.json
+│   └── Textures
+│       └── ItemParts
+│           ├── Module_Bronze Adze Head.png
+│           ├── Module_Bronze Axe Head.png
+│           ├── Module_Bronze Chisel Head.png
+│           ├── Module_Bronze Hammer Head.png
+│           ├── Module_Bronze Maul Head.png
+│           ├── Module_Bronze Pickaxe Head.png
+│           ├── Module_Bronze Saw Blade.png
+│           ├── Module_Bronze Scraper Head.png
+│           ├── Module_Bronze Short Blade.png
+│           ├── Module_Bronze Shovel Head.png
+│           ├── Module_Flint Graver.png
+│           ├── Module_Flint Scraper.png
+│           ├── Module_Flint Shard.png
+│           ├── Module_Iron Adze Head.png
+│           ├── Module_Iron Axe Head.png
+│           ├── Module_Iron Chisel Head.png
+│           ├── Module_Iron Hammer Head.png
+│           ├── Module_Iron Maul Head.png
+│           ├── Module_Iron Pickaxe Head.png
+│           ├── Module_Iron Saw Blade.png
+│           ├── Module_Iron Scraper Head.png
+│           ├── Module_Iron Short Blade.png
+│           ├── Module_Iron Shovel Head.png
+│           ├── Module_Linen Twine.png
+│           ├── Module_Long Linen Twine.png
+│           ├── Module_Long Plant Twine.png
+│           ├── Module_Long Wooden Stick.png
+│           ├── Module_Plant Twine.png
+│           ├── Module_Short Linen Twine.png
+│           ├── Module_Short Plant Twine.png
+│           ├── Module_Short Wooden Stick.png
+│           ├── Module_Stone Adze.png
+│           ├── Module_Stone Cleaver.png
+│           ├── Module_Stone Percussor.png
+│           ├── Module_Stone Shard.png
+│           └── Module_Wooden Stick.png
+├── Z_Legacy
+│   ├── ItemTexture
+│   │   ├── Crude Wooden Plank.png
+│   │   ├── Fire Starter.png
+│   │   ├── Flint Knife Head.png
+│   │   ├── Flint Shard.png
+│   │   ├── Flint Spear Head.png
+│   │   ├── Flint Tool.png
+│   │   ├── Log.png
+│   │   ├── Module_Flint Knife Head.png
+│   │   ├── Module_Flint Spear Head.png
+│   │   ├── Module_Stone Axe Head.png
+│   │   ├── Module_Stone Hammer Head.png
+│   │   ├── Module_Stone Mallet Head.png
+│   │   ├── Plant Short Binding.png
+│   │   ├── Stone Axe Head.png
+│   │   ├── Stone Hammer Head.png
+│   │   ├── Stone Mallet Head.png
+│   │   ├── Stone Shard.png
+│   │   ├── Stone Tool.png
+│   │   ├── Thick Twig.png
+│   │   ├── Twig.png
+│   │   ├── Wooden Club.png
+│   │   ├── Wooden Crude Plank.png
+│   │   ├── Wooden Long Handle.png
+│   │   ├── Wooden Plank.png
+│   │   ├── Wooden Short Handle.png
+│   │   ├── Wooden Stick 1.png
+│   │   ├── Wooden Stick.png
+│   │   └── Wooden Thick Stick.png
+│   ├── Mold
+│   │   ├── Axe Head Mold.png
+│   │   ├── Chisel Head Mold.png
+│   │   ├── Hammer Head Mold.png
+│   │   ├── Ingot Mold.png
+│   │   ├── Long Blade Mold.png
+│   │   ├── Nail Mold.png
+│   │   ├── Pickaxe Head Mold.png
+│   │   ├── Plate Mold.png
+│   │   ├── Saw Blade Mold.png
+│   │   ├── Short Blade Mold.png
+│   │   ├── Unfired Axe Head Mold.png
+│   │   ├── Unfired Chisel Head Mold.png
+│   │   ├── Unfired Hammer Head Mold.png
+│   │   ├── Unfired Ingot Mold.png
+│   │   ├── Unfired Long Blade Mold.png
+│   │   ├── Unfired Nail Mold.png
+│   │   ├── Unfired Pickaxe Head Mold.png
+│   │   ├── Unfired Plate Mold.png
+│   │   ├── Unfired Saw Blade Mold.png
+│   │   └── Unfired Short Blade Mold.png
+│   ├── Temp
+│   │   ├── Bone.png
+│   │   ├── Raw Hide.png
+│   │   └── Sinew.png
+│   ├── TextMesh Pro
+│   │   ├── Documentation
+│   │   │   └── TextMesh Pro User Guide 2016.pdf
+│   │   ├── Fonts
+│   │   │   ├── LiberationSans - OFL.txt
+│   │   │   └── LiberationSans.ttf
+│   │   ├── Resources
+│   │   │   ├── Fonts & Materials
+│   │   │   │   ├── GNF.asset
+│   │   │   │   ├── LiberationSans SDF - Drop Shadow.mat
+│   │   │   │   ├── LiberationSans SDF - Fallback.asset
+│   │   │   │   ├── LiberationSans SDF - Outline.mat
+│   │   │   │   └── LiberationSans SDF.asset
+│   │   │   ├── Sprite Assets
+│   │   │   │   └── EmojiOne.asset
+│   │   │   ├── Style Sheets
+│   │   │   │   └── Default Style Sheet.asset
+│   │   │   ├── LineBreaking Following Characters.txt
+│   │   │   ├── LineBreaking Leading Characters.txt
+│   │   │   └── TMP Settings.asset
+│   │   ├── Shaders
+│   │   │   ├── TMP_Bitmap-Custom-Atlas.shader
+│   │   │   ├── TMP_Bitmap-Mobile.shader
+│   │   │   ├── TMP_Bitmap.shader
+│   │   │   ├── TMP_SDF Overlay.shader
+│   │   │   ├── TMP_SDF SSD.shader
+│   │   │   ├── TMP_SDF-Mobile Masking.shader
+│   │   │   ├── TMP_SDF-Mobile Overlay.shader
+│   │   │   ├── TMP_SDF-Mobile SSD.shader
+│   │   │   ├── TMP_SDF-Mobile.shader
+│   │   │   ├── TMP_SDF-Surface-Mobile.shader
+│   │   │   ├── TMP_SDF-Surface.shader
+│   │   │   ├── TMP_SDF.shader
+│   │   │   ├── TMP_Sprite.shader
+│   │   │   ├── TMPro.cginc
+│   │   │   ├── TMPro_Mobile.cginc
+│   │   │   ├── TMPro_Properties.cginc
+│   │   │   └── TMPro_Surface.cginc
+│   │   └── Sprites
+│   │       ├── EmojiOne Attribution.txt
+│   │       ├── EmojiOne.json
+│   │       └── EmojiOne.png
+│   ├── Clay Chunk.png
+│   ├── Clay Kiln_Bottom.png
+│   ├── Clay Kiln_Bottom_Working.png
+│   ├── Clay Kiln_Top.png
+│   ├── Copper Chunk.png
+│   ├── Flint Awl.png
+│   ├── Flint Burin.png
+│   ├── Flint Denticulate.png
+│   ├── Flint Shard.png
+│   ├── HandCraft.png
+│   ├── HandCraft_Legacy.png
+│   ├── Iron Chunk.png
+│   ├── Log.png
+│   ├── Module_Flint Awl.png
+│   ├── Module_Flint Burin.png
+│   ├── Module_Flint Denticulate.png
+│   ├── Module_Stone Maul.png
+│   ├── Module_Stone Pounder.png
+│   ├── PlayerHotbar_Legacy.png
+│   ├── PlayerInventory_Legacy.png
+│   ├── PrimalCraft.png
+│   ├── PrimalCraft_Legacy.png
+│   ├── Stone Maul.png
+│   ├── Stone Percussor.png
+│   ├── Stone Pounder.png
+│   ├── Stripped Log.png
+│   ├── Tin Chunk.png
+│   ├── Unfired Thick Refractory Clay Slab.png
+│   ├── Wooden Chest_L.png
+│   └── Wooden Chest_R.png
+├── Game.unity
+├── Loby.unity
+├── MapPreview.unity
+└── Test.unity
