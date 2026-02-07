@@ -395,7 +395,7 @@
     "name": "Long Plant Twine",
     "spriteName": "Long Plant Twine",
     "maxStack": 32,
-    "tags": ["Binding", "Fuel"],
+    "tags": ["Binding", "Fuel", "GearBelt"],
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -407,6 +407,9 @@
         "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
+      },
+      "AttachBelt": {
+        "beltKind": "Plant Belt"
       }
     }
   },
@@ -455,7 +458,7 @@
     "name": "Long Linen Twine",
     "spriteName": "Long Linen Twine",
     "maxStack": 32,
-    "tags": ["Binding", "Fuel"],
+    "tags": ["Binding", "Fuel", "GearBelt"],
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -467,6 +470,9 @@
         "temperature": 1,
         "resultItem": "Ash",
         "amount": 1
+      },
+      "AttachBelt": {
+        "beltKind": "Linen Belt"
       }
     }
   },

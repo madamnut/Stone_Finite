@@ -80,5 +80,21 @@
       "rpm": 1,
       "stressCapacity": 64
     }
+  },
+
+  "Plant Belt": {
+    "kind": "Belt",
+    "belt": {
+      "maxRpm": 64,
+      "materialItem": "Long Plant Twine"
+    }
+  },
+
+  "Linen Belt": {
+    "kind": "Belt",
+    "belt": {
+      "maxRpm": 128,
+      "materialItem": "Long Linen Twine"
+    }
   }
 }
