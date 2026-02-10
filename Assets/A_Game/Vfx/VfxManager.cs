@@ -1,7 +1,8 @@
 // VfxManager.cs (전체 교체본)
 // - 기존 Smoke/Fire loop VFX 유지
 // - Rotating VFX: vfxKey -> prefab 을 인스펙터에서 매핑(List)으로 등록
-// - SetRotatingLoopVfx 그대로 사용 가능(gearId를 vfxKey로 그대로 넣으면 됨)
+// - Belt VFX: prefab 1개만 사용, 색상은 외부에서 주입
+// - SetRotatingLoopVfx 그대로 사용 가능
 // - (ownerInstId, vfxKey) 재사용/중복 방지 유지
 // - Block Break Particles 코드는 그대로 유지
 
@@ -30,8 +31,10 @@ public class VfxManager : MonoBehaviour
 
     [Header("Rotating VFX Prefabs (Inspector Mapping)")]
     // 예) key="Wooden Cogwheel", prefab=WoodenCogwheelVfxPrefab
-    // 예) key="Big Iron Cogwheel", prefab=BigIronCogwheelVfxPrefab
     public List<VfxKeyPrefabPair> rotatingPrefabs = new List<VfxKeyPrefabPair>();
+
+    [Header("Belt VFX Prefab (Single)")]
+    public GameObject beltPrefab;
 
     [Header("Loop VFX Culling")]
     public float activeRange = 40f;  // 플레이어 기준 거리 비활/활
@@ -55,7 +58,6 @@ public class VfxManager : MonoBehaviour
 
     void OnValidate()
     {
-        // 에디터에서 리스트 수정 시 갱신
         _rotatingCacheBuilt = false;
         BuildRotatingCache();
     }
@@ -102,7 +104,7 @@ public class VfxManager : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // Rotating Loop VFX API (gearId 그대로 vfxKey로 사용)
+    // Rotating Loop VFX API (기존)
     // ─────────────────────────────
     public void SetRotatingLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos, float rpm, int rotationDir)
     {
@@ -137,6 +139,66 @@ public class VfxManager : MonoBehaviour
         var rv = inst.GetComponent<RotatingVfx>();
         if (rv != null)
             rv.Set(rpm, rotationDir);
+
+        if (!inst.activeSelf) inst.SetActive(true);
+    }
+
+    // ─────────────────────────────
+    // Belt Loop VFX API (신규)
+    // - 프리팹은 beltPrefab 1개만 사용
+    // - 색상은 bodyColor로 주입
+    // - (ownerInstId, vfxKey) 키로 재사용 (vfxKey는 beltKind 권장)
+    // ─────────────────────────────
+    public void SetBeltLoopVfx(
+        int ownerInstId,
+        string vfxKey,
+        bool on,
+        Vector3 startWorldPos,
+        Vector3 endWorldPos,
+        float rpm,
+        int rotationDir,
+        Color bodyColor
+    )
+    {
+        var key = (ownerInstId, vfxKey);
+
+        Vector3 pivotPos = startWorldPos;
+
+        if (!on)
+        {
+            if (_loop.TryGetValue(key, out var go) && go != null)
+                go.SetActive(false);
+            return;
+        }
+
+        if (!IsInRange(pivotPos))
+        {
+            if (_loop.TryGetValue(key, out var go) && go != null)
+                go.SetActive(false);
+            return;
+        }
+
+        if (!_loop.TryGetValue(key, out var inst) || inst == null)
+        {
+            if (beltPrefab == null) return;
+
+            inst = Instantiate(beltPrefab, pivotPos, Quaternion.identity);
+            inst.name = $"{vfxKey}(Owner#{ownerInstId})";
+            _loop[key] = inst;
+        }
+
+        inst.transform.position = pivotPos;
+
+        var bv = inst.GetComponent<BeltVfx>();
+        if (bv != null)
+        {
+            bv.SetEndpointsWorld(
+                new Vector2(startWorldPos.x, startWorldPos.y),
+                new Vector2(endWorldPos.x, endWorldPos.y)
+            );
+            bv.SetSpin(rpm, rotationDir);
+            bv.SetBodyColor(bodyColor);
+        }
 
         if (!inst.activeSelf) inst.SetActive(true);
     }
@@ -206,7 +268,6 @@ public class VfxManager : MonoBehaviour
             if (string.IsNullOrEmpty(p.key)) continue;
             if (p.prefab == null) continue;
 
-            // 동일 key 중복이면 "뒤에 있는 항목"이 덮어씀(인스펙터에서 순서로 제어)
             _rotatingByKey[p.key] = p.prefab;
         }
     }

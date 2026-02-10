@@ -86,15 +86,16 @@
     "kind": "Belt",
     "belt": {
       "maxRpm": 64,
-      "materialItem": "Long Plant Twine"
+      "materialItemId": "Long Plant Twine",
+      "color": [0.55, 0.40, 0.25, 1.0]
     }
   },
-
   "Linen Belt": {
     "kind": "Belt",
     "belt": {
       "maxRpm": 128,
-      "materialItem": "Long Linen Twine"
+      "materialItemId": "Long Linen Twine",
+      "color": [0.90, 0.90, 0.85, 1.0]
     }
   }
 }

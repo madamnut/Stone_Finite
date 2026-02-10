@@ -4234,6 +4234,7 @@ MonoBehaviour:
     prefab: {fileID: 2125082372164720372, guid: dbf77237aed6ac941bfbeb29b456a75d, type: 3}
   - key: Windmill
     prefab: {fileID: 4697734446508258441, guid: 593b8d22b360cdc4a9fd892d36b931a9, type: 3}
+  beltPrefab: {fileID: 8167373282958278718, guid: 2dc588b8ce867eb47a2e05aa47938713, type: 3}
   activeRange: 40
 --- !u!4 &672136423
 Transform:
