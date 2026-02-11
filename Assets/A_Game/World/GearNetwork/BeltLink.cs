@@ -4,35 +4,21 @@ public sealed class BeltLink
 {
     public readonly GearIdPair gearIds;
     public readonly string beltKind;
-    public readonly int materialCost;
-
-    public readonly Vector2Int gearCenter0;
-    public readonly Vector2Int gearCenter1;
-
-    public GameObject vfxInstance;
 
     public BeltLink(
         GearIdPair gearIds,
-        string beltKind,
-        int materialCost,
-        Vector2Int gearCenter0,
-        Vector2Int gearCenter1,
-        GameObject vfxInstance = null
+        string beltKind
     )
     {
         this.gearIds = gearIds;
         this.beltKind = beltKind;
-        this.materialCost = materialCost;
-        this.gearCenter0 = gearCenter0;
-        this.gearCenter1 = gearCenter1;
-        this.vfxInstance = vfxInstance;
     }
 }
 
 public readonly struct GearIdPair
 {
-    public readonly int gearId0;
-    public readonly int gearId1;
+    public readonly int gearId0; // 설치 당시 start
+    public readonly int gearId1; // 설치 당시 end
 
     public GearIdPair(int gearId0, int gearId1)
     {

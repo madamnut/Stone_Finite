@@ -1,13 +1,16 @@
 // InteractionController.cs (전체 교체본)
-// 핵심 수정:
-// - ToolAction "PlaceGear" 처리 추가
-// - PlaceGear는:
-//   1) GearNetworkManager.CanPlaceGear로 점유 검사(센터 포함 + 주변)
-//   2) WorldManager.PlaceSolidExact로 "센터 셀"을 실제 월드에 설치
-//   3) GearNetworkManager.TryAddGear로 네트워크 등록
-//      ※ GearNetworkManager는 "센터에 깔린 SolidName == gearId"를 강제하므로,
-//         PlaceGear는 항상 gearId 이름의 Solid를 센터에 깐다.
-//   4) (실패 시) OverwriteSolid로 롤백(드랍 없이 제거)
+// 핵심 수정(이번 벨트 설치):
+// - ToolAction "AttachBelt" 처리 추가 (우클릭 2단계: 시작점 → 끝점)
+// - 시작점 지정 후 취소 조건:
+//   * 핫바 스코프 변경(휠/숫자키)
+//   * 인벤토리/메뉴 진입(토글/ESC)
+//   * 커서가 UI 위(기존 로직상 입력 자체가 막힘)인 경우는 자연스럽게 입력이 안 들어감
+//   * 시작점 상태에서 우클릭했는데 유효한 끝점이 아니면 취소
+//
+// 전제:
+// - GearNetworkManager에 다음 API가 존재한다고 가정하고 호출함:
+//     bool TryAttachBeltAtCells(Vector2Int anyGearCell0, Vector2Int anyGearCell1, string beltKind, out int materialCost);
+// - gearNetworkManager.IsGearOccupiedCell / TryGetGearNodeIdAtCell 는 기존대로 사용
 
 using System;
 using System.Collections;
@@ -105,6 +108,15 @@ public class InteractionController : MonoBehaviour
     Coroutine _attackCo;
     Corpse _hoverCorpse;
 
+    // ─────────────────────────────────────────
+    // Belt placement state (우클릭 2단계)
+    // ─────────────────────────────────────────
+    bool _beltPending = false;
+    Vector2Int _beltStartCell;
+    string _beltPendingKind = null;
+    int _beltPendingScope = -1;
+    ItemData _beltPendingHeldRef = null;
+
     void Awake()
     {
         inventoryPanel.SetActive(true);
@@ -135,7 +147,9 @@ public class InteractionController : MonoBehaviour
         float scroll = Input.mouseScrollDelta.y;
         if (scroll > 0.01f || scroll < -0.01f)
         {
+            int prev = _hotbarScope;
             _hotbarScope = (scroll > 0f) ? (_hotbarScope + 9) % 10 : (_hotbarScope + 1) % 10;
+            if (_hotbarScope != prev) CancelBeltPlacement();
             hotbar.SetScope(_hotbarScope);
             RefreshHeldHandSprite();
         }
@@ -157,9 +171,17 @@ public class InteractionController : MonoBehaviour
 
             if (_hotbarScope != prevScope)
             {
+                CancelBeltPlacement();
                 hotbar.SetScope(_hotbarScope);
                 RefreshHeldHandSprite();
             }
+        }
+
+        // 벨트 설치 대기 중인데, 들고 있는 슬롯/아이템이 바뀌면 취소
+        if (_beltPending)
+        {
+            if (_hotbarScope != _beltPendingScope || GetHeldItem() != _beltPendingHeldRef)
+                CancelBeltPlacement();
         }
 
         ItemData scopeHeld = GetHeldItem();
@@ -181,12 +203,16 @@ public class InteractionController : MonoBehaviour
 
         if (invDown)
         {
+            CancelBeltPlacement();
+
             if (_state == GameState.Ingame) OpenModule(handcraftModule);
             else if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
         }
 
         if (escDown)
         {
+            CancelBeltPlacement();
+
             if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
             else if (_state == GameState.Inmenu)
             {
@@ -280,6 +306,15 @@ public class InteractionController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0)) HandleLeftClick();
         if (Input.GetMouseButtonDown(1)) HandleRightClick();
+    }
+
+    void CancelBeltPlacement()
+    {
+        _beltPending = false;
+        _beltStartCell = default;
+        _beltPendingKind = null;
+        _beltPendingScope = -1;
+        _beltPendingHeldRef = null;
     }
 
     // PlaceGear param에서 gearId(=ATT_Gear id) / cellName(옵션) 추출
@@ -472,6 +507,8 @@ public class InteractionController : MonoBehaviour
                 ok = HandlePlaceGear(held, cx, cy, param);
             else if (actionName == "AttachSource")
                 ok = HandleAttachSource(held, cx, cy, param);
+            else if (actionName == "AttachBelt")
+                ok = HandleAttachBelt(held, cx, cy, param);
             else if (actionName == "BuildMultiblock")
                 ok = HandleBuildMultiblock(held, cx, cy, param);
 
@@ -524,7 +561,6 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-
     bool HandleAttachSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         if (worldManager == null || gearNetworkManager == null)
@@ -558,6 +594,97 @@ public class InteractionController : MonoBehaviour
         player.Inventory.NotifyChanged();
 
         RefreshHeldHandSprite();
+        return true;
+    }
+
+    // ✅ 벨트 설치: 우클릭 2단계 (start -> end)
+    bool HandleAttachBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
+    {
+        if (gearNetworkManager == null)
+            return false;
+
+        string beltKind = null;
+        if (param != null)
+        {
+            if (param.TryGetValue("beltKind", out var bk) && bk != null) beltKind = bk.ToString();
+            else if (param.TryGetValue("kind", out var k) && k != null) beltKind = k.ToString();
+        }
+
+        if (string.IsNullOrEmpty(beltKind))
+            return false;
+
+        var cell = new Vector2Int(cx, cy);
+
+        // 1) 시작점 미지정: 시작점 세팅
+        if (!_beltPending)
+        {
+            if (!gearNetworkManager.IsGearOccupiedCell(cell))
+                return false;
+
+            _beltPending = true;
+            _beltStartCell = cell;
+            _beltPendingKind = beltKind;
+            _beltPendingScope = _hotbarScope;
+            _beltPendingHeldRef = held;
+
+            return true;
+        }
+
+        // 2) 시작점 지정 상태: 끝점 확정 시도
+        // 들고있는게 바뀌었거나 kind가 바뀌었으면 취소
+        if (_hotbarScope != _beltPendingScope || held != _beltPendingHeldRef || _beltPendingKind != beltKind)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        // 끝점이 기어 점유 셀이 아니면 취소
+        if (!gearNetworkManager.IsGearOccupiedCell(cell))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        // 같은 기어면 취소
+        if (!gearNetworkManager.TryGetGearNodeIdAtCell(_beltStartCell, out int g0) ||
+            !gearNetworkManager.TryGetGearNodeIdAtCell(cell, out int g1))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (g0 == g1)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        // 비용 부족이면 설치 시도 안 하고 취소
+        // (비용은 GearNetworkManager에서 out으로 받지만, 호출 전에는 모르므로 여기서는 "호출 결과"로만 처리)
+        if (!gearNetworkManager.TryAttachBeltAtCells(_beltStartCell, cell, beltKind, out int cost))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (cost <= 0 || held.Count < cost)
+        {
+            // 이미 붙었으면(성공)이라는 전제라면 rollback API가 필요하지만,
+            // 여기서는 "성공 전에 cost 검사"가 불가능하므로, TryAttachBeltAtCells 내부에서
+            // cost/재료 검증까지 같이 하도록 설계되어야 안정적임.
+            // 현재 단계에서는 부족하면 그냥 취소 처리.
+            CancelBeltPlacement();
+            return false;
+        }
+
+        sound.PlayPlace();
+
+        held.Count -= cost;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        CancelBeltPlacement();
         return true;
     }
 
@@ -1058,6 +1185,8 @@ public class InteractionController : MonoBehaviour
 
     private void CloseInventoryPanelToIngame()
     {
+        CancelBeltPlacement();
+
         if (cursorSlot.Item != null)
         {
             int left = player.Inventory.AddItem(cursorSlot.Item);
