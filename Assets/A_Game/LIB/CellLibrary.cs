@@ -6,9 +6,9 @@ using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
 
 /// <summary>
-/// Solid / Fluid 정의 JSON + 단일 SpriteAtlas를 받아서
-/// - 런타임 조회: id/meta -> sprite, attachedAt, interaction 등 제공
-/// - 타일(Tile) 캐싱 제공: BG/Solid/Fluid (+ PlatformCollider 전용)
+/// Solid / Utility / Fluid 정의 JSON + 단일 SpriteAtlas를 받아서
+/// - 런타임 조회: id/meta -> sprite 등 제공
+/// - 타일(Tile) 캐싱 제공: BG/Solid/Utility/Fluid (+ PlatformCollider 전용)
 ///
 /// JSON 규칙:
 /// - 기재되지 않은 속성은 0/false/null 취급
@@ -22,6 +22,7 @@ using UnityEngine.U2D;
 ///
 /// Sprite 규칙(권장):
 /// - Solid variants Sprite 이름 = variants[].sprite
+/// - Utility variants Sprite 이름 = variants[].sprite
 /// - Fluid 단계 스프라이트: "{FluidName}_1" ~ "{FluidName}_16"
 ///   (예: Water_1 .. Water_16)
 ///
@@ -29,6 +30,7 @@ using UnityEngine.U2D;
 /// - BG: 항상 collider 없음 (Tile.colliderType = None)
 /// - Solid(FG): collidable=true면 collider Sprite, 아니면 None
 /// - PlatformCollider: isPlatform=true면 collider Sprite (렌더는 끄는 타일맵에서 사용)
+/// - Utility: 항상 collider 없음 (Tile.colliderType = None)
 /// - Fluid: 항상 collider 있음(Trigger는 TilemapCollider2D 인스펙터에서 처리),
 ///          따라서 Tile.colliderType = Sprite
 /// </summary>
@@ -38,10 +40,13 @@ public class CellLibrary : MonoBehaviour
     [Header("Solid Json (ATT_Solid.json)")]
     public TextAsset solidJson;
 
+    [Header("Utility Json (ATT_Utility.json)")]
+    public TextAsset utilityJson;
+
     [Header("Fluid Json (ATT_Fluid.json)")]
     public TextAsset fluidJson;
 
-    [Header("Sprite Atlas (Solid+Fluid)")]
+    [Header("Sprite Atlas (Solid+Utility+Fluid)")]
     public SpriteAtlas atlas;
 
     [Serializable, Flags]
@@ -79,6 +84,19 @@ public class CellLibrary : MonoBehaviour
         public Dictionary<ushort, SolidVariantDef> variants; // meta -> variant (필수라고 가정)
     }
 
+    struct UtilityVariantDef
+    {
+        public ushort meta;
+        public string spriteName; // variants[].sprite (필수)
+    }
+
+    struct UtilityDef
+    {
+        public ushort id;
+        public string name; // JSON key
+        public Dictionary<ushort, UtilityVariantDef> variants; // meta -> variant (없을 수도 있음: None 등)
+    }
+
     struct FluidDef
     {
         public ushort id;
@@ -88,13 +106,16 @@ public class CellLibrary : MonoBehaviour
 
     // ───────── 정의 캐시 ─────────
     readonly Dictionary<ushort, SolidDef> _solidById = new Dictionary<ushort, SolidDef>(256);
+    readonly Dictionary<ushort, UtilityDef> _utilityById = new Dictionary<ushort, UtilityDef>(256);
     readonly Dictionary<ushort, FluidDef> _fluidById = new Dictionary<ushort, FluidDef>(32);
 
     readonly Dictionary<string, ushort> _solidIdByName = new Dictionary<string, ushort>(256);
+    readonly Dictionary<string, ushort> _utilityIdByName = new Dictionary<string, ushort>(256);
     readonly Dictionary<string, ushort> _fluidIdByName = new Dictionary<string, ushort>(32);
 
     // ───────── 스프라이트 캐시 ─────────
     readonly Dictionary<uint, Sprite> _solidSpriteByKey = new Dictionary<uint, Sprite>(512);
+    readonly Dictionary<uint, Sprite> _utilitySpriteByKey = new Dictionary<uint, Sprite>(512);
 
     readonly Dictionary<ushort, Sprite> _fluidBaseSpriteById = new Dictionary<ushort, Sprite>(32);
     readonly Dictionary<ushort, Sprite[]> _fluidLevelSpritesById = new Dictionary<ushort, Sprite[]>(32);
@@ -108,6 +129,9 @@ public class CellLibrary : MonoBehaviour
 
     // ✅ PlatformCollider: (id, meta) -> Tile (항상 collider Sprite)
     readonly Dictionary<uint, Tile> _platformColliderTileByKey = new Dictionary<uint, Tile>(256);
+
+    // ✅ Utility: (id, meta) -> Tile (항상 collider None)
+    readonly Dictionary<uint, Tile> _utilityTileByKey = new Dictionary<uint, Tile>(512);
 
     // Fluid: (id, level) -> Tile (level 1..16)
     readonly Dictionary<uint, Tile> _fluidTileByKey = new Dictionary<uint, Tile>(256);
@@ -132,6 +156,7 @@ public class CellLibrary : MonoBehaviour
     void Awake()
     {
         BuildSolidCache();
+        BuildUtilityCache();
         BuildFluidCache();
         BuildSpriteCache();
         BuildTileCache(); // 스프라이트 캐시 후
@@ -252,6 +277,70 @@ public class CellLibrary : MonoBehaviour
         }
     }
 
+    void BuildUtilityCache()
+    {
+        _utilityById.Clear();
+        _utilityIdByName.Clear();
+
+        if (utilityJson == null || string.IsNullOrEmpty(utilityJson.text))
+            return;
+
+        var root = JObject.Parse(utilityJson.text);
+
+        foreach (var prop in root.Properties())
+        {
+            string name = prop.Name;
+            var o = (JObject)prop.Value;
+
+            int idInt = o["id"]?.Value<int>() ?? 0;
+            if (idInt < 0) idInt = 0;
+            if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
+            ushort id = (ushort)idInt;
+
+            Dictionary<ushort, UtilityVariantDef> variants = null;
+
+            if (o.TryGetValue("variants", out JToken vTok) && vTok is JArray vArr && vArr.Count > 0)
+            {
+                variants = new Dictionary<ushort, UtilityVariantDef>(vArr.Count);
+
+                for (int i = 0; i < vArr.Count; i++)
+                {
+                    if (!(vArr[i] is JObject vObj)) continue;
+
+                    int metaInt = vObj["meta"]?.Value<int>() ?? 0;
+                    if (metaInt < 0) metaInt = 0;
+                    if (metaInt > ushort.MaxValue) metaInt = ushort.MaxValue;
+                    ushort meta = (ushort)metaInt;
+
+                    string spriteName = vObj["sprite"]?.Value<string>();
+                    if (string.IsNullOrEmpty(spriteName))
+                        continue; // sprite는 필수(variants가 있다면)
+
+                    variants[meta] = new UtilityVariantDef
+                    {
+                        meta = meta,
+                        spriteName = spriteName
+                    };
+                }
+
+                if (variants.Count == 0)
+                    variants = null;
+            }
+
+            var def = new UtilityDef
+            {
+                id = id,
+                name = name,
+                variants = variants
+            };
+
+            _utilityById[id] = def;
+
+            if (!_utilityIdByName.ContainsKey(name))
+                _utilityIdByName.Add(name, id);
+        }
+    }
+
     void BuildFluidCache()
     {
         _fluidById.Clear();
@@ -293,6 +382,7 @@ public class CellLibrary : MonoBehaviour
     void BuildSpriteCache()
     {
         _solidSpriteByKey.Clear();
+        _utilitySpriteByKey.Clear();
         _fluidBaseSpriteById.Clear();
         _fluidLevelSpritesById.Clear();
 
@@ -309,6 +399,21 @@ public class CellLibrary : MonoBehaviour
                 var sp = atlas.GetSprite(v.spriteName);
                 if (sp != null)
                     _solidSpriteByKey[MakeKey(def.id, v.meta)] = sp;
+            }
+        }
+
+        // Utility: 모든 variants sprite 캐시
+        foreach (var kv in _utilityById)
+        {
+            var def = kv.Value;
+            if (def.variants == null) continue;
+
+            foreach (var vkv in def.variants)
+            {
+                var v = vkv.Value;
+                var sp = atlas.GetSprite(v.spriteName);
+                if (sp != null)
+                    _utilitySpriteByKey[MakeKey(def.id, v.meta)] = sp;
             }
         }
 
@@ -338,6 +443,7 @@ public class CellLibrary : MonoBehaviour
         _bgTileById.Clear();
         _solidTileByKey.Clear();
         _platformColliderTileByKey.Clear();
+        _utilityTileByKey.Clear();
         _fluidTileByKey.Clear();
     }
 
@@ -348,6 +454,11 @@ public class CellLibrary : MonoBehaviour
     public SolidCell MakeSolidCell(ushort id, ushort meta = 0)
     {
         return new SolidCell { id = id, meta = meta };
+    }
+
+    public UtilityCell MakeUtilityCell(ushort id, ushort meta = 0)
+    {
+        return new UtilityCell { id = id, meta = meta };
     }
 
     public FluidCell MakeFluidCell(ushort id, byte amount)
@@ -362,6 +473,11 @@ public class CellLibrary : MonoBehaviour
     public string GetSolidName(ushort id)
     {
         return _solidById.TryGetValue(id, out var def) ? def.name : null;
+    }
+
+    public string GetUtilityName(ushort id)
+    {
+        return _utilityById.TryGetValue(id, out var def) ? def.name : null;
     }
 
     public string GetFluidName(ushort id)
@@ -382,6 +498,13 @@ public class CellLibrary : MonoBehaviour
     public bool HasSolidVariant(ushort id, ushort meta)
     {
         return _solidById.TryGetValue(id, out var def) &&
+               def.variants != null &&
+               def.variants.ContainsKey(meta);
+    }
+
+    public bool HasUtilityVariant(ushort id, ushort meta)
+    {
+        return _utilityById.TryGetValue(id, out var def) &&
                def.variants != null &&
                def.variants.ContainsKey(meta);
     }
@@ -413,6 +536,11 @@ public class CellLibrary : MonoBehaviour
     public bool TryGetSolidIdByName(string name, out ushort id)
     {
         return _solidIdByName.TryGetValue(name, out id);
+    }
+
+    public bool TryGetUtilityIdByName(string name, out ushort id)
+    {
+        return _utilityIdByName.TryGetValue(name, out id);
     }
 
     public bool TryGetFluidIdByName(string name, out ushort id)
@@ -467,6 +595,16 @@ public class CellLibrary : MonoBehaviour
     public Sprite GetSolidSprite(ushort id)
     {
         return GetSolidSprite(id, 0);
+    }
+
+    public Sprite GetUtilitySprite(ushort id, ushort meta)
+    {
+        return _utilitySpriteByKey.TryGetValue(MakeKey(id, meta), out var sp) ? sp : null;
+    }
+
+    public Sprite GetUtilitySprite(ushort id)
+    {
+        return GetUtilitySprite(id, 0);
     }
 
     public Sprite GetFluidSprite(ushort id)
@@ -565,6 +703,30 @@ public class CellLibrary : MonoBehaviour
         tile.colliderType = Tile.ColliderType.Sprite;
 
         _platformColliderTileByKey[key] = tile;
+        return tile;
+    }
+
+    /// <summary>
+    /// ✅ Utility 타일:
+    /// - 항상 collider 없음
+    /// </summary>
+    public TileBase GetUtilityTile(ushort id, ushort meta)
+    {
+        if (id == 0) return null;
+
+        uint key = MakeKey(id, meta);
+        if (_utilityTileByKey.TryGetValue(key, out var t))
+            return t;
+
+        var sp = GetUtilitySprite(id, meta);
+        if (sp == null) return null;
+
+        var tile = ScriptableObject.CreateInstance<Tile>();
+        tile.sprite = sp;
+        tile.name = sp.name;
+        tile.colliderType = Tile.ColliderType.None;
+
+        _utilityTileByKey[key] = tile;
         return tile;
     }
 

@@ -395,7 +395,7 @@
     "name": "Long Plant Twine",
     "spriteName": "Long Plant Twine",
     "maxStack": 32,
-    "tags": ["Binding", "Fuel", "GearBelt"],
+    "tags": ["Binding", "Fuel", "Utility"],
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -408,8 +408,14 @@
         "resultItem": "Ash",
         "amount": 1
       },
-      "AttachBelt": {
-        "beltKind": "Plant Belt"
+      "PlaceUtility": {
+        "type": "Belt",
+        "cell": "Plant Belt",
+        "Belt": {
+          "maxRpm": 64,
+          "materialItemId": "Long Plant Twine",
+          "color": [0.55, 0.40, 0.25, 1.0]
+        }
       }
     }
   },
@@ -458,7 +464,7 @@
     "name": "Long Linen Twine",
     "spriteName": "Long Linen Twine",
     "maxStack": 32,
-    "tags": ["Binding", "Fuel", "GearBelt"],
+    "tags": ["Binding", "Fuel", "Utility"],
     "toolActions": {
       "Combine": {
         "partType": "Binding",
@@ -471,8 +477,14 @@
         "resultItem": "Ash",
         "amount": 1
       },
-      "AttachBelt": {
-        "beltKind": "Linen Belt"
+      "PlaceUtility": {
+        "type": "Belt",
+        "cell": "Linen Belt",
+        "Belt": {
+          "maxRpm": 128,
+          "materialItemId": "Long Linen Twine",
+          "color": [0.90, 0.90, 0.85, 1.0]
+        }
       }
     }
   },
@@ -1322,10 +1334,15 @@
     "name": "Wooden Cogwheel",
     "spriteName": "Wooden Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Wooden Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Wooden Cogwheel",
+        "Cogwheel": {
+          "size": "Small",
+          "maxRpm": 64
+        }
       }
     }
   },
@@ -1334,10 +1351,15 @@
     "name": "Big Wooden Cogwheel",
     "spriteName": "Big Wooden Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Big Wooden Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Big Wooden Cogwheel",
+        "Cogwheel": {
+          "size": "Big",
+          "maxRpm": 64
+        }
       }
     }
   },
@@ -1346,10 +1368,15 @@
     "name": "Bronze Cogwheel",
     "spriteName": "Bronze Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Bronze Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Bronze Cogwheel",
+        "Cogwheel": {
+          "size": "Small",
+          "maxRpm": 128
+        }
       }
     }
   },
@@ -1358,10 +1385,15 @@
     "name": "Big Bronze Cogwheel",
     "spriteName": "Big Bronze Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Big Bronze Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Big Bronze Cogwheel",
+        "Cogwheel": {
+          "size": "Big",
+          "maxRpm": 128
+        }
       }
     }
   },
@@ -1370,10 +1402,15 @@
     "name": "Iron Cogwheel",
     "spriteName": "Iron Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Iron Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Iron Cogwheel",
+        "Cogwheel": {
+          "size": "Small",
+          "maxRpm": 256
+        }
       }
     }
   },
@@ -1382,10 +1419,15 @@
     "name": "Big Iron Cogwheel",
     "spriteName": "Big Iron Cogwheel",
     "maxStack": 16,
-    "tags": ["Gear"],
+    "tags": ["Utility"],
     "toolActions": {
-      "PlaceGear": {
-        "cell": "Big Iron Cogwheel"
+      "PlaceUtility": {
+        "type": "Cogwheel",
+        "cell": "Big Iron Cogwheel",
+        "Cogwheel": {
+          "size": "Big",
+          "maxRpm": 256
+        }
       }
     }
   },
@@ -1401,10 +1443,15 @@
     "name": "Windmill",
     "spriteName": "Windmill",
     "maxStack": 1,
-    "tags": ["GearSource"],
+    "tags": ["Utility"],
     "toolActions": {
-      "AttachSource": {
-        "sourceKind": "Windmill"
+      "PlaceUtility": {
+        "type": "Source",
+        "cell": "Windmill",
+        "Source": {
+          "rpm": 1,
+          "stressCapacity": 64
+        }
       }
     }
   },
@@ -1413,10 +1460,15 @@
     "name": "Waterwheel",
     "spriteName": "Waterwheel",
     "maxStack": 1,
-    "tags": ["GearSource"],
+    "tags": ["Utility"],
     "toolActions": {
-      "AttachSource": {
-        "sourceKind": "Waterwheel"
+      "PlaceUtility": {
+        "type": "Source",
+        "cell": "Waterwheel",
+        "Source": {
+          "rpm": 2,
+          "stressCapacity": 32
+        }
       }
     }
   }

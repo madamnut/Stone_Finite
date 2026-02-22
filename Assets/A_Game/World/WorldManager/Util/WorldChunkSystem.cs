@@ -8,15 +8,16 @@ using UnityEngine.Tilemaps;
 /// (WorldManager에서 의존성만 주입해서 사용)
 ///
 /// WorldData 구조(신규):
-///   bg / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
+///   bg / utility(id+meta) / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
 ///
 /// Chunk 컴포넌트 전제(필드명):
 ///   - Tilemap bgTilemap;
+///   - Tilemap utilityTilemap;    // ✅ 추가
 ///   - Tilemap solidTilemap;
 ///   - Tilemap platformTilemap;   // ✅ 추가 (콜라이더 전용, 렌더 OFF 전제)
 ///   - Tilemap liquidTilemap;     (필드명 유지)
-///   - TileBase[] bgBuffer, solidBuffer, platformBuffer, liquidBuffer;
-///   - bool bgDirty, solidDirty, platformDirty, liquidDirty, lightDirty;
+///   - TileBase[] bgBuffer, utilityBuffer, solidBuffer, platformBuffer, liquidBuffer; // ✅
+///   - bool bgDirty, utilityDirty, solidDirty, platformDirty, liquidDirty, lightDirty; // ✅
 ///
 /// Liquid Mask 전제(Chunk.cs에 추가된 필드):
 ///   - Texture2D liquidTypeTex, liquidAmountTex (16x16)
@@ -32,6 +33,7 @@ using UnityEngine.Tilemaps;
 ///
 /// Tile 정책:
 /// - BG 타일: CellLibrary.GetBgTile(id)
+/// - Utility 타일: CellLibrary.GetUtilityTile(id, meta)                    // ✅ 추가
 /// - Solid 타일(시각): CellLibrary.GetSolidTile(id, meta)
 /// - Platform 콜라이더 타일: CellLibrary.GetPlatformColliderTile(id, meta)  // ✅ 추가
 /// - Fluid 타일: CellLibrary.GetFluidTile(fluidId, amount)
@@ -70,6 +72,7 @@ public class WorldChunkSystem
     private readonly HashSet<Vector2Int> platformDirtyChunks = new(); // ✅ 추가
     private readonly HashSet<Vector2Int> liquidDirtyChunks = new();
     private readonly HashSet<Vector2Int> bgDirtyChunks = new();
+    private readonly HashSet<Vector2Int> utilityDirtyChunks = new(); // ✅ 추가
     private readonly HashSet<Vector2Int> lightDirtyChunks = new();
 
     private bool isLoading = false;
@@ -183,6 +186,7 @@ public class WorldChunkSystem
 
             // 혹시 남아있을 수 있는 더티 기록 제거
             bgDirtyChunks.Remove(coord);
+            utilityDirtyChunks.Remove(coord); // ✅
             solidDirtyChunks.Remove(coord);
             platformDirtyChunks.Remove(coord);
             liquidDirtyChunks.Remove(coord);
@@ -226,6 +230,7 @@ public class WorldChunkSystem
             platformDirtyChunks.Count == 0 &&
             liquidDirtyChunks.Count == 0 &&
             bgDirtyChunks.Count == 0 &&
+            utilityDirtyChunks.Count == 0 && // ✅
             lightDirtyChunks.Count == 0)
             return;
 
@@ -242,6 +247,21 @@ public class WorldChunkSystem
                 c.bgDirty = false;
             }
             bgDirtyChunks.Clear();
+        }
+
+        // Utility
+        if (utilityDirtyChunks.Count > 0)
+        {
+            foreach (var coord in utilityDirtyChunks)
+            {
+                if (!activeChunks.TryGetValue(coord, out var go)) continue;
+                var c = go.GetComponent<Chunk>();
+                if (!c.utilityDirty) continue;
+
+                RefreshChunkLayer(coord, LayerType.Utility);
+                c.utilityDirty = false;
+            }
+            utilityDirtyChunks.Clear();
         }
 
         // Solid (+ PlatformCollider 같이 갱신)
@@ -315,7 +335,8 @@ public class WorldChunkSystem
         int worldY,
         bool markSolid,
         bool markBG = false,
-        bool markLiquid = false
+        bool markLiquid = false,
+        bool markUtility = false // ✅ 추가
     )
     {
         int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
@@ -342,6 +363,11 @@ public class WorldChunkSystem
         {
             c.bgDirty = true;
             bgDirtyChunks.Add(coord);
+        }
+        if (markUtility)
+        {
+            c.utilityDirty = true;
+            utilityDirtyChunks.Add(coord);
         }
     }
 
@@ -473,6 +499,7 @@ public class WorldChunkSystem
         var c = go.GetComponent<Chunk>();
 
         var bgBuf = c.bgBuffer;
+        var utilBuf = c.utilityBuffer; // ✅
         var solidBuf = c.solidBuffer;
         var platBuf = c.platformBuffer;
         var liqBuf = c.liquidBuffer;
@@ -481,6 +508,7 @@ public class WorldChunkSystem
         for (int i = 0; i < size; i++)
         {
             bgBuf[i] = null;
+            utilBuf[i] = null; // ✅
             solidBuf[i] = null;
             platBuf[i] = null;
             liqBuf[i] = null;
@@ -500,6 +528,10 @@ public class WorldChunkSystem
 
             // BG
             bgBuf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
+
+            // Utility
+            var u = worldMap.utility[wx, wy];
+            utilBuf[idx] = (u.id != 0) ? cellLibrary.GetUtilityTile(u.id, u.meta) : null;
 
             // Solid(시각) + PlatformCollider(전용 타일맵)
             var s = worldMap.solid[wx, wy];
@@ -527,6 +559,7 @@ public class WorldChunkSystem
         }
 
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
+        if (c.utilityTilemap != null) c.utilityTilemap.SetTilesBlock(bounds, utilBuf); // ✅
         c.solidTilemap.SetTilesBlock(bounds, solidBuf);
         if (c.platformTilemap != null) c.platformTilemap.SetTilesBlock(bounds, platBuf);
         c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
@@ -593,13 +626,14 @@ public class WorldChunkSystem
         RefreshLightLayer(coord);
 
         c.bgDirty = false;
+        c.utilityDirty = false; // ✅
         c.solidDirty = false;
         c.platformDirty = false;
         c.liquidDirty = false;
         c.lightDirty = false;
     }
 
-    private enum LayerType { BG, Solid, Platform, Liquid }
+    private enum LayerType { BG, Utility, Solid, Platform, Liquid } // ✅
 
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
@@ -623,6 +657,27 @@ public class WorldChunkSystem
                     buf[idx] = cellLibrary.GetBgTile(worldMap.bg[wx, wy]);
                 }
                 c.bgTilemap.SetTilesBlock(bounds, buf);
+                break;
+            }
+
+            case LayerType.Utility:
+            {
+                if (c.utilityTilemap == null) break;
+
+                var buf = c.utilityBuffer;
+                for (int y = 0; y < chunkSize; y++)
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    int wx = coord.x * chunkSize + x;
+                    int wy = coord.y * chunkSize + y;
+                    int idx = y * chunkSize + x;
+                    if ((uint)wx >= (uint)worldWidth || (uint)wy >= (uint)worldHeight) { buf[idx] = null; continue; }
+
+                    var u = worldMap.utility[wx, wy];
+                    buf[idx] = (u.id != 0) ? cellLibrary.GetUtilityTile(u.id, u.meta) : null;
+                }
+
+                c.utilityTilemap.SetTilesBlock(bounds, buf);
                 break;
             }
 

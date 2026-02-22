@@ -5,20 +5,22 @@ public sealed class WorldData
 {
     public const byte MaxFluid = 128;
 
-    public ushort[,]    bg;               // 후경
-    public SolidCell[,] solid;            // 전경: id + meta
-    public FluidCell[,] fluid;            // 유체: id + amount
+    public ushort[,]     bg;               // 후경
+    public SolidCell[,]  solid;            // 전경: id + meta
+    public UtilityCell[,] utility;         // 유틸리티: id + meta
+    public FluidCell[,]  fluid;            // 유체: id + amount
 
-    public ushort[,] naturalLight;        // 자연광
-    public ushort[,] artificialLight;     // 인공광
+    public ushort[,] naturalLight;         // 자연광
+    public ushort[,] artificialLight;      // 인공광
 
     public WorldData(int width, int height)
     {
-        bg              = new ushort    [width, height];
-        solid           = new SolidCell [width, height];
-        fluid           = new FluidCell [width, height];
-        naturalLight    = new ushort    [width, height];
-        artificialLight = new ushort    [width, height];
+        bg              = new ushort      [width, height];
+        solid           = new SolidCell   [width, height];
+        utility         = new UtilityCell [width, height];
+        fluid           = new FluidCell   [width, height];
+        naturalLight    = new ushort      [width, height];
+        artificialLight = new ushort      [width, height];
     }
 
     #region Set
@@ -39,6 +41,19 @@ public sealed class WorldData
     {
         if (!InBounds(x, y)) return;
         solid[x, y].meta = meta;
+    }
+
+    public void SetUtility(int x, int y, ushort id, ushort meta)
+    {
+        if (!InBounds(x, y)) return;
+        utility[x, y].id   = id;
+        utility[x, y].meta = meta;
+    }
+
+    public void SetUtilityMeta(int x, int y, ushort meta)
+    {
+        if (!InBounds(x, y)) return;
+        utility[x, y].meta = meta;
     }
 
     public void SetFluid(int x, int y, ushort id, byte amount)
@@ -80,6 +95,12 @@ public sealed class WorldData
         return solid[x, y];
     }
 
+    public UtilityCell GetUtility(int x, int y)
+    {
+        if (!InBounds(x, y)) return default;
+        return utility[x, y];
+    }
+
     public FluidCell GetFluid(int x, int y)
     {
         if (!InBounds(x, y)) return default;
@@ -116,6 +137,13 @@ public sealed class WorldData
 public struct SolidCell
 {
     public ushort id;    // 본체 ID
+    public ushort meta;  // 2 bytes meta
+}
+
+[Serializable]
+public struct UtilityCell
+{
+    public ushort id;    // 유틸리티 ID
     public ushort meta;  // 2 bytes meta
 }
 

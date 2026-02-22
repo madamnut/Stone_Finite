@@ -5,8 +5,12 @@ public class Chunk : MonoBehaviour
 {
     public const int ChunkSize = 16;
 
-    // ── Tilemap 레이어: 후경 + 솔리드(시각) + 플랫폼(콜라이더 전용) + 유체 ──
+    // ── Tilemap 레이어: 후경 + 유틸리티 + 솔리드(시각) + 플랫폼(콜라이더 전용) + 유체 ──
     public Tilemap bgTilemap;
+
+    // ✅ 추가: 유틸리티(벽면 설비) 레이어
+    public Tilemap utilityTilemap;
+
     public Tilemap solidTilemap;
 
     // ✅ 추가: 플랫폼 콜라이더 전용 타일맵 (TilemapCollider2D/Composite/PlatformEffector2D)
@@ -21,6 +25,10 @@ public class Chunk : MonoBehaviour
 
     // ── 타일 버퍼(재사용) ──
     [HideInInspector] public TileBase[] bgBuffer;
+
+    // ✅ 추가: 유틸리티 버퍼
+    [HideInInspector] public TileBase[] utilityBuffer;
+
     [HideInInspector] public TileBase[] solidBuffer;
 
     // ✅ 추가: 플랫폼 콜라이더 전용 버퍼
@@ -30,6 +38,10 @@ public class Chunk : MonoBehaviour
 
     // ── Dirty 플래그 ──
     [HideInInspector] public bool bgDirty       = false;
+
+    // ✅ 추가: 유틸리티 더티
+    [HideInInspector] public bool utilityDirty  = false;
+
     [HideInInspector] public bool solidDirty    = false;
 
     // ✅ 추가: 플랫폼 콜라이더 더티
@@ -56,10 +68,11 @@ public class Chunk : MonoBehaviour
     {
         // 타일 버퍼
         int ts = ChunkSize * ChunkSize;
-        bgBuffer       = new TileBase[ts];
-        solidBuffer    = new TileBase[ts];
-        platformBuffer = new TileBase[ts];
-        liquidBuffer   = new TileBase[ts];
+        bgBuffer        = new TileBase[ts];
+        utilityBuffer   = new TileBase[ts];
+        solidBuffer     = new TileBase[ts];
+        platformBuffer  = new TileBase[ts];
+        liquidBuffer    = new TileBase[ts];
 
         // ── Platform TilemapRenderer 비활성(시각 렌더 중복 방지) ──
         // 플랫폼은 Solid 타일맵에 "콜라이더 없는 솔리드처럼" 그리므로,
