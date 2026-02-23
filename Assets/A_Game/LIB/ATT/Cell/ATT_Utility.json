@@ -1,45 +1,53 @@
 {
   "None": {
-    "id": 0
+    "id": 0,
+    "type": "None"
   },
   "Occupied": {
     "id": 1,
+    "type": "Occupied",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Occupied" }
     ]
   },
   "Wooden Cogwheel": {
     "id": 2,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]
   },
   "Big Wooden Cogwheel": {
     "id": 3,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]
   },
   "Bronze Cogwheel": {
     "id": 4,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]
   },
   "Big Bronze Cogwheel": {
     "id": 5,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]
   },
   "Iron Cogwheel": {
     "id": 6,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]
   },
   "Big Iron Cogwheel": {
     "id": 7,
+    "type": "Cogwheel",
     "variants": [
       { "key": "Default", "meta": 0, "sprite": "Center" }
     ]

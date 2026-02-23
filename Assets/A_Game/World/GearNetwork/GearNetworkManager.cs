@@ -1,48 +1,39 @@
 // GearNetworkManager.cs (전체 교체본)
-// 정책(2차 - Source):
-// - 소스는 "기어 센터"에 부착되며, 기어당 1개만 허용
-// - AttachSource는 "기어 점유 셀(any occupied)" 클릭해도 해당 기어 center에 부착
-// - Source 출력 갱신은 매 월드틱마다 TickSources()에서 수행
-//   * Windmill: 항상 rpm=spec.rpm, dir=CW
-//   * Waterwheel: (x-1,y-1),(x,y-1),(x+1,y-1) 3칸이 모두 water(fid==1 && amt>0)일 때만 rpm=spec.rpm, 아니면 0
+// ✅ 변경 요약 (Utility 레이어 전환 대응)
+// - GearNode에서 OccupiedCells 제거에 맞춰, GearNetworkManager도 "점유 셀 역인덱스(_cellToGearNodeId)" 제거
+// - 기어 배치 가능/기어 탐색은 이제 Utility 레이어 기반으로 처리:
+//   * "기어 점유 셀(any occupied)" 개념은 유지하되,
+//     - center 셀은 Utility에서 "Cogwheel 셀(id!=0 && id!=Occupied)"
+//     - Big의 Occupied는 center 상하좌우 4칸
+//     - anyGearCell -> center는 (자기 자신이 center인지) + (4방 이웃 중 center 찾기)로 해석
+// - ATT_Gear.json 의존은 제거(또는 선택적) 가능하도록 "스펙 등록 API" 추가
+//   * Cogwheel/Source/Belt 스펙은 InteractionController(PlaceUtility)에서 전달/등록하는 흐름 권장
 //
-// ✅ 네트워크 해석(이번 작업 + Belt):
-// - 기어 맞물림: dir 반전, Big<->Small에서 속도비 2배(deltaK ±1)
-// - 벨트(Belt): dir 유지(반전 없음), 속도비 1:1(deltaK=0)
-// - 모순(사이클 충돌 또는 서로 다른 소스 조건)이면 Stalled=true, 전체 rpm=0
-// - rpm이 gear.MaxRpm 초과하면 해당 gear 파괴(world.BreakSolid(center)) (일괄 처리)
+// ✅ 유지되는 기존 정책
+// - Source는 기어당 1개, any occupied 클릭 허용(센터로 붙음)
+// - Belt: 기어-기어 1:1, 한 기어에 최대 1개(시작/끝 포함), 설치 당시 start gearNodeId를 owner로 VFX
+// - 네트워크 해석: 기어 맞물림(Dir 반전, Big<->Small 속도비 2배), 벨트(Dir 유지, 1:1)
+// - 모순이면 stalled, rpm=0
+// - 오버스피드면 기어 파괴 예약 (world.BreakSolid(center))  ※ 기존 동작 유지(추후 Utility 파괴로 변경 필요)
 //
-// ✅ VFX:
-// - Gear/Source: SetRotatingLoopVfx
-// - Belt: vfx.SetBeltLoopVfx(ownerInstId, beltKind, on, startPos, endPos, rpm, rotationDir, bodyColor)
-//   * ownerInstId는 "설치 당시 start gearNodeId"를 사용(고정)
-//
-// ✅ Belt 정책:
-// - 기어-기어 1:1 연결 (전파 판정은 무방향)
-// - 한 기어에 벨트는 최대 1개(시작/끝 포함)
-// - 드랍 수량은 파괴 시점에 (start/end center 거리) 반올림 정수로 계산(저장 안함)
-//
-// ⚠️ 전제(ATT_Gear.json):
-// - kind: "Gear","Source","Belt"
-// - belt: { "maxRpm":int, "materialItemId":string, "color":[r,g,b,a?] }
+// ⚠ 전제(현 단계)
+// - 기어 "센터"는 Utility 레이어에 설치된다.
+// - Solid 레이어에는 더 이상 기어를 설치/파괴하지 않는 방향(추후 Break 대상 변경 필요).
 
 using System.Collections.Generic;
 using UnityEngine;
-using Newtonsoft.Json.Linq;
 
 public sealed class GearNetworkManager : MonoBehaviour
 {
     [Header("World Ref")]
     public WorldManager world;
 
-    [Header("ATT Jsons")]
-    public TextAsset attGearJson;
-
     [Header("VFX Ref (optional)")]
     public VfxManager vfx;
 
-    enum AttKind { Gear, Source, Belt }
-
+    // ─────────────────────────────────────────
+    // Specs (등록 기반)
+    // ─────────────────────────────────────────
     struct GearSpec
     {
         public GearNode.GearSize size;
@@ -51,6 +42,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     struct SourceSpec
     {
+        public SourceNode.SourceKind kind;
         public int rpm;
         public int stressCapacity;
     }
@@ -68,15 +60,20 @@ public sealed class GearNetworkManager : MonoBehaviour
         public int count;
     }
 
+    // key = kind id string (ex: "Big Iron Cogwheel", "Windmill", "Plant Belt")
     readonly Dictionary<string, GearSpec> _gearSpecById = new();
     readonly Dictionary<string, SourceSpec> _sourceSpecById = new();
     readonly Dictionary<string, BeltSpec> _beltSpecById = new();
 
+    // ─────────────────────────────────────────
+    // Storage
+    // ─────────────────────────────────────────
     int _nextNodeId = 1;
     int _nextNetworkId = 1;
 
     readonly Dictionary<int, GearNode> _gearNodes = new();
-    readonly Dictionary<int, string> _gearIdByNodeId = new(); // nodeId -> gearId(ATT key)
+    readonly Dictionary<int, string> _gearIdByNodeId = new();           // nodeId -> gearId string (VFX/식별용)
+    readonly Dictionary<Vector2Int, int> _gearCenterToNodeId = new();   // center -> gearNodeId
 
     // Source
     readonly Dictionary<int, SourceNode> _sourceNodes = new();
@@ -84,16 +81,11 @@ public sealed class GearNetworkManager : MonoBehaviour
     readonly Dictionary<Vector2Int, int> _gearCenterToSourceNodeId = new();   // gear center -> sourceNodeId (1개 제한)
 
     // Belt
-    // - 설치 당시 start gearNodeId를 owner로 사용(=딕셔너리 키)
-    // - 전파/제약 판정은 무방향이므로 end->start 역인덱스도 유지
-    readonly Dictionary<int, BeltLink> _beltByStartGearNodeId = new();                 // startGearNodeId -> link
-    readonly Dictionary<int, HashSet<int>> _beltStartsByEndGearNodeId = new();         // endGearNodeId -> {startGearNodeId}
-    readonly Dictionary<int, string> _beltKindByStartGearNodeId = new();               // startGearNodeId -> beltKind(ATT key)
+    readonly Dictionary<int, BeltLink> _beltByStartGearNodeId = new();         // startGearNodeId -> link
+    readonly Dictionary<int, HashSet<int>> _beltStartsByEndGearNodeId = new(); // endGearNodeId -> {startGearNodeId}
+    readonly Dictionary<int, string> _beltKindByStartGearNodeId = new();       // startGearNodeId -> beltKind
 
     readonly Dictionary<int, GearNetwork> _networks = new();
-
-    // 점유 역인덱스(센터 포함)
-    readonly Dictionary<Vector2Int, int> _cellToGearNodeId = new();
     readonly Dictionary<int, int> _nodeIdToNetworkId = new();
 
     bool _suppressRebuild = false;
@@ -102,92 +94,129 @@ public sealed class GearNetworkManager : MonoBehaviour
     readonly List<Vector2Int> _pendingBreakCenters = new();
     readonly HashSet<Vector2Int> _pendingBreakSet = new();
 
+    // Utility "Occupied" id 캐시(없으면 0)
+    ushort _utilityOccupiedId = 0;
+    static readonly Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+
     void Awake()
     {
-        BuildAttCache();
+        if (vfx == null && world != null)
+            vfx = world.vfx;
 
+        CacheUtilityOccupiedId();
+    }
+
+    void CacheUtilityOccupiedId()
+    {
+        _utilityOccupiedId = 0;
+        if (world == null || world.cellLibrary == null) return;
+        if (world.cellLibrary.TryGetUtilityIdByName("Occupied", out var occ))
+            _utilityOccupiedId = occ;
+    }
+
+    void EnsureVfxRef()
+    {
         if (vfx == null && world != null)
             vfx = world.vfx;
     }
 
-    void LateUpdate()
+    static Vector3 CellCenterToWorld(Vector2Int c) => new Vector3(c.x + 0.5f, c.y + 0.5f, 0f);
+
+    // ─────────────────────────────────────────
+    // Public API : Spec Registration
+    // ─────────────────────────────────────────
+    public void RegisterCogwheelSpec(string gearId, GearNode.GearSize size, int maxRpm)
     {
-        EnsureVfxRef();
-        if (vfx == null) return;
+        if (string.IsNullOrEmpty(gearId)) return;
+        if (maxRpm < 0) maxRpm = 0;
+        _gearSpecById[gearId] = new GearSpec { size = size, maxRpm = maxRpm };
+    }
 
-        // 1) Gear VFX
-        if (_gearNodes.Count > 0)
-        {
-            foreach (var kv in _gearNodes)
-            {
-                int nodeId = kv.Key;
-                var gear = kv.Value;
+    public void RegisterSourceSpec(string sourceId, SourceNode.SourceKind kind, int rpm, int stressCapacity)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return;
+        if (rpm < 0) rpm = 0;
+        if (stressCapacity < 0) stressCapacity = 0;
+        _sourceSpecById[sourceId] = new SourceSpec { kind = kind, rpm = rpm, stressCapacity = stressCapacity };
+    }
 
-                if (!_gearIdByNodeId.TryGetValue(nodeId, out var gearId) || string.IsNullOrEmpty(gearId))
-                    continue;
-
-                Vector3 pos = CellCenterToWorld(gear.Center);
-                float rpm = Mathf.Max(0f, gear.Rpm);
-                int dir = (gear.Dir == GearNode.RotationDir.CW) ? 1 : -1;
-
-                vfx.SetRotatingLoopVfx(nodeId, gearId, true, pos, rpm, dir);
-            }
-        }
-
-        // 2) Source VFX
-        if (_sourceNodes.Count > 0)
-        {
-            foreach (var kv in _sourceNodes)
-            {
-                int sourceNodeId = kv.Key;
-                var src = kv.Value;
-
-                if (!_sourceIdByNodeId.TryGetValue(sourceNodeId, out var sourceId) || string.IsNullOrEmpty(sourceId))
-                    continue;
-
-                Vector3 pos = CellCenterToWorld(src.AttachedGearCenter);
-                float rpm = Mathf.Max(0f, src.Rpm);
-                int dir = (src.Dir == SourceNode.RotationDir.CW) ? 1 : -1;
-
-                vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm, dir);
-            }
-        }
-
-        // 3) Belt VFX
-        if (_beltByStartGearNodeId.Count > 0)
-        {
-            foreach (var kv in _beltByStartGearNodeId)
-            {
-                int ownerStartGearNodeId = kv.Key;
-                var link = kv.Value;
-
-                if (!_beltKindByStartGearNodeId.TryGetValue(ownerStartGearNodeId, out var beltKind) || string.IsNullOrEmpty(beltKind))
-                    continue;
-
-                if (!_beltSpecById.TryGetValue(beltKind, out var bspec))
-                    continue;
-
-                int gear0 = link.gearIds.gearId0;
-                int gear1 = link.gearIds.gearId1;
-
-                if (!_gearNodes.TryGetValue(gear0, out var g0)) continue;
-                if (!_gearNodes.TryGetValue(gear1, out var g1)) continue;
-
-                Vector3 startPos = CellCenterToWorld(g0.Center);
-                Vector3 endPos   = CellCenterToWorld(g1.Center);
-
-                // 표시 rpm/dir: 현재 단계에서는 start gear의 결과를 그대로 사용
-                float rpm = Mathf.Max(0f, g0.Rpm);
-                int dir = (g0.Dir == GearNode.RotationDir.CW) ? 1 : -1;
-
-                vfx.SetBeltLoopVfx(ownerStartGearNodeId, beltKind, true, startPos, endPos, rpm, dir, bspec.color);
-            }
-        }
+    public void RegisterBeltSpec(string beltKind, int maxRpm, string materialItemId, Color color)
+    {
+        if (string.IsNullOrEmpty(beltKind)) return;
+        if (maxRpm < 0) maxRpm = 0;
+        if (string.IsNullOrEmpty(materialItemId)) materialItemId = null;
+        _beltSpecById[beltKind] = new BeltSpec { maxRpm = maxRpm, materialItemId = materialItemId, color = color };
     }
 
     // ─────────────────────────────────────────
     // Public API : World Tick
     // ─────────────────────────────────────────
+    public void TickSources()
+    {
+        if (world == null) return;
+        if (_sourceNodes.Count == 0) return;
+
+        foreach (var kv in _sourceNodes)
+        {
+            int srcNodeId = kv.Key;
+            var src = kv.Value;
+
+            if (!_sourceIdByNodeId.TryGetValue(srcNodeId, out var sourceId))
+                continue;
+
+            // 스펙이 없으면 현재 값 유지(안전)
+            if (_sourceSpecById.TryGetValue(sourceId, out var spec))
+            {
+                src.Dir = SourceNode.RotationDir.CW;
+
+                if (src.Kind == SourceNode.SourceKind.Windmill)
+                {
+                    src.IsActive = true;
+                    src.Rpm = spec.rpm;
+                }
+                else
+                {
+                    // Waterwheel 조건
+                    var c = src.AttachedGearCenter;
+
+                    bool ok =
+                        IsWaterAt(c.x - 1, c.y - 1) &&
+                        IsWaterAt(c.x + 0, c.y - 1) &&
+                        IsWaterAt(c.x + 1, c.y - 1);
+
+                    src.IsActive = ok;
+                    src.Rpm = ok ? spec.rpm : 0;
+                }
+
+                // BaseRpm/StressCapacity는 SourceNode 내부에 있으나,
+                // 현재 구현은 spec 기반으로만 갱신(정책상 OK)
+                src.SetBaseRpm(spec.rpm);
+                src.SetStressCapacity(spec.stressCapacity);
+                src.SetKind(spec.kind);
+            }
+            else
+            {
+                // 최소 정책: Windmill은 true, Waterwheel은 조건 검사
+                src.Dir = SourceNode.RotationDir.CW;
+
+                if (src.Kind == SourceNode.SourceKind.Windmill)
+                {
+                    src.IsActive = true;
+                }
+                else
+                {
+                    var c = src.AttachedGearCenter;
+                    bool ok =
+                        IsWaterAt(c.x - 1, c.y - 1) &&
+                        IsWaterAt(c.x + 0, c.y - 1) &&
+                        IsWaterAt(c.x + 1, c.y - 1);
+                    src.IsActive = ok;
+                }
+            }
+        }
+    }
+
     public void TickNetworks()
     {
         if (world == null) return;
@@ -207,6 +236,9 @@ public sealed class GearNetworkManager : MonoBehaviour
             for (int i = 0; i < _pendingBreakCenters.Count; i++)
             {
                 var c = _pendingBreakCenters[i];
+
+                // ⚠ 현 단계에서는 기존 구현 유지(솔리드 파괴).
+                // Utility로 옮긴 뒤에는 world.BreakUtility(center) 같은 API로 바꾸는 게 맞다.
                 world.BreakSolid(c.x, c.y);
             }
 
@@ -218,76 +250,105 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Gear
+    // Public API : Utility 기반 "기어 점유 셀" 판정/탐색
     // ─────────────────────────────────────────
-
-    public bool CanPlaceGear(Vector2Int center, string gearId)
+    public bool IsGearOccupiedCell(Vector2Int cell)
     {
-        if (world == null) return false;
-        if (string.IsNullOrEmpty(gearId)) return false;
-        if (!_gearSpecById.TryGetValue(gearId, out var spec)) return false;
-
-        var occupied = BuildOccupiedCells(center, spec.size);
-
-        foreach (var cell in occupied)
-        {
-            if (!IsSolidEmptyWorld(cell)) return false;
-            if (_cellToGearNodeId.ContainsKey(cell)) return false;
-        }
-
-        return true;
+        return TryResolveGearCenterFromAnyCell(cell, out _);
     }
 
-    public bool TryAddGear(Vector2Int center, string gearId, out int nodeId)
+    public bool TryGetGearNodeIdAtCell(Vector2Int anyGearCell, out int gearNodeId)
+    {
+        gearNodeId = -1;
+        if (!TryResolveGearCenterFromAnyCell(anyGearCell, out var center))
+            return false;
+
+        return _gearCenterToNodeId.TryGetValue(center, out gearNodeId);
+    }
+
+    bool TryResolveGearCenterFromAnyCell(Vector2Int anyCell, out Vector2Int center)
+    {
+        center = default;
+
+        if (world == null) return false;
+        if (!world.InBounds(anyCell.x, anyCell.y)) return false;
+
+        // 1) 본인이 센터인지 검사: Utility id가 0이 아니고, Occupied가 아니면 "센터 후보"
+        ushort uid = world.GetUtilityId(anyCell.x, anyCell.y);
+        if (uid != 0 && (_utilityOccupiedId == 0 || uid != _utilityOccupiedId))
+        {
+            // 등록된 기어만 센터로 인정
+            if (_gearCenterToNodeId.ContainsKey(anyCell))
+            {
+                center = anyCell;
+                return true;
+            }
+        }
+
+        // 2) Big의 Occupied(상하좌우)로부터 센터 찾기
+        // (Occupied는 center 정보를 안 들고 있으므로 4방 이웃에서 센터를 찾는다)
+
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            var n = anyCell + dirs[i];
+            if (!world.InBounds(n.x, n.y)) continue;
+
+            if (_gearCenterToNodeId.ContainsKey(n))
+            {
+                center = n;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ─────────────────────────────────────────
+    // Public API : Gear (배치/등록/제거)
+    // ─────────────────────────────────────────
+
+    // ✅ 신규 권장: 스펙 직접 전달
+    public bool CanPlaceGear(Vector2Int center, GearNode.GearSize size)
+    {
+        if (world == null) return false;
+        if (!world.InBounds(center.x, center.y)) return false;
+        if (_gearCenterToNodeId.ContainsKey(center)) return false;
+
+        var offsets = BuildFootprintOffsets(size);
+        return world.IsUtilityAreaEmpty(center, offsets);
+    }
+
+    // ✅ 레거시 호환: gearId로 스펙 조회(스펙이 Register 되어 있어야 함)
+    public bool CanPlaceGear(Vector2Int center, string gearId)
+    {
+        if (string.IsNullOrEmpty(gearId)) return false;
+        if (!_gearSpecById.TryGetValue(gearId, out var spec)) return false;
+        return CanPlaceGear(center, spec.size);
+    }
+
+    // ✅ 신규 권장: 스펙 직접 전달 + VFX id(gearId)
+    public bool TryAddGear(Vector2Int center, GearNode.GearSize size, int maxRpm, string gearId, out int nodeId)
     {
         nodeId = -1;
 
         if (world == null) return false;
-        if (string.IsNullOrEmpty(gearId)) return false;
-        if (!_gearSpecById.TryGetValue(gearId, out var spec)) return false;
+        if (!world.InBounds(center.x, center.y)) return false;
+        if (_gearCenterToNodeId.ContainsKey(center)) return false;
 
-        if (!world.InBounds(center.x, center.y))
-            return false;
-
-        ushort centerSolidId = world.GetSolidId(center.x, center.y);
-        if (centerSolidId == 0)
-            return false;
-
-        string centerName = world.cellLibrary.GetSolidName(centerSolidId);
-        if (!string.Equals(centerName, gearId, System.StringComparison.Ordinal))
-            return false;
-
-        var occupied = BuildOccupiedCells(center, spec.size);
-
-        foreach (var cell in occupied)
-        {
-            if (!world.InBounds(cell.x, cell.y))
-                return false;
-
-            if (_cellToGearNodeId.ContainsKey(cell))
-                return false;
-
-            if (cell != center)
-            {
-                if (world.GetSolidId(cell.x, cell.y) != 0)
-                    return false;
-            }
-        }
-
+        // Utility 레이어에 이미 센터가 깔렸다는 전제는 InteractionController에서 보장
+        // 여기서는 네트워크 등록만 담당
         nodeId = _nextNodeId++;
 
-        var gear = new GearNode(nodeId, center, spec.size, spec.maxRpm, occupied);
+        var gear = new GearNode(nodeId, center, size, Mathf.Max(0, maxRpm));
         _gearNodes.Add(nodeId, gear);
         _gearIdByNodeId[nodeId] = gearId;
-
-        foreach (var cell in gear.OccupiedCells)
-            _cellToGearNodeId[cell] = nodeId;
+        _gearCenterToNodeId[center] = nodeId;
 
         if (!_suppressRebuild)
             RebuildNetworksFrom(nodeId);
 
         EnsureVfxRef();
-        if (vfx != null)
+        if (vfx != null && !string.IsNullOrEmpty(gearId))
         {
             Vector3 pos = CellCenterToWorld(center);
             vfx.SetRotatingLoopVfx(nodeId, gearId, true, pos, rpm: 0f, rotationDir: 1);
@@ -296,12 +357,23 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell, out string droppedSourceId, out List<BeltDrop> droppedBelts)
+    // ✅ 레거시 호환: gearId로 스펙 조회(스펙이 Register 되어 있어야 함)
+    public bool TryAddGear(Vector2Int center, string gearId, out int nodeId)
+    {
+        nodeId = -1;
+
+        if (string.IsNullOrEmpty(gearId)) return false;
+        if (!_gearSpecById.TryGetValue(gearId, out var spec)) return false;
+
+        return TryAddGear(center, spec.size, spec.maxRpm, gearId, out nodeId);
+    }
+
+    public bool TryRemoveGearAt(Vector2Int anyGearCell, out string droppedSourceId, out List<BeltDrop> droppedBelts)
     {
         droppedSourceId = null;
         droppedBelts = null;
 
-        if (!_cellToGearNodeId.TryGetValue(anyOccupiedCell, out var nodeId))
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int nodeId))
             return false;
 
         if (!_gearNodes.TryGetValue(nodeId, out var gear))
@@ -322,17 +394,13 @@ public sealed class GearNetworkManager : MonoBehaviour
             TryRemoveSource(srcNodeId);
         }
 
-        // 2) 점유 해제
-        foreach (var cell in gear.OccupiedCells)
-            _cellToGearNodeId.Remove(cell);
-
         _gearNodes.Remove(nodeId);
+        _gearIdByNodeId.Remove(nodeId);
+        _gearCenterToNodeId.Remove(gear.Center);
 
         EnsureVfxRef();
         if (vfx != null)
             vfx.DespawnAllForOwner(nodeId);
-
-        _gearIdByNodeId.Remove(nodeId);
 
         if (!_suppressRebuild)
             RebuildNetworksAround(gear.Center);
@@ -340,43 +408,132 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell, out string droppedSourceId)
+    public bool TryRemoveGearAt(Vector2Int anyGearCell, out string droppedSourceId)
     {
-        return TryRemoveGearAt(anyOccupiedCell, out droppedSourceId, out _);
+        return TryRemoveGearAt(anyGearCell, out droppedSourceId, out _);
     }
 
-    public bool TryRemoveGearAt(Vector2Int anyOccupiedCell)
+    public bool TryRemoveGearAt(Vector2Int anyGearCell)
     {
-        return TryRemoveGearAt(anyOccupiedCell, out _, out _);
+        return TryRemoveGearAt(anyGearCell, out _, out _);
     }
 
-    public bool IsGearOccupiedCell(Vector2Int cell)
+    // ─────────────────────────────────────────
+    // Public API : Source
+    // ─────────────────────────────────────────
+    public bool TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceId, out int sourceNodeId)
     {
-        return _cellToGearNodeId.ContainsKey(cell);
+        sourceNodeId = -1;
+
+        if (string.IsNullOrEmpty(sourceId)) return false;
+
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out var gearNodeId))
+            return false;
+
+        var gear = _gearNodes[gearNodeId];
+
+        if (_gearCenterToSourceNodeId.ContainsKey(gear.Center))
+            return false;
+
+        return TryAddSource(gear.Center, sourceId, out sourceNodeId);
     }
 
-    public bool TryGetGearNodeIdAtCell(Vector2Int cell, out int gearNodeId)
+    public bool TryAddSource(Vector2Int attachedGearCenter, string sourceId, out int sourceNodeId)
     {
-        return _cellToGearNodeId.TryGetValue(cell, out gearNodeId);
+        sourceNodeId = -1;
+
+        if (string.IsNullOrEmpty(sourceId)) return false;
+
+        if (!_gearCenterToNodeId.TryGetValue(attachedGearCenter, out var gearNodeId))
+            return false;
+
+        // 스펙 등록이 없으면 kind 매핑만이라도 필요
+        if (!_sourceSpecById.TryGetValue(sourceId, out var spec))
+        {
+            if (!TryMapSourceKind(sourceId, out var k))
+                return false;
+
+            spec = new SourceSpec { kind = k, rpm = 0, stressCapacity = 0 };
+            _sourceSpecById[sourceId] = spec;
+        }
+
+        if (_gearCenterToSourceNodeId.ContainsKey(attachedGearCenter))
+            return false;
+
+        sourceNodeId = _nextNodeId++;
+
+        var source = new SourceNode(
+            sourceNodeId,
+            attachedGearCenter,
+            spec.kind,
+            spec.stressCapacity,
+            spec.rpm
+        );
+
+        source.Dir = SourceNode.RotationDir.CW;
+        source.Rpm = 0;
+
+        _sourceNodes.Add(sourceNodeId, source);
+        _sourceIdByNodeId[sourceNodeId] = sourceId;
+        _gearCenterToSourceNodeId[attachedGearCenter] = sourceNodeId;
+
+        if (!_suppressRebuild)
+            RebuildNetworksFrom(gearNodeId);
+
+        EnsureVfxRef();
+        if (vfx != null)
+        {
+            Vector3 pos = CellCenterToWorld(attachedGearCenter);
+            vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm: 0f, rotationDir: 1);
+        }
+
+        return true;
+    }
+
+    public bool TryRemoveSource(int sourceNodeId)
+    {
+        if (!_sourceNodes.TryGetValue(sourceNodeId, out var source))
+            return false;
+
+        EnsureVfxRef();
+        if (vfx != null)
+            vfx.DespawnAllForOwner(sourceNodeId);
+
+        _sourceNodes.Remove(sourceNodeId);
+        _sourceIdByNodeId.Remove(sourceNodeId);
+
+        if (_gearCenterToSourceNodeId.TryGetValue(source.AttachedGearCenter, out int cur) && cur == sourceNodeId)
+            _gearCenterToSourceNodeId.Remove(source.AttachedGearCenter);
+
+        if (!_suppressRebuild && _gearCenterToNodeId.TryGetValue(source.AttachedGearCenter, out var gearNodeId))
+            RebuildNetworksFrom(gearNodeId);
+
+        return true;
+    }
+
+    bool IsWaterAt(int x, int y)
+    {
+        if (world == null) return false;
+        if (!world.InBounds(x, y)) return false;
+
+        byte amt;
+        ushort fid = world.GetFluidId(x, y, out amt);
+        return fid == 1 && amt > 0;
     }
 
     // ─────────────────────────────────────────
     // Public API : Belt
     // ─────────────────────────────────────────
-
-    // start/end는 "기어 점유 셀(any occupied)" 가능.
-    // materialCost는 설치 시점 소비량(거리 반올림) 반환.
     public bool TryAttachBeltAtCells(Vector2Int startAnyGearCell, Vector2Int endAnyGearCell, string beltKind, out int materialCost)
     {
         materialCost = 0;
 
         if (world == null) return false;
         if (string.IsNullOrEmpty(beltKind)) return false;
-        if (!_beltSpecById.TryGetValue(beltKind, out _)) return false;
 
-        if (!_cellToGearNodeId.TryGetValue(startAnyGearCell, out int startGearNodeId))
+        if (!TryGetGearNodeIdAtCell(startAnyGearCell, out int startGearNodeId))
             return false;
-        if (!_cellToGearNodeId.TryGetValue(endAnyGearCell, out int endGearNodeId))
+        if (!TryGetGearNodeIdAtCell(endAnyGearCell, out int endGearNodeId))
             return false;
 
         if (startGearNodeId == endGearNodeId) return false;
@@ -409,12 +566,11 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    // 벨트 제거(양 끝 중 아무 gear 점유 셀로 호출 가능)
-    public bool TryRemoveBeltAtGearCell(Vector2Int anyGearOccupiedCell, out BeltDrop droppedBelt)
+    public bool TryRemoveBeltAtGearCell(Vector2Int anyGearCell, out BeltDrop droppedBelt)
     {
         droppedBelt = default;
 
-        if (!_cellToGearNodeId.TryGetValue(anyGearOccupiedCell, out int gearNodeId))
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
             return false;
 
         // 1) gear가 start인 케이스
@@ -435,11 +591,11 @@ public sealed class GearNetworkManager : MonoBehaviour
             return true;
         }
 
-        // 2) gear가 end인 케이스(역인덱스로 start를 찾는다)
+        // 2) gear가 end인 케이스
         if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
         {
             int startId = -1;
-            foreach (var s in starts) { startId = s; break; } // 이 정책상 end에는 1개만 붙을 수 있음
+            foreach (var s in starts) { startId = s; break; }
 
             if (startId < 0) return false;
             if (!_beltByStartGearNodeId.TryGetValue(startId, out var link2)) return false;
@@ -488,7 +644,7 @@ public sealed class GearNetworkManager : MonoBehaviour
             }
         }
 
-        // B) gear가 end인 incoming (start들 제거)
+        // B) gear가 end인 incoming
         if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
         {
             var tmp = new List<int>(starts);
@@ -553,15 +709,22 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     // Public API : Load/Restore
     // ─────────────────────────────────────────
-
     public void RebuildFromWorldFullScan()
     {
-        if (world == null) return;
+        // Utility 레이어 기반으로 "센터만" 스캔해서 네트워크를 복원하려면
+        // "어떤 Utility 셀이 Cogwheel 센터인지"를 알아야 한다.
+        // 현재는 gear center 등록이 외부(설치 시)에서만 발생하므로,
+        // 필요 시 여기 확장(Utility id->name 기반 필터링)하면 됨.
+        ClearAll();
+        ClearNetworks();
+        BuildAllNetworks();
+    }
 
-        EnsureVfxRef();
-
+    void ClearAll()
+    {
         _gearNodes.Clear();
         _gearIdByNodeId.Clear();
+        _gearCenterToNodeId.Clear();
 
         _sourceNodes.Clear();
         _sourceIdByNodeId.Clear();
@@ -572,178 +735,14 @@ public sealed class GearNetworkManager : MonoBehaviour
         _beltKindByStartGearNodeId.Clear();
 
         _networks.Clear();
-        _cellToGearNodeId.Clear();
         _nodeIdToNetworkId.Clear();
 
         _nextNodeId = 1;
         _nextNetworkId = 1;
-
-        int w = world.settings.width;
-        int h = world.settings.height;
-
-        _suppressRebuild = true;
-
-        for (int x = 0; x < w; x++)
-        for (int y = 0; y < h; y++)
-        {
-            ushort sid = world.GetSolidId(x, y);
-            if (sid == 0) continue;
-
-            string solidName = world.cellLibrary.GetSolidName(sid);
-            if (string.IsNullOrEmpty(solidName)) continue;
-
-            if (!_gearSpecById.ContainsKey(solidName))
-                continue;
-
-            var center = new Vector2Int(x, y);
-
-            if (_cellToGearNodeId.ContainsKey(center))
-                continue;
-
-            TryAddGear(center, solidName, out _);
-        }
-
-        _suppressRebuild = false;
-
-        ClearNetworks();
-        BuildAllNetworks();
     }
 
     // ─────────────────────────────────────────
-    // Public API : Source
-    // ─────────────────────────────────────────
-
-    public bool TryAttachSourceAtCell(Vector2Int anyGearOccupiedCell, string sourceId, out int sourceNodeId)
-    {
-        sourceNodeId = -1;
-
-        if (!_cellToGearNodeId.TryGetValue(anyGearOccupiedCell, out var gearNodeId))
-            return false;
-
-        if (!_gearNodes.TryGetValue(gearNodeId, out var gear))
-            return false;
-
-        if (_gearCenterToSourceNodeId.ContainsKey(gear.Center))
-            return false;
-
-        return TryAddSource(gear.Center, sourceId, out sourceNodeId);
-    }
-
-    public bool TryAddSource(Vector2Int attachedGearCenter, string sourceId, out int sourceNodeId)
-    {
-        sourceNodeId = -1;
-
-        if (!TryGetGearAtCenter(attachedGearCenter, out var gearNodeId))
-            return false;
-
-        if (!_sourceSpecById.TryGetValue(sourceId, out var spec))
-            return false;
-
-        if (!TryMapSourceKind(sourceId, out var kind))
-            return false;
-
-        if (_gearCenterToSourceNodeId.ContainsKey(attachedGearCenter))
-            return false;
-
-        sourceNodeId = _nextNodeId++;
-
-        var source = new SourceNode(
-            sourceNodeId,
-            attachedGearCenter,
-            kind,
-            spec.stressCapacity,
-            spec.rpm
-        );
-
-        source.Dir = SourceNode.RotationDir.CW;
-        source.Rpm = 0;
-
-        _sourceNodes.Add(sourceNodeId, source);
-        _sourceIdByNodeId[sourceNodeId] = sourceId;
-        _gearCenterToSourceNodeId[attachedGearCenter] = sourceNodeId;
-
-        if (!_suppressRebuild)
-            RebuildNetworksFrom(gearNodeId);
-
-        EnsureVfxRef();
-        if (vfx != null)
-        {
-            Vector3 pos = CellCenterToWorld(attachedGearCenter);
-            vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm: 0f, rotationDir: 1);
-        }
-
-        return true;
-    }
-
-    public bool TryRemoveSource(int sourceNodeId)
-    {
-        if (!_sourceNodes.TryGetValue(sourceNodeId, out var source))
-            return false;
-
-        EnsureVfxRef();
-        if (vfx != null)
-            vfx.DespawnAllForOwner(sourceNodeId);
-
-        _sourceNodes.Remove(sourceNodeId);
-        _sourceIdByNodeId.Remove(sourceNodeId);
-
-        if (_gearCenterToSourceNodeId.TryGetValue(source.AttachedGearCenter, out int cur) && cur == sourceNodeId)
-            _gearCenterToSourceNodeId.Remove(source.AttachedGearCenter);
-
-        if (!_suppressRebuild && TryGetGearAtCenter(source.AttachedGearCenter, out var gearNodeId))
-            RebuildNetworksFrom(gearNodeId);
-
-        return true;
-    }
-
-    public void TickSources()
-    {
-        if (world == null) return;
-        if (_sourceNodes.Count == 0) return;
-
-        foreach (var kv in _sourceNodes)
-        {
-            int srcNodeId = kv.Key;
-            var src = kv.Value;
-
-            if (!_sourceIdByNodeId.TryGetValue(srcNodeId, out var sourceId))
-                continue;
-
-            if (!_sourceSpecById.TryGetValue(sourceId, out var spec))
-                continue;
-
-            src.Dir = SourceNode.RotationDir.CW;
-
-            if (src.Kind == SourceNode.SourceKind.Windmill)
-            {
-                src.Rpm = spec.rpm;
-            }
-            else
-            {
-                var c = src.AttachedGearCenter;
-
-                bool ok =
-                    IsWaterAt(c.x - 1, c.y - 1) &&
-                    IsWaterAt(c.x + 0, c.y - 1) &&
-                    IsWaterAt(c.x + 1, c.y - 1);
-
-                src.Rpm = ok ? spec.rpm : 0;
-            }
-        }
-    }
-
-    bool IsWaterAt(int x, int y)
-    {
-        if (world == null) return false;
-        if (!world.InBounds(x, y)) return false;
-
-        byte amt;
-        ushort fid = world.GetFluidId(x, y, out amt);
-        return fid == 1 && amt > 0;
-    }
-
-    // ─────────────────────────────────────────
-    // Network rebuild (현재 단계: 단순 전체 리빌드)
+    // Network rebuild
     // ─────────────────────────────────────────
     void RebuildNetworksFrom(int startGearNodeId)
     {
@@ -795,14 +794,12 @@ public sealed class GearNetworkManager : MonoBehaviour
             network.GearNodeIds.Add(gearId);
             _nodeIdToNetworkId[gearId] = network.NetworkId;
 
-            foreach (var src in _sourceNodes)
+            // sources attached to this gear center
+            if (_gearNodes.TryGetValue(gearId, out var g) &&
+                _gearCenterToSourceNodeId.TryGetValue(g.Center, out int srcNodeId))
             {
-                if (_gearNodes.TryGetValue(gearId, out var g) &&
-                    src.Value.AttachedGearCenter == g.Center)
-                {
-                    network.SourceNodeIds.Add(src.Key);
-                    _nodeIdToNetworkId[src.Key] = network.NetworkId;
-                }
+                network.SourceNodeIds.Add(srcNodeId);
+                _nodeIdToNetworkId[srcNodeId] = network.NetworkId;
             }
 
             foreach (var conn in EnumerateConnections(gearId))
@@ -823,7 +820,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     IEnumerable<GearConnection> EnumerateConnections(int gearId)
     {
-        // 1) 기어 맞물림
+        // 1) 기어 맞물림(물리 연결)
         var a = _gearNodes[gearId];
 
         foreach (var other in _gearNodes)
@@ -867,12 +864,12 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
     }
 
-    // ✅ 핵심: 전파/충돌/오버스피드 파괴 예약
+    // 전파/충돌/오버스피드 파괴 예약
     void SolveNetwork(GearNetwork network)
     {
         int capacity = 0;
         foreach (var sid in network.SourceNodeIds)
-            capacity += _sourceNodes[sid].StressCapacity;
+            capacity += _sourceNodes[sid].CurrentStressCapacity;
 
         network.StressCapacityTotal = capacity;
         network.StressUsed = 0;
@@ -884,10 +881,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (network.SourceNodeIds.Count == 0)
         {
             foreach (int gid in network.GearNodeIds)
-            {
-                var g = _gearNodes[gid];
-                g.Rpm = 0;
-            }
+                _gearNodes[gid].Rpm = 0;
             return;
         }
 
@@ -912,7 +906,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             foreach (var conn in EnumerateConnections(aId))
             {
                 int bId = conn.otherGearId;
-
                 if (!network.GearNodeIds.Contains(bId)) continue;
 
                 int kb = ka + conn.deltaK;
@@ -943,9 +936,11 @@ public sealed class GearNetworkManager : MonoBehaviour
         foreach (int srcId in network.SourceNodeIds)
         {
             if (!_sourceNodes.TryGetValue(srcId, out var src)) continue;
-            if (src.Rpm <= 0) continue;
 
-            if (!TryGetGearAtCenter(src.AttachedGearCenter, out int gearId)) continue;
+            int srpm = src.CurrentRpm;
+            if (srpm <= 0) continue;
+
+            if (!_gearCenterToNodeId.TryGetValue(src.AttachedGearCenter, out int gearId)) continue;
             if (!kByGear.TryGetValue(gearId, out int k)) continue;
             if (!parityByGear.TryGetValue(gearId, out bool p)) continue;
 
@@ -958,41 +953,21 @@ public sealed class GearNetworkManager : MonoBehaviour
             else if (seedDir.Value != seedDirCand) { network.Stalled = true; break; }
 
             float denom = Pow2(k);
-            float baseCand = src.Rpm / denom;
+            float baseCand = srpm / denom;
 
             if (baseRpm == null) baseRpm = baseCand;
-            else
-            {
-                if (Mathf.Abs(baseRpm.Value - baseCand) > 0.01f)
-                {
-                    network.Stalled = true;
-                    break;
-                }
-            }
+            else if (Mathf.Abs(baseRpm.Value - baseCand) > 0.01f) { network.Stalled = true; break; }
         }
 
-        if (!hasDrivingSource)
+        if (!hasDrivingSource || network.Stalled)
         {
             foreach (int gid in network.GearNodeIds)
-            {
-                var g = _gearNodes[gid];
-                g.Rpm = 0;
-            }
+                _gearNodes[gid].Rpm = 0;
             return;
         }
 
         if (seedDir == null) seedDir = GearNode.RotationDir.CW;
         if (baseRpm == null) baseRpm = 0f;
-
-        if (network.Stalled)
-        {
-            foreach (int gid in network.GearNodeIds)
-            {
-                var g = _gearNodes[gid];
-                g.Rpm = 0;
-            }
-            return;
-        }
 
         foreach (int gid in network.GearNodeIds)
         {
@@ -1009,9 +984,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
             if (g.MaxRpm > 0 && rpm > g.MaxRpm)
                 EnqueueBreak(g.Center);
-
-            // Belt maxRpm은 "전파 해석"에는 영향 없고, 설치/표시/추후 제한에서 사용 가능.
-            // 지금 단계에서는 별도 처리 없음.
         }
     }
 
@@ -1040,166 +1012,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         return (d == GearNode.RotationDir.CW) ? GearNode.RotationDir.CCW : GearNode.RotationDir.CW;
     }
 
-    // ─────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────
-    void EnsureVfxRef()
-    {
-        if (vfx == null && world != null)
-            vfx = world.vfx;
-    }
-
-    static Vector3 CellCenterToWorld(Vector2Int c)
-    {
-        return new Vector3(c.x + 0.5f, c.y + 0.5f, 0f);
-    }
-
-    bool IsSolidEmptyWorld(Vector2Int cell)
-    {
-        if (world == null) return false;
-        if (!world.InBounds(cell.x, cell.y)) return false;
-        return world.GetSolidId(cell.x, cell.y) == 0;
-    }
-
-    bool TryGetGearAtCenter(Vector2Int center, out int gearNodeId)
-    {
-        if (_cellToGearNodeId.TryGetValue(center, out gearNodeId))
-            return _gearNodes.TryGetValue(gearNodeId, out var g) && g.Center == center;
-
-        gearNodeId = -1;
-        return false;
-    }
-
-    static HashSet<Vector2Int> BuildOccupiedCells(Vector2Int center, GearNode.GearSize size)
-    {
-        var set = new HashSet<Vector2Int> { center };
-
-        if (size == GearNode.GearSize.Big)
-        {
-            set.Add(center + Vector2Int.right);
-            set.Add(center + Vector2Int.left);
-            set.Add(center + Vector2Int.up);
-            set.Add(center + Vector2Int.down);
-        }
-
-        return set;
-    }
-
-    // ─────────────────────────────────────────
-    // ATT parsing (Unified)
-    // ─────────────────────────────────────────
-    void BuildAttCache()
-    {
-        _gearSpecById.Clear();
-        _sourceSpecById.Clear();
-        _beltSpecById.Clear();
-
-        if (attGearJson == null || string.IsNullOrEmpty(attGearJson.text))
-            return;
-
-        var root = JObject.Parse(attGearJson.text);
-
-        foreach (var prop in root.Properties())
-        {
-            string id = prop.Name;
-            var o = prop.Value as JObject;
-            if (o == null) continue;
-
-            string kindStr = o["kind"]?.Value<string>();
-            if (!TryParseAttKind(kindStr, out var kind))
-                continue;
-
-            if (kind == AttKind.Gear)
-            {
-                var g = o["gear"] as JObject;
-                if (g == null) continue;
-
-                string sizeStr = g["size"]?.Value<string>();
-                int maxRpm = g["maxRpm"]?.Value<int>() ?? 0;
-                if (maxRpm < 0) maxRpm = 0;
-
-                if (!TryParseGearSize(sizeStr, out var size))
-                    continue;
-
-                _gearSpecById[id] = new GearSpec
-                {
-                    size = size,
-                    maxRpm = maxRpm
-                };
-            }
-            else if (kind == AttKind.Source)
-            {
-                var s = o["source"] as JObject;
-                if (s == null) continue;
-
-                int rpm = s["rpm"]?.Value<int>() ?? 0;
-                if (rpm < 0) rpm = 0;
-
-                int cap = s["stressCapacity"]?.Value<int>() ?? 0;
-                if (cap < 0) cap = 0;
-
-                _sourceSpecById[id] = new SourceSpec
-                {
-                    rpm = rpm,
-                    stressCapacity = cap
-                };
-            }
-            else // Belt
-            {
-                var b = o["belt"] as JObject;
-                if (b == null) continue;
-
-                int maxRpm = b["maxRpm"]?.Value<int>() ?? 0;
-                if (maxRpm < 0) maxRpm = 0;
-
-                string materialItemId = b["materialItemId"]?.Value<string>();
-                if (string.IsNullOrEmpty(materialItemId))
-                    materialItemId = null;
-
-                Color color = Color.white;
-                var arr = b["color"] as JArray;
-                if (arr != null && arr.Count >= 3)
-                {
-                    float r = arr[0]?.Value<float>() ?? 1f;
-                    float g = arr[1]?.Value<float>() ?? 1f;
-                    float bl = arr[2]?.Value<float>() ?? 1f;
-                    float a = (arr.Count >= 4) ? (arr[3]?.Value<float>() ?? 1f) : 1f;
-                    color = new Color(r, g, bl, a);
-                }
-
-                _beltSpecById[id] = new BeltSpec
-                {
-                    maxRpm = maxRpm,
-                    materialItemId = materialItemId,
-                    color = color
-                };
-            }
-        }
-    }
-
-    static bool TryParseAttKind(string s, out AttKind kind)
-    {
-        kind = AttKind.Gear;
-        if (string.IsNullOrEmpty(s)) return false;
-
-        if (s == "Gear") { kind = AttKind.Gear; return true; }
-        if (s == "Source") { kind = AttKind.Source; return true; }
-        if (s == "Belt") { kind = AttKind.Belt; return true; }
-
-        return false;
-    }
-
-    static bool TryParseGearSize(string s, out GearNode.GearSize size)
-    {
-        size = GearNode.GearSize.Small;
-        if (string.IsNullOrEmpty(s)) return false;
-
-        if (s == "Small") { size = GearNode.GearSize.Small; return true; }
-        if (s == "Big") { size = GearNode.GearSize.Big; return true; }
-
-        return false;
-    }
-
     static bool TryMapSourceKind(string sourceId, out SourceNode.SourceKind kind)
     {
         kind = SourceNode.SourceKind.Waterwheel;
@@ -1208,6 +1020,23 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (sourceId == "Windmill") { kind = SourceNode.SourceKind.Windmill; return true; }
 
         return false;
+    }
+
+    static List<Vector2Int> BuildFootprintOffsets(GearNode.GearSize size)
+    {
+        if (size == GearNode.GearSize.Big)
+        {
+            return new List<Vector2Int>
+            {
+                Vector2Int.zero,
+                Vector2Int.up,
+                Vector2Int.down,
+                Vector2Int.left,
+                Vector2Int.right
+            };
+        }
+
+        return new List<Vector2Int> { Vector2Int.zero };
     }
 
     static bool AreConnected(GearNode a, GearNode b)
@@ -1228,4 +1057,82 @@ public sealed class GearNetworkManager : MonoBehaviour
         return ax == 1 && ay == 1;
     }
 
+    // ─────────────────────────────────────────
+    // VFX (LateUpdate)
+    // ─────────────────────────────────────────
+    void LateUpdate()
+    {
+        EnsureVfxRef();
+        if (vfx == null) return;
+
+        // 1) Gear VFX
+        if (_gearNodes.Count > 0)
+        {
+            foreach (var kv in _gearNodes)
+            {
+                int nodeId = kv.Key;
+                var gear = kv.Value;
+
+                _gearIdByNodeId.TryGetValue(nodeId, out var gearId);
+
+                Vector3 pos = CellCenterToWorld(gear.Center);
+                float rpm = Mathf.Max(0f, gear.Rpm);
+                int dir = (gear.Dir == GearNode.RotationDir.CW) ? 1 : -1;
+
+                if (!string.IsNullOrEmpty(gearId))
+                    vfx.SetRotatingLoopVfx(nodeId, gearId, true, pos, rpm, dir);
+            }
+        }
+
+        // 2) Source VFX
+        if (_sourceNodes.Count > 0)
+        {
+            foreach (var kv in _sourceNodes)
+            {
+                int sourceNodeId = kv.Key;
+                var src = kv.Value;
+
+                _sourceIdByNodeId.TryGetValue(sourceNodeId, out var sourceId);
+
+                Vector3 pos = CellCenterToWorld(src.AttachedGearCenter);
+                float rpm = Mathf.Max(0f, src.CurrentRpm);
+                int dir = (src.Dir == SourceNode.RotationDir.CW) ? 1 : -1;
+
+                if (!string.IsNullOrEmpty(sourceId))
+                    vfx.SetRotatingLoopVfx(sourceNodeId, sourceId, true, pos, rpm, dir);
+            }
+        }
+
+        // 3) Belt VFX
+        if (_beltByStartGearNodeId.Count > 0)
+        {
+            foreach (var kv in _beltByStartGearNodeId)
+            {
+                int ownerStartGearNodeId = kv.Key;
+                var link = kv.Value;
+
+                if (!_beltKindByStartGearNodeId.TryGetValue(ownerStartGearNodeId, out var beltKind) || string.IsNullOrEmpty(beltKind))
+                    continue;
+
+                // color는 등록된 스펙이 있으면 사용, 없으면 white
+                Color color = Color.white;
+                if (_beltSpecById.TryGetValue(beltKind, out var bspec))
+                    color = bspec.color;
+
+                int gear0 = link.gearIds.gearId0;
+                int gear1 = link.gearIds.gearId1;
+
+                if (!_gearNodes.TryGetValue(gear0, out var g0)) continue;
+                if (!_gearNodes.TryGetValue(gear1, out var g1)) continue;
+
+                Vector3 startPos = CellCenterToWorld(g0.Center);
+                Vector3 endPos = CellCenterToWorld(g1.Center);
+
+                float rpm = Mathf.Max(0f, g0.Rpm);
+                int dir = (g0.Dir == GearNode.RotationDir.CW) ? 1 : -1;
+
+                vfx.SetBeltLoopVfx(ownerStartGearNodeId, beltKind, true, startPos, endPos, rpm, dir, color);
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
-// GearNode.cs
-// 변경 없음 (그대로 사용)
+// GearNode.cs (전체 교체본)
+// 변경:
+// - 점유공간(OccupiedCells) 제거 (Utility 레이어가 담당)
 
-using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class GearNode
@@ -15,8 +15,6 @@ public sealed class GearNode
     public GearSize Size { get; private set; }
     public int MaxRpm { get; private set; }
 
-    public HashSet<Vector2Int> OccupiedCells { get; private set; }
-
     public RotationDir Dir { get; set; }
     public int Rpm { get; set; }
 
@@ -24,16 +22,13 @@ public sealed class GearNode
         int nodeId,
         Vector2Int center,
         GearSize size,
-        int maxRpm,
-        HashSet<Vector2Int> occupiedCells
+        int maxRpm
     )
     {
         NodeId = nodeId;
         Center = center;
         Size = size;
         MaxRpm = maxRpm;
-
-        OccupiedCells = occupiedCells;
 
         Dir = RotationDir.CW;
         Rpm = 0;

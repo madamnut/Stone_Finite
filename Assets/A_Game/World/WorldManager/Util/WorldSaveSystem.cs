@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 /// 월드 / 플레이어 / 엔티티 저장/로드 전담 시스템
 /// ⚠ 호환성 전혀 고려 안 함 (신규 포맷 고정)
 /// WorldData 구조(신규):
-///   bg / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
+///   bg / utility(id+meta) / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
 /// + Multiblock 인스턴스(신규):
 ///   count
 ///   반복:
@@ -86,6 +86,15 @@ public static class WorldSaveSystem
                     bw.Write(worldMap.bg[x, y]);
                 }
 
+                // utility (id + meta)  ✅ 추가
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    var u = worldMap.utility[x, y];
+                    bw.Write(u.id);
+                    bw.Write(u.meta);
+                }
+
                 // solid (id + meta)
                 for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
@@ -141,11 +150,6 @@ public static class WorldSaveSystem
                         var mb = kv.Value;
                         if (mb == null)
                         {
-                            // null 이면 빈 더미로 넣지 않고 스킵(카운트가 깨지므로 금지)
-                            // 따라서 mbCount는 "실제 null 제외"로 계산돼야 한다.
-                            // 여기까지 왔다는건 Instances에 null이 들어있는 비정상 상황.
-                            // 안전하게 0개로 저장 처리.
-                            // (요구사항: 호환성 고려 안함. 포맷 깨짐 방지)
                             throw new System.Exception("[SAVE] Multiblock instance is null in Instances.");
                         }
 
@@ -227,6 +231,15 @@ public static class WorldSaveSystem
             for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
                 data.bg[x, y] = br.ReadUInt16();
+
+            // utility (id + meta) ✅ 추가
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                ref var u = ref data.utility[x, y];
+                u.id   = br.ReadUInt16();
+                u.meta = br.ReadUInt16();
+            }
 
             // solid (id + meta)
             for (int y = 0; y < height; y++)

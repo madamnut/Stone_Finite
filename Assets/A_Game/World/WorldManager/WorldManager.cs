@@ -174,6 +174,25 @@ public class WorldManager : MonoBehaviour
         return f.id;
     }
 
+    // ✅ Utility
+    public UtilityCell GetUtility(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return default;
+        return worldMap.GetUtility(x, y);
+    }
+
+    public ushort GetUtilityId(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return 0;
+        return worldMap.GetUtility(x, y).id;
+    }
+
+    public bool IsUtilityEmpty(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+        return worldMap.GetUtility(x, y).id == 0;
+    }
+
     // ✅ "물리적으로 막는가" (기존 의미 유지: collidable만)
     public bool IsCollidable(int x, int y)
     {
@@ -572,7 +591,98 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * World Edit API
+     * World Edit API (Utility)
+     *────────────────────────────────────────────────────────────*/
+
+    public bool SetUtilityExact(int x, int y, ushort id, ushort meta = 0)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+
+        worldMap.SetUtility(x, y, id, meta);
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+        return true;
+    }
+
+    public bool ClearUtilityExact(int x, int y)
+    {
+        if (!worldMap.InBounds(x, y)) return false;
+
+        worldMap.SetUtility(x, y, 0, 0);
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+        return true;
+    }
+
+    // offsets는 (0,0) 포함 규칙
+    public bool IsUtilityAreaEmpty(Vector2Int center, IReadOnlyList<Vector2Int> offsets)
+    {
+        if (offsets == null || offsets.Count == 0) return false;
+
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            int x = center.x + offsets[i].x;
+            int y = center.y + offsets[i].y;
+            if (!worldMap.InBounds(x, y)) return false;
+
+            if (worldMap.GetUtility(x, y).id != 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    public bool PlaceUtilityFootprint(
+        Vector2Int center,
+        ushort centerId,
+        ushort centerMeta,
+        ushort occupiedId,
+        IReadOnlyList<Vector2Int> offsets
+    )
+    {
+        if (centerId == 0) return false;
+        if (offsets == null || offsets.Count == 0) return false;
+        if (!IsUtilityAreaEmpty(center, offsets)) return false;
+
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            int x = center.x + offsets[i].x;
+            int y = center.y + offsets[i].y;
+
+            if (offsets[i].x == 0 && offsets[i].y == 0)
+                worldMap.SetUtility(x, y, centerId, centerMeta);
+            else
+                worldMap.SetUtility(x, y, occupiedId, 0);
+
+            MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+        }
+
+        return true;
+    }
+
+    public bool ClearUtilityFootprint(Vector2Int center, IReadOnlyList<Vector2Int> offsets)
+    {
+        if (offsets == null || offsets.Count == 0) return false;
+
+        bool any = false;
+
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            int x = center.x + offsets[i].x;
+            int y = center.y + offsets[i].y;
+            if (!worldMap.InBounds(x, y)) continue;
+
+            var u = worldMap.GetUtility(x, y);
+            if (u.id == 0) continue;
+
+            worldMap.SetUtility(x, y, 0, 0);
+            MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+            any = true;
+        }
+
+        return any;
+    }
+
+    /*────────────────────────────────────────────────────────────
+     * World Edit API (기존 Solid/BG/Fluid)
      *────────────────────────────────────────────────────────────*/
     public void OverwriteSolid(int x, int y, ushort newId, ushort newMeta = 0)
     {
@@ -1130,7 +1240,7 @@ public class WorldManager : MonoBehaviour
     {
         if (gearNetworkManager != null)
             gearNetworkManager.TickSources();
-            gearNetworkManager.TickNetworks();
+        gearNetworkManager.TickNetworks();
 
         StepTick();
         DoRandomTicks();
@@ -1256,9 +1366,10 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false)
+    // ✅ Utility 더티 포함 시그니처로 확장
+    public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false, bool markUtility = false)
     {
-        chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markLiquid);
+        chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markLiquid, markUtility);
     }
 
     public void MarkLightDirtyCell(int x, int y)

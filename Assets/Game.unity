@@ -10760,11 +10760,16 @@ MonoBehaviour:
   exitButton: {fileID: 842289406}
   toggleInventoryKey: 101
   toggleBreakModeKey: 118
+  toggleUtilityModeKey: 116
   player: {fileID: 1746062761}
   hotbar: {fileID: 1278894248}
   cursorSlot: {fileID: 1563785317}
   breakCursorTex: {fileID: 2800000, guid: 696114dedffcce944b27a36764a78b56, type: 3}
   combatCursorTex: {fileID: 2800000, guid: 0af31b91609b82544b177e06a4cf710e, type: 3}
+  utilityCursorTex: {fileID: 2800000, guid: 2ddd69ab33aa546478e81ee8dde0e462, type: 3}
+  breakHotspot: {x: 7, y: 7}
+  combatHotspot: {x: 5, y: 4}
+  utilityHotspot: {x: 0, y: 0}
   worldManager: {fileID: 557152421}
   multiblockManager: {fileID: 143361366}
   gearNetworkManager: {fileID: 1500385778}
@@ -10776,6 +10781,9 @@ MonoBehaviour:
   HighLight_BG: {fileID: 21300000, guid: 90218ddedcc54114e9493216eb80d854, type: 3}
   HighLight_BG_CAN: {fileID: 21300000, guid: ae1becb1c722c5444801d4823ccf9d25, type: 3}
   HighLight_BG_CANNOT: {fileID: 21300000, guid: 98b5cfd29f400ec4c91843b6031c778c, type: 3}
+  HighLight_Utility: {fileID: 21300000, guid: bf16ec711dd9d844db5140af729401af, type: 3}
+  HighLight_Utility_CAN: {fileID: 21300000, guid: 726de4ee5a6213e4895742dc48fca92a, type: 3}
+  HighLight_Utility_CANNOT: {fileID: 21300000, guid: d0c1dd5cb6976304991edf9f990fef4b, type: 3}
   minScale: 0.92
   maxScale: 1.08
   period: 1
