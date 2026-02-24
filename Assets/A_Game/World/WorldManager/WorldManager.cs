@@ -63,7 +63,7 @@ public class WorldManager : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     [Header("Gear Network")]
-    public GearNetworkManager gearNetworkManager; // ✅ 논리 점유(기어 점유) 체크용
+    public GearNetworkManager gearNetworkManager; // ✅ Utility 파괴에서 기어 처리
 
     [Header("Time Settings")]
     public int ticksPerSecond = 20;
@@ -148,6 +148,10 @@ public class WorldManager : MonoBehaviour
     private const ushort META_DOWN = 3;
     private const ushort META_LEFT = 4;
     private const ushort META_RIGHT = 5;
+
+    // ✅ Utility: Occupied 캐시
+    private ushort _utilityOccupiedId = 0;
+    private static readonly Vector2Int[] _dirs4 = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
     /*────────────────────────────────────────────────────────────
      * Read-only Query
@@ -270,8 +274,6 @@ public class WorldManager : MonoBehaviour
 
     //────────────────────────────────────────────
     // Attachment (연쇄 파괴)
-    // - 셀이 "attachedAt" 규칙을 가지면 지지 셀을 검사하고,
-    //   지지가 없으면 BreakSolid로 파괴(연쇄는 OnCellEdited -> Tick으로 자동 확산)
     //────────────────────────────────────────────
     void StepAttachmentAt(int x, int y)
     {
@@ -283,10 +285,8 @@ public class WorldManager : MonoBehaviour
         if (!cellLibrary.GetAttachedAt(s.id, s.meta, out string attachedAt))
             return;
 
-        // ✅ meta=1: BG 부착 처리
         if (attachedAt == "BG")
         {
-            // BG가 없으면 지지 상실 -> 파괴
             if (worldMap.GetBG(x, y) == 0)
                 BreakSolid(x, y);
             return;
@@ -563,7 +563,6 @@ public class WorldManager : MonoBehaviour
 
             if (!solidMustBeCollidable) return true;
 
-            // ✅ 지지 판정은 "collidable OR platform"
             return IsSupportSolid(nx, ny);
         }
 
@@ -579,7 +578,6 @@ public class WorldManager : MonoBehaviour
     {
         if (!worldMap.InBounds(sx, sy)) return false;
 
-        // 지지는 BG 또는 "collidable OR platform"
         if (worldMap.GetBG(sx, sy) != 0) return true;
 
         return IsSupportSolid(sx, sy);
@@ -681,6 +679,134 @@ public class WorldManager : MonoBehaviour
         return any;
     }
 
+    // ✅ 유틸 파괴(기어 포함): 유틸 편집/오버스피드 파괴 공통 엔트리
+    // 정책:
+    // - Occupied(점유 셀)는 클릭해도 무시(파괴 불가)
+    // - 기어 파괴는 "센터 유틸"에서만 발생한다(센터를 파괴하면 footprint/네트워크/드랍 일괄)
+    public ushort BreakUtilityAt(int x, int y)
+    {
+        if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
+
+        CacheUtilityOccupiedIdIfNeeded();
+
+        var u = worldMap.GetUtility(x, y);
+        if (u.id == 0) return 0;
+
+        // Occupied는 무시
+        if (_utilityOccupiedId != 0 && u.id == _utilityOccupiedId)
+            return 0;
+
+        var cell = new Vector2Int(x, y);
+
+        // 1) 기어 센터라면: 네트워크 제거 + footprint 제거 + 드랍(기어/소스/벨트)
+        // (IsGearOccupiedCell이 any-cell을 true로 줄 수 있어도, 위에서 Occupied는 걸렀으므로 센터만 남는다)
+        if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(cell))
+        {
+            ushort centerUtilityId = u.id;
+            ushort centerUtilityMeta = u.meta;
+
+            string droppedSourceId = null;
+            List<GearNetworkManager.BeltDrop> droppedBelts = null;
+
+            // 입력은 center로 통일
+            if (!gearNetworkManager.TryRemoveGearAt(cell, out droppedSourceId, out droppedBelts))
+                return 0;
+
+            // footprint 제거: center + (center 4방 중 Occupied만)
+            ClearGearFootprintUtility(cell);
+
+            // VFX
+            if (vfx != null)
+            {
+                var spr = cellLibrary.GetUtilitySprite(centerUtilityId, centerUtilityMeta);
+                vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+            }
+
+            // 드랍 위치
+            var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+
+            // 드랍: 기어 본체(센터 유틸 name)
+            string gearItemId = cellLibrary != null ? cellLibrary.GetUtilityName(centerUtilityId) : null;
+            if (!string.IsNullOrEmpty(gearItemId))
+                itemDropper.SpawnDroppedItems(gearItemId, pos3);
+
+            // 드랍: 소스(있으면 1개)
+            if (!string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
+            {
+                var srcData = itemLibrary.Create(droppedSourceId, 1);
+                if (srcData != null)
+                    itemDropper.SpawnDroppedItem(srcData, pos3);
+            }
+
+            // 드랍: 벨트(거리 기반 count -> material item)
+            if (droppedBelts != null && droppedBelts.Count > 0 && itemLibrary != null)
+            {
+                for (int i = 0; i < droppedBelts.Count; i++)
+                {
+                    var bd = droppedBelts[i];
+                    if (string.IsNullOrEmpty(bd.beltKind) || bd.count <= 0) continue;
+
+                    if (gearNetworkManager.TryGetBeltMaterialItemId(bd.beltKind, out var matId) &&
+                        !string.IsNullOrEmpty(matId))
+                    {
+                        var beltMat = itemLibrary.Create(matId, bd.count);
+                        if (beltMat != null)
+                            itemDropper.SpawnDroppedItem(beltMat, pos3);
+                    }
+                }
+            }
+
+            return centerUtilityId;
+        }
+
+        // 2) 일반 유틸: 1칸 제거(+VFX). (드랍 규칙 필요하면 여기 추가)
+        worldMap.SetUtility(x, y, 0, 0);
+        MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+
+        if (vfx != null)
+        {
+            var spr = cellLibrary.GetUtilitySprite(u.id, u.meta);
+            vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+        }
+
+        return u.id;
+    }
+
+    void ClearGearFootprintUtility(Vector2Int center)
+    {
+        CacheUtilityOccupiedIdIfNeeded();
+
+        // center
+        if (worldMap.InBounds(center.x, center.y))
+        {
+            worldMap.SetUtility(center.x, center.y, 0, 0);
+            MarkChunkDirty(center.x, center.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+        }
+
+        if (_utilityOccupiedId == 0) return;
+
+        // big gear occupied: center 상하좌우 중 Occupied인 셀만 비움
+        for (int i = 0; i < _dirs4.Length; i++)
+        {
+            var p = center + _dirs4[i];
+            if (!worldMap.InBounds(p.x, p.y)) continue;
+
+            var u = worldMap.GetUtility(p.x, p.y);
+            if (u.id != _utilityOccupiedId) continue;
+
+            worldMap.SetUtility(p.x, p.y, 0, 0);
+            MarkChunkDirty(p.x, p.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+        }
+    }
+
+    void CacheUtilityOccupiedIdIfNeeded()
+    {
+        if (_utilityOccupiedId != 0) return;
+        if (cellLibrary == null) return;
+        if (cellLibrary.TryGetUtilityIdByName("Occupied", out var occ))
+            _utilityOccupiedId = occ;
+    }
+
     /*────────────────────────────────────────────────────────────
      * World Edit API (기존 Solid/BG/Fluid)
      *────────────────────────────────────────────────────────────*/
@@ -701,38 +827,25 @@ public class WorldManager : MonoBehaviour
         HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
     }
 
-    // ✅ 기존 시그니처 유지(호출처 호환)
     public bool PlaceSolid(int x, int y, ushort id)
         => PlaceSolid(x, y, id, RelV.Neutral, RelH.Neutral);
 
-    // ✅ 내부 공통: "빈 칸"에 실제 설치 로직
-    // 규칙:
-    // 1) meta=1..5 (부착) 먼저 시도
-    // 2) 전부 실패하면 meta=0 존재 시 그걸로 fallback 설치
     private bool PlaceSolidAtEmpty(int x, int y, ushort id, RelV relV, RelH relH)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
-
-        // ✅ 기어 논리 점유 침범 방지
-        if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(x, y)))
-            return false;
 
         var curS = worldMap.GetSolid(x, y);
         if (curS.id != 0) return false;
 
         bool hasBgHere = worldMap.GetBG(x, y) != 0;
 
-        // ✅ 완전 공중(=BG 없음)이고 주변 지지(4방향 BG/솔리드)도 없으면 실패
-        //   (Solid 지지는 "support solid"(collidable OR platform)만 인정)
         if (!hasBgHere)
         {
             if (!HasAnyNeighborSupport_BGorSolid(x, y, solidMustBeCollidable: true))
                 return false;
         }
 
-        // 후보 meta: 1..5 중 variants 존재하는 것만
-        // 우선순위: (BG가 있으면 META_BG) > 수평(플레이어 상대) > 수직(플레이어 상대)
         var candidates = new List<ushort>(5);
 
         if (hasBgHere && HasVariantMeta(id, META_BG))
@@ -744,17 +857,14 @@ public class WorldManager : MonoBehaviour
             if (HasVariantMeta(id, second)) candidates.Add(second);
         }
 
-        // 수평 우선
         if (relH == RelH.Left) Add(META_LEFT, META_RIGHT);
         else if (relH == RelH.Right) Add(META_RIGHT, META_LEFT);
         else Add(META_LEFT, META_RIGHT);
 
-        // 수직 차선
         if (relV == RelV.Up) Add(META_UP, META_DOWN);
         else if (relV == RelV.Down) Add(META_DOWN, META_UP);
         else Add(META_DOWN, META_UP);
 
-        // 순서 유지 중복 제거
         var seen = new HashSet<ushort>();
         for (int i = candidates.Count - 1; i >= 0; i--)
         {
@@ -771,22 +881,20 @@ public class WorldManager : MonoBehaviour
 
             switch (m)
             {
-                case META_UP: sy = y + 1; break;    // 위에 지지
-                case META_DOWN: sy = y - 1; break;  // 아래 지지
-                case META_LEFT: sx = x - 1; break;  // 왼쪽 지지
-                case META_RIGHT: sx = x + 1; break; // 오른쪽 지지
+                case META_UP: sy = y + 1; break;
+                case META_DOWN: sy = y - 1; break;
+                case META_LEFT: sx = x - 1; break;
+                case META_RIGHT: sx = x + 1; break;
                 default: return false;
             }
 
             return IsValidSupportForSolidAttach(sx, sy);
         }
 
-        // 1) 부착 메타(1..5) 우선 시도
         for (int i = 0; i < candidates.Count; i++)
         {
             ushort m = candidates[i];
 
-            // BG 부착(meta=1)은 "해당 칸에 BG가 있을 때만" 후보로 들어오며 지지 검사 없이 허용
             if (m == META_BG)
             {
                 chosenMeta = META_BG;
@@ -802,7 +910,6 @@ public class WorldManager : MonoBehaviour
             break;
         }
 
-        // 2) 전부 실패하면 meta=0 fallback (존재할 때만)
         if (!found)
         {
             if (HasVariantMeta(id, META_DEFAULT))
@@ -830,7 +937,6 @@ public class WorldManager : MonoBehaviour
         return true;
     }
 
-    // ✅ 신규: 상대방향 포함
     public bool PlaceSolid(int x, int y, ushort id, RelV relV, RelH relH)
     {
         if (!worldMap.InBounds(x, y)) return false;
@@ -838,9 +944,6 @@ public class WorldManager : MonoBehaviour
 
         var curS = worldMap.GetSolid(x, y);
 
-        // 클릭한 곳에 솔리드가 있으면:
-        // - support solid(collidable OR platform)이면: "옆 빈칸 부착 설치"를 시도
-        // - 그 외(uncollidable non-platform)이면: 설치 명령 무시(=실패 반환)
         if (curS.id != 0)
         {
             if (!IsSupportSolid(x, y))
@@ -851,14 +954,9 @@ public class WorldManager : MonoBehaviour
                 if (!worldMap.InBounds(nx, ny)) return false;
                 if (worldMap.GetSolid(nx, ny).id != 0) return false;
 
-                // ✅ 기어 논리 점유 침범 방지 (밀림 설치 후보도 막기)
-                if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(nx, ny)))
-                    return false;
-
                 return PlaceSolidAtEmpty(nx, ny, id, nRelV, nRelH);
             }
 
-            // 수평 우선
             if (relH == RelH.Left)
             {
                 if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
@@ -875,7 +973,6 @@ public class WorldManager : MonoBehaviour
                 if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
             }
 
-            // 수직 차선
             if (relV == RelV.Up)
             {
                 if (TryNeighbor(x, y - 1, RelV.Up, RelH.Neutral)) return true;
@@ -895,21 +992,15 @@ public class WorldManager : MonoBehaviour
             return false;
         }
 
-        // 클릭 칸이 비어있으면: 내부 규칙대로 설치
         return PlaceSolidAtEmpty(x, y, id, relV, relH);
     }
 
-    // 기어 전용: 밀림/부착/meta 규칙 무시하고 "해당 칸"에만 설치
+    // (이제 "기어 전용" 용도는 Utility로 이동했지만, 시그니처/호출처 호환을 위해 유지)
     public bool PlaceSolidExact(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
         if (id == 0) return false;
 
-        // ✅ 기어 논리 점유 침범 방지
-        if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(new Vector2Int(x, y)))
-            return false;
-
-        // 딱 그 칸이 비어있어야만 설치
         if (worldMap.GetSolid(x, y).id != 0) return false;
 
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
@@ -989,10 +1080,7 @@ public class WorldManager : MonoBehaviour
         ushort oldMeta = s.meta;
         if (oldSolidId == 0) return 0;
 
-        // ✅ 기어 점유 셀 파괴 시 네트워크에서도 제거
-        string droppedSourceId = null;
-        if (gearNetworkManager != null)
-            gearNetworkManager.TryRemoveGearAt(new Vector2Int(x, y), out droppedSourceId);
+        // ✅ Solid 파괴에서는 GearNetworkManager를 건드리지 않는다.
 
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
@@ -1013,12 +1101,6 @@ public class WorldManager : MonoBehaviour
             vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
 
             itemDropper.SpawnDroppedItems(key, pos3);
-            if (!string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
-            {
-                var srcData = itemLibrary.Create(droppedSourceId, 1);
-                if (srcData != null)
-                    itemDropper.SpawnDroppedItem(srcData, pos3);
-            }
         }
 
         return oldSolidId;
@@ -1069,7 +1151,7 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Lifecycle (이하 동일)
+     * Lifecycle
      *────────────────────────────────────────────────────────────*/
     void Awake()
     {
@@ -1078,6 +1160,9 @@ public class WorldManager : MonoBehaviour
 
         tickCurr.Clear();
         tickNext.Clear();
+
+        // ✅ Utility Occupied 캐시
+        CacheUtilityOccupiedIdIfNeeded();
 
         string dirBoot = WorldLoadContext.GetSavePath();
         string pathBoot = Path.Combine(dirBoot, "world.bin");
@@ -1239,8 +1324,10 @@ public class WorldManager : MonoBehaviour
     void FixedUpdate()
     {
         if (gearNetworkManager != null)
+        {
             gearNetworkManager.TickSources();
-        gearNetworkManager.TickNetworks();
+            gearNetworkManager.TickNetworks();
+        }
 
         StepTick();
         DoRandomTicks();

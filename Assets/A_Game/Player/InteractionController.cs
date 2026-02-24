@@ -1,25 +1,26 @@
 // InteractionController.cs (전체 교체본)
 // ✅ 이번 수정(Utility Interaction Mode + T 토글 + 전용 커서)
-// - LayerMode에 Utility 추가
-// - T 키 토글:
-//   * 어디서든 T 누르면 Utility 모드 진입
-//   * Utility 모드에서 T 누르면 직전 모드(Solid/BG)로 복귀
-// - Utility 모드에서만:
-//   * 좌클릭: Utility 파괴(Occupied는 파괴 불가)
-//   * 우클릭: PlaceUtility 처리 (type 분기: Cogwheel/Source/Belt)
-// - 커서 텍스처는 InteractionController가 담당 (Cursor.cs는 UI툴팁/아이템 이동 전용)
+// - Utility 좌클릭 파괴: WorldManager.BreakUtilityAt(cx, cy)로 위임 (기어/소스/벨트/footprint/드랍 포함)
+// - PlaceUtility에서 GearNetworkManager 스펙 Register를 반드시 수행:
+//   * Cogwheel: RegisterCogwheelSpec
+//   * Source  : RegisterSourceSpec
+//   * Belt    : RegisterBeltSpec
+// - Occupied 클릭 정책(확정):
+//   * Occupied는 설치/부착/벨트 시작/끝 모두 무시(실패)
+//   * Source/Belt는 반드시 "센터 셀(Occupied 아님)"에만 작동
 //
 // 전제:
 // - WorldManager에 Utility API 존재:
-//     GetUtilityId, SetUtilityExact, ClearUtilityExact,
-//     IsUtilityAreaEmpty, PlaceUtilityFootprint, ClearUtilityFootprint
+//     GetUtilityId, GetUtility, SetUtilityExact, ClearUtilityExact,
+//     IsUtilityAreaEmpty, PlaceUtilityFootprint, ClearUtilityFootprint,
+//     BreakUtilityAt(int x, int y)
 // - CellLibrary에 Utility lookup 존재:
 //     TryGetUtilityIdByName
-// - GearNetworkManager 기존 API는 당분간 유지된다고 가정:
+// - GearNetworkManager API(현 단계):
+//     RegisterCogwheelSpec/RegisterSourceSpec/RegisterBeltSpec
 //     CanPlaceGear(Vector2Int center, string gearId)
 //     TryAddGear(Vector2Int center, string gearId, out int nodeId)
-//     IsGearOccupiedCell(Vector2Int anyCell)
-//     TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceKind, out int nodeIdOrSourceId)
+//     TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceKind, out int sourceNodeId)
 //     TryGetGearNodeIdAtCell(Vector2Int anyCell, out int nodeId)
 //     TryAttachBeltAtCells(Vector2Int anyGearCell0, Vector2Int anyGearCell1, string beltKind, out int materialCost)
 
@@ -62,12 +63,12 @@ public class InteractionController : MonoBehaviour
     public Texture2D utilityCursorTex; // ✅ 추가
     public Vector2 breakHotspot = new Vector2(7, 6);
     public Vector2 combatHotspot = new Vector2(5, 4);
-    public Vector2 utilityHotspot = new Vector2(7, 6); // ✅ 필요시 인스펙터에서 조절
+    public Vector2 utilityHotspot = new Vector2(7, 6);
 
     [Header("World References")]
     public WorldManager worldManager;
     public MultiblockManager multiblockManager;
-    public GearNetworkManager gearNetworkManager; // ✅ 기어 설치/점유 체크
+    public GearNetworkManager gearNetworkManager;
     public Camera worldCamera;
     public int cellSize = 1;
 
@@ -114,12 +115,12 @@ public class InteractionController : MonoBehaviour
     public SpriteRenderer meleeSprite;
 
     bool _attackActive = false;
-    HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
+    readonly HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
     int _currentAttackDamage = 1;
 
     GameState _state = GameState.Ingame;
     LayerMode _layerMode = LayerMode.Solid;
-    LayerMode _prevLayerModeBeforeUtility = LayerMode.Solid; // ✅ Utility 토글 복귀용
+    LayerMode _prevLayerModeBeforeUtility = LayerMode.Solid;
 
     GameObject _hlGO;
     SpriteRenderer _hlSR;
@@ -135,7 +136,7 @@ public class InteractionController : MonoBehaviour
     // Belt placement state (우클릭 2단계)
     // ─────────────────────────────────────────
     bool _beltPending = false;
-    Vector2Int _beltStartCell;
+    Vector2Int _beltStartCell;            // ✅ "센터 셀"만 저장
     string _beltPendingKind = null;
     int _beltPendingScope = -1;
     ItemData _beltPendingHeldRef = null;
@@ -163,16 +164,14 @@ public class InteractionController : MonoBehaviour
         resumeButton.onClick.AddListener(OnClickResume);
         exitButton.onClick.AddListener(OnClickQuitToLobby);
 
-        ApplyWorldCursor(); // ✅ 초기 커서 적용
-
-        meleeRoot.gameObject.SetActive(false);
-
         if (cellLibrary != null)
         {
-            // "Occupied"는 ATT_Utility.json에 존재하는 전제
             if (cellLibrary.TryGetUtilityIdByName("Occupied", out ushort occ))
                 _utilityOccupiedId = occ;
         }
+
+        ApplyWorldCursor();
+        meleeRoot.gameObject.SetActive(false);
     }
 
     void Update()
@@ -210,14 +209,13 @@ public class InteractionController : MonoBehaviour
             }
         }
 
-        // 벨트 설치 대기 중인데, 들고 있는 슬롯/아이템이 바뀌면 취소
         if (_beltPending)
         {
             if (_hotbarScope != _beltPendingScope || GetHeldItem() != _beltPendingHeldRef)
                 CancelBeltPlacement();
         }
 
-        // ✅ Utility 모드 토글(T): 어디서든 Utility 진입 / Utility에서 복귀
+        // ✅ Utility 모드 토글(T)
         if (_state == GameState.Ingame && Input.GetKeyDown(toggleUtilityModeKey))
         {
             CancelBeltPlacement();
@@ -239,7 +237,6 @@ public class InteractionController : MonoBehaviour
         ItemData scopeHeld = GetHeldItem();
         bool hasWeapon = (scopeHeld != null && scopeHeld.HasTag("Weapon"));
 
-        // ✅ Utility 모드에서는 전용 커서 우선
         if (_layerMode != LayerMode.Utility)
         {
             if (hasWeapon && !_combatMode)
@@ -424,11 +421,8 @@ public class InteractionController : MonoBehaviour
         if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(cell))
             return false;
 
-        // 타입별 오브젝트 키는 type과 동일(예: "Cogwheel", "Source", "Belt")
         if (placeParam.TryGetValue(type, out var obj) && obj is Dictionary<string, object> dict)
             typeObj = dict;
-        else
-            typeObj = null;
 
         return true;
     }
@@ -451,9 +445,91 @@ public class InteractionController : MonoBehaviour
         if (o is int i) { v = i; return true; }
         if (o is long l) { v = (int)l; return true; }
         if (o is float f) { v = Mathf.RoundToInt(f); return true; }
-        if (o is double db) { v = (int)System.Math.Round(db); return true; }
+        if (o is double db) { v = (int)Math.Round(db); return true; }
 
         return int.TryParse(o.ToString(), out v);
+    }
+
+    static bool TryReadFloat(Dictionary<string, object> d, string key, out float v)
+    {
+        v = 0f;
+        if (d == null) return false;
+        if (!d.TryGetValue(key, out var o) || o == null) return false;
+
+        if (o is float f) { v = f; return true; }
+        if (o is double db) { v = (float)db; return true; }
+        if (o is int i) { v = i; return true; }
+        if (o is long l) { v = l; return true; }
+
+        return float.TryParse(o.ToString(), out v);
+    }
+
+    static bool TryReadColor(Dictionary<string, object> d, string key, out Color c)
+    {
+        c = Color.white;
+        if (d == null) return false;
+        if (!d.TryGetValue(key, out var o) || o == null) return false;
+
+        // 1) "#RRGGBB" or "#RRGGBBAA"
+        if (o is string s)
+        {
+            s = s.Trim();
+            if (!string.IsNullOrEmpty(s) && ColorUtility.TryParseHtmlString(s, out var cc))
+            {
+                c = cc;
+                return true;
+            }
+        }
+
+        // 2) [r,g,b,a] (0~1 or 0~255)
+        if (o is IList list && list.Count >= 3)
+        {
+            float Read01(int idx, float def)
+            {
+                object v0 = list[idx];
+                if (v0 == null) return def;
+
+                if (v0 is float ff) return ff;
+                if (v0 is double dd) return (float)dd;
+                if (v0 is int ii) return ii;
+                if (v0 is long ll) return ll;
+
+                if (float.TryParse(v0.ToString(), out var tmp)) return tmp;
+                return def;
+            }
+
+            float r = Read01(0, 1f);
+            float g = Read01(1, 1f);
+            float b = Read01(2, 1f);
+            float a = (list.Count >= 4) ? Read01(3, 1f) : 1f;
+
+            // 0~255로 들어오면 0~1로 정규화
+            if (r > 1.001f || g > 1.001f || b > 1.001f || a > 1.001f)
+            {
+                r /= 255f; g /= 255f; b /= 255f; a /= 255f;
+            }
+
+            c = new Color(Mathf.Clamp01(r), Mathf.Clamp01(g), Mathf.Clamp01(b), Mathf.Clamp01(a));
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsUtilityOccupiedCell(int x, int y)
+    {
+        if (worldManager == null) return false;
+        ushort uid = worldManager.GetUtilityId(x, y);
+        if (uid == 0) return false;
+        return (_utilityOccupiedId != 0 && uid == _utilityOccupiedId);
+    }
+
+    bool IsUtilityCenterCell(int x, int y)
+    {
+        if (worldManager == null) return false;
+        ushort uid = worldManager.GetUtilityId(x, y);
+        if (uid == 0) return false;
+        return (_utilityOccupiedId == 0 || uid != _utilityOccupiedId);
     }
 
     // ─────────────────────────────────────────
@@ -470,12 +546,11 @@ public class InteractionController : MonoBehaviour
         float half = cellSize * 0.5f;
         _hlGO.transform.position = new Vector3(cx * cellSize + half, cy * cellSize + half, 0f);
 
-        // ✅ Utility 모드: PlaceUtility/BreakUtility 하이라이트
         if (_layerMode == LayerMode.Utility)
         {
             ItemData held = GetHeldItem();
 
-            // 1) 설치 하이라이트(PlaceUtility)
+            // 설치 하이라이트(PlaceUtility)
             if (held != null && held.Count > 0 && held.ToolActions != null &&
                 held.ToolActions.TryGetValue("PlaceUtility", out var pObj) &&
                 pObj is Dictionary<string, object> p &&
@@ -485,18 +560,13 @@ public class InteractionController : MonoBehaviour
 
                 if (type == "Cogwheel")
                 {
-                    // Cogwheel만 "월드 설치"를 한다는 정책
                     if (worldManager != null && cellLibrary != null)
                     {
-                        // 센터 id
                         if (cellLibrary.TryGetUtilityIdByName(cell, out ushort centerId) && centerId != 0)
                         {
-                            // size
                             string sizeStr = null;
                             if (typeObj != null) TryReadString(typeObj, "size", out sizeStr);
 
-                            // offsets: Small(센터만), Big(십자)
-                            // (0,0) 포함
                             var offsets = (sizeStr == "Big")
                                 ? new List<Vector2Int> { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
                                 : new List<Vector2Int> { Vector2Int.zero };
@@ -505,12 +575,10 @@ public class InteractionController : MonoBehaviour
                         }
                     }
                 }
-                else
+                else if (type == "Source" || type == "Belt")
                 {
-                    // Source/Belt는 "설치"가 아니라 네트워크 등록/부착이지만,
-                    // Utility 모드에서만 수행되므로, 시각적으로는 "가능"을 단순 표시한다.
-                    // (정교한 판정은 HandlePlaceUtility에서 수행)
-                    can = true;
+                    // ✅ Source/Belt는 "센터 셀에서만" 가능 표시
+                    can = IsUtilityCenterCell(cx, cy);
                 }
 
                 _hlSR.sprite = can
@@ -521,10 +589,10 @@ public class InteractionController : MonoBehaviour
                 return;
             }
 
-            // 2) 파괴 하이라이트(Occupied는 파괴 불가)
-            ushort uid = (worldManager != null) ? worldManager.GetUtilityId(cx, cy) : (ushort)0;
-            bool has = uid != 0;
-            bool canBreak = has && (_utilityOccupiedId == 0 || uid != _utilityOccupiedId);
+            // 파괴 하이라이트(Occupied는 파괴 불가)
+            ushort uid2 = (worldManager != null) ? worldManager.GetUtilityId(cx, cy) : (ushort)0;
+            bool has = uid2 != 0;
+            bool canBreak = has && !IsUtilityOccupiedCell(cx, cy);
 
             _hlSR.sprite = canBreak
                 ? (HighLight_Utility_CAN != null ? HighLight_Utility_CAN : HighLight_Solid_CAN)
@@ -534,7 +602,7 @@ public class InteractionController : MonoBehaviour
             return;
         }
 
-        // 기존 하이라이트(브레이크/레이어 표시)
+        // Solid/BG 기존 하이라이트
         ushort solidId = worldManager.GetSolidId(cx, cy);
         ushort bgId = worldManager.GetBGId(cx, cy);
 
@@ -578,7 +646,6 @@ public class InteractionController : MonoBehaviour
             return;
         }
 
-        // ✅ Utility 모드: 좌클릭 = Utility 파괴
         if (_layerMode == LayerMode.Utility)
         {
             BreakUtilityAtCursor();
@@ -593,7 +660,6 @@ public class InteractionController : MonoBehaviour
         if (TryCorpseInteraction())
             return;
 
-        // ✅ Utility 모드: 우클릭 = PlaceUtility만 허용
         if (_layerMode == LayerMode.Utility)
         {
             TryItemInteraction_UtilityOnly();
@@ -652,9 +718,8 @@ public class InteractionController : MonoBehaviour
 
     // ─────────────────────────────────────────
     // Break (Utility)
-    // 정책:
-    // - Occupied는 파괴 불가(무조건 센터를 건드려야 함)
-    // - 현재 단계에서는 "해당 셀만" 제거 (Cogwheel 센터 제거 시 footprint 제거는 PlaceUtility 구현에서 처리)
+    // - Occupied는 파괴 불가
+    // - 파괴/드랍/footprint/네트워크 정리는 WorldManager.BreakUtilityAt로 위임
     // ─────────────────────────────────────────
     void BreakUtilityAtCursor()
     {
@@ -664,13 +729,12 @@ public class InteractionController : MonoBehaviour
         ushort uid = worldManager.GetUtilityId(cx, cy);
         if (uid == 0) return;
 
-        if (_utilityOccupiedId != 0 && uid == _utilityOccupiedId)
+        if (IsUtilityOccupiedCell(cx, cy))
             return;
 
-        // 현재는 단일 셀 제거만 수행
-        // (Cogwheel 센터 제거 시 footprint 제거는 이후: "센터 판정/size 복구"가 필요)
-        if (!worldManager.ClearUtilityExact(cx, cy))
-            return;
+        // ✅ 최종 엔트리
+        ushort removed = worldManager.BreakUtilityAt(cx, cy);
+        if (removed == 0) return;
 
         sound.PlayDig();
     }
@@ -709,11 +773,11 @@ public class InteractionController : MonoBehaviour
             if (actionName == "Place")
                 ok = HandlePlace(held, cx, cy, param);
             else if (actionName == "PlaceGear")
-                ok = HandlePlaceGear(held, cx, cy, param);
+                ok = HandlePlaceGear(held, cx, cy, param);          // 레거시 유지
             else if (actionName == "AttachSource")
-                ok = HandleAttachSource(held, cx, cy, param);
+                ok = HandleAttachSource(held, cx, cy, param);       // 레거시 유지
             else if (actionName == "AttachBelt")
-                ok = HandleAttachBelt(held, cx, cy, param);
+                ok = HandleAttachBelt(held, cx, cy, param);         // 레거시 유지
             else if (actionName == "BuildMultiblock")
                 ok = HandleBuildMultiblock(held, cx, cy, param);
 
@@ -742,22 +806,24 @@ public class InteractionController : MonoBehaviour
         if (held == null || held.Count <= 0)
             return false;
 
-        if (held.ToolActions == null || held.ToolActions.Count == 0)
+        if (held.ToolActions == null)
             return false;
 
         if (!held.ToolActions.TryGetValue("PlaceUtility", out var pObj))
             return false;
 
-        var p = pObj as Dictionary<string, object>;
-        if (p == null) return false;
+        if (pObj is not Dictionary<string, object> p)
+            return false;
 
         return HandlePlaceUtility(held, cx, cy, p);
     }
 
     // ─────────────────────────────────────────
     // PlaceUtility (type 분기)
-    // - Cogwheel: 월드(Utility) 설치 + 점유 + 네트워크 등록
-    // - Source/Belt: 월드 설치 없음, 네트워크로만 전달(기존 방식 유지)
+    // 정책:
+    // - Cogwheel: Utility 설치 + 점유(Occupied) + 네트워크 등록
+    // - Source/Belt: "센터 셀에서만" 작동(Occupied 클릭은 무시)
+    // - 스펙 Register는 여기서 확정적으로 수행
     // ─────────────────────────────────────────
     bool HandlePlaceUtility(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
@@ -767,15 +833,17 @@ public class InteractionController : MonoBehaviour
         if (!TryGetPlaceUtilityParam(placeParam, out var type, out var cell, out var typeObj))
             return false;
 
+        // ✅ Occupied 클릭은 무조건 무시(실패)
+        if (IsUtilityOccupiedCell(cx, cy))
+            return false;
+
         var cellPos = new Vector2Int(cx, cy);
 
         if (type == "Cogwheel")
         {
-            // center tile id
             if (!cellLibrary.TryGetUtilityIdByName(cell, out ushort centerId) || centerId == 0)
                 return false;
 
-            // size/maxRpm (maxRpm은 현재 네트워크가 string id 기반이라 일단 무시 가능)
             string sizeStr = null;
             int maxRpm = 0;
             if (typeObj != null)
@@ -784,32 +852,31 @@ public class InteractionController : MonoBehaviour
                 TryReadInt(typeObj, "maxRpm", out maxRpm);
             }
 
-            // offsets (0,0 포함)
-            List<Vector2Int> offsets =
-                (sizeStr == "Big")
+            var size = (sizeStr == "Big") ? GearNode.GearSize.Big : GearNode.GearSize.Small;
+
+            // ✅ 스펙 등록(필수)
+            gearNetworkManager.RegisterCogwheelSpec(cell, size, maxRpm);
+
+            var offsets =
+                (size == GearNode.GearSize.Big)
                 ? new List<Vector2Int> { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
                 : new List<Vector2Int> { Vector2Int.zero };
 
-            // 빈칸 검사
             if (!worldManager.IsUtilityAreaEmpty(cellPos, offsets))
                 return false;
 
-            // 네트워크 관점 설치 가능? (현재 API가 string gearId를 받는 전제 -> cell을 그대로 사용)
             if (!gearNetworkManager.CanPlaceGear(cellPos, cell))
                 return false;
 
-            // footprint 설치 (Big면 occupied 깔림)
-            ushort occId = _utilityOccupiedId; // 0이면 주변 점유를 못 깜 -> 데이터 누락이므로 실패 처리
-            if (sizeStr == "Big" && occId == 0)
+            ushort occId = _utilityOccupiedId;
+            if (size == GearNode.GearSize.Big && occId == 0)
                 return false;
 
             if (!worldManager.PlaceUtilityFootprint(cellPos, centerId, 0, occId, offsets))
                 return false;
 
-            // 네트워크 등록 (현재는 string 기반으로 cell 사용)
             if (!gearNetworkManager.TryAddGear(cellPos, cell, out _))
             {
-                // 롤백
                 worldManager.ClearUtilityFootprint(cellPos, offsets);
                 return false;
             }
@@ -826,11 +893,32 @@ public class InteractionController : MonoBehaviour
 
         if (type == "Source")
         {
-            // 기존 AttachSource 방식 유지: "기어 점유 셀"에 부착
-            if (!gearNetworkManager.IsGearOccupiedCell(cellPos))
+            // ✅ 센터 셀에서만
+            if (!IsUtilityCenterCell(cx, cy))
                 return false;
 
-            // sourceKind는 cell을 사용(예: "Windmill", "Waterwheel")
+            if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
+                return false;
+
+            // ✅ 스펙 등록(가능하면)
+            // typeObj 예시 기대키: kind("Windmill"/"Waterwheel"), rpm, stressCapacity
+            string kindStr = null;
+            int rpm = 0;
+            int stressCap = 0;
+
+            if (typeObj != null)
+            {
+                TryReadString(typeObj, "kind", out kindStr);
+                TryReadInt(typeObj, "rpm", out rpm);
+                TryReadInt(typeObj, "stressCapacity", out stressCap);
+            }
+
+            // kindStr이 없으면 cell 자체를 kind로 간주(기존 컨벤션)
+            if (string.IsNullOrEmpty(kindStr)) kindStr = cell;
+
+            SourceNode.SourceKind sk = (kindStr == "Windmill") ? SourceNode.SourceKind.Windmill : SourceNode.SourceKind.Waterwheel;
+            gearNetworkManager.RegisterSourceSpec(cell, sk, rpm, stressCap);
+
             if (!gearNetworkManager.TryAttachSourceAtCell(cellPos, cell, out _))
                 return false;
 
@@ -846,32 +934,41 @@ public class InteractionController : MonoBehaviour
 
         if (type == "Belt")
         {
-            // 벨트는 기존 2단계 방식 유지
-            string beltKind = cell; // 예: "Plant Belt", "Linen Belt"
+            // ✅ 센터 셀에서만 시작/끝 지정
+            if (!IsUtilityCenterCell(cx, cy))
+                return false;
 
-            // 1) 시작점 미지정: 시작점 세팅
+            if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
+                return false;
+
+            string beltKind = cell;
+
+            // ✅ 스펙 등록(가능하면)
+            // typeObj 예시 기대키: maxRpm, materialItemId, color
+            int maxRpm = 0;
+            string materialItemId = null;
+            Color color = Color.white;
+
+            if (typeObj != null)
+            {
+                TryReadInt(typeObj, "maxRpm", out maxRpm);
+                TryReadString(typeObj, "materialItemId", out materialItemId);
+                TryReadColor(typeObj, "color", out color);
+            }
+
+            gearNetworkManager.RegisterBeltSpec(beltKind, maxRpm, materialItemId, color);
+
             if (!_beltPending)
             {
-                if (!gearNetworkManager.IsGearOccupiedCell(cellPos))
-                    return false;
-
                 _beltPending = true;
-                _beltStartCell = cellPos;
+                _beltStartCell = cellPos; // ✅ 센터만 저장
                 _beltPendingKind = beltKind;
                 _beltPendingScope = _hotbarScope;
                 _beltPendingHeldRef = held;
-
                 return true;
             }
 
-            // 2) 시작점 지정 상태: 끝점 확정 시도
             if (_hotbarScope != _beltPendingScope || held != _beltPendingHeldRef || _beltPendingKind != beltKind)
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            if (!gearNetworkManager.IsGearOccupiedCell(cellPos))
             {
                 CancelBeltPlacement();
                 return false;
@@ -917,11 +1014,8 @@ public class InteractionController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // (기존) PlaceGear / AttachSource / AttachBelt
+    // (레거시) PlaceGear / AttachSource / AttachBelt 유지
     // ─────────────────────────────────────────
-
-    // PlaceGear param에서 gearId(=ATT_Gear id) / cellName(옵션) 추출
-    // ※ 실제로 월드에 박는 SolidName은 gearId로 강제(gearNetworkManager의 centerName==gearId 조건 때문)
     bool TryGetGearPlaceInfo(Dictionary<string, object> placeParam, out string gearId, out string cellName)
     {
         gearId = null;
@@ -942,13 +1036,10 @@ public class InteractionController : MonoBehaviour
         if (string.IsNullOrEmpty(gearId))
             return false;
 
-        // ✅ 월드에 박는 셀은 gearId와 동일하게 강제
         cellName = gearId;
-
         return true;
     }
 
-    // ✅ 기어 설치(레거시): 월드 센터 셀 박고 + 네트워크 점유/노드 등록
     bool HandlePlaceGear(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
         if (worldManager == null || gearNetworkManager == null)
@@ -959,11 +1050,9 @@ public class InteractionController : MonoBehaviour
 
         var center = new Vector2Int(cx, cy);
 
-        // 1) 네트워크 관점 설치 가능?
         if (!gearNetworkManager.CanPlaceGear(center, gearId))
             return false;
 
-        // 2) 월드에 "센터 셀" 실제 설치 (※ 반드시 gearId 이름의 Solid를 깐다)
         if (!worldManager.cellLibrary.TryGetSolidIdByName(cellName, out ushort placeId))
             return false;
 
@@ -973,10 +1062,8 @@ public class InteractionController : MonoBehaviour
         if (!worldManager.PlaceSolidExact(cx, cy, placeId))
             return false;
 
-        // 3) 네트워크 등록
         if (!gearNetworkManager.TryAddGear(center, gearId, out _))
         {
-            // 롤백(드랍 없이 제거)
             worldManager.OverwriteSolid(cx, cy, 0, 0);
             return false;
         }
@@ -993,7 +1080,7 @@ public class InteractionController : MonoBehaviour
 
     bool HandleAttachSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
-        if (worldManager == null || gearNetworkManager == null)
+        if (gearNetworkManager == null)
             return false;
 
         string sourceKind = null;
@@ -1024,7 +1111,6 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // ✅ 벨트 설치: 우클릭 2단계 (start -> end)
     bool HandleAttachBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         if (gearNetworkManager == null)
@@ -1105,9 +1191,8 @@ public class InteractionController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // (기존) Corpse/Cell/Place/Multiblock/Combat 등 유지
+    // Corpse/Cell/Place/Multiblock/Combat (기존 유지)
     // ─────────────────────────────────────────
-
     bool TryCorpseInteraction()
     {
         if (_state != GameState.Ingame) return false;
@@ -1156,7 +1241,6 @@ public class InteractionController : MonoBehaviour
         return false;
     }
 
-    // ✅ 추가: 플레이어의 "해당 좌표에 대한 상대 위치(2축)" 계산
     void ComputeRelativeDirs(int cx, int cy, out WorldManager.RelV relV, out WorldManager.RelH relH)
     {
         float half = cellSize * 0.5f;
@@ -1235,7 +1319,6 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
-    // (이하 HandleBuildMultiblock ~ 이하 기존 그대로)
     bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
         ushort solidId = worldManager.GetSolidId(cx, cy);
@@ -1334,7 +1417,7 @@ public class InteractionController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Combat (기존 그대로)
+    // Combat (기존 유지)
     // ─────────────────────────────────────────
     void TryWeaponAttack()
     {

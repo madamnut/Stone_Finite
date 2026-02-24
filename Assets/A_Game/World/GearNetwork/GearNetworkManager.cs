@@ -1,24 +1,18 @@
 // GearNetworkManager.cs (전체 교체본)
-// ✅ 변경 요약 (Utility 레이어 전환 대응)
-// - GearNode에서 OccupiedCells 제거에 맞춰, GearNetworkManager도 "점유 셀 역인덱스(_cellToGearNodeId)" 제거
-// - 기어 배치 가능/기어 탐색은 이제 Utility 레이어 기반으로 처리:
-//   * "기어 점유 셀(any occupied)" 개념은 유지하되,
-//     - center 셀은 Utility에서 "Cogwheel 셀(id!=0 && id!=Occupied)"
-//     - Big의 Occupied는 center 상하좌우 4칸
-//     - anyGearCell -> center는 (자기 자신이 center인지) + (4방 이웃 중 center 찾기)로 해석
-// - ATT_Gear.json 의존은 제거(또는 선택적) 가능하도록 "스펙 등록 API" 추가
-//   * Cogwheel/Source/Belt 스펙은 InteractionController(PlaceUtility)에서 전달/등록하는 흐름 권장
+// ✅ Utility 레이어 전환 대응 버전 (센터 셀 전용 정책)
 //
-// ✅ 유지되는 기존 정책
-// - Source는 기어당 1개, any occupied 클릭 허용(센터로 붙음)
-// - Belt: 기어-기어 1:1, 한 기어에 최대 1개(시작/끝 포함), 설치 당시 start gearNodeId를 owner로 VFX
-// - 네트워크 해석: 기어 맞물림(Dir 반전, Big<->Small 속도비 2배), 벨트(Dir 유지, 1:1)
-// - 모순이면 stalled, rpm=0
-// - 오버스피드면 기어 파괴 예약 (world.BreakSolid(center))  ※ 기존 동작 유지(추후 Utility 파괴로 변경 필요)
+// 핵심 정책(확정):
+// - Occupied 셀 클릭은 전부 "무시(실패)" 처리한다.
+//   => Gear/Source/Belt 모든 API는 이제 "센터 셀"에서만 성공한다.
+// - 센터 셀 판정:
+//   * Utility(id!=0 && id!=Occupied) 이면서
+//   * _gearCenterToNodeId에 등록된 좌표
 //
-// ⚠ 전제(현 단계)
-// - 기어 "센터"는 Utility 레이어에 설치된다.
-// - Solid 레이어에는 더 이상 기어를 설치/파괴하지 않는 방향(추후 Break 대상 변경 필요).
+// ✅ 이번 수정:
+// - 오버스피드 파괴를 world.BreakSolid(center) → world.BreakUtilityAt(center) 로 교체
+//   (기어 파괴 결과가 "유틸 파괴(드랍/footprint/네트워크 제거)"와 완전히 동일하게 처리되도록)
+// - anyGearCell 기반 center 역추적(TryResolveGearCenterFromAnyCell) 제거
+//   (Occupied는 애초에 무시 정책이므로 필요 없음)
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -96,8 +90,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     // Utility "Occupied" id 캐시(없으면 0)
     ushort _utilityOccupiedId = 0;
-    static readonly Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-
 
     void Awake()
     {
@@ -113,6 +105,36 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null || world.cellLibrary == null) return;
         if (world.cellLibrary.TryGetUtilityIdByName("Occupied", out var occ))
             _utilityOccupiedId = occ;
+    }
+
+    void EnsureOccupiedCached()
+    {
+        if (_utilityOccupiedId != 0) return;
+        CacheUtilityOccupiedId();
+    }
+
+    bool IsUtilityOccupiedCell(Vector2Int c)
+    {
+        if (world == null) return false;
+        if (!world.InBounds(c.x, c.y)) return false;
+
+        EnsureOccupiedCached();
+        ushort uid = world.GetUtilityId(c.x, c.y);
+        if (uid == 0) return false;
+
+        return (_utilityOccupiedId != 0 && uid == _utilityOccupiedId);
+    }
+
+    bool IsGearCenterCell(Vector2Int c)
+    {
+        if (world == null) return false;
+        if (!world.InBounds(c.x, c.y)) return false;
+
+        // Occupied는 무조건 센터 아님
+        if (IsUtilityOccupiedCell(c)) return false;
+
+        // 센터는 "등록된" 좌표만 인정
+        return _gearCenterToNodeId.ContainsKey(c);
     }
 
     void EnsureVfxRef()
@@ -165,7 +187,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             if (!_sourceIdByNodeId.TryGetValue(srcNodeId, out var sourceId))
                 continue;
 
-            // 스펙이 없으면 현재 값 유지(안전)
             if (_sourceSpecById.TryGetValue(sourceId, out var spec))
             {
                 src.Dir = SourceNode.RotationDir.CW;
@@ -177,7 +198,6 @@ public sealed class GearNetworkManager : MonoBehaviour
                 }
                 else
                 {
-                    // Waterwheel 조건
                     var c = src.AttachedGearCenter;
 
                     bool ok =
@@ -189,15 +209,12 @@ public sealed class GearNetworkManager : MonoBehaviour
                     src.Rpm = ok ? spec.rpm : 0;
                 }
 
-                // BaseRpm/StressCapacity는 SourceNode 내부에 있으나,
-                // 현재 구현은 spec 기반으로만 갱신(정책상 OK)
                 src.SetBaseRpm(spec.rpm);
                 src.SetStressCapacity(spec.stressCapacity);
                 src.SetKind(spec.kind);
             }
             else
             {
-                // 최소 정책: Windmill은 true, Waterwheel은 조건 검사
                 src.Dir = SourceNode.RotationDir.CW;
 
                 if (src.Kind == SourceNode.SourceKind.Windmill)
@@ -221,8 +238,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         if (world == null) return;
 
-        TickSources();
-
         _pendingBreakCenters.Clear();
         _pendingBreakSet.Clear();
 
@@ -237,9 +252,8 @@ public sealed class GearNetworkManager : MonoBehaviour
             {
                 var c = _pendingBreakCenters[i];
 
-                // ⚠ 현 단계에서는 기존 구현 유지(솔리드 파괴).
-                // Utility로 옮긴 뒤에는 world.BreakUtility(center) 같은 API로 바꾸는 게 맞다.
-                world.BreakSolid(c.x, c.y);
+                // ✅ 오버스피드 파괴는 "유틸 파괴"로 통일
+                world.BreakUtilityAt(c.x, c.y);
             }
 
             _suppressRebuild = false;
@@ -250,75 +264,42 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Utility 기반 "기어 점유 셀" 판정/탐색
+    // Public API : Center-only 판정/탐색
     // ─────────────────────────────────────────
     public bool IsGearOccupiedCell(Vector2Int cell)
     {
-        return TryResolveGearCenterFromAnyCell(cell, out _);
+        // 정책상 Occupied는 무시 => "센터 기어 셀인가?"로 해석
+        return IsGearCenterCell(cell);
     }
 
     public bool TryGetGearNodeIdAtCell(Vector2Int anyGearCell, out int gearNodeId)
     {
         gearNodeId = -1;
-        if (!TryResolveGearCenterFromAnyCell(anyGearCell, out var center))
+
+        // 정책상 Occupied는 무시 => 센터만 허용
+        if (!IsGearCenterCell(anyGearCell))
             return false;
 
-        return _gearCenterToNodeId.TryGetValue(center, out gearNodeId);
-    }
-
-    bool TryResolveGearCenterFromAnyCell(Vector2Int anyCell, out Vector2Int center)
-    {
-        center = default;
-
-        if (world == null) return false;
-        if (!world.InBounds(anyCell.x, anyCell.y)) return false;
-
-        // 1) 본인이 센터인지 검사: Utility id가 0이 아니고, Occupied가 아니면 "센터 후보"
-        ushort uid = world.GetUtilityId(anyCell.x, anyCell.y);
-        if (uid != 0 && (_utilityOccupiedId == 0 || uid != _utilityOccupiedId))
-        {
-            // 등록된 기어만 센터로 인정
-            if (_gearCenterToNodeId.ContainsKey(anyCell))
-            {
-                center = anyCell;
-                return true;
-            }
-        }
-
-        // 2) Big의 Occupied(상하좌우)로부터 센터 찾기
-        // (Occupied는 center 정보를 안 들고 있으므로 4방 이웃에서 센터를 찾는다)
-
-        for (int i = 0; i < dirs.Length; i++)
-        {
-            var n = anyCell + dirs[i];
-            if (!world.InBounds(n.x, n.y)) continue;
-
-            if (_gearCenterToNodeId.ContainsKey(n))
-            {
-                center = n;
-                return true;
-            }
-        }
-
-        return false;
+        return _gearCenterToNodeId.TryGetValue(anyGearCell, out gearNodeId);
     }
 
     // ─────────────────────────────────────────
     // Public API : Gear (배치/등록/제거)
     // ─────────────────────────────────────────
-
-    // ✅ 신규 권장: 스펙 직접 전달
     public bool CanPlaceGear(Vector2Int center, GearNode.GearSize size)
     {
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
+
+        // Occupied에 두려는 시도도 방지(센터 후보는 occupied일 수 없음)
+        if (IsUtilityOccupiedCell(center)) return false;
+
         if (_gearCenterToNodeId.ContainsKey(center)) return false;
 
         var offsets = BuildFootprintOffsets(size);
         return world.IsUtilityAreaEmpty(center, offsets);
     }
 
-    // ✅ 레거시 호환: gearId로 스펙 조회(스펙이 Register 되어 있어야 함)
     public bool CanPlaceGear(Vector2Int center, string gearId)
     {
         if (string.IsNullOrEmpty(gearId)) return false;
@@ -326,17 +307,15 @@ public sealed class GearNetworkManager : MonoBehaviour
         return CanPlaceGear(center, spec.size);
     }
 
-    // ✅ 신규 권장: 스펙 직접 전달 + VFX id(gearId)
     public bool TryAddGear(Vector2Int center, GearNode.GearSize size, int maxRpm, string gearId, out int nodeId)
     {
         nodeId = -1;
 
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
+        if (IsUtilityOccupiedCell(center)) return false;
         if (_gearCenterToNodeId.ContainsKey(center)) return false;
 
-        // Utility 레이어에 이미 센터가 깔렸다는 전제는 InteractionController에서 보장
-        // 여기서는 네트워크 등록만 담당
         nodeId = _nextNodeId++;
 
         var gear = new GearNode(nodeId, center, size, Mathf.Max(0, maxRpm));
@@ -357,7 +336,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
-    // ✅ 레거시 호환: gearId로 스펙 조회(스펙이 Register 되어 있어야 함)
     public bool TryAddGear(Vector2Int center, string gearId, out int nodeId)
     {
         nodeId = -1;
@@ -373,19 +351,20 @@ public sealed class GearNetworkManager : MonoBehaviour
         droppedSourceId = null;
         droppedBelts = null;
 
+        // ✅ 정책: 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out int nodeId))
             return false;
 
         if (!_gearNodes.TryGetValue(nodeId, out var gear))
             return false;
 
-        // 0) 연결된 벨트 제거 + 드랍 계산(파괴 시점 거리)
+        // 0) 연결된 벨트 제거 + 드랍 계산
         var beltDrops = new List<BeltDrop>();
         RemoveBeltsConnectedToGear(nodeId, beltDrops);
         if (beltDrops.Count > 0)
             droppedBelts = beltDrops;
 
-        // 1) 붙은 소스 있으면 제거 + 드랍 대상 기록
+        // 1) 붙은 소스 제거 + 드랍 대상 기록
         if (_gearCenterToSourceNodeId.TryGetValue(gear.Center, out int srcNodeId))
         {
             if (_sourceIdByNodeId.TryGetValue(srcNodeId, out var sid))
@@ -419,7 +398,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Source
+    // Public API : Source (센터 전용)
     // ─────────────────────────────────────────
     public bool TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceId, out int sourceNodeId)
     {
@@ -427,6 +406,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(sourceId)) return false;
 
+        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out var gearNodeId))
             return false;
 
@@ -444,10 +424,13 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(sourceId)) return false;
 
+        // ✅ 센터만 허용 + 등록된 기어여야 함
+        if (!IsGearCenterCell(attachedGearCenter))
+            return false;
+
         if (!_gearCenterToNodeId.TryGetValue(attachedGearCenter, out var gearNodeId))
             return false;
 
-        // 스펙 등록이 없으면 kind 매핑만이라도 필요
         if (!_sourceSpecById.TryGetValue(sourceId, out var spec))
         {
             if (!TryMapSourceKind(sourceId, out var k))
@@ -522,7 +505,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Belt
+    // Public API : Belt (센터 전용)
     // ─────────────────────────────────────────
     public bool TryAttachBeltAtCells(Vector2Int startAnyGearCell, Vector2Int endAnyGearCell, string beltKind, out int materialCost)
     {
@@ -531,6 +514,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (string.IsNullOrEmpty(beltKind)) return false;
 
+        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(startAnyGearCell, out int startGearNodeId))
             return false;
         if (!TryGetGearNodeIdAtCell(endAnyGearCell, out int endGearNodeId))
@@ -570,6 +554,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         droppedBelt = default;
 
+        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
             return false;
 
@@ -598,7 +583,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             foreach (var s in starts) { startId = s; break; }
 
             if (startId < 0) return false;
-            if (!_beltByStartGearNodeId.TryGetValue(startId, out var link2)) return false;
             if (!_beltKindByStartGearNodeId.TryGetValue(startId, out var beltKind)) return false;
 
             int count = 0;
@@ -653,9 +637,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             {
                 int startId = tmp[i];
 
-                if (!_beltByStartGearNodeId.TryGetValue(startId, out var link))
-                    continue;
-
                 if (!_beltKindByStartGearNodeId.TryGetValue(startId, out var beltKind))
                     continue;
 
@@ -672,7 +653,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     void RemoveBeltInternal(int startGearNodeId, int endGearNodeId, string beltKind)
     {
-        // VFX off
         EnsureVfxRef();
         if (vfx != null && !string.IsNullOrEmpty(beltKind))
             vfx.SetBeltLoopVfx(startGearNodeId, beltKind, false, Vector3.zero, Vector3.zero, 0f, 1, Color.white);
@@ -711,10 +691,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     public void RebuildFromWorldFullScan()
     {
-        // Utility 레이어 기반으로 "센터만" 스캔해서 네트워크를 복원하려면
-        // "어떤 Utility 셀이 Cogwheel 센터인지"를 알아야 한다.
-        // 현재는 gear center 등록이 외부(설치 시)에서만 발생하므로,
-        // 필요 시 여기 확장(Utility id->name 기반 필터링)하면 됨.
+        // 현 단계: 설치 시점 등록 기반.
         ClearAll();
         ClearNetworks();
         BuildAllNetworks();
@@ -794,7 +771,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             network.GearNodeIds.Add(gearId);
             _nodeIdToNetworkId[gearId] = network.NetworkId;
 
-            // sources attached to this gear center
             if (_gearNodes.TryGetValue(gearId, out var g) &&
                 _gearCenterToSourceNodeId.TryGetValue(g.Center, out int srcNodeId))
             {
@@ -820,9 +796,9 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     IEnumerable<GearConnection> EnumerateConnections(int gearId)
     {
-        // 1) 기어 맞물림(물리 연결)
         var a = _gearNodes[gearId];
 
+        // 1) 기어 맞물림(물리 연결)
         foreach (var other in _gearNodes)
         {
             if (other.Key == gearId) continue;
@@ -864,7 +840,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
     }
 
-    // 전파/충돌/오버스피드 파괴 예약
     void SolveNetwork(GearNetwork network)
     {
         int capacity = 0;
@@ -929,7 +904,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
 
         bool hasDrivingSource = false;
-
         GearNode.RotationDir? seedDir = null;
         float? baseRpm = null;
 
@@ -1114,7 +1088,6 @@ public sealed class GearNetworkManager : MonoBehaviour
                 if (!_beltKindByStartGearNodeId.TryGetValue(ownerStartGearNodeId, out var beltKind) || string.IsNullOrEmpty(beltKind))
                     continue;
 
-                // color는 등록된 스펙이 있으면 사용, 없으면 white
                 Color color = Color.white;
                 if (_beltSpecById.TryGetValue(beltKind, out var bspec))
                     color = bspec.color;

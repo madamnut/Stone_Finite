@@ -186,7 +186,7 @@ public class WorldChunkSystem
 
             // 혹시 남아있을 수 있는 더티 기록 제거
             bgDirtyChunks.Remove(coord);
-            utilityDirtyChunks.Remove(coord); // ✅
+            utilityDirtyChunks.Remove(coord);
             solidDirtyChunks.Remove(coord);
             platformDirtyChunks.Remove(coord);
             liquidDirtyChunks.Remove(coord);
@@ -230,7 +230,7 @@ public class WorldChunkSystem
             platformDirtyChunks.Count == 0 &&
             liquidDirtyChunks.Count == 0 &&
             bgDirtyChunks.Count == 0 &&
-            utilityDirtyChunks.Count == 0 && // ✅
+            utilityDirtyChunks.Count == 0 &&
             lightDirtyChunks.Count == 0)
             return;
 
@@ -278,7 +278,10 @@ public class WorldChunkSystem
                 c.platformDirty = false;
             }
             solidDirtyChunks.Clear();
-            platformDirtyChunks.RemoveWhere(coord => true); // 아래에서 별도로 돌지 않도록 일괄 비움
+
+            // ✅ 여기서 platformDirtyChunks를 "전부 제거"하려면 Clear가 맞다.
+            // (Solid 갱신에서 platform도 함께 갱신했으므로)
+            platformDirtyChunks.Clear();
         }
 
         // (안전장치) PlatformDirty만 남아있을 경우
@@ -336,7 +339,7 @@ public class WorldChunkSystem
         bool markSolid,
         bool markBG = false,
         bool markLiquid = false,
-        bool markUtility = false // ✅ 추가
+        bool markUtility = false
     )
     {
         int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
@@ -348,7 +351,6 @@ public class WorldChunkSystem
 
         if (markSolid)
         {
-            // ✅ Solid 변경은 플랫폼 콜라이더도 같이 바뀔 수 있음(같은 solid 데이터 기반)
             c.solidDirty = true;
             c.platformDirty = true;
             solidDirtyChunks.Add(coord);
@@ -465,6 +467,7 @@ public class WorldChunkSystem
 
     private Vector2Int GetPlayerChunk(Vector3 p)
     {
+        // ✅ 월드가 "셀=1유닛" 전제라면 이 계산이 맞다(기존 유지).
         return new Vector2Int(
             Mathf.FloorToInt(p.x / chunkSize),
             Mathf.FloorToInt(p.y / chunkSize)
@@ -499,7 +502,7 @@ public class WorldChunkSystem
         var c = go.GetComponent<Chunk>();
 
         var bgBuf = c.bgBuffer;
-        var utilBuf = c.utilityBuffer; // ✅
+        var utilBuf = c.utilityBuffer;
         var solidBuf = c.solidBuffer;
         var platBuf = c.platformBuffer;
         var liqBuf = c.liquidBuffer;
@@ -508,7 +511,7 @@ public class WorldChunkSystem
         for (int i = 0; i < size; i++)
         {
             bgBuf[i] = null;
-            utilBuf[i] = null; // ✅
+            utilBuf[i] = null;
             solidBuf[i] = null;
             platBuf[i] = null;
             liqBuf[i] = null;
@@ -537,10 +540,8 @@ public class WorldChunkSystem
             var s = worldMap.solid[wx, wy];
             if (s.id != 0)
             {
-                // 플랫폼도 "시각"은 solidTilemap에 그림 (collidable=false 전제 -> colliderType None)
                 solidBuf[idx] = cellLibrary.GetSolidTile(s.id, s.meta);
 
-                // 플랫폼이면 콜라이더 전용 타일을 platformTilemap에 깔기
                 platBuf[idx] = cellLibrary.IsPlatform(s.id)
                     ? cellLibrary.GetPlatformColliderTile(s.id, s.meta)
                     : null;
@@ -559,7 +560,7 @@ public class WorldChunkSystem
         }
 
         c.bgTilemap.SetTilesBlock(bounds, bgBuf);
-        if (c.utilityTilemap != null) c.utilityTilemap.SetTilesBlock(bounds, utilBuf); // ✅
+        if (c.utilityTilemap != null) c.utilityTilemap.SetTilesBlock(bounds, utilBuf);
         c.solidTilemap.SetTilesBlock(bounds, solidBuf);
         if (c.platformTilemap != null) c.platformTilemap.SetTilesBlock(bounds, platBuf);
         c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
@@ -581,10 +582,10 @@ public class WorldChunkSystem
 
             var f2 = worldMap.fluid[wx, wy];
             byte type = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0);
-            byte amt  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
+            byte amt = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
             c.liquidTypePixels[idx] = new Color32(type, 0, 0, 255);
-            c.liquidAmtPixels[idx]  = new Color32(amt, 0, 0, 255);
+            c.liquidAmtPixels[idx] = new Color32(amt, 0, 0, 255);
         }
 
         c.liquidTypeTex.SetPixels32(c.liquidTypePixels);
@@ -626,14 +627,14 @@ public class WorldChunkSystem
         RefreshLightLayer(coord);
 
         c.bgDirty = false;
-        c.utilityDirty = false; // ✅
+        c.utilityDirty = false;
         c.solidDirty = false;
         c.platformDirty = false;
         c.liquidDirty = false;
         c.lightDirty = false;
     }
 
-    private enum LayerType { BG, Utility, Solid, Platform, Liquid } // ✅
+    private enum LayerType { BG, Utility, Solid, Platform, Liquid }
 
     private void RefreshChunkLayer(Vector2Int coord, LayerType type)
     {
@@ -733,7 +734,6 @@ public class WorldChunkSystem
 
             case LayerType.Platform:
             {
-                // Solid에서 같이 처리하는 게 기본이지만, 안전하게 별도 갱신도 지원
                 if (c.platformTilemap == null) break;
 
                 var pbuf = c.platformBuffer;
@@ -799,10 +799,10 @@ public class WorldChunkSystem
 
                     var f2 = worldMap.fluid[wx, wy];
                     byte type2 = (byte)((f2.id != 0 && f2.amount > 0) ? Mathf.Min((int)f2.id, 255) : 0);
-                    byte amt2  = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
+                    byte amt2 = (byte)((f2.id != 0 && f2.amount > 0) ? f2.amount : 0);
 
                     c.liquidTypePixels[idx] = new Color32(type2, 0, 0, 255);
-                    c.liquidAmtPixels[idx]  = new Color32(amt2, 0, 0, 255);
+                    c.liquidAmtPixels[idx] = new Color32(amt2, 0, 0, 255);
                 }
 
                 c.liquidTypeTex.SetPixels32(c.liquidTypePixels);

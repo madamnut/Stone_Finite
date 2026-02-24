@@ -94,6 +94,10 @@ public class CellLibrary : MonoBehaviour
     {
         public ushort id;
         public string name; // JSON key
+
+        // ✅ 추가: 유틸 셀 분기용 타입(예: "Cogwheel", "Occupied", "None")
+        public string type;
+
         public Dictionary<ushort, UtilityVariantDef> variants; // meta -> variant (없을 수도 있음: None 등)
     }
 
@@ -205,7 +209,6 @@ public class CellLibrary : MonoBehaviour
             if (collidable && isPlatform)
             {
                 Debug.LogError($"[CellLibrary] invalid solid def: both collidable and isPlatform are true (name={name}, id={id})");
-                // 계속 진행은 하되, 충돌이 나기 쉬우니 여기서 collidable을 무시하는 식의 보정은 하지 않음.
             }
 
             SolidFlags flags = SolidFlags.None;
@@ -297,6 +300,10 @@ public class CellLibrary : MonoBehaviour
             if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
             ushort id = (ushort)idInt;
 
+            // ✅ 추가: type 파싱 (미기재면 "None")
+            string type = o["type"]?.Value<string>();
+            if (string.IsNullOrEmpty(type)) type = "None";
+
             Dictionary<ushort, UtilityVariantDef> variants = null;
 
             if (o.TryGetValue("variants", out JToken vTok) && vTok is JArray vArr && vArr.Count > 0)
@@ -331,6 +338,7 @@ public class CellLibrary : MonoBehaviour
             {
                 id = id,
                 name = name,
+                type = type,
                 variants = variants
             };
 
@@ -478,6 +486,11 @@ public class CellLibrary : MonoBehaviour
     public string GetUtilityName(ushort id)
     {
         return _utilityById.TryGetValue(id, out var def) ? def.name : null;
+    }
+
+    public string GetUtilityType(ushort id)
+    {
+        return _utilityById.TryGetValue(id, out var def) ? def.type : null;
     }
 
     public string GetFluidName(ushort id)
