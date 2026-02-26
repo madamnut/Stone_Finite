@@ -716,7 +716,7 @@ public class WorldManager : MonoBehaviour
             ClearGearFootprintUtility(cell);
 
             // VFX
-            if (vfx != null)
+            if (vfx != null && cellLibrary != null)
             {
                 var spr = cellLibrary.GetUtilitySprite(centerUtilityId, centerUtilityMeta);
                 vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
@@ -726,12 +726,15 @@ public class WorldManager : MonoBehaviour
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
             // 드랍: 기어 본체(센터 유틸 name)
-            string gearItemId = cellLibrary != null ? cellLibrary.GetUtilityName(centerUtilityId) : null;
-            if (!string.IsNullOrEmpty(gearItemId))
-                itemDropper.SpawnDroppedItems(gearItemId, pos3);
+            if (itemDropper != null && cellLibrary != null)
+            {
+                string gearItemId = cellLibrary.GetUtilityName(centerUtilityId);
+                if (!string.IsNullOrEmpty(gearItemId))
+                    itemDropper.SpawnDroppedItems(gearItemId, pos3);
+            }
 
             // 드랍: 소스(있으면 1개)
-            if (!string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
+            if (itemDropper != null && !string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
             {
                 var srcData = itemLibrary.Create(droppedSourceId, 1);
                 if (srcData != null)
@@ -739,7 +742,7 @@ public class WorldManager : MonoBehaviour
             }
 
             // 드랍: 벨트(거리 기반 count -> material item)
-            if (droppedBelts != null && droppedBelts.Count > 0 && itemLibrary != null)
+            if (itemDropper != null && droppedBelts != null && droppedBelts.Count > 0 && itemLibrary != null)
             {
                 for (int i = 0; i < droppedBelts.Count; i++)
                 {
@@ -763,7 +766,7 @@ public class WorldManager : MonoBehaviour
         worldMap.SetUtility(x, y, 0, 0);
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
 
-        if (vfx != null)
+        if (vfx != null && cellLibrary != null)
         {
             var spr = cellLibrary.GetUtilitySprite(u.id, u.meta);
             vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
