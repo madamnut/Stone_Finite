@@ -5,51 +5,51 @@
   },
   "Occupied": {
     "id": 1,
-    "type": "Occupied",
+    "type": "CogwheelOccupied",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Occupied" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelOccupied" }
     ]
   },
   "Wooden Cogwheel": {
     "id": 2,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   },
   "Big Wooden Cogwheel": {
     "id": 3,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   },
   "Bronze Cogwheel": {
     "id": 4,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   },
   "Big Bronze Cogwheel": {
     "id": 5,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   },
   "Iron Cogwheel": {
     "id": 6,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   },
   "Big Iron Cogwheel": {
     "id": 7,
     "type": "Cogwheel",
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Center" }
+      { "key": "Default", "meta": 0, "sprite": "CogwheelCenter" }
     ]
   }
 }

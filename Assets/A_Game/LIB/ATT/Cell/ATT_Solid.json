@@ -1019,7 +1019,7 @@
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Windmill" }
+      { "key": "Default", "meta": 0, "sprite": "Source" }
     ]
   },
   "Waterwheel": {
@@ -1028,7 +1028,7 @@
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Waterwheel" }
+      { "key": "Default", "meta": 0, "sprite": "Source" }
     ]
   },
   "Plant Belt": {
@@ -1037,7 +1037,7 @@
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Plant Belt" }
+      { "key": "Default", "meta": 0, "sprite": "Belt" }
     ]
   },
   "Linen Belt": {
@@ -1046,9 +1046,12 @@
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Linen Belt" }
+      { "key": "Default", "meta": 0, "sprite": "Belt" }
     ]
   },
+  
+
+
   
   "Torch": {
     "id": 50001,
