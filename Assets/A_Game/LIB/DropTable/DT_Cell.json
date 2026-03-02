@@ -299,6 +299,13 @@
   "Waterwheel": [
     { "itemId": "Waterwheel", "probability": 1, "min": 1, "max": 1 }
   ],
+  "Plant Belt": [
+    { "itemId": "Long Plant Twine", "probability": 1, "min": 1, "max": 1 }
+  ],
+  "Linen Belt": [
+    { "itemId": "Long Linen Twine", "probability": 1, "min": 1, "max": 1 }
+  ],
+
 
   "Torch": [
     { "itemId": "Torch", "probability": 1, "min": 1, "max": 1 }

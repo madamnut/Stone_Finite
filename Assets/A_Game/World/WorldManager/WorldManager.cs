@@ -149,7 +149,7 @@ public class WorldManager : MonoBehaviour
     private const ushort META_LEFT = 4;
     private const ushort META_RIGHT = 5;
 
-    // ✅ Utility: Occupied 캐시
+    // ✅ Utility: CogwheelOccupied 캐시
     private ushort _utilityOccupiedId = 0;
     private static readonly Vector2Int[] _dirs4 = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
@@ -681,7 +681,7 @@ public class WorldManager : MonoBehaviour
 
     // ✅ 유틸 파괴(기어 포함): 유틸 편집/오버스피드 파괴 공통 엔트리
     // 정책:
-    // - Occupied(점유 셀)는 클릭해도 무시(파괴 불가)
+    // - CogwheelOccupied(점유 셀)는 클릭해도 무시(파괴 불가)
     // - 기어 파괴는 "센터 유틸"에서만 발생한다(센터를 파괴하면 footprint/네트워크/드랍 일괄)
     public ushort BreakUtilityAt(int x, int y)
     {
@@ -692,14 +692,14 @@ public class WorldManager : MonoBehaviour
         var u = worldMap.GetUtility(x, y);
         if (u.id == 0) return 0;
 
-        // Occupied는 무시
+        // CogwheelOccupied는 무시
         if (_utilityOccupiedId != 0 && u.id == _utilityOccupiedId)
             return 0;
 
         var cell = new Vector2Int(x, y);
 
         // 1) 기어 센터라면: 네트워크 제거 + footprint 제거 + 드랍(기어/소스/벨트)
-        // (IsGearOccupiedCell이 any-cell을 true로 줄 수 있어도, 위에서 Occupied는 걸렀으므로 센터만 남는다)
+        // (IsGearOccupiedCell이 any-cell을 true로 줄 수 있어도, 위에서 occupied는 걸렀으므로 센터만 남는다)
         if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(cell))
         {
             ushort centerUtilityId = u.id;
@@ -712,7 +712,7 @@ public class WorldManager : MonoBehaviour
             if (!gearNetworkManager.TryRemoveGearAt(cell, out droppedSourceId, out droppedBelts))
                 return 0;
 
-            // footprint 제거: center + (center 4방 중 Occupied만)
+            // footprint 제거: center + (center 4방 중 occupied만)
             ClearGearFootprintUtility(cell);
 
             // VFX
@@ -788,7 +788,7 @@ public class WorldManager : MonoBehaviour
 
         if (_utilityOccupiedId == 0) return;
 
-        // big gear occupied: center 상하좌우 중 Occupied인 셀만 비움
+        // big gear occupied: center 상하좌우 중 occupied인 셀만 비움
         for (int i = 0; i < _dirs4.Length; i++)
         {
             var p = center + _dirs4[i];
@@ -806,7 +806,9 @@ public class WorldManager : MonoBehaviour
     {
         if (_utilityOccupiedId != 0) return;
         if (cellLibrary == null) return;
-        if (cellLibrary.TryGetUtilityIdByName("Occupied", out var occ))
+
+        // ✅ 변경: "Occupied" -> "CogwheelOccupied"
+        if (cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out var occ))
             _utilityOccupiedId = occ;
     }
 
@@ -1164,7 +1166,7 @@ public class WorldManager : MonoBehaviour
         tickCurr.Clear();
         tickNext.Clear();
 
-        // ✅ Utility Occupied 캐시
+        // ✅ Utility CogwheelOccupied 캐시
         CacheUtilityOccupiedIdIfNeeded();
 
         string dirBoot = WorldLoadContext.GetSavePath();

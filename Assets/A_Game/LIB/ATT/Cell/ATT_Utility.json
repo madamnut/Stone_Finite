@@ -1,9 +1,9 @@
 {
   "None": {
     "id": 0,
-    "type": "None"
+    "type": "Default"
   },
-  "Occupied": {
+  "CogwheelOccupied": {
     "id": 1,
     "type": "CogwheelOccupied",
     "variants": [

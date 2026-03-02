@@ -1,28 +1,15 @@
 // InteractionController.cs (전체 교체본)
-// ✅ 이번 수정(Utility Interaction Mode + T 토글 + 전용 커서)
-// - Utility 좌클릭 파괴: WorldManager.BreakUtilityAt(cx, cy)로 위임 (기어/소스/벨트/footprint/드랍 포함)
-// - PlaceUtility에서 GearNetworkManager 스펙 Register를 반드시 수행:
-//   * Cogwheel: RegisterCogwheelSpec
-//   * Source  : RegisterSourceSpec
-//   * Belt    : RegisterBeltSpec
-// - Occupied 클릭 정책(확정):
-//   * Occupied는 설치/부착/벨트 시작/끝 모두 무시(실패)
-//   * Source/Belt는 반드시 "센터 셀(Occupied 아님)"에만 작동
+// ✅ 이번 수정(PlaceSource/PlaceBelt 분리 대응)
+// - Utility 모드(T): PlaceUtility(Cogwheel)만 설치 가능. Source/Belt는 Utility 모드에서 무시.
+// - Solid/BG 모드: PlaceSource / PlaceBelt 처리 추가 (기어 센터 셀에서만 작동, Occupied 무시)
+// - Highlight:
+//   * Utility 모드: PlaceUtility(Cogwheel)만 설치 하이라이트
+//   * Solid/BG 모드: PlaceSource/PlaceBelt 하이라이트 추가(센터 셀 조건)
 //
-// 전제:
-// - WorldManager에 Utility API 존재:
-//     GetUtilityId, GetUtility, SetUtilityExact, ClearUtilityExact,
-//     IsUtilityAreaEmpty, PlaceUtilityFootprint, ClearUtilityFootprint,
-//     BreakUtilityAt(int x, int y)
-// - CellLibrary에 Utility lookup 존재:
-//     TryGetUtilityIdByName
-// - GearNetworkManager API(현 단계):
-//     RegisterCogwheelSpec/RegisterSourceSpec/RegisterBeltSpec
-//     CanPlaceGear(Vector2Int center, string gearId)
-//     TryAddGear(Vector2Int center, string gearId, out int nodeId)
-//     TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceKind, out int sourceNodeId)
-//     TryGetGearNodeIdAtCell(Vector2Int anyCell, out int nodeId)
-//     TryAttachBeltAtCells(Vector2Int anyGearCell0, Vector2Int anyGearCell1, string beltKind, out int materialCost)
+// 전제(기존 유지):
+// - WorldManager Utility API 존재
+// - CellLibrary Utility lookup 존재
+// - GearNetworkManager API 존재
 
 using System;
 using System.Collections;
@@ -166,7 +153,7 @@ public class InteractionController : MonoBehaviour
 
         if (cellLibrary != null)
         {
-            if (cellLibrary.TryGetUtilityIdByName("Occupied", out ushort occ))
+            if (cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out ushort occ))
                 _utilityOccupiedId = occ;
         }
 
@@ -427,6 +414,15 @@ public class InteractionController : MonoBehaviour
         return true;
     }
 
+    bool TryGetCellParam(Dictionary<string, object> p, out string cell)
+    {
+        cell = null;
+        if (p == null) return false;
+        if (!p.TryGetValue("cell", out var c) || c == null) return false;
+        cell = c.ToString();
+        return !string.IsNullOrEmpty(cell);
+    }
+
     static bool TryReadString(Dictionary<string, object> d, string key, out string v)
     {
         v = null;
@@ -550,16 +546,16 @@ public class InteractionController : MonoBehaviour
         {
             ItemData held = GetHeldItem();
 
-            // 설치 하이라이트(PlaceUtility)
+            // 설치 하이라이트(PlaceUtility: Cogwheel only)
             if (held != null && held.Count > 0 && held.ToolActions != null &&
                 held.ToolActions.TryGetValue("PlaceUtility", out var pObj) &&
                 pObj is Dictionary<string, object> p &&
                 TryGetPlaceUtilityParam(p, out var type, out var cell, out var typeObj))
             {
-                bool can = false;
-
                 if (type == "Cogwheel")
                 {
+                    bool can = false;
+
                     if (worldManager != null && cellLibrary != null)
                     {
                         if (cellLibrary.TryGetUtilityIdByName(cell, out ushort centerId) && centerId != 0)
@@ -574,19 +570,14 @@ public class InteractionController : MonoBehaviour
                             can = worldManager.IsUtilityAreaEmpty(new Vector2Int(cx, cy), offsets);
                         }
                     }
-                }
-                else if (type == "Source" || type == "Belt")
-                {
-                    // ✅ Source/Belt는 "센터 셀에서만" 가능 표시
-                    can = IsUtilityCenterCell(cx, cy);
-                }
 
-                _hlSR.sprite = can
-                    ? (HighLight_Utility_CAN != null ? HighLight_Utility_CAN : HighLight_Solid_CAN)
-                    : (HighLight_Utility_CANNOT != null ? HighLight_Utility_CANNOT : HighLight_Solid_CANNOT);
+                    _hlSR.sprite = can
+                        ? (HighLight_Utility_CAN != null ? HighLight_Utility_CAN : HighLight_Solid_CAN)
+                        : (HighLight_Utility_CANNOT != null ? HighLight_Utility_CANNOT : HighLight_Solid_CANNOT);
 
-                PulseHighlight();
-                return;
+                    PulseHighlight();
+                    return;
+                }
             }
 
             // 파괴 하이라이트(Occupied는 파괴 불가)
@@ -600,6 +591,66 @@ public class InteractionController : MonoBehaviour
 
             PulseHighlight();
             return;
+        }
+
+        // ✅ Solid/BG 모드에서 PlaceSource/PlaceBelt 하이라이트 우선 처리
+        {
+            ItemData held = GetHeldItem();
+            if (held != null && held.Count > 0 && held.ToolActions != null)
+            {
+                bool isSource = held.ToolActions.TryGetValue("PlaceSource", out var psObj) && psObj is Dictionary<string, object>;
+                bool isBelt = held.ToolActions.TryGetValue("PlaceBelt", out var pbObj) && pbObj is Dictionary<string, object>;
+
+                if (isSource || isBelt)
+                {
+                    bool can = false;
+
+                    // Occupied는 무조건 실패
+                    if (!IsUtilityOccupiedCell(cx, cy) && IsUtilityCenterCell(cx, cy))
+                    {
+                        var cellPos = new Vector2Int(cx, cy);
+
+                        if (gearNetworkManager != null && gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out int n1))
+                        {
+                            if (isSource)
+                            {
+                                can = true;
+                            }
+                            else
+                            {
+                                if (!_beltPending)
+                                {
+                                    can = true;
+                                }
+                                else
+                                {
+                                    // 2단계: 동일 아이템/스코프/종류가 유지되면 후보 표시
+                                    if (_hotbarScope == _beltPendingScope && held == _beltPendingHeldRef)
+                                    {
+                                        if (gearNetworkManager.TryGetGearNodeIdAtCell(_beltStartCell, out int n0))
+                                        {
+                                            can = (n0 != n1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (_layerMode == LayerMode.Solid)
+                    {
+                        _hlSR.sprite = can ? HighLight_Solid_CAN : HighLight_Solid_CANNOT;
+                    }
+                    else
+                    {
+                        // BG 모드에서도 "부착 가능 여부"는 보여주되, BG 하이라이트 색 유지가 더 중요하면 여기 바꿔도 됨
+                        _hlSR.sprite = can ? HighLight_BG_CAN : HighLight_BG_CANNOT;
+                    }
+
+                    PulseHighlight();
+                    return;
+                }
+            }
         }
 
         // Solid/BG 기존 하이라이트
@@ -740,7 +791,7 @@ public class InteractionController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Item Interaction (기존)
+    // Item Interaction (Solid/BG)
     // ─────────────────────────────────────────
     bool TryItemInteraction()
     {
@@ -778,6 +829,10 @@ public class InteractionController : MonoBehaviour
                 ok = HandleAttachSource(held, cx, cy, param);       // 레거시 유지
             else if (actionName == "AttachBelt")
                 ok = HandleAttachBelt(held, cx, cy, param);         // 레거시 유지
+            else if (actionName == "PlaceSource")
+                ok = HandlePlaceSource(held, cx, cy, param);
+            else if (actionName == "PlaceBelt")
+                ok = HandlePlaceBelt(held, cx, cy, param);
             else if (actionName == "BuildMultiblock")
                 ok = HandleBuildMultiblock(held, cx, cy, param);
 
@@ -819,11 +874,7 @@ public class InteractionController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // PlaceUtility (type 분기)
-    // 정책:
-    // - Cogwheel: Utility 설치 + 점유(Occupied) + 네트워크 등록
-    // - Source/Belt: "센터 셀에서만" 작동(Occupied 클릭은 무시)
-    // - 스펙 Register는 여기서 확정적으로 수행
+    // PlaceUtility (Cogwheel only)
     // ─────────────────────────────────────────
     bool HandlePlaceUtility(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
     {
@@ -891,126 +942,121 @@ public class InteractionController : MonoBehaviour
             return true;
         }
 
-        if (type == "Source")
-        {
-            // ✅ 센터 셀에서만
-            if (!IsUtilityCenterCell(cx, cy))
-                return false;
-
-            if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
-                return false;
-
-            // ✅ 스펙 등록(가능하면)
-            // typeObj 예시 기대키: kind("Windmill"/"Waterwheel"), rpm, stressCapacity
-            string kindStr = null;
-            int rpm = 0;
-            int stressCap = 0;
-
-            if (typeObj != null)
-            {
-                TryReadString(typeObj, "kind", out kindStr);
-                TryReadInt(typeObj, "rpm", out rpm);
-                TryReadInt(typeObj, "stressCapacity", out stressCap);
-            }
-
-            // kindStr이 없으면 cell 자체를 kind로 간주(기존 컨벤션)
-            if (string.IsNullOrEmpty(kindStr)) kindStr = cell;
-
-            SourceNode.SourceKind sk = (kindStr == "Windmill") ? SourceNode.SourceKind.Windmill : SourceNode.SourceKind.Waterwheel;
-            gearNetworkManager.RegisterSourceSpec(cell, sk, rpm, stressCap);
-
-            if (!gearNetworkManager.TryAttachSourceAtCell(cellPos, cell, out _))
-                return false;
-
-            sound.PlayPlace();
-
-            held.Count -= 1;
-            if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-            player.Inventory.NotifyChanged();
-
-            RefreshHeldHandSprite();
-            return true;
-        }
-
-        if (type == "Belt")
-        {
-            // ✅ 센터 셀에서만 시작/끝 지정
-            if (!IsUtilityCenterCell(cx, cy))
-                return false;
-
-            if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
-                return false;
-
-            string beltKind = cell;
-
-            // ✅ 스펙 등록(가능하면)
-            // typeObj 예시 기대키: maxRpm, materialItemId, color
-            int maxRpm = 0;
-            string materialItemId = null;
-            Color color = Color.white;
-
-            if (typeObj != null)
-            {
-                TryReadInt(typeObj, "maxRpm", out maxRpm);
-                TryReadString(typeObj, "materialItemId", out materialItemId);
-                TryReadColor(typeObj, "color", out color);
-            }
-
-            gearNetworkManager.RegisterBeltSpec(beltKind, maxRpm, materialItemId, color);
-
-            if (!_beltPending)
-            {
-                _beltPending = true;
-                _beltStartCell = cellPos; // ✅ 센터만 저장
-                _beltPendingKind = beltKind;
-                _beltPendingScope = _hotbarScope;
-                _beltPendingHeldRef = held;
-                return true;
-            }
-
-            if (_hotbarScope != _beltPendingScope || held != _beltPendingHeldRef || _beltPendingKind != beltKind)
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            if (!gearNetworkManager.TryGetGearNodeIdAtCell(_beltStartCell, out int g0) ||
-                !gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out int g1))
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            if (g0 == g1)
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            if (!gearNetworkManager.TryAttachBeltAtCells(_beltStartCell, cellPos, beltKind, out int cost))
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            if (cost <= 0 || held.Count < cost)
-            {
-                CancelBeltPlacement();
-                return false;
-            }
-
-            sound.PlayPlace();
-
-            held.Count -= cost;
-            if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
-            player.Inventory.NotifyChanged();
-
-            RefreshHeldHandSprite();
-            CancelBeltPlacement();
-            return true;
-        }
-
+        // ✅ Source/Belt는 Utility 모드에서 설치하지 않음
         return false;
+    }
+
+    // ─────────────────────────────────────────
+    // PlaceSource (Solid/BG only)
+    // ─────────────────────────────────────────
+    bool HandlePlaceSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
+    {
+        if (gearNetworkManager == null)
+            return false;
+
+        if (!TryGetCellParam(param, out var cell))
+            return false;
+
+        // ✅ Occupied 클릭은 무시
+        if (IsUtilityOccupiedCell(cx, cy))
+            return false;
+
+        // ✅ 센터 셀에서만
+        if (!IsUtilityCenterCell(cx, cy))
+            return false;
+
+        var cellPos = new Vector2Int(cx, cy);
+
+        if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
+            return false;
+
+        if (!gearNetworkManager.TryAttachSourceAtCell(cellPos, cell, out _))
+            return false;
+
+        sound.PlayPlace();
+
+        held.Count -= 1;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        return true;
+    }
+
+    // ─────────────────────────────────────────
+    // PlaceBelt (Solid/BG only)
+    // ─────────────────────────────────────────
+    bool HandlePlaceBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
+    {
+        if (gearNetworkManager == null)
+            return false;
+
+        if (!TryGetCellParam(param, out var beltKind))
+            return false;
+
+        // ✅ Occupied 클릭은 무시
+        if (IsUtilityOccupiedCell(cx, cy))
+            return false;
+
+        // ✅ 센터 셀에서만 시작/끝 지정
+        if (!IsUtilityCenterCell(cx, cy))
+            return false;
+
+        var cellPos = new Vector2Int(cx, cy);
+
+        if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
+            return false;
+
+        if (!_beltPending)
+        {
+            _beltPending = true;
+            _beltStartCell = cellPos; // ✅ 센터만 저장
+            _beltPendingKind = beltKind;
+            _beltPendingScope = _hotbarScope;
+            _beltPendingHeldRef = held;
+            return true;
+        }
+
+        if (_hotbarScope != _beltPendingScope || held != _beltPendingHeldRef || _beltPendingKind != beltKind)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (!gearNetworkManager.TryGetGearNodeIdAtCell(_beltStartCell, out int g0) ||
+            !gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out int g1))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (g0 == g1)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (!gearNetworkManager.TryAttachBeltAtCells(_beltStartCell, cellPos, beltKind, out int cost))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (cost <= 0 || held.Count < cost)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        sound.PlayPlace();
+
+        held.Count -= cost;
+        if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
+        player.Inventory.NotifyChanged();
+
+        RefreshHeldHandSprite();
+        CancelBeltPlacement();
+        return true;
     }
 
     // ─────────────────────────────────────────

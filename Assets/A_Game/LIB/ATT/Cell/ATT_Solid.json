@@ -1,6 +1,7 @@
 {
   "Air": {
     "id": 0,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -11,6 +12,7 @@
 
   "Rock": {
     "id": 1,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -20,6 +22,7 @@
   },
   "Dirt": {
     "id": 2,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -30,6 +33,7 @@
 
   "Grass_Top": {
     "id": 3,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -39,6 +43,7 @@
   },
   "Grass_Left": {
     "id": 4,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -48,6 +53,7 @@
   },
   "Grass_Right": {
     "id": 5,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -57,6 +63,7 @@
   },
   "Grass_TopLeft": {
     "id": 6,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -66,6 +73,7 @@
   },
   "Grass_TopRight": {
     "id": 7,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -75,6 +83,7 @@
   },
   "Grass_LeftRight": {
     "id": 8,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -84,6 +93,7 @@
   },
   "Grass_TopLeftRight": {
     "id": 9,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -94,6 +104,7 @@
 
   "Clay": {
     "id": 10,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -103,6 +114,7 @@
   },
   "Mud": {
     "id": 11,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -112,6 +124,7 @@
   },
   "Log": {
     "id": 12,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -121,6 +134,7 @@
   },
   "Stripped Log": {
     "id": 13,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -130,6 +144,7 @@
   },
   "Firewood": {
     "id": 14,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -139,6 +154,7 @@
   },
   "Wooden Plank": {
     "id": 15,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -148,6 +164,7 @@
   },
   "Wooden Platform": {
     "id": 16,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -157,6 +174,7 @@
   },
   "Wooden Frame": {
     "id": 17,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -166,6 +184,7 @@
   },
   "Clay Brick Cell": {
     "id": 18,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -175,6 +194,7 @@
   },
   "Refractory Clay Brick Cell": {
     "id": 19,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -184,6 +204,7 @@
   },
   "Copper Cell": {
     "id": 20,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -193,6 +214,7 @@
   },
   "Tin Cell": {
     "id": 21,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -202,6 +224,7 @@
   },
   "Bronze Cell": {
     "id": 22,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -211,6 +234,7 @@
   },
   "Iron Cell": {
     "id": 23,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -220,6 +244,7 @@
   },
   "Steel Cell": {
     "id": 24,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -229,6 +254,7 @@
   },
   "Copper Frame": {
     "id": 25,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -238,6 +264,7 @@
   },
   "Tin Frame": {
     "id": 26,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -247,6 +274,7 @@
   },
   "Bronze Frame": {
     "id": 27,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -256,6 +284,7 @@
   },
   "Iron Frame": {
     "id": 28,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -265,6 +294,7 @@
   },
   "Steel Frame": {
     "id": 29,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -274,6 +304,7 @@
   },
   "Copper Platform": {
     "id": 30,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -283,6 +314,7 @@
   },
   "Tin Platform": {
     "id": 31,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -292,6 +324,7 @@
   },
   "Bronze Platform": {
     "id": 32,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -301,6 +334,7 @@
   },
   "Iron Platform": {
     "id": 33,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -310,6 +344,7 @@
   },
   "Steel Platform": {
     "id": 34,
+    "type": "Default",
     "collidable": false,
     "isPlatform": true,
     "gravity": false,
@@ -319,6 +354,7 @@
   },
   "SandStone": {
     "id": 35,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -328,6 +364,7 @@
   },
   "SandStone Brick Cell": {
     "id": 36,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -337,6 +374,7 @@
   },
   "Frozen Grass_Top": {
     "id": 37,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -346,6 +384,7 @@
   },
   "Frozen Grass_Left": {
     "id": 38,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -355,6 +394,7 @@
   },
   "Frozen Grass_Right": {
     "id": 39,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -364,6 +404,7 @@
   },
   "Frozen Grass_TopLeft": {
     "id": 40,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -373,6 +414,7 @@
   },
   "Frozen Grass_TopRight": {
     "id": 41,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -382,6 +424,7 @@
   },
   "Frozen Grass_LeftRight": {
     "id": 42,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -391,6 +434,7 @@
   },
   "Frozen Grass_TopLeftRight": {
     "id": 43,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -400,6 +444,7 @@
   },
   "Ice Cell": {
     "id": 44,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -409,6 +454,7 @@
   },
   "Snow Cell": {
     "id": 45,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -418,6 +464,7 @@
   },
   "Frozen Dirt": {
     "id": 46,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -427,6 +474,7 @@
   },
   "Basalt": {
     "id": 47,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -436,6 +484,7 @@
   },
   "Tuff": {
     "id": 48,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -445,6 +494,7 @@
   },
   "Andesite": {
     "id": 49,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -455,6 +505,7 @@
 
   "Sand": {
     "id": 1000,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": true,
@@ -464,6 +515,7 @@
   },
   "Gravel": {
     "id": 1001,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": true,
@@ -474,6 +526,7 @@
 
   "Trunk": {
     "id": 2000,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -483,6 +536,7 @@
   },
   "Leaf": {
     "id": 2001,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -493,6 +547,7 @@
 
   "Plant": {
     "id": 2002,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -502,6 +557,7 @@
   },
   "Bush": {
     "id": 2003,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -511,6 +567,7 @@
   },
   "Stone_Pile": {
     "id": 2004,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -520,6 +577,7 @@
   },
   "Small_Stone_Pile": {
     "id": 2005,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -529,6 +587,7 @@
   },
   "Dead_Bush": {
     "id": 2006,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -538,6 +597,7 @@
   },
   "Agave_0": {
     "id": 2007,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -547,6 +607,7 @@
   },
   "Agave_1": {
     "id": 2008,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -556,6 +617,7 @@
   },
   "Agave_2": {
     "id": 2009,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -565,6 +627,7 @@
   },
   "Agave_3": {
     "id": 2010,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -574,6 +637,7 @@
   },
   "Agave_4": {
     "id": 2011,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -583,6 +647,7 @@
   },
   "Agave_5": {
     "id": 2012,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -592,6 +657,7 @@
   },
   "Cactus": {
     "id": 2013,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -601,6 +667,7 @@
   },
   "Snow": {
     "id": 2014,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -610,6 +677,7 @@
   },
   "Frozen Bush": {
     "id": 2015,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -619,6 +687,7 @@
   },
   "Frozen Plant": {
     "id": 2016,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -628,6 +697,7 @@
   },
   "Frozen Trunk": {
     "id": 2017,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -637,6 +707,7 @@
   },
   "Ash": {
     "id": 2018,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -646,6 +717,7 @@
   },
   "Sulfur Crystal": {
     "id": 2019,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -655,6 +727,7 @@
   },
   "Flax_Top": {
     "id": 2020,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -664,6 +737,7 @@
   },
   "Flax_Bottom": {
     "id": 2021,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -672,10 +746,9 @@
     ]
   },
 
-
-
   "Ore_Coal": {
     "id": 3000,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -685,6 +758,7 @@
   },
   "Ore_Copper": {
     "id": 3001,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -694,6 +768,7 @@
   },
   "Ore_Iron": {
     "id": 3002,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -703,6 +778,7 @@
   },
   "Ore_Tin": {
     "id": 3003,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -713,6 +789,7 @@
 
   "Granite": {
     "id": 4000,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -722,6 +799,7 @@
   },
   "Amphibolite": {
     "id": 4001,
+    "type": "Default",
     "collidable": true,
     "isPlatform": false,
     "gravity": false,
@@ -732,6 +810,7 @@
 
   "Primal Workbench_L": {
     "id": 5000,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -741,6 +820,7 @@
   },
   "Primal Workbench_R": {
     "id": 5001,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -750,6 +830,7 @@
   },
   "Campfire_L": {
     "id": 5002,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -761,6 +842,7 @@
   },
   "Campfire_R": {
     "id": 5003,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -772,6 +854,7 @@
   },
   "Wooden Crate_L": {
     "id": 5004,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -781,6 +864,7 @@
   },
   "Wooden Crate_R": {
     "id": 5005,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -790,6 +874,7 @@
   },
   "Clay Kiln_BL": {
     "id": 5006,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -800,6 +885,7 @@
   },
   "Clay Kiln_BR": {
     "id": 5007,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -810,6 +896,7 @@
   },
   "Clay Kiln_TL": {
     "id": 5008,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -820,6 +907,7 @@
   },
   "Clay Kiln_TR": {
     "id": 5009,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -830,6 +918,7 @@
   },
   "Brick Furnace_BL": {
     "id": 5010,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -840,6 +929,7 @@
   },
   "Brick Furnace_BR": {
     "id": 5011,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -850,6 +940,7 @@
   },
   "Brick Furnace_TL": {
     "id": 5012,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -860,6 +951,7 @@
   },
   "Brick Furnace_TR": {
     "id": 5013,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -870,6 +962,7 @@
   },
   "Toolbench_BL": {
     "id": 5014,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -879,6 +972,7 @@
   },
   "Toolbench_BR": {
     "id": 5015,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -888,6 +982,7 @@
   },
   "Toolbench_TL": {
     "id": 5016,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -897,6 +992,7 @@
   },
   "Toolbench_TR": {
     "id": 5017,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -906,6 +1002,7 @@
   },
   "Coke Oven_0": {
     "id": 5018,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -916,6 +1013,7 @@
   },
   "Coke Oven_1": {
     "id": 5019,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -926,6 +1024,7 @@
   },
   "Coke Oven_2": {
     "id": 5020,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -936,6 +1035,7 @@
   },
   "Coke Oven_3": {
     "id": 5021,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -946,6 +1046,7 @@
   },
   "Coke Oven_4": {
     "id": 5022,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -956,6 +1057,7 @@
   },
   "Coke Oven_5": {
     "id": 5023,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -966,6 +1068,7 @@
   },
   "Coke Oven_6": {
     "id": 5024,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -976,6 +1079,7 @@
   },
   "Coke Oven_7": {
     "id": 5025,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -986,6 +1090,7 @@
   },
   "Coke Oven_8": {
     "id": 5026,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -996,6 +1101,7 @@
   },
   "Forge Workbench_L": {
     "id": 5027,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1005,6 +1111,7 @@
   },
   "Forge Workbench_R": {
     "id": 5028,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1015,6 +1122,7 @@
 
   "Windmill": {
     "id": 6000,
+    "type": "Source",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1024,6 +1132,7 @@
   },
   "Waterwheel": {
     "id": 6001,
+    "type": "Source",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1033,6 +1142,7 @@
   },
   "Plant Belt": {
     "id": 6002,
+    "type": "Belt",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1042,6 +1152,7 @@
   },
   "Linen Belt": {
     "id": 6003,
+    "type": "Belt",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
@@ -1049,12 +1160,10 @@
       { "key": "Default", "meta": 0, "sprite": "Belt" }
     ]
   },
-  
 
-
-  
   "Torch": {
     "id": 50001,
+    "type": "Default",
     "collidable": false,
     "isPlatform": false,
     "gravity": false,

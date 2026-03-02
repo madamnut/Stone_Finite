@@ -408,8 +408,7 @@
         "resultItem": "Ash",
         "amount": 1
       },
-      "PlaceUtility": {
-        "type": "Belt",
+      "PlaceBelt": {
         "cell": "Plant Belt"
       }
     }
@@ -472,8 +471,7 @@
         "resultItem": "Ash",
         "amount": 1
       },
-      "PlaceUtility": {
-        "type": "Belt",
+      "PlaceBelt": {
         "cell": "Linen Belt"
       }
     }
@@ -1411,8 +1409,7 @@
     "maxStack": 1,
     "tags": ["Utility"],
     "toolActions": {
-      "PlaceUtility": {
-        "type": "Source",
+      "PlaceSource": {
         "cell": "Windmill"
       }
     }
@@ -1424,8 +1421,7 @@
     "maxStack": 1,
     "tags": ["Utility"],
     "toolActions": {
-      "PlaceUtility": {
-        "type": "Source",
+      "PlaceSource": {
         "cell": "Waterwheel"
       }
     }

@@ -103,7 +103,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         _utilityOccupiedId = 0;
         if (world == null || world.cellLibrary == null) return;
-        if (world.cellLibrary.TryGetUtilityIdByName("Occupied", out var occ))
+        if (world.cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out var occ))
             _utilityOccupiedId = occ;
     }
 

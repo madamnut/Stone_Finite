@@ -15,6 +15,7 @@ using UnityEngine.U2D;
 /// - brightness는 0~15 클램프
 /// - variants[].brightness_override는 0~15 클램프 (미기재면 미오버라이드)
 /// - isPlatform(선택): true/false
+/// - type(선택): string (미기재면 "Default")
 ///
 /// 추가 규칙(사용자 전제):
 /// - isPlatform 과 collidable 은 서로 배타적 (둘 다 true 금지)
@@ -79,6 +80,9 @@ public class CellLibrary : MonoBehaviour
         // ✅ JSON: isPlatform (선택)
         public bool isPlatform;
 
+        // ✅ JSON: type (선택, 미기재면 "Default")
+        public string type;
+
         public string interaction; // 없으면 null
         public string name;        // JSON key
         public Dictionary<ushort, SolidVariantDef> variants; // meta -> variant (필수라고 가정)
@@ -95,7 +99,7 @@ public class CellLibrary : MonoBehaviour
         public ushort id;
         public string name; // JSON key
 
-        // ✅ 추가: 유틸 셀 분기용 타입(예: "Cogwheel", "Occupied", "None")
+        // ✅ 유틸 셀 분기용 타입(예: "Cogwheel", "Belt", "Source", "CogwheelOccupied", "Default")
         public string type;
 
         public Dictionary<ushort, UtilityVariantDef> variants; // meta -> variant (없을 수도 있음: None 등)
@@ -196,6 +200,10 @@ public class CellLibrary : MonoBehaviour
             if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
             ushort id = (ushort)idInt;
 
+            // ✅ 추가: type 파싱 (미기재면 "Default")
+            string type = o["type"]?.Value<string>();
+            if (string.IsNullOrEmpty(type)) type = "Default";
+
             int bInt = o["brightness"]?.Value<int>() ?? 0;
             if (bInt < 0) bInt = 0; else if (bInt > 15) bInt = 15;
             byte brightness = (byte)bInt;
@@ -265,6 +273,7 @@ public class CellLibrary : MonoBehaviour
             var def = new SolidDef
             {
                 id = id,
+                type = type,
                 brightness = brightness,
                 flags = flags,
                 isPlatform = isPlatform,
@@ -300,9 +309,9 @@ public class CellLibrary : MonoBehaviour
             if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
             ushort id = (ushort)idInt;
 
-            // ✅ 추가: type 파싱 (미기재면 "None")
+            // ✅ type 파싱 (미기재면 "Default")
             string type = o["type"]?.Value<string>();
-            if (string.IsNullOrEmpty(type)) type = "None";
+            if (string.IsNullOrEmpty(type)) type = "Default";
 
             Dictionary<ushort, UtilityVariantDef> variants = null;
 
@@ -483,6 +492,11 @@ public class CellLibrary : MonoBehaviour
         return _solidById.TryGetValue(id, out var def) ? def.name : null;
     }
 
+    public string GetSolidType(ushort id)
+    {
+        return _solidById.TryGetValue(id, out var def) ? def.type : "Default";
+    }
+
     public string GetUtilityName(ushort id)
     {
         return _utilityById.TryGetValue(id, out var def) ? def.name : null;
@@ -490,7 +504,7 @@ public class CellLibrary : MonoBehaviour
 
     public string GetUtilityType(ushort id)
     {
-        return _utilityById.TryGetValue(id, out var def) ? def.type : null;
+        return _utilityById.TryGetValue(id, out var def) ? def.type : "Default";
     }
 
     public string GetFluidName(ushort id)
