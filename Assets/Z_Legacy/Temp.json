@@ -1,0 +1,101 @@
+{
+  "Wooden Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 64
+    }
+  },
+  "Big Wooden Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 64
+    }
+  },
+
+  "Bronze Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 128
+    }
+  },
+  "Big Bronze Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 128
+    }
+  },
+
+  "Iron Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 256
+    }
+  },
+  "Big Iron Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 256
+    }
+  },
+
+  "Steel Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Small",
+      "maxRpm": 512
+    }
+  },
+  "Big Steel Cogwheel": {
+    "kind": "Gear",
+    "gear": {
+      "type": "Cogwheel",
+      "size": "Big",
+      "maxRpm": 512
+    }
+  },
+
+  "Waterwheel": {
+    "kind": "Source",
+    "source": {
+      "rpm": 2,
+      "stressCapacity": 32
+    }
+  },
+  "Windmill": {
+    "kind": "Source",
+    "source": {
+      "rpm": 1,
+      "stressCapacity": 64
+    }
+  },
+
+  "Plant Belt": {
+    "kind": "Belt",
+    "belt": {
+      "maxRpm": 64,
+      "materialItemId": "Long Plant Twine",
+      "color": [0.55, 0.40, 0.25, 1.0]
+    }
+  },
+  "Linen Belt": {
+    "kind": "Belt",
+    "belt": {
+      "maxRpm": 128,
+      "materialItemId": "Long Linen Twine",
+      "color": [0.90, 0.90, 0.85, 1.0]
+    }
+  }
+}

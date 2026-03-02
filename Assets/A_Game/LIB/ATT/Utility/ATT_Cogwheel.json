@@ -1,0 +1,13 @@
+{
+  "Wooden Cogwheel": { "size": "Small", "maxRpm": 64 },
+  "Big Wooden Cogwheel": { "size": "Big", "maxRpm": 64 },
+
+  "Bronze Cogwheel": { "size": "Small", "maxRpm": 128 },
+  "Big Bronze Cogwheel": { "size": "Big", "maxRpm": 128 },
+
+  "Iron Cogwheel": { "size": "Small", "maxRpm": 256 },
+  "Big Iron Cogwheel": { "size": "Big", "maxRpm": 256 },
+
+  "Steel Cogwheel": { "size": "Small", "maxRpm": 512 },
+  "Big Steel Cogwheel": { "size": "Big", "maxRpm": 512 }
+}

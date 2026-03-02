@@ -1,0 +1,12 @@
+{
+  "Plant Belt": {
+    "maxRpm": 64,
+    "materialItemId": "Long Plant Twine",
+    "color": [0.55, 0.40, 0.25, 1.0]
+  },
+  "Linen Belt": {
+    "maxRpm": 128,
+    "materialItemId": "Long Linen Twine",
+    "color": [0.90, 0.90, 0.85, 1.0]
+  }
+}

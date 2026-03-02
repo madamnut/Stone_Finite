@@ -410,12 +410,7 @@
       },
       "PlaceUtility": {
         "type": "Belt",
-        "cell": "Plant Belt",
-        "Belt": {
-          "maxRpm": 64,
-          "materialItemId": "Long Plant Twine",
-          "color": [0.55, 0.40, 0.25, 1.0]
-        }
+        "cell": "Plant Belt"
       }
     }
   },
@@ -440,7 +435,7 @@
     }
   },
 
- "Linen Twine": {
+  "Linen Twine": {
     "name": "Linen Twine",
     "spriteName": "Linen Twine",
     "maxStack": 32,
@@ -479,12 +474,7 @@
       },
       "PlaceUtility": {
         "type": "Belt",
-        "cell": "Linen Belt",
-        "Belt": {
-          "maxRpm": 128,
-          "materialItemId": "Long Linen Twine",
-          "color": [0.90, 0.90, 0.85, 1.0]
-        }
+        "cell": "Linen Belt"
       }
     }
   },
@@ -1338,11 +1328,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Wooden Cogwheel",
-        "Cogwheel": {
-          "size": "Small",
-          "maxRpm": 64
-        }
+        "cell": "Wooden Cogwheel"
       }
     }
   },
@@ -1355,11 +1341,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Big Wooden Cogwheel",
-        "Cogwheel": {
-          "size": "Big",
-          "maxRpm": 64
-        }
+        "cell": "Big Wooden Cogwheel"
       }
     }
   },
@@ -1372,11 +1354,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Bronze Cogwheel",
-        "Cogwheel": {
-          "size": "Small",
-          "maxRpm": 128
-        }
+        "cell": "Bronze Cogwheel"
       }
     }
   },
@@ -1389,11 +1367,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Big Bronze Cogwheel",
-        "Cogwheel": {
-          "size": "Big",
-          "maxRpm": 128
-        }
+        "cell": "Big Bronze Cogwheel"
       }
     }
   },
@@ -1406,11 +1380,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Iron Cogwheel",
-        "Cogwheel": {
-          "size": "Small",
-          "maxRpm": 256
-        }
+        "cell": "Iron Cogwheel"
       }
     }
   },
@@ -1423,11 +1393,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Cogwheel",
-        "cell": "Big Iron Cogwheel",
-        "Cogwheel": {
-          "size": "Big",
-          "maxRpm": 256
-        }
+        "cell": "Big Iron Cogwheel"
       }
     }
   },
@@ -1447,11 +1413,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Source",
-        "cell": "Windmill",
-        "Source": {
-          "rpm": 1,
-          "stressCapacity": 64
-        }
+        "cell": "Windmill"
       }
     }
   },
@@ -1464,11 +1426,7 @@
     "toolActions": {
       "PlaceUtility": {
         "type": "Source",
-        "cell": "Waterwheel",
-        "Source": {
-          "rpm": 2,
-          "stressCapacity": 32
-        }
+        "cell": "Waterwheel"
       }
     }
   }

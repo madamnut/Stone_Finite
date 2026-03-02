@@ -1013,58 +1013,40 @@
     ]
   },
 
-  "Wooden Cogwheel": {
+  "Windmill": {
     "id": 6000,
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Wooden Cogwheel" }
+      { "key": "Default", "meta": 0, "sprite": "Windmill" }
     ]
   },
-  "Big Wooden Cogwheel": {
+  "Waterwheel": {
     "id": 6001,
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Big Wooden Cogwheel" }
+      { "key": "Default", "meta": 0, "sprite": "Waterwheel" }
     ]
   },
-  "Bronze Cogwheel": {
+  "Plant Belt": {
     "id": 6002,
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Bronze Cogwheel" }
+      { "key": "Default", "meta": 0, "sprite": "Plant Belt" }
     ]
   },
-  "Big Bronze Cogwheel": {
+  "Linen Belt": {
     "id": 6003,
     "collidable": false,
     "isPlatform": false,
     "gravity": false,
     "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Big Bronze Cogwheel" }
-    ]
-  },
-  "Iron Cogwheel": {
-    "id": 6004,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Iron Cogwheel" }
-    ]
-  },
-  "Big Iron Cogwheel": {
-    "id": 6005,
-    "collidable": false,
-    "isPlatform": false,
-    "gravity": false,
-    "variants": [
-      { "key": "Default", "meta": 0, "sprite": "Big Iron Cogwheel" }
+      { "key": "Default", "meta": 0, "sprite": "Linen Belt" }
     ]
   },
   

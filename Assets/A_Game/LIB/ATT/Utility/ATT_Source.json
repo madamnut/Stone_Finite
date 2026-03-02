@@ -1,0 +1,10 @@
+{
+  "Waterwheel": {
+    "rpm": 2,
+    "stressCapacity": 32
+  },
+  "Windmill": {
+    "rpm": 1,
+    "stressCapacity": 64
+  }
+}

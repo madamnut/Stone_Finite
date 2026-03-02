@@ -4532,6 +4532,56 @@ Transform:
   - {fileID: 430136572}
   m_Father: {fileID: 1746062756}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &739783371
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 739783373}
+  - component: {fileID: 739783372}
+  m_Layer: 0
+  m_Name: UtilityLib
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &739783372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 739783371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb76a097c77e50438c2acbc7b439941, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attCogwheel: {fileID: 4900000, guid: 8de57a14b8d668048997bf6275c7e43c, type: 3}
+  attBelt: {fileID: 4900000, guid: 6349058d88886dd478b1f3d50d0b2608, type: 3}
+  attSource: {fileID: 4900000, guid: af37a026f13f778449dd0248deb1668e, type: 3}
+  attWire: {fileID: 4900000, guid: d5502c91f1c65b4479082cbc41c8dc57, type: 3}
+  attPipe: {fileID: 4900000, guid: 6fbd4c86b884c2044b4b7e352a10e4de, type: 3}
+  attTube: {fileID: 4900000, guid: c8f7395b08e343146a8c6a7e25cfc2e9, type: 3}
+--- !u!4 &739783373
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 739783371}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &751118036
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9134,7 +9184,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   world: {fileID: 557152421}
-  attGearJson: {fileID: 4900000, guid: 8a4ee27ee6656d142803ac61fafaf7cb, type: 3}
   vfx: {fileID: 672136422}
 --- !u!4 &1500385779
 Transform:
@@ -14313,6 +14362,7 @@ SceneRoots:
   - {fileID: 1635185976}
   - {fileID: 1746062756}
   - {fileID: 1639529666}
+  - {fileID: 739783373}
   - {fileID: 867055870}
   - {fileID: 708102120}
   - {fileID: 1177056458}
