@@ -1,8 +1,10 @@
-// WorldManager.cs (전체 교체본)
-// meta 규칙:
-// 0: 일반(부착 아님)  ✅ (fallback)
-// 1: BG 부착
-// 2,3,4,5: 상/하/좌/우 부착
+// WorldManager.cs (전체 교체본 - 요청한 변경만 반영한 버전)
+// ✅ 변경사항:
+// - Utility Occupied 캐시/판정: "CogwheelOccupied"로 통일
+// - BreakUtilityAt(): CogwheelOccupied면 파괴 불가 return 0
+// - BreakUtilityAt(): 기어면 기존 로직 유지(네트워크 제거 + footprint 제거 + 드랍)
+// - BreakUtilityAt(): 일반 유틸도 DT_Cell 기반 드랍 추가 (utility name 사용)
+// - BreakBG(): VFX + DT_Cell 드랍 추가 (BG id는 Solid name 체계로 GetSolidName)
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +15,6 @@ public class WorldManager : MonoBehaviour
 {
     public enum CellLayer { Solid, BG }
 
-    // ✅ 설치 상대방향(2축) - InteractionController에서 사용
     public enum RelV { Neutral = 0, Up = 1, Down = 2 }
     public enum RelH { Neutral = 0, Left = 1, Right = 2 }
 
@@ -31,10 +32,8 @@ public class WorldManager : MonoBehaviour
 
     [Header("플레이어 및 렌더링 설정")]
     public Transform player;
-    [Tooltip("인벤토리 저장/로드 안전 참조용 Player 컴포넌트")]
     public Player playerComp;
     public int ChunkRadius = 7;
-    [Tooltip("한 프레임당 최대 로드할 청크 개수")]
     public int maxLoadsPerFrame = 4;
 
     [Header("Falling Blocks")]
@@ -46,8 +45,6 @@ public class WorldManager : MonoBehaviour
 
     [Header("Multiblock")]
     public MultiblockManager multiblockManager;
-
-    // 로드 때만 임시로 들고있다가 Awake 끝에서 적용
     private List<Multiblock.SaveData> _loadedMultiblocks;
 
     [Header("Corpse")]
@@ -63,7 +60,7 @@ public class WorldManager : MonoBehaviour
     public ItemLibrary itemLibrary;
 
     [Header("Gear Network")]
-    public GearNetworkManager gearNetworkManager; // ✅ Utility 파괴에서 기어 처리
+    public GearNetworkManager gearNetworkManager;
 
     [Header("Time Settings")]
     public int ticksPerSecond = 20;
@@ -115,7 +112,6 @@ public class WorldManager : MonoBehaviour
     public int randomTicksPerWorldTick = 64;
 
     [Header("Artificial Light Flood (Budget)")]
-    [Tooltip("FixedUpdate 1회당 인공빛 큐에서 처리할 최대 노드 수(감소+증가 합산)")]
     public int artificialLightOpsPerTick = 8000;
 
     private struct IncNode
@@ -265,7 +261,7 @@ public class WorldManager : MonoBehaviour
 
         foreach (var p in tickCurr)
         {
-            StepAttachmentAt(p.x, p.y); // ✅ 부착 연쇄 파괴
+            StepAttachmentAt(p.x, p.y);
             StepGravityAt(p.x, p.y);
             StepFluidAt(p.x, p.y);
         }
@@ -610,7 +606,6 @@ public class WorldManager : MonoBehaviour
         return true;
     }
 
-    // offsets는 (0,0) 포함 규칙
     public bool IsUtilityAreaEmpty(Vector2Int center, IReadOnlyList<Vector2Int> offsets)
     {
         if (offsets == null || offsets.Count == 0) return false;
@@ -692,14 +687,13 @@ public class WorldManager : MonoBehaviour
         var u = worldMap.GetUtility(x, y);
         if (u.id == 0) return 0;
 
-        // CogwheelOccupied는 무시
+        // CogwheelOccupied는 파괴 불가
         if (_utilityOccupiedId != 0 && u.id == _utilityOccupiedId)
             return 0;
 
         var cell = new Vector2Int(x, y);
 
         // 1) 기어 센터라면: 네트워크 제거 + footprint 제거 + 드랍(기어/소스/벨트)
-        // (IsGearOccupiedCell이 any-cell을 true로 줄 수 있어도, 위에서 occupied는 걸렀으므로 센터만 남는다)
         if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(cell))
         {
             ushort centerUtilityId = u.id;
@@ -708,21 +702,17 @@ public class WorldManager : MonoBehaviour
             string droppedSourceId = null;
             List<GearNetworkManager.BeltDrop> droppedBelts = null;
 
-            // 입력은 center로 통일
             if (!gearNetworkManager.TryRemoveGearAt(cell, out droppedSourceId, out droppedBelts))
                 return 0;
 
-            // footprint 제거: center + (center 4방 중 occupied만)
             ClearGearFootprintUtility(cell);
 
-            // VFX
             if (vfx != null && cellLibrary != null)
             {
                 var spr = cellLibrary.GetUtilitySprite(centerUtilityId, centerUtilityMeta);
                 vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
             }
 
-            // 드랍 위치
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
             // 드랍: 기어 본체(센터 유틸 name)
@@ -741,7 +731,7 @@ public class WorldManager : MonoBehaviour
                     itemDropper.SpawnDroppedItem(srcData, pos3);
             }
 
-            // 드랍: 벨트(거리 기반 count -> material item)
+            // 드랍: 벨트(기존: material id로 변환)
             if (itemDropper != null && droppedBelts != null && droppedBelts.Count > 0 && itemLibrary != null)
             {
                 for (int i = 0; i < droppedBelts.Count; i++)
@@ -762,7 +752,7 @@ public class WorldManager : MonoBehaviour
             return centerUtilityId;
         }
 
-        // 2) 일반 유틸: 1칸 제거(+VFX). (드랍 규칙 필요하면 여기 추가)
+        // 2) 일반 유틸: 1칸 제거 + VFX + DT_Cell 드랍(utility name key)
         worldMap.SetUtility(x, y, 0, 0);
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
 
@@ -772,6 +762,16 @@ public class WorldManager : MonoBehaviour
             vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
         }
 
+        if (itemDropper != null && cellLibrary != null)
+        {
+            string key = cellLibrary.GetUtilityName(u.id);
+            if (!string.IsNullOrEmpty(key))
+            {
+                var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+                itemDropper.SpawnDroppedItems(key, pos3);
+            }
+        }
+
         return u.id;
     }
 
@@ -779,7 +779,6 @@ public class WorldManager : MonoBehaviour
     {
         CacheUtilityOccupiedIdIfNeeded();
 
-        // center
         if (worldMap.InBounds(center.x, center.y))
         {
             worldMap.SetUtility(center.x, center.y, 0, 0);
@@ -788,7 +787,6 @@ public class WorldManager : MonoBehaviour
 
         if (_utilityOccupiedId == 0) return;
 
-        // big gear occupied: center 상하좌우 중 occupied인 셀만 비움
         for (int i = 0; i < _dirs4.Length; i++)
         {
             var p = center + _dirs4[i];
@@ -807,7 +805,6 @@ public class WorldManager : MonoBehaviour
         if (_utilityOccupiedId != 0) return;
         if (cellLibrary == null) return;
 
-        // ✅ 변경: "Occupied" -> "CogwheelOccupied"
         if (cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out var occ))
             _utilityOccupiedId = occ;
     }
@@ -1000,7 +997,6 @@ public class WorldManager : MonoBehaviour
         return PlaceSolidAtEmpty(x, y, id, relV, relH);
     }
 
-    // (이제 "기어 전용" 용도는 Utility로 이동했지만, 시그니처/호출처 호환을 위해 유지)
     public bool PlaceSolidExact(int x, int y, ushort id)
     {
         if (!worldMap.InBounds(x, y)) return false;
@@ -1085,8 +1081,6 @@ public class WorldManager : MonoBehaviour
         ushort oldMeta = s.meta;
         if (oldSolidId == 0) return 0;
 
-        // ✅ Solid 파괴에서는 GearNetworkManager를 건드리지 않는다.
-
         ushort oldFluidId = worldMap.GetFluid(x, y).id;
 
         worldMap.SetSolid(x, y, 0, 0);
@@ -1102,10 +1096,14 @@ public class WorldManager : MonoBehaviour
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
-            var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
-            vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+            if (vfx != null)
+            {
+                var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
+                vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+            }
 
-            itemDropper.SpawnDroppedItems(key, pos3);
+            if (itemDropper != null)
+                itemDropper.SpawnDroppedItems(key, pos3);
         }
 
         return oldSolidId;
@@ -1144,6 +1142,26 @@ public class WorldManager : MonoBehaviour
 
         MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
+
+        // ✅ VFX + DT_Cell 드랍
+        if (cellLibrary != null)
+        {
+            string key = cellLibrary.GetSolidName(removed);
+            if (!string.IsNullOrEmpty(key))
+            {
+                var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+
+                if (vfx != null)
+                {
+                    var spr = cellLibrary.GetSolidSprite(removed, 0);
+                    vfx.EmitBlockAtCell(spr, x, y, 1, grid: 2, count: -1);
+                }
+
+                if (itemDropper != null)
+                    itemDropper.SpawnDroppedItems(key, pos3);
+            }
+        }
+
         return removed;
     }
 
@@ -1156,8 +1174,9 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Lifecycle
+     * Lifecycle / Light / SaveLoad ... (아래는 기존 유지)
      *────────────────────────────────────────────────────────────*/
+
     void Awake()
     {
         W = settings.width;
@@ -1166,7 +1185,6 @@ public class WorldManager : MonoBehaviour
         tickCurr.Clear();
         tickNext.Clear();
 
-        // ✅ Utility CogwheelOccupied 캐시
         CacheUtilityOccupiedIdIfNeeded();
 
         string dirBoot = WorldLoadContext.GetSavePath();
@@ -1458,7 +1476,6 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    // ✅ Utility 더티 포함 시그니처로 확장
     public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false, bool markUtility = false)
     {
         chunkSystem.MarkChunkDirty(worldX, worldY, markSolid, markBG, markLiquid, markUtility);

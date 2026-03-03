@@ -1,18 +1,19 @@
 // GearNetworkManager.cs (전체 교체본)
 // ✅ Utility 레이어 전환 대응 버전 (센터 셀 전용 정책)
+// ✅ CogwheelOccupied 이름 적용 버전
 //
 // 핵심 정책(확정):
-// - Occupied 셀 클릭은 전부 "무시(실패)" 처리한다.
+// - CogwheelOccupied 셀 클릭은 전부 "무시(실패)" 처리한다.
 //   => Gear/Source/Belt 모든 API는 이제 "센터 셀"에서만 성공한다.
 // - 센터 셀 판정:
-//   * Utility(id!=0 && id!=Occupied) 이면서
+//   * Utility(id!=0 && id!=CogwheelOccupied) 이면서
 //   * _gearCenterToNodeId에 등록된 좌표
 //
 // ✅ 이번 수정:
 // - 오버스피드 파괴를 world.BreakSolid(center) → world.BreakUtilityAt(center) 로 교체
 //   (기어 파괴 결과가 "유틸 파괴(드랍/footprint/네트워크 제거)"와 완전히 동일하게 처리되도록)
 // - anyGearCell 기반 center 역추적(TryResolveGearCenterFromAnyCell) 제거
-//   (Occupied는 애초에 무시 정책이므로 필요 없음)
+//   (CogwheelOccupied는 애초에 무시 정책이므로 필요 없음)
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -88,7 +89,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     readonly List<Vector2Int> _pendingBreakCenters = new();
     readonly HashSet<Vector2Int> _pendingBreakSet = new();
 
-    // Utility "Occupied" id 캐시(없으면 0)
+    // Utility "CogwheelOccupied" id 캐시(없으면 0)
     ushort _utilityOccupiedId = 0;
 
     void Awake()
@@ -103,6 +104,8 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         _utilityOccupiedId = 0;
         if (world == null || world.cellLibrary == null) return;
+
+        // ✅ "Occupied" → "CogwheelOccupied"
         if (world.cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out var occ))
             _utilityOccupiedId = occ;
     }
@@ -130,7 +133,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (!world.InBounds(c.x, c.y)) return false;
 
-        // Occupied는 무조건 센터 아님
+        // CogwheelOccupied는 무조건 센터 아님
         if (IsUtilityOccupiedCell(c)) return false;
 
         // 센터는 "등록된" 좌표만 인정
@@ -268,7 +271,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     public bool IsGearOccupiedCell(Vector2Int cell)
     {
-        // 정책상 Occupied는 무시 => "센터 기어 셀인가?"로 해석
+        // 정책상 CogwheelOccupied는 무시 => "센터 기어 셀인가?"로 해석
         return IsGearCenterCell(cell);
     }
 
@@ -276,7 +279,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         gearNodeId = -1;
 
-        // 정책상 Occupied는 무시 => 센터만 허용
+        // 정책상 CogwheelOccupied는 무시 => 센터만 허용
         if (!IsGearCenterCell(anyGearCell))
             return false;
 
@@ -291,7 +294,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
 
-        // Occupied에 두려는 시도도 방지(센터 후보는 occupied일 수 없음)
+        // CogwheelOccupied에 두려는 시도도 방지(센터 후보는 occupied일 수 없음)
         if (IsUtilityOccupiedCell(center)) return false;
 
         if (_gearCenterToNodeId.ContainsKey(center)) return false;
