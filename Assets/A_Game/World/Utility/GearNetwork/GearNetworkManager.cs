@@ -1,19 +1,15 @@
 // GearNetworkManager.cs (전체 교체본)
-// ✅ Utility 레이어 전환 대응 버전 (센터 셀 전용 정책)
-// ✅ CogwheelOccupied 이름 적용 버전
+// ✅ 이번 반영:
+// - CogwheelOccupied 이름 유지
+// - 벨트 설치 비용을 거리 기반 -> 고정 2로 변경
+// - Source/Belt를 "기어 센터 셀 기준으로 Solid 레이어 분기 처리"할 수 있도록
+//   제거용 API를 추가
+// - 기존 구조는 최대한 유지
 //
-// 핵심 정책(확정):
-// - CogwheelOccupied 셀 클릭은 전부 "무시(실패)" 처리한다.
-//   => Gear/Source/Belt 모든 API는 이제 "센터 셀"에서만 성공한다.
-// - 센터 셀 판정:
-//   * Utility(id!=0 && id!=CogwheelOccupied) 이면서
-//   * _gearCenterToNodeId에 등록된 좌표
-//
-// ✅ 이번 수정:
-// - 오버스피드 파괴를 world.BreakSolid(center) → world.BreakUtilityAt(center) 로 교체
-//   (기어 파괴 결과가 "유틸 파괴(드랍/footprint/네트워크 제거)"와 완전히 동일하게 처리되도록)
-// - anyGearCell 기반 center 역추적(TryResolveGearCenterFromAnyCell) 제거
-//   (CogwheelOccupied는 애초에 무시 정책이므로 필요 없음)
+// 주의:
+// - 아직 실제 Solid 파괴 분기(WorldManager.BreakSolid에서 type 기반 호출)는
+//   이 파일만으로 끝나지 않음
+// - 이 버전은 "다음 WorldManager 작업에 필요한 GearNetwork API"를 먼저 갖춘 버전임
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -55,7 +51,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         public int count;
     }
 
-    // key = kind id string (ex: "Big Iron Cogwheel", "Windmill", "Plant Belt")
     readonly Dictionary<string, GearSpec> _gearSpecById = new();
     readonly Dictionary<string, SourceSpec> _sourceSpecById = new();
     readonly Dictionary<string, BeltSpec> _beltSpecById = new();
@@ -67,29 +62,27 @@ public sealed class GearNetworkManager : MonoBehaviour
     int _nextNetworkId = 1;
 
     readonly Dictionary<int, GearNode> _gearNodes = new();
-    readonly Dictionary<int, string> _gearIdByNodeId = new();           // nodeId -> gearId string (VFX/식별용)
-    readonly Dictionary<Vector2Int, int> _gearCenterToNodeId = new();   // center -> gearNodeId
+    readonly Dictionary<int, string> _gearIdByNodeId = new();
+    readonly Dictionary<Vector2Int, int> _gearCenterToNodeId = new();
 
     // Source
     readonly Dictionary<int, SourceNode> _sourceNodes = new();
-    readonly Dictionary<int, string> _sourceIdByNodeId = new();               // sourceNodeId -> "Windmill"/"Waterwheel"
-    readonly Dictionary<Vector2Int, int> _gearCenterToSourceNodeId = new();   // gear center -> sourceNodeId (1개 제한)
+    readonly Dictionary<int, string> _sourceIdByNodeId = new();
+    readonly Dictionary<Vector2Int, int> _gearCenterToSourceNodeId = new();
 
     // Belt
-    readonly Dictionary<int, BeltLink> _beltByStartGearNodeId = new();         // startGearNodeId -> link
-    readonly Dictionary<int, HashSet<int>> _beltStartsByEndGearNodeId = new(); // endGearNodeId -> {startGearNodeId}
-    readonly Dictionary<int, string> _beltKindByStartGearNodeId = new();       // startGearNodeId -> beltKind
+    readonly Dictionary<int, BeltLink> _beltByStartGearNodeId = new();
+    readonly Dictionary<int, HashSet<int>> _beltStartsByEndGearNodeId = new();
+    readonly Dictionary<int, string> _beltKindByStartGearNodeId = new();
 
     readonly Dictionary<int, GearNetwork> _networks = new();
     readonly Dictionary<int, int> _nodeIdToNetworkId = new();
 
     bool _suppressRebuild = false;
 
-    // TickNetworks에서 오버스피드 파괴를 모아서 처리
     readonly List<Vector2Int> _pendingBreakCenters = new();
     readonly HashSet<Vector2Int> _pendingBreakSet = new();
 
-    // Utility "CogwheelOccupied" id 캐시(없으면 0)
     ushort _utilityOccupiedId = 0;
 
     void Awake()
@@ -105,7 +98,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         _utilityOccupiedId = 0;
         if (world == null || world.cellLibrary == null) return;
 
-        // ✅ "Occupied" → "CogwheelOccupied"
         if (world.cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out var occ))
             _utilityOccupiedId = occ;
     }
@@ -133,10 +125,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (!world.InBounds(c.x, c.y)) return false;
 
-        // CogwheelOccupied는 무조건 센터 아님
         if (IsUtilityOccupiedCell(c)) return false;
-
-        // 센터는 "등록된" 좌표만 인정
         return _gearCenterToNodeId.ContainsKey(c);
     }
 
@@ -254,9 +243,7 @@ public sealed class GearNetworkManager : MonoBehaviour
             for (int i = 0; i < _pendingBreakCenters.Count; i++)
             {
                 var c = _pendingBreakCenters[i];
-
-                // ✅ 오버스피드 파괴는 "유틸 파괴"로 통일
-                world.BreakUtilityAt(c.x, c.y);
+                world.BreakUtility(c.x, c.y);
             }
 
             _suppressRebuild = false;
@@ -271,7 +258,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     public bool IsGearOccupiedCell(Vector2Int cell)
     {
-        // 정책상 CogwheelOccupied는 무시 => "센터 기어 셀인가?"로 해석
         return IsGearCenterCell(cell);
     }
 
@@ -279,7 +265,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         gearNodeId = -1;
 
-        // 정책상 CogwheelOccupied는 무시 => 센터만 허용
         if (!IsGearCenterCell(anyGearCell))
             return false;
 
@@ -287,16 +272,14 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Gear (배치/등록/제거)
+    // Public API : Gear
     // ─────────────────────────────────────────
     public bool CanPlaceGear(Vector2Int center, GearNode.GearSize size)
     {
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
 
-        // CogwheelOccupied에 두려는 시도도 방지(센터 후보는 occupied일 수 없음)
         if (IsUtilityOccupiedCell(center)) return false;
-
         if (_gearCenterToNodeId.ContainsKey(center)) return false;
 
         var offsets = BuildFootprintOffsets(size);
@@ -354,20 +337,17 @@ public sealed class GearNetworkManager : MonoBehaviour
         droppedSourceId = null;
         droppedBelts = null;
 
-        // ✅ 정책: 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out int nodeId))
             return false;
 
         if (!_gearNodes.TryGetValue(nodeId, out var gear))
             return false;
 
-        // 0) 연결된 벨트 제거 + 드랍 계산
         var beltDrops = new List<BeltDrop>();
         RemoveBeltsConnectedToGear(nodeId, beltDrops);
         if (beltDrops.Count > 0)
             droppedBelts = beltDrops;
 
-        // 1) 붙은 소스 제거 + 드랍 대상 기록
         if (_gearCenterToSourceNodeId.TryGetValue(gear.Center, out int srcNodeId))
         {
             if (_sourceIdByNodeId.TryGetValue(srcNodeId, out var sid))
@@ -401,7 +381,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Source (센터 전용)
+    // Public API : Source
     // ─────────────────────────────────────────
     public bool TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceId, out int sourceNodeId)
     {
@@ -409,7 +389,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(sourceId)) return false;
 
-        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out var gearNodeId))
             return false;
 
@@ -427,7 +406,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(sourceId)) return false;
 
-        // ✅ 센터만 허용 + 등록된 기어여야 함
         if (!IsGearCenterCell(attachedGearCenter))
             return false;
 
@@ -497,6 +475,39 @@ public sealed class GearNetworkManager : MonoBehaviour
         return true;
     }
 
+    public bool TryGetSourceAtGearCell(Vector2Int anyGearCell, out string sourceId)
+    {
+        sourceId = null;
+
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
+            return false;
+
+        if (!_gearNodes.TryGetValue(gearNodeId, out var gear))
+            return false;
+
+        if (!_gearCenterToSourceNodeId.TryGetValue(gear.Center, out int sourceNodeId))
+            return false;
+
+        return _sourceIdByNodeId.TryGetValue(sourceNodeId, out sourceId);
+    }
+
+    public bool TryRemoveSourceAtGearCell(Vector2Int anyGearCell, out string sourceId)
+    {
+        sourceId = null;
+
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
+            return false;
+
+        if (!_gearNodes.TryGetValue(gearNodeId, out var gear))
+            return false;
+
+        if (!_gearCenterToSourceNodeId.TryGetValue(gear.Center, out int sourceNodeId))
+            return false;
+
+        _sourceIdByNodeId.TryGetValue(sourceNodeId, out sourceId);
+        return TryRemoveSource(sourceNodeId);
+    }
+
     bool IsWaterAt(int x, int y)
     {
         if (world == null) return false;
@@ -508,7 +519,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Public API : Belt (센터 전용)
+    // Public API : Belt
     // ─────────────────────────────────────────
     public bool TryAttachBeltAtCells(Vector2Int startAnyGearCell, Vector2Int endAnyGearCell, string beltKind, out int materialCost)
     {
@@ -517,7 +528,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (string.IsNullOrEmpty(beltKind)) return false;
 
-        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(startAnyGearCell, out int startGearNodeId))
             return false;
         if (!TryGetGearNodeIdAtCell(endAnyGearCell, out int endGearNodeId))
@@ -528,7 +538,6 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (!_gearNodes.TryGetValue(startGearNodeId, out var g0)) return false;
         if (!_gearNodes.TryGetValue(endGearNodeId, out var g1)) return false;
 
-        // 한 기어에 벨트 1개(시작/끝 포함)
         if (HasAnyBeltOnGear(startGearNodeId)) return false;
         if (HasAnyBeltOnGear(endGearNodeId)) return false;
 
@@ -557,11 +566,9 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         droppedBelt = default;
 
-        // ✅ 센터만 허용
         if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
             return false;
 
-        // 1) gear가 start인 케이스
         if (_beltByStartGearNodeId.TryGetValue(gearNodeId, out var link))
         {
             int endId = link.gearIds.gearId1;
@@ -579,7 +586,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             return true;
         }
 
-        // 2) gear가 end인 케이스
         if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
         {
             int startId = -1;
@@ -601,6 +607,90 @@ public sealed class GearNetworkManager : MonoBehaviour
         return false;
     }
 
+    public bool TryRemoveBeltAtGearCell(Vector2Int anyGearCell, out BeltDrop droppedBelt, out Vector2Int otherGearCenter)
+    {
+        droppedBelt = default;
+        otherGearCenter = default;
+
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
+            return false;
+
+        if (_beltByStartGearNodeId.TryGetValue(gearNodeId, out var link))
+        {
+            int endId = link.gearIds.gearId1;
+
+            if (!_beltKindByStartGearNodeId.TryGetValue(gearNodeId, out var beltKind))
+                return false;
+
+            if (!_gearNodes.TryGetValue(gearNodeId, out var g0) || !_gearNodes.TryGetValue(endId, out var g1))
+                return false;
+
+            droppedBelt = new BeltDrop { beltKind = beltKind, count = CalcBeltCost(g0.Center, g1.Center) };
+            otherGearCenter = g1.Center;
+
+            RemoveBeltInternal(gearNodeId, endId, beltKind);
+            return true;
+        }
+
+        if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
+        {
+            int startId = -1;
+            foreach (var s in starts) { startId = s; break; }
+
+            if (startId < 0) return false;
+            if (!_beltKindByStartGearNodeId.TryGetValue(startId, out var beltKind)) return false;
+
+            if (!_gearNodes.TryGetValue(startId, out var g0) || !_gearNodes.TryGetValue(gearNodeId, out var g1))
+                return false;
+
+            droppedBelt = new BeltDrop { beltKind = beltKind, count = CalcBeltCost(g0.Center, g1.Center) };
+            otherGearCenter = g0.Center;
+
+            RemoveBeltInternal(startId, gearNodeId, beltKind);
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool TryGetBeltAtGearCell(Vector2Int anyGearCell, out string beltKind, out Vector2Int otherGearCenter)
+    {
+        beltKind = null;
+        otherGearCenter = default;
+
+        if (!TryGetGearNodeIdAtCell(anyGearCell, out int gearNodeId))
+            return false;
+
+        if (_beltByStartGearNodeId.TryGetValue(gearNodeId, out var outLink))
+        {
+            int endId = outLink.gearIds.gearId1;
+            if (!_beltKindByStartGearNodeId.TryGetValue(gearNodeId, out beltKind))
+                return false;
+            if (!_gearNodes.TryGetValue(endId, out var g1))
+                return false;
+
+            otherGearCenter = g1.Center;
+            return true;
+        }
+
+        if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
+        {
+            int startId = -1;
+            foreach (var s in starts) { startId = s; break; }
+
+            if (startId < 0) return false;
+            if (!_beltKindByStartGearNodeId.TryGetValue(startId, out beltKind))
+                return false;
+            if (!_gearNodes.TryGetValue(startId, out var g0))
+                return false;
+
+            otherGearCenter = g0.Center;
+            return true;
+        }
+
+        return false;
+    }
+
     bool HasAnyBeltOnGear(int gearNodeId)
     {
         if (_beltByStartGearNodeId.ContainsKey(gearNodeId))
@@ -614,7 +704,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     void RemoveBeltsConnectedToGear(int gearNodeId, List<BeltDrop> drops)
     {
-        // A) gear가 start인 outgoing
         if (_beltByStartGearNodeId.TryGetValue(gearNodeId, out var outLink))
         {
             int endGearId = outLink.gearIds.gearId1;
@@ -626,12 +715,10 @@ public sealed class GearNetworkManager : MonoBehaviour
                     count = CalcBeltCost(g0.Center, g1.Center);
 
                 drops.Add(new BeltDrop { beltKind = beltKind, count = count });
-
                 RemoveBeltInternal(gearNodeId, endGearId, beltKind);
             }
         }
 
-        // B) gear가 end인 incoming
         if (_beltStartsByEndGearNodeId.TryGetValue(gearNodeId, out var starts) && starts != null && starts.Count > 0)
         {
             var tmp = new List<int>(starts);
@@ -648,7 +735,6 @@ public sealed class GearNetworkManager : MonoBehaviour
                     count = CalcBeltCost(g0.Center, g1.Center);
 
                 drops.Add(new BeltDrop { beltKind = beltKind, count = count });
-
                 RemoveBeltInternal(startId, gearNodeId, beltKind);
             }
         }
@@ -676,8 +762,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     static int CalcBeltCost(Vector2Int a, Vector2Int b)
     {
-        float dist = Vector2.Distance(a, b);
-        return Mathf.Max(0, Mathf.RoundToInt(dist));
+        return 2;
     }
 
     public bool TryGetBeltMaterialItemId(string beltKind, out string materialItemId)
@@ -694,7 +779,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     public void RebuildFromWorldFullScan()
     {
-        // 현 단계: 설치 시점 등록 기반.
         ClearAll();
         ClearNetworks();
         BuildAllNetworks();
@@ -801,7 +885,6 @@ public sealed class GearNetworkManager : MonoBehaviour
     {
         var a = _gearNodes[gearId];
 
-        // 1) 기어 맞물림(물리 연결)
         foreach (var other in _gearNodes)
         {
             if (other.Key == gearId) continue;
@@ -818,7 +901,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             }
         }
 
-        // 2) 벨트: dir 유지, 속도비 1:1
         if (_beltByStartGearNodeId.TryGetValue(gearId, out var outLink))
         {
             yield return new GearConnection
@@ -1018,7 +1100,6 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     static bool AreConnected(GearNode a, GearNode b)
     {
-        // Big ↔ Big 금지
         if (a.Size == GearNode.GearSize.Big && b.Size == GearNode.GearSize.Big)
             return false;
 
@@ -1026,23 +1107,20 @@ public sealed class GearNetworkManager : MonoBehaviour
         int ax = Mathf.Abs(d.x);
         int ay = Mathf.Abs(d.y);
 
-        // Small ↔ Small : 4방 인접
         if (a.Size == GearNode.GearSize.Small && b.Size == GearNode.GearSize.Small)
             return ax + ay == 1;
 
-        // Big ↔ Small : 대각선만
         return ax == 1 && ay == 1;
     }
 
     // ─────────────────────────────────────────
-    // VFX (LateUpdate)
+    // VFX
     // ─────────────────────────────────────────
     void LateUpdate()
     {
         EnsureVfxRef();
         if (vfx == null) return;
 
-        // 1) Gear VFX
         if (_gearNodes.Count > 0)
         {
             foreach (var kv in _gearNodes)
@@ -1061,7 +1139,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             }
         }
 
-        // 2) Source VFX
         if (_sourceNodes.Count > 0)
         {
             foreach (var kv in _sourceNodes)
@@ -1080,7 +1157,6 @@ public sealed class GearNetworkManager : MonoBehaviour
             }
         }
 
-        // 3) Belt VFX
         if (_beltByStartGearNodeId.Count > 0)
         {
             foreach (var kv in _beltByStartGearNodeId)

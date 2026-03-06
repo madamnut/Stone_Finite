@@ -1,10 +1,18 @@
-// WorldManager.cs (전체 교체본 - 요청한 변경만 반영한 버전)
-// ✅ 변경사항:
+// WorldManager.cs (전체 교체본)
+// ✅ 이번 반영:
 // - Utility Occupied 캐시/판정: "CogwheelOccupied"로 통일
 // - BreakUtilityAt(): CogwheelOccupied면 파괴 불가 return 0
 // - BreakUtilityAt(): 기어면 기존 로직 유지(네트워크 제거 + footprint 제거 + 드랍)
 // - BreakUtilityAt(): 일반 유틸도 DT_Cell 기반 드랍 추가 (utility name 사용)
 // - BreakBG(): VFX + DT_Cell 드랍 추가 (BG id는 Solid name 체계로 GetSolidName)
+// - BreakUtility() 별칭 추가
+// - RemoveSolidNoDrop() 추가
+// - BreakSolid(): Solid type 기반 분기 추가
+//   * Source: 기어네트워크 Source 노드 제거 후 Solid 파괴/드랍
+//   * Belt: 기어네트워크 Belt 링크 제거 후 반대편 Belt Solid는 no-drop 제거
+// - BreakUtility(): 기어 파괴 시 belt material 드랍 제거
+//   (벨트는 양 끝점 Solid 셀 드랍으로 처리)
+
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -137,15 +145,13 @@ public class WorldManager : MonoBehaviour
     private readonly HashSet<Vector2Int> _lightChangedSet = new();
     private readonly List<Vector2Int> _lightChangedList = new();
 
-    // ✅ meta 규칙(고정)
-    private const ushort META_DEFAULT = 0; // ✅ 일반 셀(부착 아님) fallback
+    private const ushort META_DEFAULT = 0;
     private const ushort META_BG = 1;
     private const ushort META_UP = 2;
     private const ushort META_DOWN = 3;
     private const ushort META_LEFT = 4;
     private const ushort META_RIGHT = 5;
 
-    // ✅ Utility: CogwheelOccupied 캐시
     private ushort _utilityOccupiedId = 0;
     private static readonly Vector2Int[] _dirs4 = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
@@ -174,7 +180,6 @@ public class WorldManager : MonoBehaviour
         return f.id;
     }
 
-    // ✅ Utility
     public UtilityCell GetUtility(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return default;
@@ -193,7 +198,6 @@ public class WorldManager : MonoBehaviour
         return worldMap.GetUtility(x, y).id == 0;
     }
 
-    // ✅ "물리적으로 막는가" (기존 의미 유지: collidable만)
     public bool IsCollidable(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return true;
@@ -202,8 +206,6 @@ public class WorldManager : MonoBehaviour
         return (cellLibrary.GetSolidFlags(s.id) & CellLibrary.SolidFlags.Collidable) != 0;
     }
 
-    // ✅ 설치/지지/부착 판정에서 "고정된 지지물"로 취급할 셀
-    // - collidable OR platform
     private bool IsSupportSolid(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return false;
@@ -268,9 +270,9 @@ public class WorldManager : MonoBehaviour
         tickCurr.Clear();
     }
 
-    //────────────────────────────────────────────
-    // Attachment (연쇄 파괴)
-    //────────────────────────────────────────────
+    /*────────────────────────────────────────────
+     * Attachment
+     *────────────────────────────────────────────*/
     void StepAttachmentAt(int x, int y)
     {
         if (!worldMap.InBounds(x, y)) return;
@@ -308,9 +310,7 @@ public class WorldManager : MonoBehaviour
         }
 
         if (worldMap.GetSolid(sx, sy).id == 0)
-        {
             BreakSolid(x, y);
-        }
     }
 
     void DoRandomTicks()
@@ -340,8 +340,6 @@ public class WorldManager : MonoBehaviour
         if (yMax > H) yMax = H;
 
         if (xMin >= xMax || yMin >= yMax) return;
-
-        // 기존 샘플 랜덤틱 로직 주석 유지
     }
 
     /*────────────────────────────────────────────────────────────
@@ -474,13 +472,9 @@ public class WorldManager : MonoBehaviour
         newAmount = Mathf.Clamp(newAmount, 0, WorldData.MaxFluid);
 
         if (IsCollidable(x, y) || id == 0 || newAmount == 0)
-        {
             worldMap.SetFluid(x, y, 0, 0);
-        }
         else
-        {
             worldMap.SetFluid(x, y, id, (byte)newAmount);
-        }
 
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: true);
         HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
@@ -587,7 +581,6 @@ public class WorldManager : MonoBehaviour
     /*────────────────────────────────────────────────────────────
      * World Edit API (Utility)
      *────────────────────────────────────────────────────────────*/
-
     public bool SetUtilityExact(int x, int y, ushort id, ushort meta = 0)
     {
         if (!worldMap.InBounds(x, y)) return false;
@@ -674,10 +667,11 @@ public class WorldManager : MonoBehaviour
         return any;
     }
 
-    // ✅ 유틸 파괴(기어 포함): 유틸 편집/오버스피드 파괴 공통 엔트리
-    // 정책:
-    // - CogwheelOccupied(점유 셀)는 클릭해도 무시(파괴 불가)
-    // - 기어 파괴는 "센터 유틸"에서만 발생한다(센터를 파괴하면 footprint/네트워크/드랍 일괄)
+    public ushort BreakUtility(int x, int y)
+    {
+        return BreakUtilityAt(x, y);
+    }
+
     public ushort BreakUtilityAt(int x, int y)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
@@ -687,13 +681,11 @@ public class WorldManager : MonoBehaviour
         var u = worldMap.GetUtility(x, y);
         if (u.id == 0) return 0;
 
-        // CogwheelOccupied는 파괴 불가
         if (_utilityOccupiedId != 0 && u.id == _utilityOccupiedId)
             return 0;
 
         var cell = new Vector2Int(x, y);
 
-        // 1) 기어 센터라면: 네트워크 제거 + footprint 제거 + 드랍(기어/소스/벨트)
         if (gearNetworkManager != null && gearNetworkManager.IsGearOccupiedCell(cell))
         {
             ushort centerUtilityId = u.id;
@@ -715,7 +707,6 @@ public class WorldManager : MonoBehaviour
 
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
-            // 드랍: 기어 본체(센터 유틸 name)
             if (itemDropper != null && cellLibrary != null)
             {
                 string gearItemId = cellLibrary.GetUtilityName(centerUtilityId);
@@ -723,7 +714,6 @@ public class WorldManager : MonoBehaviour
                     itemDropper.SpawnDroppedItems(gearItemId, pos3);
             }
 
-            // 드랍: 소스(있으면 1개)
             if (itemDropper != null && !string.IsNullOrEmpty(droppedSourceId) && itemLibrary != null)
             {
                 var srcData = itemLibrary.Create(droppedSourceId, 1);
@@ -731,28 +721,12 @@ public class WorldManager : MonoBehaviour
                     itemDropper.SpawnDroppedItem(srcData, pos3);
             }
 
-            // 드랍: 벨트(기존: material id로 변환)
-            if (itemDropper != null && droppedBelts != null && droppedBelts.Count > 0 && itemLibrary != null)
-            {
-                for (int i = 0; i < droppedBelts.Count; i++)
-                {
-                    var bd = droppedBelts[i];
-                    if (string.IsNullOrEmpty(bd.beltKind) || bd.count <= 0) continue;
-
-                    if (gearNetworkManager.TryGetBeltMaterialItemId(bd.beltKind, out var matId) &&
-                        !string.IsNullOrEmpty(matId))
-                    {
-                        var beltMat = itemLibrary.Create(matId, bd.count);
-                        if (beltMat != null)
-                            itemDropper.SpawnDroppedItem(beltMat, pos3);
-                    }
-                }
-            }
+            // ✅ 벨트는 이제 양 끝점 Solid 셀 드랍으로 처리
+            // 여기서는 belt material 드랍을 하지 않음
 
             return centerUtilityId;
         }
 
-        // 2) 일반 유틸: 1칸 제거 + VFX + DT_Cell 드랍(utility name key)
         worldMap.SetUtility(x, y, 0, 0);
         MarkChunkDirty(x, y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
 
@@ -810,7 +784,7 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * World Edit API (기존 Solid/BG/Fluid)
+     * World Edit API (Solid/BG/Fluid)
      *────────────────────────────────────────────────────────────*/
     public void OverwriteSolid(int x, int y, ushort newId, ushort newMeta = 0)
     {
@@ -1072,7 +1046,7 @@ public class WorldManager : MonoBehaviour
         return true;
     }
 
-    public ushort BreakSolid(int x, int y)
+    public ushort RemoveSolidNoDrop(int x, int y, bool emitVfx = false)
     {
         if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
 
@@ -1090,13 +1064,100 @@ public class WorldManager : MonoBehaviour
 
         HandleSourceLightChangeAt(x, y, oldSolidId, oldMeta, oldFluidId);
 
-        string key = cellLibrary.GetSolidName(oldSolidId);
+        if (emitVfx && vfx != null && cellLibrary != null)
+        {
+            var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
+            vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+        }
+
+        return oldSolidId;
+    }
+
+    public ushort BreakSolid(int x, int y)
+    {
+        if ((uint)x >= (uint)W || (uint)y >= (uint)H) return 0;
+
+        var s = worldMap.GetSolid(x, y);
+        ushort oldSolidId = s.id;
+        ushort oldMeta = s.meta;
+        if (oldSolidId == 0) return 0;
+
+        string solidType = (cellLibrary != null) ? cellLibrary.GetSolidType(oldSolidId) : "Default";
+        var cell = new Vector2Int(x, y);
+
+        // ✅ Source Solid
+        if (solidType == "Source")
+        {
+            if (gearNetworkManager != null)
+                gearNetworkManager.TryRemoveSourceAtGearCell(cell, out _);
+
+            ushort removedSourceSolid = RemoveSolidNoDrop(x, y, emitVfx: false);
+            if (removedSourceSolid == 0) return 0;
+
+            string srcKey = cellLibrary != null ? cellLibrary.GetSolidName(oldSolidId) : null;
+            if (!string.IsNullOrEmpty(srcKey))
+            {
+                var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+
+                if (vfx != null && cellLibrary != null)
+                {
+                    var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
+                    vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+                }
+
+                if (itemDropper != null)
+                    itemDropper.SpawnDroppedItems(srcKey, pos3);
+            }
+
+            return removedSourceSolid;
+        }
+
+        // ✅ Belt Solid
+        if (solidType == "Belt")
+        {
+            Vector2Int otherGearCenter = default;
+            bool removedBeltLink = false;
+
+            if (gearNetworkManager != null)
+                removedBeltLink = gearNetworkManager.TryRemoveBeltAtGearCell(cell, out _, out otherGearCenter);
+
+            if (removedBeltLink)
+            {
+                // 반대편 벨트 셀은 no-drop 제거
+                RemoveSolidNoDrop(otherGearCenter.x, otherGearCenter.y, emitVfx: true);
+            }
+
+            ushort removedBeltSolid = RemoveSolidNoDrop(x, y, emitVfx: false);
+            if (removedBeltSolid == 0) return 0;
+
+            string beltKey = cellLibrary != null ? cellLibrary.GetSolidName(oldSolidId) : null;
+            if (!string.IsNullOrEmpty(beltKey))
+            {
+                var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
+
+                if (vfx != null && cellLibrary != null)
+                {
+                    var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
+                    vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
+                }
+
+                if (itemDropper != null)
+                    itemDropper.SpawnDroppedItems(beltKey, pos3);
+            }
+
+            return removedBeltSolid;
+        }
+
+        ushort removed = RemoveSolidNoDrop(x, y, emitVfx: false);
+        if (removed == 0) return 0;
+
+        string key = cellLibrary != null ? cellLibrary.GetSolidName(oldSolidId) : null;
 
         if (!string.IsNullOrEmpty(key))
         {
             var pos3 = new Vector3(x + 0.5f, y + 0.5f, 0f);
 
-            if (vfx != null)
+            if (vfx != null && cellLibrary != null)
             {
                 var spr = cellLibrary.GetSolidSprite(oldSolidId, oldMeta);
                 vfx.EmitBlockAtCell(spr, x, y, 1, grid: 3, count: -1);
@@ -1106,7 +1167,7 @@ public class WorldManager : MonoBehaviour
                 itemDropper.SpawnDroppedItems(key, pos3);
         }
 
-        return oldSolidId;
+        return removed;
     }
 
     public FluidCell BreakFluid(int x, int y)
@@ -1143,7 +1204,6 @@ public class WorldManager : MonoBehaviour
         MarkChunkDirty(x, y, markSolid: false, markBG: true, markLiquid: false);
         OnCellEdited(x, y);
 
-        // ✅ VFX + DT_Cell 드랍
         if (cellLibrary != null)
         {
             string key = cellLibrary.GetSolidName(removed);
@@ -1174,9 +1234,8 @@ public class WorldManager : MonoBehaviour
     }
 
     /*────────────────────────────────────────────────────────────
-     * Lifecycle / Light / SaveLoad ... (아래는 기존 유지)
+     * Lifecycle / Light / SaveLoad
      *────────────────────────────────────────────────────────────*/
-
     void Awake()
     {
         W = settings.width;

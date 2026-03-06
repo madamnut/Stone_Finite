@@ -1,5 +1,11 @@
 // InteractionController.cs (전체 교체본)
 // ✅ PlaceSource/PlaceBelt 분리 대응 + CogwheelOccupied 적용
+// ✅ 이번 반영:
+// - Utility 모드: Cogwheel만 설치/파괴
+// - Solid/BG 모드: Source/Belt 설치
+// - CogwheelOccupied 클릭 무시
+// - Belt 설치 비용을 고정 2개로 처리
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -664,7 +670,7 @@ public class InteractionController : MonoBehaviour
         if (IsUtilityOccupiedCell(cx, cy))
             return;
 
-        ushort removed = worldManager.BreakUtilityAt(cx, cy);
+        ushort removed = worldManager.BreakUtility(cx, cy);
         if (removed == 0) return;
 
         sound.PlayDig();
@@ -898,7 +904,9 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
-        if (cost <= 0 || held.Count < cost)
+        // ✅ 벨트는 재료 2개 고정
+        const int BELT_COST = 2;
+        if (held.Count < BELT_COST)
         {
             CancelBeltPlacement();
             return false;
@@ -906,7 +914,7 @@ public class InteractionController : MonoBehaviour
 
         sound.PlayPlace();
 
-        held.Count -= cost;
+        held.Count -= BELT_COST;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
@@ -1073,7 +1081,9 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
-        if (cost <= 0 || held.Count < cost)
+        // ✅ 레거시 AttachBelt도 재료 2개 고정
+        const int BELT_COST = 2;
+        if (held.Count < BELT_COST)
         {
             CancelBeltPlacement();
             return false;
@@ -1081,7 +1091,7 @@ public class InteractionController : MonoBehaviour
 
         sound.PlayPlace();
 
-        held.Count -= cost;
+        held.Count -= BELT_COST;
         if (held.Count <= 0) player.Inventory.items[_hotbarScope] = null;
         player.Inventory.NotifyChanged();
 
