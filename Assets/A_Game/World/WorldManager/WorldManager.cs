@@ -667,6 +667,53 @@ public class WorldManager : MonoBehaviour
         return any;
     }
 
+    public bool PlaceGearFootprintUtility(
+        Vector2Int center,
+        ushort centerId,
+        ushort centerMeta,
+        ushort occupiedId,
+        IReadOnlyList<Vector2Int> occupiedCells
+    )
+    {
+        if (centerId == 0) return false;
+        if (!worldMap.InBounds(center.x, center.y)) return false;
+        if (worldMap.GetUtility(center.x, center.y).id != 0) return false;
+        if (occupiedCells != null && occupiedCells.Count > 0 && occupiedId == 0) return false;
+
+        if (occupiedCells != null)
+        {
+            for (int i = 0; i < occupiedCells.Count; i++)
+            {
+                var cell = occupiedCells[i];
+                if (!worldMap.InBounds(cell.x, cell.y)) return false;
+
+                var u = worldMap.GetUtility(cell.x, cell.y);
+                if (u.id != 0 && u.id != occupiedId)
+                    return false;
+            }
+        }
+
+        worldMap.SetUtility(center.x, center.y, centerId, centerMeta);
+        MarkChunkDirty(center.x, center.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+
+        if (occupiedCells != null)
+        {
+            for (int i = 0; i < occupiedCells.Count; i++)
+            {
+                var cell = occupiedCells[i];
+                worldMap.SetUtility(cell.x, cell.y, occupiedId, 0);
+                MarkChunkDirty(cell.x, cell.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
+            }
+        }
+
+        return true;
+    }
+
+    public void RemoveGearFootprintUtility(Vector2Int center, IReadOnlyList<Vector2Int> occupiedCells)
+    {
+        ClearGearFootprintUtility(center, occupiedCells);
+    }
+
     public ushort BreakUtility(int x, int y)
     {
         return BreakUtilityAt(x, y);
@@ -691,13 +738,44 @@ public class WorldManager : MonoBehaviour
             ushort centerUtilityId = u.id;
             ushort centerUtilityMeta = u.meta;
 
+            bool hasSourceSolid = false;
+            bool hasBeltSolid = false;
+            Vector2Int otherBeltCenter = default;
+
+            ushort centerSolidIdBeforeBreak = worldMap.GetSolid(x, y).id;
+            string centerSolidTypeBeforeBreak = (cellLibrary != null)
+                ? cellLibrary.GetSolidType(centerSolidIdBeforeBreak)
+                : "Default";
+
+            if (centerSolidIdBeforeBreak != 0)
+            {
+                if (centerSolidTypeBeforeBreak == "Source")
+                {
+                    hasSourceSolid = true;
+                }
+                else if (centerSolidTypeBeforeBreak == "Belt" &&
+                         gearNetworkManager.TryGetBeltAtGearCell(cell, out _, out otherBeltCenter))
+                {
+                    hasBeltSolid = true;
+                }
+            }
+
             string droppedSourceId = null;
             List<GearNetworkManager.BeltDrop> droppedBelts = null;
 
-            if (!gearNetworkManager.TryRemoveGearAt(cell, out droppedSourceId, out droppedBelts))
+            if (!gearNetworkManager.TryRemoveGearAt(cell, out droppedSourceId, out droppedBelts, out var removedOccupiedCells))
                 return 0;
 
-            ClearGearFootprintUtility(cell);
+            if (hasSourceSolid)
+                RemoveSolidNoDrop(x, y, emitVfx: true);
+
+            if (hasBeltSolid)
+            {
+                RemoveSolidNoDrop(x, y, emitVfx: true);
+                RemoveSolidNoDrop(otherBeltCenter.x, otherBeltCenter.y, emitVfx: true);
+            }
+
+            ClearGearFootprintUtility(cell, removedOccupiedCells);
 
             if (vfx != null && cellLibrary != null)
             {
@@ -749,7 +827,7 @@ public class WorldManager : MonoBehaviour
         return u.id;
     }
 
-    void ClearGearFootprintUtility(Vector2Int center)
+    void ClearGearFootprintUtility(Vector2Int center, IReadOnlyList<Vector2Int> occupiedCells)
     {
         CacheUtilityOccupiedIdIfNeeded();
 
@@ -759,15 +837,17 @@ public class WorldManager : MonoBehaviour
             MarkChunkDirty(center.x, center.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);
         }
 
-        if (_utilityOccupiedId == 0) return;
+        if (_utilityOccupiedId == 0 || occupiedCells == null) return;
 
-        for (int i = 0; i < _dirs4.Length; i++)
+        for (int i = 0; i < occupiedCells.Count; i++)
         {
-            var p = center + _dirs4[i];
+            var p = occupiedCells[i];
             if (!worldMap.InBounds(p.x, p.y)) continue;
 
             var u = worldMap.GetUtility(p.x, p.y);
             if (u.id != _utilityOccupiedId) continue;
+            if (gearNetworkManager != null && gearNetworkManager.HasGearOccupiedVisualAt(p))
+                continue;
 
             worldMap.SetUtility(p.x, p.y, 0, 0);
             MarkChunkDirty(p.x, p.y, markSolid: false, markBG: false, markLiquid: false, markUtility: true);

@@ -77,6 +77,7 @@ public class InteractionController : MonoBehaviour
     public ItemLibrary itemLibrary;
     public CorpseLibrary corpseLibrary;
     public CellLibrary cellLibrary;
+    public UtilityLibrary utilityLibrary;
 
     [Header("UI Prefabs")]
     public GameObject handcraftModule;
@@ -147,6 +148,9 @@ public class InteractionController : MonoBehaviour
             if (cellLibrary.TryGetUtilityIdByName("CogwheelOccupied", out ushort occ))
                 _utilityOccupiedId = occ;
         }
+
+        if (utilityLibrary == null)
+            utilityLibrary = FindObjectOfType<UtilityLibrary>();
 
         ApplyWorldCursor();
         meleeRoot.gameObject.SetActive(false);
@@ -431,6 +435,22 @@ public class InteractionController : MonoBehaviour
         return int.TryParse(o.ToString(), out v);
     }
 
+    bool TryGetCogwheelPlacementSpec(string cell, out GearNode.GearSize size, out int maxRpm)
+    {
+        size = GearNode.GearSize.Small;
+        maxRpm = 0;
+
+        if (string.IsNullOrEmpty(cell) || utilityLibrary == null)
+            return false;
+
+        if (!utilityLibrary.TryGetCogwheel(cell, out var def))
+            return false;
+
+        size = (def.size == "Big") ? GearNode.GearSize.Big : GearNode.GearSize.Small;
+        maxRpm = def.maxRpm;
+        return true;
+    }
+
     bool IsUtilityOccupiedCell(int x, int y)
     {
         if (worldManager == null) return false;
@@ -465,25 +485,17 @@ public class InteractionController : MonoBehaviour
             if (held != null && held.Count > 0 && held.ToolActions != null &&
                 held.ToolActions.TryGetValue("PlaceUtility", out var pObj) &&
                 pObj is Dictionary<string, object> p &&
-                TryGetPlaceUtilityParam(p, out var type, out var cell, out var typeObj))
+                TryGetPlaceUtilityParam(p, out var type, out var cell, out _))
             {
                 if (type == "Cogwheel")
                 {
                     bool can = false;
 
-                    if (worldManager != null && cellLibrary != null)
+                    if (worldManager != null && cellLibrary != null &&
+                        TryGetCogwheelPlacementSpec(cell, out var size, out _))
                     {
                         if (cellLibrary.TryGetUtilityIdByName(cell, out ushort centerId) && centerId != 0)
-                        {
-                            string sizeStr = null;
-                            if (typeObj != null) TryReadString(typeObj, "size", out sizeStr);
-
-                            var offsets = (sizeStr == "Big")
-                                ? new List<Vector2Int> { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
-                                : new List<Vector2Int> { Vector2Int.zero };
-
-                            can = worldManager.IsUtilityAreaEmpty(new Vector2Int(cx, cy), offsets);
-                        }
+                            can = gearNetworkManager != null && gearNetworkManager.CanPlaceGear(new Vector2Int(cx, cy), size);
                     }
 
                     _hlSR.sprite = can
@@ -526,17 +538,20 @@ public class InteractionController : MonoBehaviour
                         {
                             if (isSource)
                             {
-                                can = true;
+                                can = worldManager != null && worldManager.GetSolidId(cx, cy) == 0;
                             }
                             else
                             {
-                                if (!_beltPending) can = true;
+                                if (!_beltPending) can = worldManager != null && worldManager.GetSolidId(cx, cy) == 0;
                                 else
                                 {
                                     if (_hotbarScope == _beltPendingScope && held == _beltPendingHeldRef)
                                     {
                                         if (gearNetworkManager.TryGetGearNodeIdAtCell(_beltStartCell, out int n0))
-                                            can = (n0 != n1);
+                                            can = (n0 != n1) &&
+                                                  worldManager != null &&
+                                                  worldManager.GetSolidId(_beltStartCell.x, _beltStartCell.y) == 0 &&
+                                                  worldManager.GetSolidId(cx, cy) == 0;
                                     }
                                 }
                             }
@@ -756,7 +771,7 @@ public class InteractionController : MonoBehaviour
         if (worldManager == null || gearNetworkManager == null || cellLibrary == null)
             return false;
 
-        if (!TryGetPlaceUtilityParam(placeParam, out var type, out var cell, out var typeObj))
+        if (!TryGetPlaceUtilityParam(placeParam, out var type, out var cell, out _))
             return false;
 
         if (IsUtilityOccupiedCell(cx, cy))
@@ -769,25 +784,21 @@ public class InteractionController : MonoBehaviour
             if (!cellLibrary.TryGetUtilityIdByName(cell, out ushort centerId) || centerId == 0)
                 return false;
 
-            string sizeStr = null;
-            int maxRpm = 0;
-            if (typeObj != null)
-            {
-                TryReadString(typeObj, "size", out sizeStr);
-                TryReadInt(typeObj, "maxRpm", out maxRpm);
-            }
-
-            var size = (sizeStr == "Big") ? GearNode.GearSize.Big : GearNode.GearSize.Small;
+            if (!TryGetCogwheelPlacementSpec(cell, out var size, out int maxRpm))
+                return false;
 
             gearNetworkManager.RegisterCogwheelSpec(cell, size, maxRpm);
 
-            var offsets =
+            var occupiedCells =
                 (size == GearNode.GearSize.Big)
-                ? new List<Vector2Int> { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
-                : new List<Vector2Int> { Vector2Int.zero };
-
-            if (!worldManager.IsUtilityAreaEmpty(cellPos, offsets))
-                return false;
+                ? new List<Vector2Int>
+                {
+                    cellPos + Vector2Int.up,
+                    cellPos + Vector2Int.down,
+                    cellPos + Vector2Int.left,
+                    cellPos + Vector2Int.right
+                }
+                : null;
 
             if (!gearNetworkManager.CanPlaceGear(cellPos, cell))
                 return false;
@@ -796,12 +807,12 @@ public class InteractionController : MonoBehaviour
             if (size == GearNode.GearSize.Big && occId == 0)
                 return false;
 
-            if (!worldManager.PlaceUtilityFootprint(cellPos, centerId, 0, occId, offsets))
+            if (!gearNetworkManager.TryAddGear(cellPos, cell, out _))
                 return false;
 
-            if (!gearNetworkManager.TryAddGear(cellPos, cell, out _))
+            if (!worldManager.PlaceGearFootprintUtility(cellPos, centerId, 0, occId, occupiedCells))
             {
-                worldManager.ClearUtilityFootprint(cellPos, offsets);
+                gearNetworkManager.TryRemoveGearAt(cellPos, out _, out _, out _);
                 return false;
             }
 
@@ -820,7 +831,7 @@ public class InteractionController : MonoBehaviour
 
     bool HandlePlaceSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
-        if (gearNetworkManager == null)
+        if (gearNetworkManager == null || worldManager == null || worldManager.cellLibrary == null)
             return false;
 
         if (!TryGetCellParam(param, out var cell))
@@ -837,8 +848,30 @@ public class InteractionController : MonoBehaviour
         if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
             return false;
 
+        if (!worldManager.cellLibrary.TryGetSolidIdByName(cell, out ushort solidId) || solidId == 0)
+            return false;
+
+        if (worldManager.GetSolidId(cx, cy) != 0)
+            return false;
+
+        if (utilityLibrary == null || !utilityLibrary.TryGetSource(cell, out var sourceDef))
+            return false;
+
+        if (cell == "Windmill")
+            gearNetworkManager.RegisterSourceSpec(cell, SourceNode.SourceKind.Windmill, sourceDef.rpm, sourceDef.stressCapacity);
+        else if (cell == "Waterwheel")
+            gearNetworkManager.RegisterSourceSpec(cell, SourceNode.SourceKind.Waterwheel, sourceDef.rpm, sourceDef.stressCapacity);
+        else
+            return false;
+
         if (!gearNetworkManager.TryAttachSourceAtCell(cellPos, cell, out _))
             return false;
+
+        if (!worldManager.PlaceSolidExact(cx, cy, solidId))
+        {
+            gearNetworkManager.TryRemoveSourceAtGearCell(cellPos, out _);
+            return false;
+        }
 
         sound.PlayPlace();
 
@@ -852,7 +885,7 @@ public class InteractionController : MonoBehaviour
 
     bool HandlePlaceBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
     {
-        if (gearNetworkManager == null)
+        if (gearNetworkManager == null || worldManager == null || worldManager.cellLibrary == null)
             return false;
 
         if (!TryGetCellParam(param, out var beltKind))
@@ -869,8 +902,14 @@ public class InteractionController : MonoBehaviour
         if (!gearNetworkManager.TryGetGearNodeIdAtCell(cellPos, out _))
             return false;
 
+        if (!worldManager.cellLibrary.TryGetSolidIdByName(beltKind, out ushort beltSolidId) || beltSolidId == 0)
+            return false;
+
         if (!_beltPending)
         {
+            if (worldManager.GetSolidId(cx, cy) != 0)
+                return false;
+
             _beltPending = true;
             _beltStartCell = cellPos;
             _beltPendingKind = beltKind;
@@ -898,13 +937,6 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
-        if (!gearNetworkManager.TryAttachBeltAtCells(_beltStartCell, cellPos, beltKind, out int cost))
-        {
-            CancelBeltPlacement();
-            return false;
-        }
-
-        // ✅ 벨트는 재료 2개 고정
         const int BELT_COST = 2;
         if (held.Count < BELT_COST)
         {
@@ -912,6 +944,35 @@ public class InteractionController : MonoBehaviour
             return false;
         }
 
+        if (worldManager.GetSolidId(_beltStartCell.x, _beltStartCell.y) != 0 ||
+            worldManager.GetSolidId(cx, cy) != 0)
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (!gearNetworkManager.TryAttachBeltAtCells(_beltStartCell, cellPos, beltKind, out _))
+        {
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (!worldManager.PlaceSolidExact(_beltStartCell.x, _beltStartCell.y, beltSolidId))
+        {
+            gearNetworkManager.TryRemoveBeltAtGearCell(_beltStartCell, out _, out _);
+            CancelBeltPlacement();
+            return false;
+        }
+
+        if (!worldManager.PlaceSolidExact(cx, cy, beltSolidId))
+        {
+            worldManager.OverwriteSolid(_beltStartCell.x, _beltStartCell.y, 0, 0);
+            gearNetworkManager.TryRemoveBeltAtGearCell(_beltStartCell, out _, out _);
+            CancelBeltPlacement();
+            return false;
+        }
+
+        // ✅ 벨트는 재료 2개 고정
         sound.PlayPlace();
 
         held.Count -= BELT_COST;

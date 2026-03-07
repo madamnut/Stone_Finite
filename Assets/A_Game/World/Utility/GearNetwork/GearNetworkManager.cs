@@ -64,6 +64,7 @@ public sealed class GearNetworkManager : MonoBehaviour
     readonly Dictionary<int, GearNode> _gearNodes = new();
     readonly Dictionary<int, string> _gearIdByNodeId = new();
     readonly Dictionary<Vector2Int, int> _gearCenterToNodeId = new();
+    readonly Dictionary<Vector2Int, HashSet<int>> _gearNodeIdsByOccupiedCell = new();
 
     // Source
     readonly Dictionary<int, SourceNode> _sourceNodes = new();
@@ -258,17 +259,29 @@ public sealed class GearNetworkManager : MonoBehaviour
     // ─────────────────────────────────────────
     public bool IsGearOccupiedCell(Vector2Int cell)
     {
-        return IsGearCenterCell(cell);
+        if (IsGearCenterCell(cell))
+            return true;
+
+        return _gearNodeIdsByOccupiedCell.TryGetValue(cell, out var set) && set != null && set.Count > 0;
     }
 
     public bool TryGetGearNodeIdAtCell(Vector2Int anyGearCell, out int gearNodeId)
     {
         gearNodeId = -1;
 
-        if (!IsGearCenterCell(anyGearCell))
+        if (IsGearCenterCell(anyGearCell))
+            return _gearCenterToNodeId.TryGetValue(anyGearCell, out gearNodeId);
+
+        if (!_gearNodeIdsByOccupiedCell.TryGetValue(anyGearCell, out var set) || set == null || set.Count != 1)
             return false;
 
-        return _gearCenterToNodeId.TryGetValue(anyGearCell, out gearNodeId);
+        foreach (var nodeId in set)
+        {
+            gearNodeId = nodeId;
+            return true;
+        }
+
+        return false;
     }
 
     // ─────────────────────────────────────────
@@ -279,11 +292,22 @@ public sealed class GearNetworkManager : MonoBehaviour
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
 
-        if (IsUtilityOccupiedCell(center)) return false;
         if (_gearCenterToNodeId.ContainsKey(center)) return false;
+        if (world.GetUtilityId(center.x, center.y) != 0) return false;
 
-        var offsets = BuildFootprintOffsets(size);
-        return world.IsUtilityAreaEmpty(center, offsets);
+        var occupiedCells = BuildOccupiedCells(center, size);
+        for (int i = 0; i < occupiedCells.Count; i++)
+        {
+            var cell = occupiedCells[i];
+            if (!world.InBounds(cell.x, cell.y)) return false;
+            if (_gearCenterToNodeId.ContainsKey(cell)) return false;
+
+            ushort utilityId = world.GetUtilityId(cell.x, cell.y);
+            if (utilityId != 0 && !IsUtilityOccupiedCell(cell))
+                return false;
+        }
+
+        return true;
     }
 
     public bool CanPlaceGear(Vector2Int center, string gearId)
@@ -299,8 +323,7 @@ public sealed class GearNetworkManager : MonoBehaviour
 
         if (world == null) return false;
         if (!world.InBounds(center.x, center.y)) return false;
-        if (IsUtilityOccupiedCell(center)) return false;
-        if (_gearCenterToNodeId.ContainsKey(center)) return false;
+        if (!CanPlaceGear(center, size)) return false;
 
         nodeId = _nextNodeId++;
 
@@ -308,6 +331,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         _gearNodes.Add(nodeId, gear);
         _gearIdByNodeId[nodeId] = gearId;
         _gearCenterToNodeId[center] = nodeId;
+        RegisterOccupiedCells(nodeId, gear.OccupiedCells);
 
         if (!_suppressRebuild)
             RebuildNetworksFrom(nodeId);
@@ -332,16 +356,24 @@ public sealed class GearNetworkManager : MonoBehaviour
         return TryAddGear(center, spec.size, spec.maxRpm, gearId, out nodeId);
     }
 
-    public bool TryRemoveGearAt(Vector2Int anyGearCell, out string droppedSourceId, out List<BeltDrop> droppedBelts)
+    public bool TryRemoveGearAt(
+        Vector2Int anyGearCell,
+        out string droppedSourceId,
+        out List<BeltDrop> droppedBelts,
+        out List<Vector2Int> removedOccupiedCells
+    )
     {
         droppedSourceId = null;
         droppedBelts = null;
+        removedOccupiedCells = null;
 
         if (!TryGetGearNodeIdAtCell(anyGearCell, out int nodeId))
             return false;
 
         if (!_gearNodes.TryGetValue(nodeId, out var gear))
             return false;
+
+        removedOccupiedCells = new List<Vector2Int>(gear.OccupiedCells);
 
         var beltDrops = new List<BeltDrop>();
         RemoveBeltsConnectedToGear(nodeId, beltDrops);
@@ -356,6 +388,7 @@ public sealed class GearNetworkManager : MonoBehaviour
             TryRemoveSource(srcNodeId);
         }
 
+        UnregisterOccupiedCells(nodeId, gear.OccupiedCells);
         _gearNodes.Remove(nodeId);
         _gearIdByNodeId.Remove(nodeId);
         _gearCenterToNodeId.Remove(gear.Center);
@@ -372,12 +405,17 @@ public sealed class GearNetworkManager : MonoBehaviour
 
     public bool TryRemoveGearAt(Vector2Int anyGearCell, out string droppedSourceId)
     {
-        return TryRemoveGearAt(anyGearCell, out droppedSourceId, out _);
+        return TryRemoveGearAt(anyGearCell, out droppedSourceId, out _, out _);
     }
 
     public bool TryRemoveGearAt(Vector2Int anyGearCell)
     {
-        return TryRemoveGearAt(anyGearCell, out _, out _);
+        return TryRemoveGearAt(anyGearCell, out _, out _, out _);
+    }
+
+    public bool HasGearOccupiedVisualAt(Vector2Int cell)
+    {
+        return _gearNodeIdsByOccupiedCell.TryGetValue(cell, out var set) && set != null && set.Count > 0;
     }
 
     // ─────────────────────────────────────────
@@ -789,6 +827,7 @@ public sealed class GearNetworkManager : MonoBehaviour
         _gearNodes.Clear();
         _gearIdByNodeId.Clear();
         _gearCenterToNodeId.Clear();
+        _gearNodeIdsByOccupiedCell.Clear();
 
         _sourceNodes.Clear();
         _sourceIdByNodeId.Clear();
@@ -1081,6 +1120,20 @@ public sealed class GearNetworkManager : MonoBehaviour
         return false;
     }
 
+    static List<Vector2Int> BuildOccupiedCells(Vector2Int center, GearNode.GearSize size)
+    {
+        if (size != GearNode.GearSize.Big)
+            return new List<Vector2Int>(0);
+
+        return new List<Vector2Int>
+        {
+            center + Vector2Int.up,
+            center + Vector2Int.down,
+            center + Vector2Int.left,
+            center + Vector2Int.right
+        };
+    }
+
     static List<Vector2Int> BuildFootprintOffsets(GearNode.GearSize size)
     {
         if (size == GearNode.GearSize.Big)
@@ -1096,6 +1149,39 @@ public sealed class GearNetworkManager : MonoBehaviour
         }
 
         return new List<Vector2Int> { Vector2Int.zero };
+    }
+
+    void RegisterOccupiedCells(int nodeId, IReadOnlyList<Vector2Int> occupiedCells)
+    {
+        if (occupiedCells == null) return;
+
+        for (int i = 0; i < occupiedCells.Count; i++)
+        {
+            var cell = occupiedCells[i];
+            if (!_gearNodeIdsByOccupiedCell.TryGetValue(cell, out var set))
+            {
+                set = new HashSet<int>();
+                _gearNodeIdsByOccupiedCell[cell] = set;
+            }
+
+            set.Add(nodeId);
+        }
+    }
+
+    void UnregisterOccupiedCells(int nodeId, IReadOnlyList<Vector2Int> occupiedCells)
+    {
+        if (occupiedCells == null) return;
+
+        for (int i = 0; i < occupiedCells.Count; i++)
+        {
+            var cell = occupiedCells[i];
+            if (!_gearNodeIdsByOccupiedCell.TryGetValue(cell, out var set) || set == null)
+                continue;
+
+            set.Remove(nodeId);
+            if (set.Count == 0)
+                _gearNodeIdsByOccupiedCell.Remove(cell);
+        }
     }
 
     static bool AreConnected(GearNode a, GearNode b)

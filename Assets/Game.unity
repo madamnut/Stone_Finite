@@ -10840,6 +10840,7 @@ MonoBehaviour:
   itemLibrary: {fileID: 236639235}
   corpseLibrary: {fileID: 867055871}
   cellLibrary: {fileID: 2047849824}
+  utilityLibrary: {fileID: 739783372}
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
   sound: {fileID: 2008242133}
   corpseLayerMask:
