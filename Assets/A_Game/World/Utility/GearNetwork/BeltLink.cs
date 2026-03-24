@@ -1,40 +1,44 @@
 using UnityEngine;
 
-public sealed class BeltLink
+
+namespace Game.World
 {
-    public readonly GearIdPair gearIds;
-    public readonly string beltKind;
-
-    public BeltLink(
-        GearIdPair gearIds,
-        string beltKind
-    )
+    public sealed class BeltLink
     {
-        this.gearIds = gearIds;
-        this.beltKind = beltKind;
+        public readonly GearIdPair gearIds;
+        public readonly string beltKind;
+    
+        public BeltLink(
+            GearIdPair gearIds,
+            string beltKind
+        )
+        {
+            this.gearIds = gearIds;
+            this.beltKind = beltKind;
+        }
     }
-}
-
-public readonly struct GearIdPair
-{
-    public readonly int gearId0; // 설치 당시 start
-    public readonly int gearId1; // 설치 당시 end
-
-    public GearIdPair(int gearId0, int gearId1)
+    
+    public readonly struct GearIdPair
     {
-        this.gearId0 = gearId0;
-        this.gearId1 = gearId1;
-    }
-
-    public bool Contains(int gearNodeId)
-    {
-        return gearId0 == gearNodeId || gearId1 == gearNodeId;
-    }
-
-    public int GetOther(int gearNodeId)
-    {
-        if (gearId0 == gearNodeId) return gearId1;
-        if (gearId1 == gearNodeId) return gearId0;
-        return -1;
+        public readonly int gearId0; // ?�치 ?�시 start
+        public readonly int gearId1; // ?�치 ?�시 end
+    
+        public GearIdPair(int gearId0, int gearId1)
+        {
+            this.gearId0 = gearId0;
+            this.gearId1 = gearId1;
+        }
+    
+        public bool Contains(int gearNodeId)
+        {
+            return gearId0 == gearNodeId || gearId1 == gearNodeId;
+        }
+    
+        public int GetOther(int gearNodeId)
+        {
+            if (gearId0 == gearNodeId) return gearId1;
+            if (gearId1 == gearNodeId) return gearId0;
+            return -1;
+        }
     }
 }

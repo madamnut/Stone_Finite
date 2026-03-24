@@ -2,34 +2,35 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// 시체 라이브러리
-/// - corpseId → 시체 프리팹 스폰
-/// - (corpseId, toolAction) → 다음 시체 단계로 전환
-/// - 시체 단계별 corpseId를 키로 해서 드랍 아이템 스폰
+/// ?�체 ?�이브러�?
+/// - corpseId ???�체 ?�리???�폰
+/// - (corpseId, toolAction) ???�음 ?�체 ?�계�??�환
+/// - ?�체 ?�계�?corpseId�??�로 ?�서 ?�랍 ?�이???�폰
 /// </summary>
+using Game.World;
 public class CorpseLibrary : MonoBehaviour
 {
     [Serializable]
     public class CorpsePrefabDef
     {
-        [Tooltip("시체 ID (예: \"Cow_Corpse\", \"Cow_Corpse_Skinned\" 등)")]
+        [Tooltip("?�체 ID (?? \"Cow_Corpse\", \"Cow_Corpse_Skinned\" ??")]
         public string corpseId;
 
-        [Tooltip("해당 시체 ID에 대응하는 프리팹 (Corpse 컴포넌트가 붙어있어야 함)")]
+        [Tooltip("?�당 ?�체 ID???�?�하???�리??(Corpse 컴포?�트가 붙어?�어????")]
         public GameObject prefab;
     }
 
     [Serializable]
     public class CorpseProcessDef
     {
-        [Tooltip("현재 시체 ID (예: \"Cow_Corpse\")")]
+        [Tooltip("?�재 ?�체 ID (?? \"Cow_Corpse\")")]
         public string corpseId;
 
-        [Tooltip("툴 액션 이름 (예: \"Scraping\", \"Cutting\", \"Chopping\")")]
+        [Tooltip("???�션 ?�름 (?? \"Scraping\", \"Cutting\", \"Chopping\")")]
         public string toolAction;
 
-        [Header("다음 시체 단계")]
-        [Tooltip("다음 단계 시체 ID (마지막 단계면 비워두거나 null)")]
+        [Header("?�음 ?�체 ?�계")]
+        [Tooltip("?�음 ?�계 ?�체 ID (마�?�??�계�?비워?�거??null)")]
         public string nextCorpseId;
     }
 
@@ -40,11 +41,11 @@ public class CorpseLibrary : MonoBehaviour
     public CorpseProcessDef[] processDefs;
 
     [Header("Drops")]
-    [Tooltip("corpseId를 키로 사용하는 드랍 테이블을 가진 ItemDropper")]
+    [Tooltip("corpseId�??�로 ?�용?�는 ?�랍 ?�이블을 가�?ItemDropper")]
     public ItemDropper itemDropper;
 
     [Header("Entity System")]
-    [Tooltip("시체를 EntityManager에 등록하기 위한 참조 (비워두면 자동 검색)")]
+    [Tooltip("?�체�?EntityManager???�록?�기 ?�한 참조 (비워?�면 ?�동 검??")]
     public EntityManager entityManager;
 
     void Awake()
@@ -54,7 +55,7 @@ public class CorpseLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// corpseId 에 대응하는 시체 프리팹을 해당 위치에 스폰하고 Corpse 컴포넌트를 반환.
+    /// corpseId ???�?�하???�체 ?�리?�을 ?�당 ?�치???�폰?�고 Corpse 컴포?�트�?반환.
     /// </summary>
     public Corpse SpawnCorpse(string corpseId, Vector2 position)
     {
@@ -77,7 +78,7 @@ public class CorpseLibrary : MonoBehaviour
 
         if (def == null || def.prefab == null)
         {
-            Debug.LogWarning($"[CorpseLibrary] corpseId='{corpseId}' 에 해당하는 프리팹이 없음.");
+            Debug.LogWarning($"[CorpseLibrary] corpseId='{corpseId}' ???�당?�는 ?�리?�이 ?�음.");
             return null;
         }
 
@@ -85,14 +86,14 @@ public class CorpseLibrary : MonoBehaviour
         var corpse = go.GetComponent<Corpse>();
         if (corpse == null)
         {
-            Debug.LogError($"[CorpseLibrary] 프리팹 '{def.prefab.name}' 에 Corpse 컴포넌트가 없음.");
+            Debug.LogError($"[CorpseLibrary] ?�리??'{def.prefab.name}' ??Corpse 컴포?�트가 ?�음.");
             return null;
         }
 
         corpse.CorpseId       = corpseId;
         corpse.CorpsePosition = position;
 
-        // EntityManager에 등록 (세이브/로드 대상이 되도록)
+        // EntityManager???�록 (?�이�?로드 ?�?�이 ?�도�?
         if (entityManager != null)
             entityManager.Register(corpse);
 
@@ -100,13 +101,13 @@ public class CorpseLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// 시체 위에 툴액션을 사용했을 때 가공 시도.
-    /// - corpseId + toolActionName 조합으로 레시피를 찾아 처리.
-    /// - 성공 시: 현재 시체 드랍 → 현재 시체 제거 → 필요하면 다음 단계 시체 스폰.
+    /// ?�체 ?�에 ?�액?�을 ?�용?�을 ??가�??�도.
+    /// - corpseId + toolActionName 조합?�로 ?�시?��? 찾아 처리.
+    /// - ?�공 ?? ?�재 ?�체 ?�랍 ???�재 ?�체 ?�거 ???�요?�면 ?�음 ?�계 ?�체 ?�폰.
     /// </summary>
-    /// <param name="corpse">대상 시체</param>
-    /// <param name="toolActionName">툴 액션 이름 (예: "Scraping")</param>
-    /// <returns>가공이 실제로 일어났으면 true, 아니라면 false</returns>
+    /// <param name="corpse">?�???�체</param>
+    /// <param name="toolActionName">???�션 ?�름 (?? "Scraping")</param>
+    /// <returns>가공이 ?�제�??�어?�으�?true, ?�니?�면 false</returns>
     public bool TryProcessCorpse(Corpse corpse, string toolActionName)
     {
         if (corpse == null)
@@ -138,17 +139,17 @@ public class CorpseLibrary : MonoBehaviour
 
         Vector2 pos = corpse.CorpsePosition;
 
-        // 1) 드랍: 이 시체 단계의 corpseId를 키로 사용
+        // 1) ?�랍: ???�체 ?�계??corpseId�??�로 ?�용
         if (itemDropper != null)
         {
             Vector3 dropPos = new Vector3(pos.x, pos.y, 0f);
             itemDropper.SpawnDroppedItems(corpseId, dropPos);
         }
 
-        // 2) 기존 시체 제거
+        // 2) 기존 ?�체 ?�거
         Destroy(corpse.gameObject);
 
-        // 3) 다음 단계 시체 스폰 (있으면)
+        // 3) ?�음 ?�계 ?�체 ?�폰 (?�으�?
         if (!string.IsNullOrEmpty(proc.nextCorpseId))
         {
             SpawnCorpse(proc.nextCorpseId, pos);

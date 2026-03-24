@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.World;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -41,7 +42,7 @@ public sealed class GridGizmo : MonoBehaviour
 
     void OnValidate()
     {
-        // OnValidate에서 InstantiatePrefab 돌리면 내부 OnValidate가 연쇄로 터지면서 로그 폭발 가능
+        // OnValidate?�서 InstantiatePrefab ?�리�??��? OnValidate가 ?�쇄�??��?면서 로그 ??�� 가??
 #if UNITY_EDITOR
         QueueRebuild();
 #endif

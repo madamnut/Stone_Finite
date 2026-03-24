@@ -1,14 +1,15 @@
 // ImageGenerator.cs
-// ✅ 변경: Lava(FLUID_LAVA)가 AIR에 있을 때 빨간색으로 표시
+// ??변�? Lava(FLUID_LAVA)가 AIR???�을 ??빨간?�으�??�시
 
 using UnityEngine;
 using UnityEngine.UI;
 
+using Game.World;
 public class ImageGenerator : MonoBehaviour
 {
     [Header("Generator")]
     public WorldGenSettings settings;
-    [Tooltip("프리뷰에 사용할 시드")]
+    [Tooltip("?�리뷰에 ?�용???�드")]
     public int seed = 0;
 
     [Header("Target")]
@@ -17,14 +18,14 @@ public class ImageGenerator : MonoBehaviour
     public bool flipY = true;
 
     [Header("Unknown ID Color")]
-    public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 미지정 또는 예외
+    public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 미�????�는 ?�외
 
-    [Header("Name → Color (인스펙터에서 직접 지정)")]
+    [Header("Name ??Color (?�스?�터?�서 직접 지??")]
     public Color air  = new Color(0, 0, 0, 0);
     public Color rock = new Color(0.35f, 0.35f, 0.35f, 1);
     public Color dirt = new Color(0.47f, 0.28f, 0.19f, 1);
 
-    // Grass(3~9) 대표색
+    // Grass(3~9) ?�?�색
     public Color grass = new Color(0.20f, 0.71f, 0.27f, 1);
 
     public Color clay = new Color(0.62f, 0.40f, 0.33f, 1);
@@ -40,18 +41,18 @@ public class ImageGenerator : MonoBehaviour
     public Color stone_Pile       = new Color(0.51f, 0.51f, 0.51f, 1);
     public Color small_Stone_Pile = new Color(0.59f, 0.59f, 0.59f, 1);
 
-    // ✅ Desert additions
+    // ??Desert additions
     public Color dead_Bush = new Color(0.45f, 0.36f, 0.22f, 1);
 
-    // Agave(6타일) 대표색(프리뷰에서 한 색으로)
+    // Agave(6?�?? ?�?�색(?�리뷰에?????�으�?
     public Color agave  = new Color(0.22f, 0.58f, 0.24f, 1);
     public Color cactus = new Color(0.15f, 0.55f, 0.18f, 1);
 
-    // ✅ Sandstone / Pyramid
+    // ??Sandstone / Pyramid
     public Color sandstone      = new Color(0.78f, 0.70f, 0.45f, 1);
     public Color sandstoneBrick = new Color(0.73f, 0.64f, 0.40f, 1);
 
-    // ✅ Snow biome additions
+    // ??Snow biome additions
     public Color frozenDirt   = new Color(0.40f, 0.33f, 0.30f, 1);
     public Color frozenGrass  = new Color(0.70f, 0.92f, 0.78f, 1);
     public Color iceCell      = new Color(0.70f, 0.85f, 0.95f, 0.95f);
@@ -61,7 +62,7 @@ public class ImageGenerator : MonoBehaviour
     public Color frozenPlant  = new Color(0.78f, 0.92f, 0.88f, 1f);
     public Color frozenBush   = new Color(0.74f, 0.88f, 0.84f, 1f);
 
-    // ✅ Volcano biome additions
+    // ??Volcano biome additions
     public Color basalt   = new Color(0.18f, 0.18f, 0.20f, 1f);
     public Color tuff     = new Color(0.58f, 0.55f, 0.50f, 1f);
     public Color andesite = new Color(0.45f, 0.45f, 0.48f, 1f);
@@ -76,12 +77,12 @@ public class ImageGenerator : MonoBehaviour
     [Header("Fluid")]
     public Color water = new Color(0.20f, 0.43f, 0.82f, 0.78f);
 
-    // ✅ Lava preview color
+    // ??Lava preview color
     public Color lava  = new Color(0.95f, 0.15f, 0.05f, 0.95f);
 
     Texture2D tex;
 
-    // ── Solid IDs (ATT_Solid.json 기준) ──
+    // ?�?� Solid IDs (ATT_Solid.json 기�?) ?�?�
     const ushort ID_AIR  = 0;
     const ushort ID_ROCK = 1;
     const ushort ID_DIRT = 2;
@@ -108,10 +109,10 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_STONE_PILE       = 2004;
     const ushort ID_SMALL_STONE_PILE = 2005;
 
-    // ✅ Desert additions
+    // ??Desert additions
     const ushort ID_DEAD_BUSH = 2006;
 
-    // ✅ Agave 6 tiles
+    // ??Agave 6 tiles
     const ushort ID_AGAVE_0 = 2007;
     const ushort ID_AGAVE_1 = 2008;
     const ushort ID_AGAVE_2 = 2009;
@@ -120,8 +121,8 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_AGAVE_5 = 2012;
     const ushort ID_CACTUS  = 2013;
 
-    // ✅ Snow additions (ATT_Solid.json 기준)
-    // NOTE: Frozen Dirt 실제 ID로 맞춰야 함 (여기선 46 가정)
+    // ??Snow additions (ATT_Solid.json 기�?)
+    // NOTE: Frozen Dirt ?�제 ID�?맞춰????(?�기??46 가??
     const ushort ID_FROZEN_DIRT = 46;
 
     // Frozen Grass 37~43
@@ -136,7 +137,7 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_ICE_CELL  = 44;
     const ushort ID_SNOW_CELL = 45;
 
-    // ✅ Volcano solids
+    // ??Volcano solids
     const ushort ID_BASALT   = 47;
     const ushort ID_TUFF     = 48;
     const ushort ID_ANDESITE = 49;
@@ -147,7 +148,7 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_FROZEN_PLANT = 2016;
     const ushort ID_FROZEN_TRUNK = 2017;
 
-    // ✅ Sandstone + Pyramid brick
+    // ??Sandstone + Pyramid brick
     const ushort ID_SANDSTONE       = 35;
     const ushort ID_SANDSTONE_BRICK = 36;
 
@@ -159,7 +160,7 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_GRANITE     = 4000;
     const ushort ID_AMPHIBOLITE = 4001;
 
-    // ── Fluid IDs (ATT_Fluid.json 기준) ──
+    // ?�?� Fluid IDs (ATT_Fluid.json 기�?) ?�?�
     const ushort FLUID_NONE  = 0;
     const ushort FLUID_WATER = 1;
     const ushort FLUID_LAVA  = 2;
@@ -168,7 +169,7 @@ public class ImageGenerator : MonoBehaviour
     {
         if (settings == null || targetUI == null)
         {
-            Debug.LogError("ImageGenerator: settings/targetUI 미할당");
+            Debug.LogError("ImageGenerator: settings/targetUI missing.");
             return;
         }
         Repaint();
@@ -235,7 +236,7 @@ public class ImageGenerator : MonoBehaviour
 
     Color ResolveColor(ushort solidId, ushort fluidId)
     {
-        // ✅ fluid 우선 처리 (AIR 위에만 보이도록)
+        // ??fluid ?�선 처리 (AIR ?�에�?보이?�록)
         if (solidId == ID_AIR)
         {
             if (fluidId == FLUID_LAVA)  return lava;
@@ -292,12 +293,12 @@ public class ImageGenerator : MonoBehaviour
             case ID_SANDSTONE:       return sandstone;
             case ID_SANDSTONE_BRICK: return sandstoneBrick;
 
-            // ✅ Volcano solids
+            // ??Volcano solids
             case ID_BASALT:   return basalt;
             case ID_TUFF:     return tuff;
             case ID_ANDESITE: return andesite;
 
-            // ✅ Snow biome solids/decor
+            // ??Snow biome solids/decor
             case ID_FROZEN_DIRT: return frozenDirt;
 
             case ID_FROZEN_GRASS_TOP:

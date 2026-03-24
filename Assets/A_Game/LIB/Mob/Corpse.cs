@@ -3,18 +3,20 @@ using UnityEngine;
 using Newtonsoft.Json;
 
 /// <summary>
-/// 시체 엔티티
-/// - corpseId + 위치만 저장/로드
+/// ?쒖껜 ?뷀떚??
+/// - corpseId + ?꾩튂留????濡쒕뱶
 /// </summary>
+using Game.World;
+using Game.Player;
 public class Corpse : Entity
 {
     [Header("Corpse Info")]
     [SerializeField] private string corpseId;
 
-    // 세이브/로드용 논리 위치(월드 좌표)
+    // ?몄씠釉?濡쒕뱶???쇰━ ?꾩튂(?붾뱶 醫뚰몴)
     [SerializeField] private Vector2 corpsePosition;
 
-    /// <summary>시체 종류 식별용 ID (예: "Cow_Corpse")</summary>
+    /// <summary>?쒖껜 醫낅쪟 ?앸퀎??ID (?? "Cow_Corpse")</summary>
     public string CorpseId
     {
         get => corpseId;
@@ -22,8 +24,8 @@ public class Corpse : Entity
     }
 
     /// <summary>
-    /// 시체의 논리 위치.
-    /// 설정 시 transform.position 도 함께 갱신.
+    /// ?쒖껜???쇰━ ?꾩튂.
+    /// ?ㅼ젙 ??transform.position ???④퍡 媛깆떊.
     /// </summary>
     public Vector2 CorpsePosition
     {
@@ -37,18 +39,18 @@ public class Corpse : Entity
 
     public override EntityKind Kind => EntityKind.Corpse;
 
-    // ─────────────────────────────────────────────
-    //   호버 하이라이트 (시체 위에 마우스 올렸을 때)
-    // ─────────────────────────────────────────────
+    // ?????????????????????????????????????????????
+    //   ?몃쾭 ?섏씠?쇱씠??(?쒖껜 ?꾩뿉 留덉슦???щ졇????
+    // ?????????????????????????????????????????????
 
     [Header("Hover Highlight")]
-    [Tooltip("정렬 및 호버용 메인 스프라이트 (자식 SpriteRenderer 한 장)")]
+    [Tooltip("?뺣젹 諛??몃쾭??硫붿씤 ?ㅽ봽?쇱씠??(?먯떇 SpriteRenderer ????")]
     public SpriteRenderer mainRenderer;
 
-    [Tooltip("얼마나 어둡게 만들지 (0 = 그대로, 1 = 완전 검정)")]
+    [Tooltip("?쇰쭏???대몼寃?留뚮뱾吏 (0 = 洹몃?濡? 1 = ?꾩쟾 寃??")]
     [Range(0f, 1f)] public float hoverDarkenFactor = 0.6f;
 
-    [Tooltip("어둡게→밝게 한 왕복 주기(초)")]
+    [Tooltip("?대몼寃뚢넂諛앷쾶 ???뺣났 二쇨린(珥?")]
     [Range(0.1f, 5f)] public float hoverPeriod = 1.0f;
 
     Color _baseColor = Color.white;
@@ -81,9 +83,9 @@ public class Corpse : Entity
     }
 
     /// <summary>
-    /// 외부(InteractionController 등)에서 호버 상태를 지정한다.
-    /// true: 서서히 어두워졌다 밝아지는 펄스 시작
-    /// false: 코루틴 정지 + 즉시 원래 색 복원
+    /// ?몃?(InteractionController ???먯꽌 ?몃쾭 ?곹깭瑜?吏?뺥븳??
+    /// true: ?쒖꽌???대몢?뚯죱??諛앹븘吏???꾩뒪 ?쒖옉
+    /// false: 肄붾（???뺤? + 利됱떆 ?먮옒 ??蹂듭썝
     /// </summary>
     public void SetHovered(bool on)
     {
@@ -138,7 +140,7 @@ public class Corpse : Entity
             t += Time.deltaTime;
             if (hoverPeriod <= 0.0001f) hoverPeriod = 0.1f;
 
-            // 0~1 사이를 부드럽게 왕복
+            // 0~1 ?ъ씠瑜?遺?쒕읇寃??뺣났
             float u = Mathf.PingPong(t / hoverPeriod, 1f);
 
             Color darkCol = Color.Lerp(_baseColor, Color.black, hoverDarkenFactor);
@@ -151,9 +153,9 @@ public class Corpse : Entity
         _hoverCo = null;
     }
 
-    // ─────────────────────────────────────────────
-    //   세이브 / 로드
-    // ─────────────────────────────────────────────
+    // ?????????????????????????????????????????????
+    //   ?몄씠釉?/ 濡쒕뱶
+    // ?????????????????????????????????????????????
 
     [Serializable]
     private class CorpsePayload
@@ -163,7 +165,7 @@ public class Corpse : Entity
 
     public override EntitySaveData ToSaveData()
     {
-        // 현재 위치를 corpsePosition에 동기화
+        // ?꾩옱 ?꾩튂瑜?corpsePosition???숆린??
         corpsePosition = transform.position;
 
         var payload = new CorpsePayload
@@ -174,14 +176,14 @@ public class Corpse : Entity
         return new EntitySaveData
         {
             Kind        = EntityKind.Corpse,
-            Position    = corpsePosition, // 위치는 공통 필드로 저장
+            Position    = corpsePosition, // ?꾩튂??怨듯넻 ?꾨뱶濡????
             PayloadJson = JsonConvert.SerializeObject(payload)
         };
     }
 
     public override void FromSaveData(EntitySaveData data)
     {
-        // 위치 복원 (CorpsePosition 통해 transform도 같이 갱신)
+        // ?꾩튂 蹂듭썝 (CorpsePosition ?듯빐 transform??媛숈씠 媛깆떊)
         CorpsePosition = data.Position;
 
         if (!string.IsNullOrEmpty(data.PayloadJson))
@@ -194,11 +196,11 @@ public class Corpse : Entity
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Corpse] payload 파싱 실패: {ex.Message}");
+                Debug.LogError($"[Corpse] payload ?뚯떛 ?ㅽ뙣: {ex.Message}");
             }
         }
 
-        // 로드 직후에는 호버 꺼진 상태로 보장
+        // 濡쒕뱶 吏곹썑?먮뒗 ?몃쾭 爰쇱쭊 ?곹깭濡?蹂댁옣
         StopHoverImmediate();
     }
 }

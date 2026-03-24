@@ -1,44 +1,45 @@
 using System.Collections;
 using UnityEngine;
 
+using Game.World;
 public class Cow : Mob
 {
-    // ===== 스프라이트 파츠 =====
+    // ===== ?�프?�이???�츠 =====
     [Header("Sprite Parts")]
     public Transform body;
     public Transform head;
     public Transform legFL, legFR, legBL, legBR;
 
-    // ===== 이동/애니메이션 =====
+    // ===== ?�동/?�니메이??=====
     [Header("Movement / Animation")]
     public float moveSpeed      = 2.0f;
     public float walkAnimSpeed  = 3.0f;
     public float legSwingRange  = 20f;
 
-    // ===== 땅 체크 (Collider) =====
+    // ===== ??체크 (Collider) =====
     [Header("Ground Check (Collider)")]
-    [Tooltip("발밑 GroundCheck 용 Collider2D (Trigger 권장)")]
+    [Tooltip("발밑 GroundCheck ??Collider2D (Trigger 권장)")]
     public Collider2D groundCheckCollider;
-    [Tooltip("땅으로 인식할 레이어 마스크")]
+    [Tooltip("Ground Layer Mask")]
     public LayerMask groundLayerMask;
 
-    // ===== 오디오 =====
+    // ===== ?�디??=====
     [Header("Audio")]
-    [Tooltip("소 위치 기준 3D 사운드를 재생할 AudioSource (Cow 프리팹에 붙어있는 것)")]
+    [Tooltip("???�치 기�? 3D ?�운?��? ?�생??AudioSource (Cow ?�리?�에 붙어?�는 �?")]
     public AudioSource audioSource;
 
-    [Tooltip("주기적으로 재생될 울음 소리들 (3개, 랜덤 선택)")]
-    public AudioClip[] mooClips;   // 3개 클립
+    [Tooltip("주기?�으�??�생???�음 ?�리??(3�? ?�덤 ?�택)")]
+    public AudioClip[] mooClips;   // 3�??�립
 
-    [Tooltip("주기적으로 재생될 숨소리/코고는 소리 등 (1개)")]
-    public AudioClip breathClip;   // 1개
+    [Tooltip("주기?�으�??�생???�소�?코고???�리 ??(1�?")]
+    public AudioClip breathClip;   // 1�?
 
-    [Tooltip("죽을 때 재생될 소리 (1개)")]
-    public AudioClip deathClip;    // 1개
+    [Tooltip("죽을 ???�생???�리 (1�?")]
+    public AudioClip deathClip;    // 1�?
 
     [Range(0f, 1f)]
-    [Tooltip("소 울음 소리 볼륨")]
-    public float mooVolume = 0.6f; // ← 요구한 0.6 기본값
+    [Tooltip("???�음 ?�리 볼륨")]
+    public float mooVolume = 0.6f; // ???�구??0.6 기본�?
 
     [Header("Cow SFX Timing")]
     public float mooIntervalMin    = 5f;
@@ -57,45 +58,45 @@ public class Cow : Mob
     enum CowState { Idle, Walk }
     CowState state      = CowState.Idle;
     float    stateTimer = 0f;
-    int      curDir     = 1;   // -1 또는 1
+    int      curDir     = 1;   // -1 ?�는 1
 
     float walkTimer = 0f;
     int   facing    = 1;
 
     Rigidbody2D rb;
 
-    // ===== 피격 연출 =====
+    // ===== ?�격 ?�출 =====
     [Header("Hit Flash")]
-    [Tooltip("맞았을 때 적용할 색")]
+    [Tooltip("Hit Flash Color")]
     public Color hitFlashColor = Color.red;
-    [Tooltip("맞았을 때 색 유지 시간(초)")]
+    [Tooltip("맞았???????��? ?�간(�?")]
     public float hitFlashTime = 0.08f;
 
     SpriteRenderer[] _hitRenderers;
     Coroutine        _hitFlashRoutine;
 
-    // ===== 시체 프리팹 =====
+    // ===== ?�체 ?�리??=====
     [Header("Corpse")]
-    [Tooltip("소가 죽었을 때 생성할 시체 프리팹 (Cow_Corpse)")]
+    [Tooltip("?��? 죽었?????�성???�체 ?�리??(Cow_Corpse)")]
     public Corpse corpsePrefab;
 
 
     protected override void Awake()
     {
-        // Mob 쪽 HP 초기화 등 먼저 처리
+        // Mob �?HP 초기????먼�? 처리
         base.Awake();
 
         rb = GetComponent<Rigidbody2D>();
         if (rb == null)
-            Debug.LogWarning("[Cow] Rigidbody2D가 없습니다.");
+            Debug.LogWarning("[Cow] Rigidbody2D가 ?�습?�다.");
 
         SetSpriteOrder();
 
-        // Cow 프리팹에 붙은 AudioSource 자동 캐싱
+        // Cow ?�리?�에 붙�? AudioSource ?�동 캐싱
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
 
-        // 피격 시 색 바꿀 스프라이트 캐싱 (한 번만)
+        // ?�격 ????바�? ?�프?�이??캐싱 (??번만)
         _hitRenderers = new SpriteRenderer[]
         {
             body  != null ? body.GetComponent<SpriteRenderer>()  : null,
@@ -111,7 +112,7 @@ public class Cow : Mob
     {
         SetNextState();
 
-        // 울음 / 숨소리 타이머 초기화 (5~15초 랜덤)
+        // ?�음 / ?�소�??�?�머 초기??(5~15�??�덤)
         _mooTimer    = Random.Range(mooIntervalMin,    mooIntervalMax);
         _breathTimer = Random.Range(breathIntervalMin, breathIntervalMax);
     }
@@ -120,12 +121,12 @@ public class Cow : Mob
     {
         bool grounded = IsGrounded();
 
-        // 상태 타이머
+        // ?�태 ?�?�머
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
             SetNextState();
 
-        // 이동 방향
+        // ?�동 방향
         float aiMoveDir = (state == CowState.Walk) ? curDir : 0f;
 
         // 좌우 반전
@@ -144,11 +145,11 @@ public class Cow : Mob
             body.localScale = scale;
         }
 
-        // Rigidbody 이동
+        // Rigidbody ?�동
         if (rb != null)
             rb.velocity = new Vector2(aiMoveDir * moveSpeed, rb.velocity.y);
 
-        // 걷기 애니메이션
+        // 걷기 ?�니메이??
         if (aiMoveDir != 0f)
         {
             walkTimer += Time.deltaTime * walkAnimSpeed;
@@ -167,7 +168,7 @@ public class Cow : Mob
             legBR.localRotation = Quaternion.identity;
         }
 
-        // ===== 소 SFX 타이밍 (3D AudioSource로 재생) =====
+        // ===== ??SFX ?�?�밍 (3D AudioSource�??�생) =====
         if (audioSource != null)
         {
             float dt = Time.deltaTime;
@@ -176,7 +177,7 @@ public class Cow : Mob
 
             bool playedThisFrame = false;
 
-            // 울음소리: 5~15초마다, 이 프레임에 다른 소리 안 나왔을 때만
+            // ?�음?�리: 5~15초마?? ???�레?�에 ?�른 ?�리 ???�왔???�만
             if (_mooTimer <= 0f && !playedThisFrame && mooClips != null && mooClips.Length > 0)
             {
                 int idx = Random.Range(0, mooClips.Length);
@@ -184,24 +185,24 @@ public class Cow : Mob
 
                 if (clip != null)
                 {
-                    audioSource.PlayOneShot(clip, mooVolume); // ← 볼륨 0.6 적용
+                    audioSource.PlayOneShot(clip, mooVolume); // ??볼륨 0.6 ?�용
                     playedThisFrame = true;
                 }
 
                 _mooTimer = Random.Range(mooIntervalMin, mooIntervalMax);
             }
 
-            // 숨소리: 5~15초마다, 이 프레임에 울음소리가 안 나왔을 때만
+            // ?�소�? 5~15초마?? ???�레?�에 ?�음?�리가 ???�왔???�만
             if (_breathTimer <= 0f && !playedThisFrame && breathClip != null)
             {
-                audioSource.PlayOneShot(breathClip); // 숨소리는 기본 볼륨 (AudioSource.volume)
+                audioSource.PlayOneShot(breathClip); // ?�소리는 기본 볼륨 (AudioSource.volume)
                 playedThisFrame = true;
                 _breathTimer = Random.Range(breathIntervalMin, breathIntervalMax);
             }
         }
     }
 
-    // ========== AI 상태 전환 ==========
+    // ========== AI ?�태 ?�환 ==========
     void SetNextState()
     {
         if (state == CowState.Idle)
@@ -217,7 +218,7 @@ public class Cow : Mob
         }
     }
 
-    // ========== 스프라이트 순서 ==========
+    // ========== ?�프?�이???�서 ==========
     void SetSpriteOrder()
     {
         SetOrder(body,  0);
@@ -235,13 +236,13 @@ public class Cow : Mob
         if (sr != null) sr.sortingOrder = order;
     }
 
-    // ========== 땅 체크 (Collider 기반) ==========
+    // ========== ??체크 (Collider 기반) ==========
     bool IsGrounded()
     {
         if (groundCheckCollider == null)
             return false;
 
-        // Ground 레이어 마스크가 비어 있으면, 어떤 레이어와 닿아도 땅으로 취급
+        // Ground ?�이??마스?��? 비어 ?�으�? ?�떤 ?�이?��? ?�아???�으�?취급
         if (groundLayerMask.value == 0)
             return groundCheckCollider.IsTouchingLayers();
 
@@ -260,10 +261,10 @@ public class Cow : Mob
     }
 #endif
 
-    // ========== 데미지 연출 ==========
+    // ========== ?��?지 ?�출 ==========
     protected override void OnDamaged(int amount)
     {
-        base.OnDamaged(amount); // 현재는 아무것도 안하지만, 혹시 모를 확장 대비
+        base.OnDamaged(amount); // ?�재???�무것도 ?�하지�? ?�시 모�? ?�장 ?��?
 
         if (_hitRenderers == null || _hitRenderers.Length == 0)
             return;
@@ -283,7 +284,7 @@ public class Cow : Mob
             yield break;
         }
 
-        // 원래 색 저장
+        // ?�래 ???�??
         Color[] originals = new Color[len];
         for (int i = 0; i < len; i++)
         {
@@ -292,7 +293,7 @@ public class Cow : Mob
                 originals[i] = sr.color;
         }
 
-        // 히트 색으로 변경
+        // ?�트 ?�으�?변�?
         for (int i = 0; i < len; i++)
         {
             var sr = _hitRenderers[i];
@@ -302,7 +303,7 @@ public class Cow : Mob
 
         yield return new WaitForSeconds(hitFlashTime);
 
-        // 원래 색 복원
+        // ?�래 ??복원
         for (int i = 0; i < len; i++)
         {
             var sr = _hitRenderers[i];
@@ -316,17 +317,17 @@ public class Cow : Mob
     // ========== 죽음 처리 ==========
     protected override void OnDeath()
     {
-        // 죽음 소리는 위치 기반 3D로 한 번만 재생
+        // 죽음 ?�리???�치 기반 3D�???번만 ?�생
         if (deathClip != null)
         {
-            // audioSource가 있으면 그걸 우선 사용 (3D 세팅 그대로)
+            // audioSource가 ?�으�?그걸 ?�선 ?�용 (3D ?�팅 그�?�?
             if (audioSource != null)
                 audioSource.PlayOneShot(deathClip);
             else
                 AudioSource.PlayClipAtPoint(deathClip, transform.position);
         }
 
-        // 원래 Mob 사망 처리 (게임오브젝트 파괴 등)
+        // ?�래 Mob ?�망 처리 (게임?�브?�트 ?�괴 ??
         base.OnDeath();
     }
 }

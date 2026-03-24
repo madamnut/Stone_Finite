@@ -1,10 +1,13 @@
 using UnityEngine;
 using TMPro;
 
+using Game.Data;
+using Game.World;
+using Game.Lobby;
 public class Debugger : MonoBehaviour
 {
     [Header("Toggle Root")]
-    public GameObject debugRoot; // F3로 토글
+    public GameObject debugRoot; // F3濡??좉?
 
     [Header("UI Text")]
     public TMP_Text fpsText;     // "FPS: 0"

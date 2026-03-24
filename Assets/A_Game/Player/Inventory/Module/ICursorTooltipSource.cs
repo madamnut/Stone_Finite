@@ -1,6 +1,10 @@
 using System.Text;
 
-public interface ICursorTooltipSource
+namespace Game.Player
 {
-    void TryBuildTooltip(StringBuilder sb);
+    
+    public interface ICursorTooltipSource
+    {
+        void TryBuildTooltip(StringBuilder sb);
+    }
 }

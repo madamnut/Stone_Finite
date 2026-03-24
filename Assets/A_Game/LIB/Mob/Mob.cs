@@ -3,31 +3,32 @@ using UnityEngine;
 using Newtonsoft.Json;
 
 /// <summary>
-/// 몹 공통 베이스
-/// - Entity 상속
-/// - MobId(종류) + MobPosition(논리 위치) + HP 보유
-/// - 세이브/로드는 MobId + 위치 + HP 다룸
+/// �?공통 베이??
+/// - Entity ?�속
+/// - MobId(종류) + MobPosition(?�리 ?�치) + HP 보유
+/// - ?�이�?로드??MobId + ?�치 + HP ?�룸
 /// </summary>
+using Game.World;
 public class Mob : Entity
 {
     [Header("Mob Info")]
     [SerializeField] private string mobId;
 
-    // 세이브/로드용 논리 위치(월드 좌표)
+    // ?�이�?로드???�리 ?�치(?�드 좌표)
     [SerializeField] private Vector2 mobPosition;
 
     [Header("HP")]
-    public int maxHp = 10;                  // 프리팹마다 개별 설정
-    [SerializeField] private int currentHp; // 런타임/세이브용
+    public int maxHp = 10;                  // ?�리?�마??개별 ?�정
+    [SerializeField] private int currentHp; // ?��????�이브용
 
     [Header("Corpse")]
-    [Tooltip("이 몹이 죽었을 때 생성할 시체 corpseId (MobLibrary에서 mobId + \"_Corpse\" 규칙으로 세팅)")]
+    [Tooltip("??몹이 죽었?????�성???�체 corpseId (MobLibrary?�서 mobId + \"_Corpse\" 규칙?�로 ?�팅)")]
     [SerializeField] private string corpseIdOnDeath;
 
-    [Tooltip("시체 스폰에 사용할 CorpseLibrary (비어 있으면 FindObjectOfType로 한 번 찾음)")]
+    [Tooltip("?�체 ?�폰???�용??CorpseLibrary (비어 ?�으�?FindObjectOfType�???�?찾음)")]
     [SerializeField] private CorpseLibrary corpseLibrary;
 
-    /// <summary>몹 종류 식별용 ID (예: "Cow", "Wolf")</summary>
+    /// <summary>�?종류 ?�별??ID (?? "Cow", "Wolf")</summary>
     public string MobId
     {
         get => mobId;
@@ -35,8 +36,8 @@ public class Mob : Entity
     }
 
     /// <summary>
-    /// 몹의 논리 위치.
-    /// 설정 시 transform.position 도 함께 갱신.
+    /// 몹의 ?�리 ?�치.
+    /// ?�정 ??transform.position ???�께 갱신.
     /// </summary>
     public Vector2 MobPosition
     {
@@ -48,44 +49,44 @@ public class Mob : Entity
         }
     }
 
-    /// <summary>이 몹이 죽었을 때 생성할 시체 corpseId (예: "Cow_Corpse")</summary>
+    /// <summary>??몹이 죽었?????�성???�체 corpseId (?? "Cow_Corpse")</summary>
     public string CorpseIdOnDeath => corpseIdOnDeath;
 
-    /// <summary>MobLibrary 등에서 corpseId 세팅용 세터</summary>
+    /// <summary>MobLibrary ?�에??corpseId ?�팅???�터</summary>
     public void SetCorpseId(string id)
     {
         corpseIdOnDeath = id;
     }
 
-    /// <summary>최대 HP (읽기 전용 접근용)</summary>
+    /// <summary>최�? HP (?�기 ?�용 ?�근??</summary>
     public int MaxHp => maxHp;
 
-    /// <summary>현재 HP</summary>
+    /// <summary>?�재 HP</summary>
     public int CurrentHp => currentHp;
 
-    /// <summary>살아있는지 여부 (HP&gt;0)</summary>
+    /// <summary>?�아?�는지 ?��? (HP&gt;0)</summary>
     public bool IsAlive => currentHp > 0;
 
     public override EntityKind Kind => EntityKind.Mob;
 
-    // 여기를 virtual + protected 로 변경
+    // ?�기�?virtual + protected �?변�?
     protected virtual void Awake()
     {
-        // 프리팹 기본값 보정
+        // ?�리??기본�?보정
         if (maxHp < 1)
             maxHp = 1;
 
-        // 새로 스폰된 몹(프리팹 기준 currentHp == 0) 은 풀피로 시작
-        // 세이브에서 로드된 몹은 나중에 FromSaveData 에서 currentHp 를 덮어씀
+        // ?�로 ?�폰??�??�리??기�? currentHp == 0) ?� ?�?�로 ?�작
+        // ?�이브에??로드??몹�? ?�중??FromSaveData ?�서 currentHp �???��?�
         if (currentHp <= 0 || currentHp > maxHp)
             currentHp = maxHp;
     }
 
-    //────────────────────────────────────────────
-    // HP / 데미지
-    //────────────────────────────────────────────
+    //?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+    // HP / ?��?지
+    //?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
 
-    /// <summary>HP를 직접 세팅 (세이브/로드 등에서 사용)</summary>
+    /// <summary>HP�?직접 ?�팅 (?�이�?로드 ?�에???�용)</summary>
     public void SetHp(int hp, int? newMaxHp = null)
     {
         if (newMaxHp.HasValue && newMaxHp.Value > 0)
@@ -97,7 +98,7 @@ public class Mob : Entity
         currentHp = Mathf.Clamp(hp, 0, maxHp);
     }
 
-    /// <summary>데미지 적용. amount&gt;0만 의미 있음.</summary>
+    /// <summary>?��?지 ?�용. amount&gt;0�??��? ?�음.</summary>
     public virtual void TakeDamage(int amount)
     {
         if (amount <= 0) return;
@@ -112,7 +113,7 @@ public class Mob : Entity
             Die();
     }
 
-    /// <summary>힐 / 회복. amount&gt;0만 의미 있음.</summary>
+    /// <summary>??/ ?�복. amount&gt;0�??��? ?�음.</summary>
     public virtual void Heal(int amount)
     {
         if (amount <= 0) return;
@@ -123,23 +124,23 @@ public class Mob : Entity
             currentHp = maxHp;
     }
 
-    /// <summary>데미지 후 훅. 파생 클래스에서 이펙트/사운드 등 오버라이드용.</summary>
+    /// <summary>?��?지 ???? ?�생 ?�래?�에???�펙???�운?????�버?�이?�용.</summary>
     protected virtual void OnDamaged(int amount)
     {
-        // 기본 구현 없음
+        // 기본 구현 ?�음
     }
 
-    /// <summary>사망 처리. 기본은 OnDeath 호출.</summary>
+    /// <summary>?�망 처리. 기본?� OnDeath ?�출.</summary>
     protected virtual void Die()
     {
         OnDeath();
     }
 
     /// <summary>
-    /// 사망 시 처리.
+    /// ?�망 ??처리.
     /// - 기본 구현:
-    ///   1) corpseIdOnDeath 가 설정되어 있으면 CorpseLibrary 통해 시체 스폰
-    ///   2) 자기 자신 Destroy
+    ///   1) corpseIdOnDeath 가 ?�정?�어 ?�으�?CorpseLibrary ?�해 ?�체 ?�폰
+    ///   2) ?�기 ?�신 Destroy
     /// </summary>
     protected virtual void OnDeath()
     {
@@ -151,7 +152,7 @@ public class Mob : Entity
 
             if (lib != null)
             {
-                // 시체 스폰 위치는 현재 논리 위치 기준 
+                // ?�체 ?�폰 ?�치???�재 ?�리 ?�치 기�? 
                 Vector2 pos = transform.position;
                 lib.SpawnCorpse(corpseIdOnDeath, pos);
             }
@@ -160,9 +161,9 @@ public class Mob : Entity
         Destroy(gameObject);
     }
 
-    //────────────────────────────────────────────
-    // 세이브 / 로드
-    //────────────────────────────────────────────
+    //?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+    // ?�이�?/ 로드
+    //?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
 
     [Serializable]
     private class MobPayload
@@ -174,7 +175,7 @@ public class Mob : Entity
 
     public override EntitySaveData ToSaveData()
     {
-        // 현재 위치를 mobPosition에 동기화
+        // ?�재 ?�치�?mobPosition???�기??
         mobPosition = transform.position;
 
         var payload = new MobPayload
@@ -187,14 +188,14 @@ public class Mob : Entity
         return new EntitySaveData
         {
             Kind        = EntityKind.Mob,
-            Position    = mobPosition, // 위치는 공통 필드로 저장
+            Position    = mobPosition, // ?�치??공통 ?�드�??�??
             PayloadJson = JsonConvert.SerializeObject(payload)
         };
     }
 
     public override void FromSaveData(EntitySaveData data)
     {
-        // 위치 복원 (MobPosition 통해 transform도 같이 갱신)
+        // ?�치 복원 (MobPosition ?�해 transform??같이 갱신)
         MobPosition = data.Position;
 
         if (!string.IsNullOrEmpty(data.PayloadJson))
@@ -206,7 +207,7 @@ public class Mob : Entity
                 {
                     mobId = payload.mobId;
 
-                    // 세이브 기준 maxHp / currentHp 복원
+                    // ?�이�?기�? maxHp / currentHp 복원
                     if (payload.maxHp > 0)
                         maxHp = payload.maxHp;
                     else if (maxHp < 1)
@@ -217,11 +218,11 @@ public class Mob : Entity
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Mob] payload 파싱 실패: {ex.Message}");
+                Debug.LogError($"[Mob] payload ?�싱 ?�패: {ex.Message}");
             }
         }
 
-        // corpseIdOnDeath 는 타입(=mobId)에서 항상 다시 유도할 수 있으므로
-        // 별도 세이브/로드는 하지 않고, MobLibrary 쪽에서 스폰 시 세팅하는 규칙을 사용.
+        // corpseIdOnDeath ???�??=mobId)?�서 ??�� ?�시 ?�도?????�으므�?
+        // 별도 ?�이�?로드???��? ?�고, MobLibrary 쪽에???�폰 ???�팅?�는 규칙???�용.
     }
 }

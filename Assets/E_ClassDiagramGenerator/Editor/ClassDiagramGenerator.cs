@@ -1,4 +1,4 @@
-﻿// Assets/ClassDiagramGenerator/Editor/ClassDiagramGenerator.cs
+// Assets/ClassDiagramGenerator/Editor/ClassDiagramGenerator.cs
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using Game.Player;
 
 namespace ClassDiagramGenerator
 {

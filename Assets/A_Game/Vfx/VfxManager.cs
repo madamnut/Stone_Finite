@@ -1,15 +1,17 @@
-// VfxManager.cs (전체 교체본)
-// - 기존 Smoke/Fire loop VFX 유지
-// - Rotating VFX: vfxKey -> prefab 을 인스펙터에서 매핑(List)으로 등록
-// - Belt VFX: prefab 1개만 사용, 색상은 외부에서 주입
-// - SetRotatingLoopVfx 그대로 사용 가능
-// - (ownerInstId, vfxKey) 재사용/중복 방지 유지
-// - Block Break Particles 코드는 그대로 유지
+// VfxManager.cs (?꾩껜 援먯껜蹂?
+// - 湲곗〈 Smoke/Fire loop VFX ?좎?
+// - Rotating VFX: vfxKey -> prefab ???몄뒪?숉꽣?먯꽌 留ㅽ븨(List)?쇰줈 ?깅줉
+// - Belt VFX: prefab 1媛쒕쭔 ?ъ슜, ?됱긽? ?몃??먯꽌 二쇱엯
+// - SetRotatingLoopVfx 洹몃?濡??ъ슜 媛??
+// - (ownerInstId, vfxKey) ?ъ궗??以묐났 諛⑹? ?좎?
+// - Block Break Particles 肄붾뱶??洹몃?濡??좎?
 
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Game.World;
+using Game.Player;
 public class VfxManager : MonoBehaviour
 {
     [Serializable]
@@ -20,32 +22,32 @@ public class VfxManager : MonoBehaviour
     }
 
     [Header("Block Break Particles")]
-    public Material material;       // Sprites/Default 기반 템플릿 1개
-    public ParticleSystem psPrefab; // 파티클 시스템 프리팹
+    public Material material;       // Sprites/Default 湲곕컲 ?쒗뵆由?1媛?
+    public ParticleSystem psPrefab; // ?뚰떚???쒖뒪???꾨━??
 
     [Header("Loop VFX Prefabs (Fixed Keys)")]
-    // 기존: "Smoke", "Fire_01", "Fire_02"
+    // 湲곗〈: "Smoke", "Fire_01", "Fire_02"
     public GameObject smokePrefab;
     public GameObject fire01Prefab;
     public GameObject fire02Prefab;
 
     [Header("Rotating VFX Prefabs (Inspector Mapping)")]
-    // 예) key="Wooden Cogwheel", prefab=WoodenCogwheelVfxPrefab
+    // ?? key="Wooden Cogwheel", prefab=WoodenCogwheelVfxPrefab
     public List<VfxKeyPrefabPair> rotatingPrefabs = new List<VfxKeyPrefabPair>();
 
     [Header("Belt VFX Prefab (Single)")]
     public GameObject beltPrefab;
 
     [Header("Loop VFX Culling")]
-    public float activeRange = 40f;  // 플레이어 기준 거리 비활/활
+    public float activeRange = 40f;  // ?뚮젅?댁뼱 湲곗? 嫄곕━ 鍮꾪솢/??
 
     readonly Dictionary<(Sprite, int), Mesh[]> _meshCache = new Dictionary<(Sprite, int), Mesh[]>();
     readonly Dictionary<Texture, Material> _matByTex = new Dictionary<Texture, Material>();
 
-    // 루프 VFX 인스턴스 관리: (ownerInstId, vfxKey) -> GameObject
+    // 猷⑦봽 VFX ?몄뒪?댁뒪 愿由? (ownerInstId, vfxKey) -> GameObject
     readonly Dictionary<(int, string), GameObject> _loop = new Dictionary<(int, string), GameObject>();
 
-    // rotating key -> prefab cache (런타임 빌드)
+    // rotating key -> prefab cache (?고???鍮뚮뱶)
     readonly Dictionary<string, GameObject> _rotatingByKey = new Dictionary<string, GameObject>(StringComparer.Ordinal);
 
     Transform _player;
@@ -68,9 +70,9 @@ public class VfxManager : MonoBehaviour
         CullAllLoopVfx();
     }
 
-    // ─────────────────────────────
-    // Loop VFX API (기존)
-    // ─────────────────────────────
+    // ?????????????????????????????
+    // Loop VFX API (湲곗〈)
+    // ?????????????????????????????
     public void SetLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos)
     {
         var key = (ownerInstId, vfxKey);
@@ -103,9 +105,9 @@ public class VfxManager : MonoBehaviour
         if (!inst.activeSelf) inst.SetActive(true);
     }
 
-    // ─────────────────────────────
-    // Rotating Loop VFX API (기존)
-    // ─────────────────────────────
+    // ?????????????????????????????
+    // Rotating Loop VFX API (湲곗〈)
+    // ?????????????????????????????
     public void SetRotatingLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos, float rpm, int rotationDir)
     {
         var key = (ownerInstId, vfxKey);
@@ -143,12 +145,12 @@ public class VfxManager : MonoBehaviour
         if (!inst.activeSelf) inst.SetActive(true);
     }
 
-    // ─────────────────────────────
-    // Belt Loop VFX API (신규)
-    // - 프리팹은 beltPrefab 1개만 사용
-    // - 색상은 bodyColor로 주입
-    // - (ownerInstId, vfxKey) 키로 재사용 (vfxKey는 beltKind 권장)
-    // ─────────────────────────────
+    // ?????????????????????????????
+    // Belt Loop VFX API (?좉퇋)
+    // - ?꾨━?뱀? beltPrefab 1媛쒕쭔 ?ъ슜
+    // - ?됱긽? bodyColor濡?二쇱엯
+    // - (ownerInstId, vfxKey) ?ㅻ줈 ?ъ궗??(vfxKey??beltKind 沅뚯옣)
+    // ?????????????????????????????
     public void SetBeltLoopVfx(
         int ownerInstId,
         string vfxKey,
@@ -279,9 +281,9 @@ public class VfxManager : MonoBehaviour
         return (_player.position - p).sqrMagnitude <= r * r;
     }
 
-    // ─────────────────────────────
-    // Block Break Particles (기존)  <<< 그대로 유지
-    // ─────────────────────────────
+    // ?????????????????????????????
+    // Block Break Particles (湲곗〈)  <<< 洹몃?濡??좎?
+    // ?????????????????????????????
     public void EmitBlockAtCell(Sprite s, int cx, int cy, int cellSize, int grid = 2, int count = -1)
     {
         Vector3 pos = new Vector3(

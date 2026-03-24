@@ -1,109 +1,114 @@
 using UnityEngine;
 using Newtonsoft.Json;
 
-public class FallingBlock : Entity
+using Game.Data;
+
+namespace Game.World
 {
-    [Header("References")]
-    [SerializeField] private WorldManager world;
-    [SerializeField] private SpriteRenderer sr;
-    [SerializeField] private LayerMask triggerMask;
-
-    [Header("Data")]
-    [SerializeField] private ushort cellId;
-    [SerializeField] private bool placed;
-
-    public override EntityKind Kind => EntityKind.FallingBlock;
-
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Save / Load
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    public override EntitySaveData ToSaveData()
+    public class FallingBlock : Entity
     {
-        // ì´ë¯¸ ì…€ë¡œ ë°•íŒ ìƒíƒœë©´ ì €ì¥ ì˜ë¯¸ ì—†ìŒ
-        if (placed)
-            return null;
-
-        var payload = new FallingBlockPayload
+        [Header("References")]
+        [SerializeField] private WorldManager world;
+        [SerializeField] private SpriteRenderer sr;
+        [SerializeField] private LayerMask triggerMask;
+    
+        [Header("Data")]
+        [SerializeField] private ushort cellId;
+        [SerializeField] private bool placed;
+    
+        public override EntityKind Kind => EntityKind.FallingBlock;
+    
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        // Save / Load
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        public override EntitySaveData ToSaveData()
         {
-            cellId = cellId
-        };
-
-        return new EntitySaveData
-        {
-            Kind        = EntityKind.FallingBlock,
-            Position    = transform.position,
-            PayloadJson = JsonConvert.SerializeObject(payload)
-        };
-    }
-
-    public override void FromSaveData(EntitySaveData data)
-    {
-        transform.position = data.Position;
-
-        if (!string.IsNullOrEmpty(data.PayloadJson))
-        {
-            var payload = JsonConvert.DeserializeObject<FallingBlockPayload>(data.PayloadJson);
-            if (payload != null)
-                cellId = payload.cellId;
+            // ?´ë? ?€ë¡?ë°•íŒ ?íƒœë©??€???˜ë? ?†ìŒ
+            if (placed)
+                return null;
+    
+            var payload = new FallingBlockPayload
+            {
+                cellId = cellId
+            };
+    
+            return new EntitySaveData
+            {
+                Kind        = EntityKind.FallingBlock,
+                Position    = transform.position,
+                PayloadJson = JsonConvert.SerializeObject(payload)
+            };
         }
-
-        ApplySprite();
-    }
-
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Init
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    public void Init(ushort id, WorldManager wm, Sprite overrideSprite = null)
-    {
-        cellId = id;
-        world  = wm;
-
-        if (!sr)
-            sr = GetComponent<SpriteRenderer>();
-
-        if (overrideSprite != null) sr.sprite = overrideSprite;
-        else ApplySprite();
-    }
-
-    private void ApplySprite()
-    {
-        if (!sr)
-            sr = GetComponent<SpriteRenderer>();
-
-        if (sr == null || world == null || world.cellLibrary == null)
-            return;
-
-        sr.sprite = world.cellLibrary.GetSolidSprite(cellId);
-    }
-
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Collision â†’ Cell placement
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (placed) return;
-        if (world == null) return;
-
-        if (((1 << other.gameObject.layer) & triggerMask.value) == 0)
-            return;
-
-        int gx = Mathf.FloorToInt(transform.position.x);
-        int gy = Mathf.FloorToInt(transform.position.y);
-
-        // âœ… ìš©ì–´ ë³€ê²½: PlaceFG -> PlaceSolid
-        if (world.PlaceSolid(gx, gy, cellId))
+    
+        public override void FromSaveData(EntitySaveData data)
         {
-            placed = true;
-            Destroy(gameObject);
+            transform.position = data.Position;
+    
+            if (!string.IsNullOrEmpty(data.PayloadJson))
+            {
+                var payload = JsonConvert.DeserializeObject<FallingBlockPayload>(data.PayloadJson);
+                if (payload != null)
+                    cellId = payload.cellId;
+            }
+    
+            ApplySprite();
         }
-    }
-
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Payload
-    //â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    [System.Serializable]
-    private class FallingBlockPayload
-    {
-        public ushort cellId;
+    
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        // Init
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        public void Init(ushort id, WorldManager wm, Sprite overrideSprite = null)
+        {
+            cellId = id;
+            world  = wm;
+    
+            if (!sr)
+                sr = GetComponent<SpriteRenderer>();
+    
+            if (overrideSprite != null) sr.sprite = overrideSprite;
+            else ApplySprite();
+        }
+    
+        private void ApplySprite()
+        {
+            if (!sr)
+                sr = GetComponent<SpriteRenderer>();
+    
+            if (sr == null || world == null || world.cellLibrary == null)
+                return;
+    
+            sr.sprite = world.cellLibrary.GetSolidSprite(cellId);
+        }
+    
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        // Collision ??Cell placement
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        void OnTriggerEnter2D(Collider2D other)
+        {
+            if (placed) return;
+            if (world == null) return;
+    
+            if (((1 << other.gameObject.layer) & triggerMask.value) == 0)
+                return;
+    
+            int gx = Mathf.FloorToInt(transform.position.x);
+            int gy = Mathf.FloorToInt(transform.position.y);
+    
+            // ???©ì–´ ë³€ê²? PlaceFG -> PlaceSolid
+            if (world.PlaceSolid(gx, gy, cellId))
+            {
+                placed = true;
+                Destroy(gameObject);
+            }
+        }
+    
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        // Payload
+        //?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        [System.Serializable]
+        private class FallingBlockPayload
+        {
+            public ushort cellId;
+        }
     }
 }

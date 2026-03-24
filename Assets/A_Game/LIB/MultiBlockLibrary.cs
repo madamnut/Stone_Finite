@@ -1,13 +1,13 @@
-// MultiblockLibrary.cs (전체 교체본) - JSON row0(맨 위) -> 내부 y=0(맨 아래)로 파싱 시 Y 뒤집기
+// MultiblockLibrary.cs (?�체 교체�? - JSON row0(�??? -> ?��? y=0(�??�래)�??�싱 ??Y ?�집�?
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>
-/// 멀티블럭 패턴/결과 정의 + 재료(셀 이름) → 멀티블럭 후보 역조회 전담.
-/// (정확 매칭: pattern에 null/빈문자열/누락 허용하지 않음)
+/// 멀?�블???�턴/결과 ?�의 + ?�료(?� ?�름) ??멀?�블???�보 ??��???�담.
+/// (?�확 매칭: pattern??null/빈문?�열/?�락 ?�용?��? ?�음)
 ///
-/// JSON 포맷(예):
+/// JSON ?�맷(??:
 /// {
 ///   "Clay Kiln": [
 ///     {
@@ -23,10 +23,11 @@ using UnityEngine;
 ///   ]
 /// }
 /// </summary>
+using Game.World;
 public class MultiblockLibrary : MonoBehaviour
 {
     [Header("Multiblock Json")]
-    [Tooltip("멀티블럭 정의 JSON (예: Clay Kiln 패턴/결과 등)")]
+    [Tooltip("멀?�블???�의 JSON (?? Clay Kiln ?�턴/결과 ??")]
     public TextAsset multiblockJson;
 
     public class Def
@@ -49,7 +50,7 @@ public class MultiblockLibrary : MonoBehaviour
 
         if (multiblockJson == null || string.IsNullOrEmpty(multiblockJson.text))
         {
-            Debug.LogError("[MultiblockLibrary] multiblockJson 이 비어있습니다.");
+            Debug.LogError("[MultiblockLibrary] multiblockJson ??비어?�습?�다.");
             return;
         }
 
@@ -179,7 +180,7 @@ public class MultiblockLibrary : MonoBehaviour
                 var pattern = new string[width, height];
                 var result  = new string[width, height];
 
-                // ✅ JSON은 row0=맨 위. 내부 배열은 y=0=맨 아래로 쓰기 위해 Y를 뒤집어서 저장한다.
+                // ??JSON?� row0=�??? ?��? 배열?� y=0=�??�래�??�기 ?�해 Y�??�집?�서 ?�?�한??
                 for (int jsonY = 0; jsonY < height; jsonY++)
                 {
                     int y = (height - 1 - jsonY);
@@ -215,7 +216,7 @@ public class MultiblockLibrary : MonoBehaviour
                 }
                 listByKey.Add(def);
 
-                // ingredient index: pattern 내부의 셀 이름 전부 재료로 등록
+                // ingredient index: pattern ?��????� ?�름 ?��? ?�료�??�록
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)

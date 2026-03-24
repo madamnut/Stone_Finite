@@ -1,278 +1,284 @@
-// WoodenCrate.cs (전체 교체본)
+// WoodenCrate.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪?
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 
-public class WoodenCrate : Multiblock
+using Game.Data;
+using Game.Player;
+
+namespace Game.World
 {
-    public const int StorageWidth  = 5;
-    public const int StorageHeight = 5;
-    public const int Capacity      = StorageWidth * StorageHeight; // 25
-
-    InventoryData _inventory;
-    bool _droppedOnDestroy = false;
-
-    public InventoryData Inventory
+    public class WoodenCrate : Multiblock
     {
-        get
+        public const int StorageWidth  = 5;
+        public const int StorageHeight = 5;
+        public const int Capacity      = StorageWidth * StorageHeight; // 25
+    
+        InventoryData _inventory;
+        bool _droppedOnDestroy = false;
+    
+        public InventoryData Inventory
         {
-            if (_inventory == null) _inventory = new InventoryData(Capacity);
-            return _inventory;
-        }
-    }
-
-    public override void Initialize(
-        WorldManager world,
-        string defId,
-        Vector2Int origin,
-        int width,
-        int height,
-        IEnumerable<Vector2Int> occupied
-    )
-    {
-        base.Initialize(world, defId, origin, width, height, occupied);
-
-        if (_inventory == null || _inventory.Capacity != Capacity)
-            _inventory = new InventoryData(Capacity);
-
-        _droppedOnDestroy = false;
-    }
-
-    public override void OnInteract(Player player, Vector2Int hitCell)
-    {
-        // 요청사항: 모듈 id = "Wooden Crate"
-        Manager.OpenModule("Wooden Crate", this);
-    }
-
-    public override void OnCellBroken(Vector2Int brokenCell)
-    {
-        if (!_droppedOnDestroy)
-        {
-            _droppedOnDestroy = true;
-            DropAllInternalItems();
-        }
-
-        base.OnCellBroken(brokenCell);
-    }
-
-    void DropAllInternalItems()
-    {
-        if (World == null || World.itemDropper == null) return;
-        if (_inventory == null) return;
-
-        Vector3 origin = new Vector3(
-            Origin.x + (Width * 0.5f),
-            Origin.y + (Height * 0.5f),
-            0f
-        );
-
-        for (int i = 0; i < _inventory.items.Count; i++)
-        {
-            var it = _inventory.items[i];
-            if (it == null) continue;
-            if (it.Count <= 0) { _inventory.items[i] = null; continue; }
-
-            var copy = new ItemData(
-                itemId:        it.ItemId,
-                name:          it.Name,
-                spriteName:    it.SpriteName,
-                itemType:      it.ItemType,
-                maxStack:      it.MaxStack,
-                maxDurability: it.MaxDurability,
-                durability:    it.Durability,
-                toolActions:   it.ToolActions,
-                weaponActions: it.WeaponActions,
-                breakActions:  it.BreakActions,
-                tags:          it.Tags,
-                details:       it.Details,
-                icon:          it.Icon,
-                count:         it.Count
-            );
-
-            World.itemDropper.SpawnDroppedItem(copy, origin);
-            _inventory.items[i] = null;
-        }
-
-        _inventory.NotifyChanged();
-    }
-
-    // ItemData "전체" 스냅샷(Icon은 제외: spriteName으로 복원)
-    [Serializable]
-    class ItemPayload
-    {
-        public string itemId;
-        public string name;
-        public string spriteName;
-        public string itemType;
-        public int maxStack;
-
-        public int maxDurability;
-        public int durability;
-        public int count;
-
-        public List<string> tags;
-        public Dictionary<string, object> details;
-
-        public Dictionary<string, Dictionary<string, object>> breakActions;
-        public Dictionary<string, Dictionary<string, object>> toolActions;
-        public Dictionary<string, Dictionary<string, object>> weaponActions;
-    }
-
-    [Serializable]
-    class WoodenCratePayload
-    {
-        public List<ItemPayload> items; // size = 25, null 허용
-    }
-
-    public override SaveData ToSaveData()
-    {
-        WoodenCratePayload payload = null;
-
-        if (_inventory != null)
-        {
-            payload = new WoodenCratePayload
+            get
             {
-                items = new List<ItemPayload>(Capacity)
-            };
-
-            for (int i = 0; i < Capacity; i++)
-            {
-                var it = (i < _inventory.items.Count) ? _inventory.items[i] : null;
-                if (it == null || it.Count <= 0)
-                {
-                    payload.items.Add(null);
-                    continue;
-                }
-
-                payload.items.Add(new ItemPayload
-                {
-                    itemId        = it.ItemId,
-                    name          = it.Name,
-                    spriteName    = it.SpriteName,
-                    itemType      = it.ItemType,
-                    maxStack      = it.MaxStack,
-
-                    maxDurability = it.MaxDurability,
-                    durability    = it.Durability,
-                    count         = it.Count,
-
-                    tags          = it.Tags,
-                    details       = it.Details,
-
-                    breakActions  = it.BreakActions,
-                    toolActions   = it.ToolActions,
-                    weaponActions = it.WeaponActions
-                });
+                if (_inventory == null) _inventory = new InventoryData(Capacity);
+                return _inventory;
             }
         }
-
-        // OriginalSolidIds (row-major)
-        ushort[] orig = new ushort[Width * Height];
-        for (int y = 0; y < Height; y++)
-        for (int x = 0; x < Width; x++)
+    
+        public override void Initialize(
+            WorldManager world,
+            string defId,
+            Vector2Int origin,
+            int width,
+            int height,
+            IEnumerable<Vector2Int> occupied
+        )
         {
-            var cell = new Vector2Int(Origin.x + x, Origin.y + y);
-            orig[x + y * Width] = originalSolidIds.TryGetValue(cell, out var id) ? id : (ushort)0;
+            base.Initialize(world, defId, origin, width, height, occupied);
+    
+            if (_inventory == null || _inventory.Capacity != Capacity)
+                _inventory = new InventoryData(Capacity);
+    
+            _droppedOnDestroy = false;
         }
-
-        return new SaveData
+    
+        public override void OnInteract(Game.Player.Player player, Vector2Int hitCell)
         {
-            DefId            = DefId,
-            InstId           = InstId,
-            Origin           = Origin,
-            Width            = Width,
-            Height           = Height,
-            PayloadJson      = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty,
-            OriginalSolidIds = orig
-        };
-    }
-
-    public override void FromSaveData(SaveData data)
-    {
-        DefId  = data.DefId;
-        InstId = data.InstId;
-        Origin = data.Origin;
-        Width  = data.Width;
-        Height = data.Height;
-
-        occupiedCells.Clear();
-        for (int y = 0; y < Height; y++)
-            for (int x = 0; x < Width; x++)
-                occupiedCells.Add(new Vector2Int(Origin.x + x, Origin.y + y));
-
-        // originalSolidIds restore (row-major)
-        originalSolidIds.Clear();
-        if (data.OriginalSolidIds != null && data.OriginalSolidIds.Length == Width * Height)
+            // ?遺욧퍕??鍮? 筌뤴뫀諭?id = "Wooden Crate"
+            Manager.OpenModule("Wooden Crate", this);
+        }
+    
+        public override void OnCellBroken(Vector2Int brokenCell)
         {
+            if (!_droppedOnDestroy)
+            {
+                _droppedOnDestroy = true;
+                DropAllInternalItems();
+            }
+    
+            base.OnCellBroken(brokenCell);
+        }
+    
+        void DropAllInternalItems()
+        {
+            if (World == null || World.itemDropper == null) return;
+            if (_inventory == null) return;
+    
+            Vector3 origin = new Vector3(
+                Origin.x + (Width * 0.5f),
+                Origin.y + (Height * 0.5f),
+                0f
+            );
+    
+            for (int i = 0; i < _inventory.items.Count; i++)
+            {
+                var it = _inventory.items[i];
+                if (it == null) continue;
+                if (it.Count <= 0) { _inventory.items[i] = null; continue; }
+    
+                var copy = new ItemData(
+                    itemId:        it.ItemId,
+                    name:          it.Name,
+                    spriteName:    it.SpriteName,
+                    itemType:      it.ItemType,
+                    maxStack:      it.MaxStack,
+                    maxDurability: it.MaxDurability,
+                    durability:    it.Durability,
+                    toolActions:   it.ToolActions,
+                    weaponActions: it.WeaponActions,
+                    breakActions:  it.BreakActions,
+                    tags:          it.Tags,
+                    details:       it.Details,
+                    icon:          it.Icon,
+                    count:         it.Count
+                );
+    
+                World.itemDropper.SpawnDroppedItem(copy, origin);
+                _inventory.items[i] = null;
+            }
+    
+            _inventory.NotifyChanged();
+        }
+    
+        // ItemData "?袁⑷퍥" ??산퉬??Icon?? ??뽰뇚: spriteName??곗쨮 癰귣벊??
+        [Serializable]
+        class ItemPayload
+        {
+            public string itemId;
+            public string name;
+            public string spriteName;
+            public string itemType;
+            public int maxStack;
+    
+            public int maxDurability;
+            public int durability;
+            public int count;
+    
+            public List<string> tags;
+            public Dictionary<string, object> details;
+    
+            public Dictionary<string, Dictionary<string, object>> breakActions;
+            public Dictionary<string, Dictionary<string, object>> toolActions;
+            public Dictionary<string, Dictionary<string, object>> weaponActions;
+        }
+    
+        [Serializable]
+        class WoodenCratePayload
+        {
+            public List<ItemPayload> items; // size = 25, null ??됱뒠
+        }
+    
+        public override SaveData ToSaveData()
+        {
+            WoodenCratePayload payload = null;
+    
+            if (_inventory != null)
+            {
+                payload = new WoodenCratePayload
+                {
+                    items = new List<ItemPayload>(Capacity)
+                };
+    
+                for (int i = 0; i < Capacity; i++)
+                {
+                    var it = (i < _inventory.items.Count) ? _inventory.items[i] : null;
+                    if (it == null || it.Count <= 0)
+                    {
+                        payload.items.Add(null);
+                        continue;
+                    }
+    
+                    payload.items.Add(new ItemPayload
+                    {
+                        itemId        = it.ItemId,
+                        name          = it.Name,
+                        spriteName    = it.SpriteName,
+                        itemType      = it.ItemType,
+                        maxStack      = it.MaxStack,
+    
+                        maxDurability = it.MaxDurability,
+                        durability    = it.Durability,
+                        count         = it.Count,
+    
+                        tags          = it.Tags,
+                        details       = it.Details,
+    
+                        breakActions  = it.BreakActions,
+                        toolActions   = it.ToolActions,
+                        weaponActions = it.WeaponActions
+                    });
+                }
+            }
+    
+            // OriginalSolidIds (row-major)
+            ushort[] orig = new ushort[Width * Height];
             for (int y = 0; y < Height; y++)
             for (int x = 0; x < Width; x++)
             {
                 var cell = new Vector2Int(Origin.x + x, Origin.y + y);
-                originalSolidIds[cell] = data.OriginalSolidIds[x + y * Width];
+                orig[x + y * Width] = originalSolidIds.TryGetValue(cell, out var id) ? id : (ushort)0;
             }
-        }
-
-        _inventory = new InventoryData(Capacity);
-        _droppedOnDestroy = false;
-
-        if (string.IsNullOrEmpty(data.PayloadJson))
-        {
-            _inventory.NotifyChanged();
-            return;
-        }
-
-        WoodenCratePayload payload;
-        try
-        {
-            payload = JsonConvert.DeserializeObject<WoodenCratePayload>(data.PayloadJson);
-        }
-        catch
-        {
-            _inventory.NotifyChanged();
-            return;
-        }
-
-        if (payload == null || payload.items == null)
-        {
-            _inventory.NotifyChanged();
-            return;
-        }
-
-        int n = Mathf.Min(Capacity, payload.items.Count);
-
-        for (int i = 0; i < n; i++)
-        {
-            var p = payload.items[i];
-            if (p == null || p.count <= 0)
+    
+            return new SaveData
             {
-                _inventory.items[i] = null;
-                continue;
-            }
-
-            Sprite icon = null;
-            if (Manager != null && Manager.ItemLibrary != null && !string.IsNullOrEmpty(p.spriteName))
-                icon = Manager.ItemLibrary.GetSprite(p.spriteName);
-
-            _inventory.items[i] = new ItemData(
-                itemId:        p.itemId,
-                name:          p.name,
-                spriteName:    p.spriteName,
-                itemType:      p.itemType,
-                maxStack:      p.maxStack,
-                maxDurability: p.maxDurability,
-                durability:    p.durability,
-                toolActions:   p.toolActions,
-                weaponActions: p.weaponActions,
-                breakActions:  p.breakActions,
-                tags:          p.tags,
-                details:       p.details,
-                icon:          icon,
-                count:         p.count
-            );
+                DefId            = DefId,
+                InstId           = InstId,
+                Origin           = Origin,
+                Width            = Width,
+                Height           = Height,
+                PayloadJson      = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty,
+                OriginalSolidIds = orig
+            };
         }
-
-        // 나머지 슬롯(저장 데이터가 더 짧은 경우)은 null 유지
-        _inventory.NotifyChanged();
+    
+        public override void FromSaveData(SaveData data)
+        {
+            DefId  = data.DefId;
+            InstId = data.InstId;
+            Origin = data.Origin;
+            Width  = data.Width;
+            Height = data.Height;
+    
+            occupiedCells.Clear();
+            for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                    occupiedCells.Add(new Vector2Int(Origin.x + x, Origin.y + y));
+    
+            // originalSolidIds restore (row-major)
+            originalSolidIds.Clear();
+            if (data.OriginalSolidIds != null && data.OriginalSolidIds.Length == Width * Height)
+            {
+                for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                {
+                    var cell = new Vector2Int(Origin.x + x, Origin.y + y);
+                    originalSolidIds[cell] = data.OriginalSolidIds[x + y * Width];
+                }
+            }
+    
+            _inventory = new InventoryData(Capacity);
+            _droppedOnDestroy = false;
+    
+            if (string.IsNullOrEmpty(data.PayloadJson))
+            {
+                _inventory.NotifyChanged();
+                return;
+            }
+    
+            WoodenCratePayload payload;
+            try
+            {
+                payload = JsonConvert.DeserializeObject<WoodenCratePayload>(data.PayloadJson);
+            }
+            catch
+            {
+                _inventory.NotifyChanged();
+                return;
+            }
+    
+            if (payload == null || payload.items == null)
+            {
+                _inventory.NotifyChanged();
+                return;
+            }
+    
+            int n = Mathf.Min(Capacity, payload.items.Count);
+    
+            for (int i = 0; i < n; i++)
+            {
+                var p = payload.items[i];
+                if (p == null || p.count <= 0)
+                {
+                    _inventory.items[i] = null;
+                    continue;
+                }
+    
+                Sprite icon = null;
+                if (Manager != null && Manager.ItemLibrary != null && !string.IsNullOrEmpty(p.spriteName))
+                    icon = Manager.ItemLibrary.GetSprite(p.spriteName);
+    
+                _inventory.items[i] = new ItemData(
+                    itemId:        p.itemId,
+                    name:          p.name,
+                    spriteName:    p.spriteName,
+                    itemType:      p.itemType,
+                    maxStack:      p.maxStack,
+                    maxDurability: p.maxDurability,
+                    durability:    p.durability,
+                    toolActions:   p.toolActions,
+                    weaponActions: p.weaponActions,
+                    breakActions:  p.breakActions,
+                    tags:          p.tags,
+                    details:       p.details,
+                    icon:          icon,
+                    count:         p.count
+                );
+            }
+    
+            // ??롢돢筌왖 ?????????怨쀬뵠?怨? ??筌욁룂? 野껋럩???? null ?醫?
+            _inventory.NotifyChanged();
+        }
     }
 }

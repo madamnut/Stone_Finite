@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 
+using Game.Data;
+using Game.World;
+using Game.Player;
 public class DroppedItem : Entity
 {
     [Header("Rendering")]
     public SpriteRenderer spriteRenderer;
 
     [Header("References")]
-    [SerializeField] private ItemLibrary itemLibrary; // spriteName -> Sprite 복원
+    [SerializeField] private ItemLibrary itemLibrary; // spriteName -> Sprite 蹂듭썝
 
     public ItemData ItemData { get; private set; }
 
@@ -20,7 +23,7 @@ public class DroppedItem : Entity
         base.SetSimActive(active);
     }
 
-    // ItemData "전체" 스냅샷(Icon은 제외: spriteName으로 복원)
+    // ItemData "?꾩껜" ?ㅻ깄??Icon? ?쒖쇅: spriteName?쇰줈 蹂듭썝)
     [Serializable]
     private class DroppedItemPayload
     {
@@ -122,7 +125,7 @@ public class DroppedItem : Entity
         Initialize(rebuilt);
     }
 
-    // 드랍 아이템 스폰/로드 시 실제 ItemData 주입
+    // ?쒕엻 ?꾩씠???ㅽ룿/濡쒕뱶 ???ㅼ젣 ItemData 二쇱엯
     public void Initialize(ItemData data)
     {
         ItemData = data;

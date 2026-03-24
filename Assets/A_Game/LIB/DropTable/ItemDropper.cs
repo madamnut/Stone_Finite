@@ -1,13 +1,16 @@
-// ItemDropper.cs (전체 교체본)
-// 변경점:
-// - "확정 드랍(확률/드랍테이블 무시)"용 API 추가: SpawnItemDirect(itemId, origin, count)
-//   (기어 파괴 시 붙은 소스는 무조건 1개 드랍 요구사항 대응)
+// ItemDropper.cs (?꾩껜 援먯껜蹂?
+// 蹂寃쎌젏:
+// - "?뺤젙 ?쒕엻(?뺣쪧/?쒕엻?뚯씠釉?臾댁떆)"??API 異붽?: SpawnItemDirect(itemId, origin, count)
+//   (湲곗뼱 ?뚭눼 ??遺숈? ?뚯뒪??臾댁“嫄?1媛??쒕엻 ?붽뎄?ы빆 ???
 
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using UnityEngine;
 
+using Game.Data;
+using Game.World;
+using Game.Player;
 public class ItemDropper : MonoBehaviour
 {
     [Header("References")]
@@ -49,7 +52,7 @@ public class ItemDropper : MonoBehaviour
         }
 
         if (!any)
-            Debug.LogError("[ItemDropper] 어떤 드랍 테이블 JSON도 설정되지 않았습니다.");
+            Debug.LogError("[ItemDropper] ?대뼡 ?쒕엻 ?뚯씠釉?JSON???ㅼ젙?섏? ?딆븯?듬땲??");
     }
 
     void MergeDropTable(TextAsset json)
@@ -69,13 +72,13 @@ public class ItemDropper : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[ItemDropper] DropTable 파싱 실패 ({json.name}): {ex.Message}");
+            Debug.LogError($"[ItemDropper] DropTable ?뚯떛 ?ㅽ뙣 ({json.name}): {ex.Message}");
         }
     }
 
-    //────────────────────────────────────────────
-    // (0) 확정 드랍(드랍테이블 무시)  ✅ 신규
-    //────────────────────────────────────────────
+    //????????????????????????????????????????????
+    // (0) ?뺤젙 ?쒕엻(?쒕엻?뚯씠釉?臾댁떆)  ???좉퇋
+    //????????????????????????????????????????????
     public void SpawnItemDirect(string itemId, Vector3 origin, int count = 1)
     {
         if (string.IsNullOrEmpty(itemId)) return;
@@ -83,9 +86,9 @@ public class ItemDropper : MonoBehaviour
         SpawnSingle(itemId, origin, count);
     }
 
-    //────────────────────────────────────────────
-    // (1) key 기반 드랍테이블
-    //────────────────────────────────────────────
+    //????????????????????????????????????????????
+    // (1) key 湲곕컲 ?쒕엻?뚯씠釉?
+    //????????????????????????????????????????????
     public void SpawnDroppedItems(string key, Vector3 origin)
     {
         if (_dropTable == null || !_dropTable.TryGetValue(key, out var list))
@@ -121,9 +124,9 @@ public class ItemDropper : MonoBehaviour
         SpawnDroppedItem(data, origin);
     }
 
-    //────────────────────────────────────────────
-    // (2) ItemData 그대로 드랍
-    //────────────────────────────────────────────
+    //????????????????????????????????????????????
+    // (2) ItemData 洹몃?濡??쒕엻
+    //????????????????????????????????????????????
     public DroppedItem SpawnDroppedItem(ItemData data, Vector3 origin)
     {
         if (data == null) return null;
@@ -150,7 +153,7 @@ public class ItemDropper : MonoBehaviour
         var comp = go.GetComponent<DroppedItem>();
         if (comp == null)
         {
-            Debug.LogError("[ItemDropper] droppedItemPrefab에 DroppedItem 컴포넌트가 없습니다.");
+            Debug.LogError("[ItemDropper] droppedItemPrefab??DroppedItem 而댄룷?뚰듃媛 ?놁뒿?덈떎.");
             Destroy(go);
             return null;
         }

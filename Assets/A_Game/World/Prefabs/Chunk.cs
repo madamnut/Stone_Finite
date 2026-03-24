@@ -1,127 +1,131 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class Chunk : MonoBehaviour
+
+namespace Game.World
 {
-    public const int ChunkSize = 16;
-
-    // ── Tilemap 레이어: 후경 + 유틸리티 + 솔리드(시각) + 플랫폼(콜라이더 전용) + 유체 ──
-    public Tilemap bgTilemap;
-
-    // ✅ 추가: 유틸리티(벽면 설비) 레이어
-    public Tilemap utilityTilemap;
-
-    public Tilemap solidTilemap;
-
-    // ✅ 추가: 플랫폼 콜라이더 전용 타일맵 (TilemapCollider2D/Composite/PlatformEffector2D)
-    // - 렌더는 끄는 전제 (TilemapRenderer disabled)
-    public Tilemap platformTilemap;
-
-    public Tilemap liquidTilemap;
-
-    // ── Light Overlay (Quad) ──
-    // 프리팹에서 LightOverlay 오브젝트를 연결 (MeshRenderer 보유)
-    public MeshRenderer lightOverlayRenderer;
-
-    // ── 타일 버퍼(재사용) ──
-    [HideInInspector] public TileBase[] bgBuffer;
-
-    // ✅ 추가: 유틸리티 버퍼
-    [HideInInspector] public TileBase[] utilityBuffer;
-
-    [HideInInspector] public TileBase[] solidBuffer;
-
-    // ✅ 추가: 플랫폼 콜라이더 전용 버퍼
-    [HideInInspector] public TileBase[] platformBuffer;
-
-    [HideInInspector] public TileBase[] liquidBuffer;
-
-    // ── Dirty 플래그 ──
-    [HideInInspector] public bool bgDirty       = false;
-
-    // ✅ 추가: 유틸리티 더티
-    [HideInInspector] public bool utilityDirty  = false;
-
-    [HideInInspector] public bool solidDirty    = false;
-
-    // ✅ 추가: 플랫폼 콜라이더 더티
-    [HideInInspector] public bool platformDirty = false;
-
-    [HideInInspector] public bool liquidDirty   = false;
-    [HideInInspector] public bool lightDirty    = false;
-
-    // ── Liquid Mask (청크별 렌더 분기용) ──
-    [HideInInspector] public Texture2D liquidTypeTex;     // 16x16, R=liquidId(0..255)
-    [HideInInspector] public Texture2D liquidAmountTex;   // 16x16, R=amount(0..128)
-    [HideInInspector] public Color32[] liquidTypePixels;  // 256
-    [HideInInspector] public Color32[] liquidAmtPixels;   // 256
-    [HideInInspector] public MaterialPropertyBlock liquidMpb;
-    [HideInInspector] public TilemapRenderer liquidRenderer;
-
-    // ── Light Texture (청크별 1회 생성, 이후 재사용) ──
-    // 18x18: 가운데 16x16 + 테두리 1픽셀 패딩(인접 청크 보간용)
-    [HideInInspector] public Texture2D lightTex;          // 18x18, RGBA (A에 어둠 알파)
-    [HideInInspector] public Color32[] lightPixels;       // 18*18
-    [HideInInspector] public MaterialPropertyBlock lightMpb;
-
-    void Awake()
+    public class Chunk : MonoBehaviour
     {
-        // 타일 버퍼
-        int ts = ChunkSize * ChunkSize;
-        bgBuffer        = new TileBase[ts];
-        utilityBuffer   = new TileBase[ts];
-        solidBuffer     = new TileBase[ts];
-        platformBuffer  = new TileBase[ts];
-        liquidBuffer    = new TileBase[ts];
-
-        // ── Platform TilemapRenderer 비활성(시각 렌더 중복 방지) ──
-        // 플랫폼은 Solid 타일맵에 "콜라이더 없는 솔리드처럼" 그리므로,
-        // platformTilemap은 콜라이더만 생성하고 렌더는 끈다.
-        if (platformTilemap != null)
+        public const int ChunkSize = 16;
+    
+        // ?�?� Tilemap ?�이?? ?�경 + ?�틸리티 + ?�리???�각) + ?�랫??콜라?�더 ?�용) + ?�체 ?�?�
+        public Tilemap bgTilemap;
+    
+        // ??추�?: ?�틸리티(벽면 ?�비) ?�이??
+        public Tilemap utilityTilemap;
+    
+        public Tilemap solidTilemap;
+    
+        // ??추�?: ?�랫??콜라?�더 ?�용 ?�?�맵 (TilemapCollider2D/Composite/PlatformEffector2D)
+        // - ?�더???�는 ?�제 (TilemapRenderer disabled)
+        public Tilemap platformTilemap;
+    
+        public Tilemap liquidTilemap;
+    
+        // ?�?� Light Overlay (Quad) ?�?�
+        // ?�리?�에??LightOverlay ?�브?�트�??�결 (MeshRenderer 보유)
+        public MeshRenderer lightOverlayRenderer;
+    
+        // ?�?� ?�??버퍼(?�사?? ?�?�
+        [HideInInspector] public TileBase[] bgBuffer;
+    
+        // ??추�?: ?�틸리티 버퍼
+        [HideInInspector] public TileBase[] utilityBuffer;
+    
+        [HideInInspector] public TileBase[] solidBuffer;
+    
+        // ??추�?: ?�랫??콜라?�더 ?�용 버퍼
+        [HideInInspector] public TileBase[] platformBuffer;
+    
+        [HideInInspector] public TileBase[] liquidBuffer;
+    
+        // ?�?� Dirty ?�래�??�?�
+        [HideInInspector] public bool bgDirty       = false;
+    
+        // ??추�?: ?�틸리티 ?�티
+        [HideInInspector] public bool utilityDirty  = false;
+    
+        [HideInInspector] public bool solidDirty    = false;
+    
+        // ??추�?: ?�랫??콜라?�더 ?�티
+        [HideInInspector] public bool platformDirty = false;
+    
+        [HideInInspector] public bool liquidDirty   = false;
+        [HideInInspector] public bool lightDirty    = false;
+    
+        // ?�?� Liquid Mask (�?���??�더 분기?? ?�?�
+        [HideInInspector] public Texture2D liquidTypeTex;     // 16x16, R=liquidId(0..255)
+        [HideInInspector] public Texture2D liquidAmountTex;   // 16x16, R=amount(0..128)
+        [HideInInspector] public Color32[] liquidTypePixels;  // 256
+        [HideInInspector] public Color32[] liquidAmtPixels;   // 256
+        [HideInInspector] public MaterialPropertyBlock liquidMpb;
+        [HideInInspector] public TilemapRenderer liquidRenderer;
+    
+        // ?�?� Light Texture (�?���?1???�성, ?�후 ?�사?? ?�?�
+        // 18x18: 가?�데 16x16 + ?�두�?1?��? ?�딩(?�접 �?�� 보간??
+        [HideInInspector] public Texture2D lightTex;          // 18x18, RGBA (A???�둠 ?�파)
+        [HideInInspector] public Color32[] lightPixels;       // 18*18
+        [HideInInspector] public MaterialPropertyBlock lightMpb;
+    
+        void Awake()
         {
-            var r = platformTilemap.GetComponent<TilemapRenderer>();
-            if (r != null) r.enabled = false;
-        }
-
-        // ── Liquid Mask 기본 리소스 (청크당 1회 생성, 이후 재사용) ──
-        liquidRenderer = liquidTilemap.GetComponent<TilemapRenderer>();
-        liquidMpb = new MaterialPropertyBlock();
-
-        liquidTypePixels = new Color32[ts];
-        liquidAmtPixels  = new Color32[ts];
-
-        liquidTypeTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
-        liquidTypeTex.filterMode = FilterMode.Point;
-        liquidTypeTex.wrapMode   = TextureWrapMode.Clamp;
-
-        liquidAmountTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
-        liquidAmountTex.filterMode = FilterMode.Point;
-        liquidAmountTex.wrapMode   = TextureWrapMode.Clamp;
-
-        // ── Light Overlay 기본 리소스 (청크당 1회 생성, 이후 재사용) ──
-        lightMpb = new MaterialPropertyBlock();
-
-        // LightOverlayRenderer가 없으면 Light 레이어는 비활성(렌더는 안 하지만 게임 진행엔 영향 없음)
-        if (lightOverlayRenderer != null)
-        {
-            const int L = ChunkSize + 2; // 18
-            lightPixels = new Color32[L * L];
-
-            lightTex = new Texture2D(L, L, TextureFormat.RGBA32, false, true);
-            lightTex.filterMode = FilterMode.Bilinear;
-            lightTex.wrapMode   = TextureWrapMode.Clamp;
-
-            // 초기값: 완전 투명(어둠 없음)
-            for (int i = 0; i < lightPixels.Length; i++)
-                lightPixels[i] = new Color32(0, 0, 0, 0);
-
-            lightTex.SetPixels32(lightPixels);
-            lightTex.Apply(false, false);
-
-            // MPB에 텍스처 바인딩 (프로퍼티 이름은 셰이더에 맞춰 통일)
-            lightOverlayRenderer.GetPropertyBlock(lightMpb);
-            lightMpb.SetTexture("_LightTex", lightTex);
-            lightOverlayRenderer.SetPropertyBlock(lightMpb);
+            // ?�??버퍼
+            int ts = ChunkSize * ChunkSize;
+            bgBuffer        = new TileBase[ts];
+            utilityBuffer   = new TileBase[ts];
+            solidBuffer     = new TileBase[ts];
+            platformBuffer  = new TileBase[ts];
+            liquidBuffer    = new TileBase[ts];
+    
+            // ?�?� Platform TilemapRenderer 비활???�각 ?�더 중복 방�?) ?�?�
+            // ?�랫?��? Solid ?�?�맵??"콜라?�더 ?�는 ?�리?�처?? 그리므�?
+            // platformTilemap?� 콜라?�더�??�성?�고 ?�더???�다.
+            if (platformTilemap != null)
+            {
+                var r = platformTilemap.GetComponent<TilemapRenderer>();
+                if (r != null) r.enabled = false;
+            }
+    
+            // ?�?� Liquid Mask 기본 리소??(�?��??1???�성, ?�후 ?�사?? ?�?�
+            liquidRenderer = liquidTilemap.GetComponent<TilemapRenderer>();
+            liquidMpb = new MaterialPropertyBlock();
+    
+            liquidTypePixels = new Color32[ts];
+            liquidAmtPixels  = new Color32[ts];
+    
+            liquidTypeTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
+            liquidTypeTex.filterMode = FilterMode.Point;
+            liquidTypeTex.wrapMode   = TextureWrapMode.Clamp;
+    
+            liquidAmountTex = new Texture2D(ChunkSize, ChunkSize, TextureFormat.RGBA32, false, true);
+            liquidAmountTex.filterMode = FilterMode.Point;
+            liquidAmountTex.wrapMode   = TextureWrapMode.Clamp;
+    
+            // ?�?� Light Overlay 기본 리소??(�?��??1???�성, ?�후 ?�사?? ?�?�
+            lightMpb = new MaterialPropertyBlock();
+    
+            // LightOverlayRenderer가 ?�으�?Light ?�이?�는 비활???�더?????��?�?게임 진행???�향 ?�음)
+            if (lightOverlayRenderer != null)
+            {
+                const int L = ChunkSize + 2; // 18
+                lightPixels = new Color32[L * L];
+    
+                lightTex = new Texture2D(L, L, TextureFormat.RGBA32, false, true);
+                lightTex.filterMode = FilterMode.Bilinear;
+                lightTex.wrapMode   = TextureWrapMode.Clamp;
+    
+                // 초기�? ?�전 ?�명(?�둠 ?�음)
+                for (int i = 0; i < lightPixels.Length; i++)
+                    lightPixels[i] = new Color32(0, 0, 0, 0);
+    
+                lightTex.SetPixels32(lightPixels);
+                lightTex.Apply(false, false);
+    
+                // MPB???�스�?바인??(?�로?�티 ?�름?� ?�이?�에 맞춰 ?�일)
+                lightOverlayRenderer.GetPropertyBlock(lightMpb);
+                lightMpb.SetTexture("_LightTex", lightTex);
+                lightOverlayRenderer.SetPropertyBlock(lightMpb);
+            }
         }
     }
 }

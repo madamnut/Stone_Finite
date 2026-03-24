@@ -2,19 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Mob 프리팹 레지스트리 + 스폰 헬퍼.
-/// mobId ↔ Mob 프리팹 매핑.
-/// 시체 corpseId 는 mobId + "_Corpse" 규칙으로 자동 생성.
+/// Mob ?�리???��??�트�?+ ?�폰 ?�퍼.
+/// mobId ??Mob ?�리??매핑.
+/// ?�체 corpseId ??mobId + "_Corpse" 규칙?�로 ?�동 ?�성.
 /// </summary>
+using Game.World;
 public class MobLibrary : MonoBehaviour
 {
     [System.Serializable]
     public class MobEntry
     {
-        [Tooltip("슬라임, Cow, Bird_White 같은 고유 ID (세이브/코드에서 사용)")]
+        [Tooltip("?�라?? Cow, Bird_White 같�? 고유 ID (?�이�?코드?�서 ?�용)")]
         public string mobId;
 
-        [Tooltip("실제 Mob 프리팹 (Mob : Entity 상속)")]
+        [Tooltip("?�제 Mob ?�리??(Mob : Entity ?�속)")]
         public Mob prefab;
     }
 
@@ -41,7 +42,7 @@ public class MobLibrary : MonoBehaviour
 
             if (_byId.ContainsKey(e.mobId))
             {
-                Debug.LogWarning($"[MobLibrary] 중복 mobId='{e.mobId}' 무시됨.");
+                Debug.LogWarning($"[MobLibrary] 중복 mobId='{e.mobId}' 무시??");
                 continue;
             }
 
@@ -49,7 +50,7 @@ public class MobLibrary : MonoBehaviour
         }
     }
 
-    /// <summary>mobId로 프리팹 반환</summary>
+    /// <summary>mobId�??�리??반환</summary>
     public Mob GetPrefab(string mobId)
     {
         if (string.IsNullOrEmpty(mobId) || _byId == null)
@@ -59,7 +60,7 @@ public class MobLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// mobId 기준 스폰 + corpseId 자동 부여.
+    /// mobId 기�? ?�폰 + corpseId ?�동 부??
     /// corpseId 규칙: mobId + "_Corpse"
     /// </summary>
     public Mob SpawnMob(string mobId, Vector3 position, EntityManager entityManager, Transform parentOverride = null)
@@ -69,7 +70,7 @@ public class MobLibrary : MonoBehaviour
 
         if (_byId == null || !_byId.TryGetValue(mobId, out var entry) || entry.prefab == null)
         {
-            Debug.LogWarning($"[MobLibrary] mobId='{mobId}' 에 해당하는 프리팹을 찾지 못했습니다.");
+            Debug.LogWarning($"[MobLibrary] mobId='{mobId}' ???�당?�는 ?�리?�을 찾�? 못했?�니??");
             return null;
         }
 
@@ -83,11 +84,11 @@ public class MobLibrary : MonoBehaviour
             if (string.IsNullOrEmpty(inst.MobId))
                 inst.MobId = mobId;
 
-            // 자동 시체 ID 지정
+            // ?�동 ?�체 ID 지??
             string corpseId = mobId + "_Corpse";
             inst.SetCorpseId(corpseId);
 
-            // 엔티티 등록
+            // ?�티???�록
             if (entityManager != null)
                 entityManager.Register(inst);
         }

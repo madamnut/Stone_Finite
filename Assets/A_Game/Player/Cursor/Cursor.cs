@@ -1,4 +1,4 @@
-// Cursor.cs (전체 교체본)
+// Cursor.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪?
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -6,364 +6,478 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-public class Cursor : MonoBehaviour
+namespace Game.Player
 {
-    [Header("이 커서는 Canvas 자식(UI)입니다")]
-    public Canvas canvas;
-    public ItemSlot cursorSlot;
-
-    [Header("Tooltip")]
-    public RectTransform tooltipRoot;  // ← 툴팁 패널
-    public TMP_Text tooltipText;       // 내용 텍스트
-    public GameObject tooltipObject;   // 보이기/숨기기
-    public Vector2 tooltipOffset = new(16, -16);
-    public Vector2 tooltipPadding = new(8, 8);
-
-    private RectTransform rt;
-    private readonly List<RaycastResult> _hits = new List<RaycastResult>(8);
-
-    void Awake()
+    
+    public class Cursor : MonoBehaviour
     {
-        rt = GetComponent<RectTransform>();
-        if (cursorSlot != null) cursorSlot.Set(null);
-        if (tooltipObject != null) tooltipObject.SetActive(false);
-    }
-
-    void Update()
-    {
-        if (rt == null || canvas == null) return;
-        var parent = rt.parent as RectTransform;
-        if (parent == null) return;
-
-        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-
-        if (canvas.renderMode == RenderMode.WorldSpace)
+        [Header("Cursor Canvas")]
+        public Canvas canvas;
+        public ItemSlot cursorSlot;
+    
+        [Header("Tooltip")]
+        public RectTransform tooltipRoot;  // ????꾨샍 ??ㅺ섯
+        public TMP_Text tooltipText;       // ??곸뒠 ??용뮞??
+        public GameObject tooltipObject;   // 癰귣똻?졿묾???ｋ┛疫?
+        public Vector2 tooltipOffset = new(16, -16);
+        public Vector2 tooltipPadding = new(8, 8);
+    
+        private RectTransform rt;
+        private readonly List<RaycastResult> _hits = new List<RaycastResult>(8);
+    
+        void Awake()
         {
-            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(parent, Input.mousePosition, cam, out var world))
-                rt.position = world;
+            rt = GetComponent<RectTransform>();
+            if (cursorSlot != null) cursorSlot.Set(null);
+            if (tooltipObject != null) tooltipObject.SetActive(false);
         }
-        else
+    
+        void Update()
         {
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, Input.mousePosition, cam, out var local))
-                rt.anchoredPosition = local;
-        }
-
-        // ── 호버 탐지 ──
-        ItemSlot hoverSlot = null;
-        ICursorTooltipSource hoverTip = null;
-
-        if (EventSystem.current != null)
-        {
-            _hits.Clear();
-            var data = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
-            EventSystem.current.RaycastAll(data, _hits);
-
-            for (int i = 0; i < _hits.Count; i++)
+            if (rt == null || canvas == null) return;
+            var parent = rt.parent as RectTransform;
+            if (parent == null) return;
+    
+            Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+    
+            if (canvas.renderMode == RenderMode.WorldSpace)
             {
-                var go = _hits[i].gameObject;
-
-                // 1) ItemSlot 우선
-                var s = go.GetComponentInParent<ItemSlot>();
-                if (s != null && s != cursorSlot)
+                if (RectTransformUtility.ScreenPointToWorldPointInRectangle(parent, Input.mousePosition, cam, out var world))
+                    rt.position = world;
+            }
+            else
+            {
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, Input.mousePosition, cam, out var local))
+                    rt.anchoredPosition = local;
+            }
+    
+            // ???? ?紐껋쒔 ?癒? ????
+            ItemSlot hoverSlot = null;
+            ICursorTooltipSource hoverTip = null;
+    
+            if (EventSystem.current != null)
+            {
+                _hits.Clear();
+                var data = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+                EventSystem.current.RaycastAll(data, _hits);
+    
+                for (int i = 0; i < _hits.Count; i++)
                 {
-                    hoverSlot = s;
-                    break;
-                }
-
-                // 2) 없으면 ICursorTooltipSource 후보(첫 번째로 잡히는 것)
-                if (hoverTip == null)
-                {
-                    var t = go.GetComponentInParent<ICursorTooltipSource>();
-                    if (t != null) hoverTip = t;
+                    var go = _hits[i].gameObject;
+    
+                    // 1) ItemSlot ?怨쀪퐨
+                    var s = go.GetComponentInParent<ItemSlot>();
+                    if (s != null && s != cursorSlot)
+                    {
+                        hoverSlot = s;
+                        break;
+                    }
+    
+                    // 2) ??곸몵筌?ICursorTooltipSource ?袁⑤궖(筌?甕곕뜆?뤸에???レ뿳??野?
+                    if (hoverTip == null)
+                    {
+                        var t = go.GetComponentInParent<ICursorTooltipSource>();
+                        if (t != null) hoverTip = t;
+                    }
                 }
             }
-        }
-
-        // ── 툴팁 갱신 ──
-        bool showTooltip = false;
-
-        if (tooltipText != null)
-        {
-            // A) ItemSlot 툴팁(기존 로직)
-            if (hoverSlot != null && hoverSlot.Item != null)
+    
+            // ???? ??꾨샍 揶쏄퉮??????
+            bool showTooltip = false;
+    
+            if (tooltipText != null)
             {
-                var it = hoverSlot.Item;
-                var sb = new StringBuilder(512);
-
-                sb.AppendLine(it.Name);
-                sb.Append("ID: ").AppendLine(it.ItemId);
-                sb.Append("Type: ").AppendLine(it.ItemType);
-                sb.Append("Sprite: ").AppendLine(it.SpriteName);
-                sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
-                sb.Append("Durability: ")
-                  .Append(it.Durability)
-                  .Append(" / ")
-                  .AppendLine(it.MaxDurability.ToString());
-
-                sb.AppendLine();
-                sb.AppendLine("Tags:");
-                if (it.Tags != null && it.Tags.Count > 0)
+                // A) ItemSlot ??꾨샍(疫꿸퀣??嚥≪뮇彛?
+                if (hoverSlot != null && hoverSlot.Item != null)
                 {
-                    for (int i = 0; i < it.Tags.Count; i++)
-                        sb.Append(" - ").AppendLine(it.Tags[i]);
-                }
-                else
-                {
-                    sb.AppendLine(" - (none)");
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("ToolActions:");
-                AppendActionKeysInline(sb, it.ToolActions);
-
-                sb.AppendLine("WeaponActions:");
-                AppendActionKeysInline(sb, it.WeaponActions);
-
-                sb.AppendLine("BreakActions:");
-                AppendActionKeysInline(sb, it.BreakActions);
-
-                sb.AppendLine();
-                sb.AppendLine("Details:");
-                if (it.Details != null && it.Details.Count > 0)
-                {
-                    foreach (var kv in it.Details)
-                        AppendDetailRecursive(sb, " - ", kv.Key, kv.Value);
-                }
-                else
-                {
-                    sb.AppendLine(" - (none)");
-                }
-
-                tooltipText.text = sb.ToString();
-                showTooltip = true;
-            }
-            // B) ICursorTooltipSource 툴팁(도가니 레이어 등)
-            else if (hoverTip != null)
-            {
-                var sb = new StringBuilder(128);
-                hoverTip.TryBuildTooltip(sb);
-                if (sb.Length > 0)
-                {
+                    var it = hoverSlot.Item;
+                    var sb = new StringBuilder(512);
+    
+                    sb.AppendLine(it.Name);
+                    sb.Append("ID: ").AppendLine(it.ItemId);
+                    sb.Append("Type: ").AppendLine(it.ItemType);
+                    sb.Append("Sprite: ").AppendLine(it.SpriteName);
+                    sb.Append("Count: ").Append(it.Count).Append(" / ").AppendLine(it.MaxStack.ToString());
+                    sb.Append("Durability: ")
+                      .Append(it.Durability)
+                      .Append(" / ")
+                      .AppendLine(it.MaxDurability.ToString());
+    
+                    sb.AppendLine();
+                    sb.AppendLine("Tags:");
+                    if (it.Tags != null && it.Tags.Count > 0)
+                    {
+                        for (int i = 0; i < it.Tags.Count; i++)
+                            sb.Append(" - ").AppendLine(it.Tags[i]);
+                    }
+                    else
+                    {
+                        sb.AppendLine(" - (none)");
+                    }
+    
+                    sb.AppendLine();
+                    sb.AppendLine("ToolActions:");
+                    AppendActionKeysInline(sb, it.ToolActions);
+    
+                    sb.AppendLine("WeaponActions:");
+                    AppendActionKeysInline(sb, it.WeaponActions);
+    
+                    sb.AppendLine("BreakActions:");
+                    AppendActionKeysInline(sb, it.BreakActions);
+    
+                    sb.AppendLine();
+                    sb.AppendLine("Details:");
+                    if (it.Details != null && it.Details.Count > 0)
+                    {
+                        foreach (var kv in it.Details)
+                            AppendDetailRecursive(sb, " - ", kv.Key, kv.Value);
+                    }
+                    else
+                    {
+                        sb.AppendLine(" - (none)");
+                    }
+    
                     tooltipText.text = sb.ToString();
                     showTooltip = true;
                 }
-            }
-        }
-
-        if (tooltipObject != null)
-        {
-            if (showTooltip)
-            {
-                if (!tooltipObject.activeSelf) tooltipObject.SetActive(true);
-
-                // ── 패널 자체를 화면 경계로 클램프 ──
-                if (canvas.renderMode != RenderMode.WorldSpace)
+                // B) ICursorTooltipSource ??꾨샍(?袁?????됱뵠????
+                else if (hoverTip != null)
                 {
-                    var canvasRT = (RectTransform)canvas.transform;
-                    var tooltipRT = tooltipRoot != null ? tooltipRoot : tooltipText.rectTransform;
-
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
-
-                    Vector2 ap = tooltipOffset;
-                    var r = tooltipRT.rect;
-                    var cr = canvasRT.rect;
-                    var pv = tooltipRT.pivot;
-
-                    float left = rt.anchoredPosition.x + ap.x - r.width * pv.x;
-                    float right = rt.anchoredPosition.x + ap.x + r.width * (1f - pv.x);
-                    float bottom = rt.anchoredPosition.y + ap.y - r.height * pv.y;
-                    float top = rt.anchoredPosition.y + ap.y + r.height * (1f - pv.y);
-
-                    float minX = cr.xMin + tooltipPadding.x;
-                    float maxX = cr.xMax - tooltipPadding.x;
-                    float minY = cr.yMin + tooltipPadding.y;
-                    float maxY = cr.yMax - tooltipPadding.y;
-
-                    if (left < minX) ap.x += (minX - left);
-                    if (right > maxX) ap.x -= (right - maxX);
-                    if (top > maxY) ap.y -= (top - maxY);
-                    if (bottom < minY) ap.y += (minY - bottom);
-
-                    tooltipRT.anchoredPosition = ap;
+                    var sb = new StringBuilder(128);
+                    hoverTip.TryBuildTooltip(sb);
+                    if (sb.Length > 0)
+                    {
+                        tooltipText.text = sb.ToString();
+                        showTooltip = true;
+                    }
                 }
             }
+    
+            if (tooltipObject != null)
+            {
+                if (showTooltip)
+                {
+                    if (!tooltipObject.activeSelf) tooltipObject.SetActive(true);
+    
+                    // ???? ??ㅺ섯 ?癒?퍥???遺얇늺 野껋럡?롦에??????????
+                    if (canvas.renderMode != RenderMode.WorldSpace)
+                    {
+                        var canvasRT = (RectTransform)canvas.transform;
+                        var tooltipRT = tooltipRoot != null ? tooltipRoot : tooltipText.rectTransform;
+    
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
+    
+                        Vector2 ap = tooltipOffset;
+                        var r = tooltipRT.rect;
+                        var cr = canvasRT.rect;
+                        var pv = tooltipRT.pivot;
+    
+                        float left = rt.anchoredPosition.x + ap.x - r.width * pv.x;
+                        float right = rt.anchoredPosition.x + ap.x + r.width * (1f - pv.x);
+                        float bottom = rt.anchoredPosition.y + ap.y - r.height * pv.y;
+                        float top = rt.anchoredPosition.y + ap.y + r.height * (1f - pv.y);
+    
+                        float minX = cr.xMin + tooltipPadding.x;
+                        float maxX = cr.xMax - tooltipPadding.x;
+                        float minY = cr.yMin + tooltipPadding.y;
+                        float maxY = cr.yMax - tooltipPadding.y;
+    
+                        if (left < minX) ap.x += (minX - left);
+                        if (right > maxX) ap.x -= (right - maxX);
+                        if (top > maxY) ap.y -= (top - maxY);
+                        if (bottom < minY) ap.y += (minY - bottom);
+    
+                        tooltipRT.anchoredPosition = ap;
+                    }
+                }
+                else
+                {
+                    if (tooltipObject.activeSelf) tooltipObject.SetActive(false);
+                }
+            }
+    
+            if (Input.GetMouseButtonDown(0)) HandleClick(PointerEventData.InputButton.Left);
+            if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
+        }
+    
+        static void AppendActionKeysInline(
+            StringBuilder sb,
+            IDictionary<string, Dictionary<string, object>> actions)
+        {
+            if (actions == null || actions.Count == 0)
+            {
+                sb.AppendLine(" - (none)");
+                return;
+            }
+    
+            foreach (var kv in actions)
+            {
+                string actionName = kv.Key;
+                var paramDict = kv.Value;
+    
+                sb.Append(" - ").Append(actionName).AppendLine(":");
+    
+                if (paramDict != null && paramDict.Count > 0)
+                {
+                    foreach (var p in paramDict)
+                        AppendDetailRecursive(sb, "    ", p.Key, p.Value);
+                }
+                else
+                {
+                    sb.AppendLine("    (no params)");
+                }
+            }
+        }
+    
+        static void AppendDetailRecursive(StringBuilder sb, string indent, string key, object value)
+        {
+            if (value is Dictionary<string, object> dict)
+            {
+                sb.Append(indent).Append(key).AppendLine(":");
+                foreach (var kv in dict)
+                    AppendDetailRecursive(sb, indent + "  ", kv.Key, kv.Value);
+            }
+            else if (value is System.Collections.IList list && value is not string)
+            {
+                sb.Append(indent).Append(key).AppendLine(": [");
+                int idx = 0;
+                foreach (var v in list)
+                {
+                    string k = $"[{idx}]";
+                    AppendDetailRecursive(sb, indent + "  ", k, v);
+                    idx++;
+                }
+                sb.Append(indent).AppendLine("]");
+            }
             else
             {
-                if (tooltipObject.activeSelf) tooltipObject.SetActive(false);
+                sb.Append(indent)
+                  .Append(key)
+                  .Append(": ")
+                  .AppendLine(value == null ? "null" : value.ToString());
             }
         }
-
-        if (Input.GetMouseButtonDown(0)) HandleClick(PointerEventData.InputButton.Left);
-        if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
-    }
-
-    static void AppendActionKeysInline(
-        StringBuilder sb,
-        IDictionary<string, Dictionary<string, object>> actions)
-    {
-        if (actions == null || actions.Count == 0)
+    
+        void HandleClick(PointerEventData.InputButton btn)
         {
-            sb.AppendLine(" - (none)");
-            return;
-        }
-
-        foreach (var kv in actions)
-        {
-            string actionName = kv.Key;
-            var paramDict = kv.Value;
-
-            sb.Append(" - ").Append(actionName).AppendLine(":");
-
-            if (paramDict != null && paramDict.Count > 0)
+            if (EventSystem.current == null || cursorSlot == null) return;
+    
+            _hits.Clear();
+            var data = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            EventSystem.current.RaycastAll(data, _hits);
+    
+            ItemSlot slotView = null;
+            for (int i = 0; i < _hits.Count; i++)
             {
-                foreach (var p in paramDict)
-                    AppendDetailRecursive(sb, "    ", p.Key, p.Value);
+                var s = _hits[i].gameObject.GetComponentInParent<ItemSlot>();
+                if (s == null || s == cursorSlot) continue;
+                slotView = s;
+                break;
             }
-            else
+            if (slotView == null) return;
+    
+            // ??甕곌쑵??筌뤴뫀諭?????? ?뚣끉苑뚦첎? "?袁⑹뵠????猷???筌ｌ꼶???? ??놁벉
+            // (?袁⑤궖 ?????源? ItemSlot.onClick??곗쨮筌?筌ｌ꼶??
+            if (slotView.useAsButton)
+                return;
+    
+            if (slotView.denyUserInteraction)
+                return;
+    
+            var cur = cursorSlot.Item;
+    
+            bool useLocal =
+                slotView.useLocalStorage ||
+                slotView.inventory == null ||
+                slotView.index < 0 ||
+                (slotView.inventory != null && slotView.index >= slotView.inventory.items.Count);
+    
+            if (useLocal)
             {
-                sb.AppendLine("    (no params)");
+                var slot = slotView.Item;
+    
+                if (slotView.denyUserPut && cur != null)
+                    return;
+    
+                bool same = (cur != null && slot != null && cur.ItemId == slot.ItemId);
+                int room = slot != null ? (slot.MaxStack - slot.Count) : 0;
+    
+                if (btn == PointerEventData.InputButton.Left)
+                {
+                    if (cur == null)
+                    {
+                        if (slot == null) return;
+                        cursorSlot.Set(slot);
+                        slotView.Set(null);
+                        return;
+                    }
+    
+                    if (slot == null)
+                    {
+                        slotView.Set(cur);
+                        cursorSlot.Set(null);
+                        return;
+                    }
+    
+                    if (same && room > 0)
+                    {
+                        int move = cur.Count < room ? cur.Count : room;
+                        slot.Count += move;
+                        cur.Count -= move;
+                        slotView.Refresh();
+                        if (cur.Count <= 0) cursorSlot.Set(null);
+                        else cursorSlot.Refresh();
+                        return;
+                    }
+    
+                    slotView.Set(cur);
+                    cursorSlot.Set(slot);
+                    return;
+                }
+    
+                if (btn == PointerEventData.InputButton.Right)
+                {
+                    if (cur == null && slot != null)
+                    {
+                        int take = (slot.Count + 1) / 2;
+                        var copy = new ItemData(
+                            itemId: slot.ItemId,
+                            name: slot.Name,
+                            spriteName: slot.SpriteName,
+                            itemType: slot.ItemType,
+                            maxStack: slot.MaxStack,
+                            maxDurability: slot.MaxDurability,
+                            durability: slot.Durability,
+                            toolActions: slot.ToolActions,
+                            weaponActions: slot.WeaponActions,
+                            breakActions: slot.BreakActions,
+                            tags: slot.Tags,
+                            details: slot.Details,
+                            icon: slot.Icon,
+                            count: take
+                        );
+                        cursorSlot.Set(copy);
+    
+                        slot.Count -= take;
+                        if (slot.Count <= 0) slotView.Set(null);
+                        else slotView.Refresh();
+                        return;
+                    }
+    
+                    if (cur != null && slot == null)
+                    {
+                        var newSlot = new ItemData(
+                            itemId: cur.ItemId,
+                            name: cur.Name,
+                            spriteName: cur.SpriteName,
+                            itemType: cur.ItemType,
+                            maxStack: cur.MaxStack,
+                            maxDurability: cur.MaxDurability,
+                            durability: cur.Durability,
+                            toolActions: cur.ToolActions,
+                            weaponActions: cur.WeaponActions,
+                            breakActions: cur.BreakActions,
+                            tags: cur.Tags,
+                            details: cur.Details,
+                            icon: cur.Icon,
+                            count: 1
+                        );
+                        slotView.Set(newSlot);
+    
+                        cur.Count -= 1;
+                        if (cur.Count <= 0) cursorSlot.Set(null);
+                        else cursorSlot.Refresh();
+                        return;
+                    }
+    
+                    if (cur != null && same && slot.Count < slot.MaxStack)
+                    {
+                        slot.Count += 1;
+                        cur.Count -= 1;
+                        slotView.Refresh();
+                        if (cur.Count <= 0) cursorSlot.Set(null);
+                        else cursorSlot.Refresh();
+                        return;
+                    }
+                }
+                return;
             }
-        }
-    }
-
-    static void AppendDetailRecursive(StringBuilder sb, string indent, string key, object value)
-    {
-        if (value is Dictionary<string, object> dict)
-        {
-            sb.Append(indent).Append(key).AppendLine(":");
-            foreach (var kv in dict)
-                AppendDetailRecursive(sb, indent + "  ", kv.Key, kv.Value);
-        }
-        else if (value is System.Collections.IList list && value is not string)
-        {
-            sb.Append(indent).Append(key).AppendLine(": [");
-            int idx = 0;
-            foreach (var v in list)
-            {
-                string k = $"[{idx}]";
-                AppendDetailRecursive(sb, indent + "  ", k, v);
-                idx++;
-            }
-            sb.Append(indent).AppendLine("]");
-        }
-        else
-        {
-            sb.Append(indent)
-              .Append(key)
-              .Append(": ")
-              .AppendLine(value == null ? "null" : value.ToString());
-        }
-    }
-
-    void HandleClick(PointerEventData.InputButton btn)
-    {
-        if (EventSystem.current == null || cursorSlot == null) return;
-
-        _hits.Clear();
-        var data = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
-        EventSystem.current.RaycastAll(data, _hits);
-
-        ItemSlot slotView = null;
-        for (int i = 0; i < _hits.Count; i++)
-        {
-            var s = _hits[i].gameObject.GetComponentInParent<ItemSlot>();
-            if (s == null || s == cursorSlot) continue;
-            slotView = s;
-            break;
-        }
-        if (slotView == null) return;
-
-        // ✅ 버튼 모드 슬롯은 커서가 "아이템 이동"을 처리하지 않음
-        // (후보 슬롯 등은 ItemSlot.onClick으로만 처리)
-        if (slotView.useAsButton)
-            return;
-
-        if (slotView.denyUserInteraction)
-            return;
-
-        var cur = cursorSlot.Item;
-
-        bool useLocal =
-            slotView.useLocalStorage ||
-            slotView.inventory == null ||
-            slotView.index < 0 ||
-            (slotView.inventory != null && slotView.index >= slotView.inventory.items.Count);
-
-        if (useLocal)
-        {
-            var slot = slotView.Item;
-
+    
+            // ===== ?紐껉뭣?醫듼봺 獄쏅뗄???野껋럥以?=====
+            var inv = slotView.inventory;
+            var items = inv.items;
+            int idx = slotView.index;
+    
+            var slotInv = items[idx];
+    
             if (slotView.denyUserPut && cur != null)
                 return;
-
-            bool same = (cur != null && slot != null && cur.ItemId == slot.ItemId);
-            int room = slot != null ? (slot.MaxStack - slot.Count) : 0;
-
+    
+            bool sameInv = (cur != null && slotInv != null && cur.ItemId == slotInv.ItemId);
+            int roomInv = slotInv != null ? (slotInv.MaxStack - slotInv.Count) : 0;
+    
             if (btn == PointerEventData.InputButton.Left)
             {
                 if (cur == null)
                 {
-                    if (slot == null) return;
-                    cursorSlot.Set(slot);
-                    slotView.Set(null);
-                    return;
+                    if (slotInv == null) return;
+                    cursorSlot.Set(slotInv);
+                    items[idx] = null;
                 }
-
-                if (slot == null)
+                else if (slotInv == null)
                 {
-                    slotView.Set(cur);
+                    items[idx] = cur;
                     cursorSlot.Set(null);
-                    return;
                 }
-
-                if (same && room > 0)
+                else if (sameInv && roomInv > 0)
                 {
-                    int move = cur.Count < room ? cur.Count : room;
-                    slot.Count += move;
+                    int move = cur.Count < roomInv ? cur.Count : roomInv;
+                    slotInv.Count += move;
                     cur.Count -= move;
-                    slotView.Refresh();
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
-                    return;
                 }
-
-                slotView.Set(cur);
-                cursorSlot.Set(slot);
+                else
+                {
+                    items[idx] = cur;
+                    cursorSlot.Set(slotInv);
+                }
+                inv.NotifyChanged();
                 return;
             }
-
+    
             if (btn == PointerEventData.InputButton.Right)
             {
-                if (cur == null && slot != null)
+                if (cur == null && slotInv != null)
                 {
-                    int take = (slot.Count + 1) / 2;
+                    int take = (slotInv.Count + 1) / 2;
                     var copy = new ItemData(
-                        itemId: slot.ItemId,
-                        name: slot.Name,
-                        spriteName: slot.SpriteName,
-                        itemType: slot.ItemType,
-                        maxStack: slot.MaxStack,
-                        maxDurability: slot.MaxDurability,
-                        durability: slot.Durability,
-                        toolActions: slot.ToolActions,
-                        weaponActions: slot.WeaponActions,
-                        breakActions: slot.BreakActions,
-                        tags: slot.Tags,
-                        details: slot.Details,
-                        icon: slot.Icon,
+                        itemId: slotInv.ItemId,
+                        name: slotInv.Name,
+                        spriteName: slotInv.SpriteName,
+                        itemType: slotInv.ItemType,
+                        maxStack: slotInv.MaxStack,
+                        maxDurability: slotInv.MaxDurability,
+                        durability: slotInv.Durability,
+                        toolActions: slotInv.ToolActions,
+                        weaponActions: slotInv.WeaponActions,
+                        breakActions: slotInv.BreakActions,
+                        tags: slotInv.Tags,
+                        details: slotInv.Details,
+                        icon: slotInv.Icon,
                         count: take
                     );
                     cursorSlot.Set(copy);
-
-                    slot.Count -= take;
-                    if (slot.Count <= 0) slotView.Set(null);
-                    else slotView.Refresh();
+    
+                    slotInv.Count -= take;
+                    if (slotInv.Count <= 0) items[idx] = null;
+                    inv.NotifyChanged();
                     return;
                 }
-
-                if (cur != null && slot == null)
+    
+                if (cur != null && slotInv == null)
                 {
-                    var newSlot = new ItemData(
+                    items[idx] = new ItemData(
                         itemId: cur.ItemId,
                         name: cur.Name,
                         spriteName: cur.SpriteName,
@@ -379,132 +493,22 @@ public class Cursor : MonoBehaviour
                         icon: cur.Icon,
                         count: 1
                     );
-                    slotView.Set(newSlot);
-
                     cur.Count -= 1;
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
+                    inv.NotifyChanged();
                     return;
                 }
-
-                if (cur != null && same && slot.Count < slot.MaxStack)
+    
+                if (cur != null && sameInv && slotInv.Count < slotInv.MaxStack)
                 {
-                    slot.Count += 1;
+                    slotInv.Count += 1;
                     cur.Count -= 1;
-                    slotView.Refresh();
                     if (cur.Count <= 0) cursorSlot.Set(null);
                     else cursorSlot.Refresh();
+                    inv.NotifyChanged();
                     return;
                 }
-            }
-            return;
-        }
-
-        // ===== 인벤토리 바운드 경로 =====
-        var inv = slotView.inventory;
-        var items = inv.items;
-        int idx = slotView.index;
-
-        var slotInv = items[idx];
-
-        if (slotView.denyUserPut && cur != null)
-            return;
-
-        bool sameInv = (cur != null && slotInv != null && cur.ItemId == slotInv.ItemId);
-        int roomInv = slotInv != null ? (slotInv.MaxStack - slotInv.Count) : 0;
-
-        if (btn == PointerEventData.InputButton.Left)
-        {
-            if (cur == null)
-            {
-                if (slotInv == null) return;
-                cursorSlot.Set(slotInv);
-                items[idx] = null;
-            }
-            else if (slotInv == null)
-            {
-                items[idx] = cur;
-                cursorSlot.Set(null);
-            }
-            else if (sameInv && roomInv > 0)
-            {
-                int move = cur.Count < roomInv ? cur.Count : roomInv;
-                slotInv.Count += move;
-                cur.Count -= move;
-                if (cur.Count <= 0) cursorSlot.Set(null);
-                else cursorSlot.Refresh();
-            }
-            else
-            {
-                items[idx] = cur;
-                cursorSlot.Set(slotInv);
-            }
-            inv.NotifyChanged();
-            return;
-        }
-
-        if (btn == PointerEventData.InputButton.Right)
-        {
-            if (cur == null && slotInv != null)
-            {
-                int take = (slotInv.Count + 1) / 2;
-                var copy = new ItemData(
-                    itemId: slotInv.ItemId,
-                    name: slotInv.Name,
-                    spriteName: slotInv.SpriteName,
-                    itemType: slotInv.ItemType,
-                    maxStack: slotInv.MaxStack,
-                    maxDurability: slotInv.MaxDurability,
-                    durability: slotInv.Durability,
-                    toolActions: slotInv.ToolActions,
-                    weaponActions: slotInv.WeaponActions,
-                    breakActions: slotInv.BreakActions,
-                    tags: slotInv.Tags,
-                    details: slotInv.Details,
-                    icon: slotInv.Icon,
-                    count: take
-                );
-                cursorSlot.Set(copy);
-
-                slotInv.Count -= take;
-                if (slotInv.Count <= 0) items[idx] = null;
-                inv.NotifyChanged();
-                return;
-            }
-
-            if (cur != null && slotInv == null)
-            {
-                items[idx] = new ItemData(
-                    itemId: cur.ItemId,
-                    name: cur.Name,
-                    spriteName: cur.SpriteName,
-                    itemType: cur.ItemType,
-                    maxStack: cur.MaxStack,
-                    maxDurability: cur.MaxDurability,
-                    durability: cur.Durability,
-                    toolActions: cur.ToolActions,
-                    weaponActions: cur.WeaponActions,
-                    breakActions: cur.BreakActions,
-                    tags: cur.Tags,
-                    details: cur.Details,
-                    icon: cur.Icon,
-                    count: 1
-                );
-                cur.Count -= 1;
-                if (cur.Count <= 0) cursorSlot.Set(null);
-                else cursorSlot.Refresh();
-                inv.NotifyChanged();
-                return;
-            }
-
-            if (cur != null && sameInv && slotInv.Count < slotInv.MaxStack)
-            {
-                slotInv.Count += 1;
-                cur.Count -= 1;
-                if (cur.Count <= 0) cursorSlot.Set(null);
-                else cursorSlot.Refresh();
-                inv.NotifyChanged();
-                return;
             }
         }
     }

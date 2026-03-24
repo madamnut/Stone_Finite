@@ -2,9 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Game.World;
 public class AudioManager : MonoBehaviour
 {
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SFX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ SFX ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     [Header("SFX Source")]
     [SerializeField] private AudioSource sfxSource;
 
@@ -14,15 +15,15 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip multiblockCompleteClip;
     [SerializeField] private AudioClip playerTookDamageClip;
     [SerializeField] private AudioClip popClip;
-    [SerializeField] private AudioClip buttonClickClip; // âœ… ë²„íŠ¼ í´ë¦­ìŒ
+    [SerializeField] private AudioClip buttonClickClip; // ??ë²„íŠ¼ ?´ë¦­??
 
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Combat SFX Clips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ Combat SFX Clips ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     [Header("Combat SFX Clips")]
     [SerializeField] private List<AudioClip> swingClips = new();
     [SerializeField] private AudioClip thrustClip;
     [SerializeField] private AudioClip hitClip;
 
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ BGM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ BGM ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     [Header("BGM Source")]
     [SerializeField] private AudioSource bgmSource;
 
@@ -56,15 +57,15 @@ public class AudioManager : MonoBehaviour
             _bgmLoopCo = StartCoroutine(CoPlayBgmLoop());
     }
 
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SFX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ SFX ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     public void PlayDig()                    => sfxSource.PlayOneShot(digClip);
     public void PlayPlace()                  => sfxSource.PlayOneShot(placeClip);
     public void PlayMultiblockComplete()     => sfxSource.PlayOneShot(multiblockCompleteClip);
     public void PlayPlayerTookDamage()       => sfxSource.PlayOneShot(playerTookDamageClip);
     public void PlayPop()                    => sfxSource.PlayOneShot(popClip);
-    public void PlayButtonClick()            => sfxSource.PlayOneShot(buttonClickClip); // âœ… ì¶”ê°€
+    public void PlayButtonClick()            => sfxSource.PlayOneShot(buttonClickClip); // ??ì¶”ê?
 
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Combat SFX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ Combat SFX ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     public void PlayWeaponSwing()
     {
         if (swingClips.Count == 0) return;
@@ -75,7 +76,7 @@ public class AudioManager : MonoBehaviour
     public void PlayWeaponThrust() => sfxSource.PlayOneShot(thrustClip);
     public void PlayWeaponHit()    => sfxSource.PlayOneShot(hitClip);
 
-    /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ BGM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+    /*?€?€?€?€?€?€?€?€?€?€?€?€?€?€ BGM ?€?€?€?€?€?€?€?€?€?€?€?€?€?€*/
     IEnumerator CoPlayBgmLoop()
     {
         while (true)

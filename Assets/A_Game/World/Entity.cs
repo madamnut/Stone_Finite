@@ -1,60 +1,64 @@
 using UnityEngine;
 
 //
-// 엔티티 공통 베이스 클래스
-// - DroppedItem, FallingBlock, Mob, Corpse 등이 이것을 상속
-// - 모든 엔티티는 동일한 방식으로 활성/비활성(SetSimActive) 처리
-// - 세이브/로드는 파생 타입이 구현
+// ?�티??공통 베이???�래??
+// - DroppedItem, FallingBlock, Mob, Corpse ?�이 ?�것???�속
+// - 모든 ?�티?�는 ?�일??방식?�로 ?�성/비활??SetSimActive) 처리
+// - ?�이�?로드???�생 ?�?�이 구현
 //
 
-public abstract class Entity : MonoBehaviour
+
+namespace Game.World
 {
-    /// <summary>엔티티 종류 식별용</summary>
-    public abstract EntityKind Kind { get; }
-
-    /// <summary>현재 시뮬레이션 활성 여부</summary>
-    public bool IsSimActive { get; private set; } = true;
-
-    /// <summary>
-    /// 엔티티를 통째로 활성/비활성 전환.
-    /// 개별 컴포넌트 제어 없이 GameObject.SetActive 만 사용.
-    /// 모든 엔티티 공통 처리.
-    /// </summary>
-    public virtual void SetSimActive(bool active)
+    public abstract class Entity : MonoBehaviour
     {
-        IsSimActive = active;
-        gameObject.SetActive(active);
+        /// <summary>?�티??종류 ?�별??/summary>
+        public abstract EntityKind Kind { get; }
+    
+        /// <summary>?�재 ?��??�이???�성 ?��?</summary>
+        public bool IsSimActive { get; private set; } = true;
+    
+        /// <summary>
+        /// ?�티?��? ?�째�??�성/비활???�환.
+        /// 개별 컴포?�트 ?�어 ?�이 GameObject.SetActive �??�용.
+        /// 모든 ?�티??공통 처리.
+        /// </summary>
+        public virtual void SetSimActive(bool active)
+        {
+            IsSimActive = active;
+            gameObject.SetActive(active);
+        }
+    
+        /// <summary>
+        /// ?�재 ?�티???�태�??�???�이?�로 변??
+        /// </summary>
+        public abstract EntitySaveData ToSaveData();
+    
+        /// <summary>
+        /// ?�?�된 ?�이?��? 기반?�로 ?�티???�태 복원
+        /// </summary>
+        public abstract void FromSaveData(EntitySaveData data);
     }
-
+    
     /// <summary>
-    /// 현재 엔티티 상태를 저장 데이터로 변환
+    /// ?�이브용 ?�용 ?�이??구조
     /// </summary>
-    public abstract EntitySaveData ToSaveData();
-
+    [System.Serializable]
+    public class EntitySaveData
+    {
+        public EntityKind Kind;
+        public Vector2 Position;
+        public string PayloadJson;
+    }
+    
     /// <summary>
-    /// 저장된 데이터를 기반으로 엔티티 상태 복원
+    /// ?�티??종류
     /// </summary>
-    public abstract void FromSaveData(EntitySaveData data);
-}
-
-/// <summary>
-/// 세이브용 전용 데이터 구조
-/// </summary>
-[System.Serializable]
-public class EntitySaveData
-{
-    public EntityKind Kind;
-    public Vector2 Position;
-    public string PayloadJson;
-}
-
-/// <summary>
-/// 엔티티 종류
-/// </summary>
-public enum EntityKind : byte
-{
-    DroppedItem  = 0,
-    FallingBlock = 1,
-    Mob          = 2,
-    Corpse       = 3,
+    public enum EntityKind : byte
+    {
+        DroppedItem  = 0,
+        FallingBlock = 1,
+        Mob          = 2,
+        Corpse       = 3,
+    }
 }

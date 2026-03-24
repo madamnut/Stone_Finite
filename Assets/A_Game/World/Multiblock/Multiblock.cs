@@ -1,113 +1,118 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Player;
 
 /// <summary>
-/// 멀티블럭 베이스 클래스.
-/// - 엔티티 아님.
-/// - 패턴 매칭이 완료되어 "완성된 순간"에만 생성된다.
-/// - Origin 은 멀티블럭을 구성하는 셀들 중 "맨 왼쪽, 맨 아래" 셀의 월드 좌표.
+/// 筌렺?怨뺥닜??甕곗쥙????????
+/// - ?酉????袁⑤뻷.
+/// - ???쉘 筌띲끉臾???袁⑥┷??뤿선 "?袁⑷쉐????볦퍢"?癒?춸 ??밴쉐??뺣뼄.
+/// - Origin ?? 筌렺?怨뺥닜?????닌딄쉐??롫뮉 ????餓?"筌???긱걹, 筌??袁⑥삋" ?????遺얜굡 ?ル슦紐?
 /// </summary>
-public abstract class Multiblock
+
+namespace Game.World
 {
-    // ───────── 식별 ─────────
-    /// <summary>멀티블럭 정의 ID (JSON 최상단 키 그대로 사용)</summary>
-    public string DefId { get; protected set; }
-
-    /// <summary>멀티블럭 인스턴스 ID (MultiblockManager가 부여)</summary>
-    public int InstId { get; internal set; }
-
-    // ───────── 참조 ─────────
-    /// <summary>월드 접근용</summary>
-    public WorldManager World { get; private set; }
-
-    /// <summary>자신을 관리하는 매니저</summary>
-    public MultiblockManager Manager { get; internal set; }
-
-    // ───────── 위치/형태 ─────────
-    public Vector2Int Origin { get; protected set; }
-    public int Width { get; protected set; }
-    public int Height { get; protected set; }
-
-    protected readonly List<Vector2Int> occupiedCells = new List<Vector2Int>();
-    public IReadOnlyList<Vector2Int> OccupiedCells => occupiedCells;
-
-    // ✅ “원래 셀” 복구용 스냅샷 (키: 월드 좌표, 값: 원본 solidId)
-    internal readonly Dictionary<Vector2Int, ushort> originalSolidIds = new Dictionary<Vector2Int, ushort>();
-
-    // ───────── VFX 요청 구조 ─────────
-    public struct VfxRequest
+    public abstract class Multiblock
     {
-        public string  key;     // "Smoke", "Fire_01"
-        public Vector2 offset;  // Origin 기준 상대 위치
-        public bool    active;  // 켜기/끄기
-    }
-
-    /// <summary>
-    /// 멀티블럭이 표시해야 하는 루프 VFX 요청을 outList에 추가한다.
-    /// - offset은 Origin 기준 "월드 좌표 오프셋" (셀 좌표가 아니라 월드 단위로 취급)
-    /// - active=false를 보내면 VfxManager가 비활 처리(또는 생성 안 함)
-    /// </summary>
-    public virtual void GetVfxRequests(List<VfxRequest> outList) { }
-
-    // ───────── 초기화 ─────────
-    public virtual void Initialize(
-        WorldManager world,
-        string defId,
-        Vector2Int origin,
-        int width,
-        int height,
-        IEnumerable<Vector2Int> occupied
-    )
-    {
-        World  = world;
-        DefId  = defId;
-        Origin = origin;
-        Width  = width;
-        Height = height;
-
-        occupiedCells.Clear();
-        if (occupied != null)
+        // ?????????????????? ??명???????????????????
+        /// <summary>筌렺?怨뺥닜???類ㅼ벥 ID (JSON 筌ㅼ뮇湲????域밸챶?嚥?????</summary>
+        public string DefId { get; protected set; }
+    
+        /// <summary>筌렺?怨뺥닜???紐꾨뮞??곷뮞 ID (MultiblockManager揶쎛 ?봔??</summary>
+        public int InstId { get; internal set; }
+    
+        // ?????????????????? 筌〓챷????????????????????
+        /// <summary>?遺얜굡 ?臾롫젏??/summary>
+        public WorldManager World { get; private set; }
+    
+        /// <summary>?癒?뻿???온?귐뗫릭??筌띲끇???</summary>
+        public MultiblockManager Manager { get; internal set; }
+    
+        // ?????????????????? ?袁⑺뒄/?類κ묶 ??????????????????
+        public Vector2Int Origin { get; protected set; }
+        public int Width { get; protected set; }
+        public int Height { get; protected set; }
+    
+        protected readonly List<Vector2Int> occupiedCells = new List<Vector2Int>();
+        public IReadOnlyList<Vector2Int> OccupiedCells => occupiedCells;
+    
+        // ????뽰뜚??????癰귣벀?????산퉬??(?? ?遺얜굡 ?ル슦紐? 揶? ?癒?궚 solidId)
+        internal readonly Dictionary<Vector2Int, ushort> originalSolidIds = new Dictionary<Vector2Int, ushort>();
+    
+        // ?????????????????? VFX ?遺욧퍕 ?닌듼???????????????????
+        public struct VfxRequest
         {
-            foreach (var c in occupied)
-                occupiedCells.Add(c);
+            public string  key;     // "Smoke", "Fire_01"
+            public Vector2 offset;  // Origin 疫꿸퀣? ?怨? ?袁⑺뒄
+            public bool    active;  // ?녹뮄由??袁㏓┛
         }
-
-        // originalSolidIds는 Manager가 채운다.
-        originalSolidIds.Clear();
+    
+        /// <summary>
+        /// 筌렺?怨뺥닜??????뽯뻻??곷튊 ??롫뮉 ?룐뫂遊?VFX ?遺욧퍕??outList???곕떽???뺣뼄.
+        /// - offset?? Origin 疫꿸퀣? "?遺얜굡 ?ル슦紐???쎈늄?? (?? ?ル슦紐닷첎? ?袁⑤빍???遺얜굡 ??μ맄嚥??띯몿??
+        /// - active=false??癰귣?沅∽쭖?VfxManager揶쎛 ??쑵??筌ｌ꼶???癒?뮉 ??밴쉐 ????
+        /// </summary>
+        public virtual void GetVfxRequests(List<VfxRequest> outList) { }
+    
+        // ?????????????????? ?λ뜃由????????????????????
+        public virtual void Initialize(
+            WorldManager world,
+            string defId,
+            Vector2Int origin,
+            int width,
+            int height,
+            IEnumerable<Vector2Int> occupied
+        )
+        {
+            World  = world;
+            DefId  = defId;
+            Origin = origin;
+            Width  = width;
+            Height = height;
+    
+            occupiedCells.Clear();
+            if (occupied != null)
+            {
+                foreach (var c in occupied)
+                    occupiedCells.Add(c);
+            }
+    
+            // originalSolidIds??Manager揶쎛 筌?쑴???
+            originalSolidIds.Clear();
+        }
+    
+        // ?????????????????? ?遺얜굡 ????????????????????
+        public virtual void Tick() { }
+    
+        // ?????????????????? ???쟿??곷선 ?怨뱀깈?臾믪뒠 ??????????????????
+        public virtual void OnInteract(Game.Player.Player player, Vector2Int hitCell) { }
+    
+        // ?????????????????? ?닌딄쉐 ?? ???댘 ??????????????????
+        /// <summary>
+        /// ??筌렺?怨뺥닜?????닌딄쉐??롫뮉 ?? 餓???롪돌揶쎛 ???댘??뤿??????紐꾪뀱.
+        /// 疫꿸퀡???닌뗭겱: 筌렺?怨뺥닜????곴퍥 + ??? 燁??癒?궗(?癒?삋 ??嚥?癰귣벀??.
+        /// </summary>
+        public virtual void OnCellBroken(Vector2Int brokenCell)
+        {
+            if (Manager != null)
+                Manager.Despawn(this, brokenCell);
+        }
+    
+        // ?????????????????? ?紐꾩뵠??嚥≪뮆諭???????????????????
+        public struct SaveData
+        {
+            public string     DefId;
+            public int        InstId;
+            public Vector2Int Origin;
+            public int        Width;
+            public int        Height;
+            public string     PayloadJson;
+    
+            // ??origin + (x,y) 疫꿸퀡而??곗쨮 癰귣벊??揶쎛?館釉?揶쏅?諭?? ?ル슦紐??類ㅻ??댿봺 ????獄쏄퀣肉닸에?????
+            // row-major: index = x + y * Width, length = Width * Height
+            public ushort[]   OriginalSolidIds;
+        }
+    
+        public abstract SaveData ToSaveData();
+        public abstract void FromSaveData(SaveData data);
     }
-
-    // ───────── 월드 틱 ─────────
-    public virtual void Tick() { }
-
-    // ───────── 플레이어 상호작용 ─────────
-    public virtual void OnInteract(Player player, Vector2Int hitCell) { }
-
-    // ───────── 구성 셀 파괴 ─────────
-    /// <summary>
-    /// 이 멀티블럭을 구성하는 셀 중 하나가 파괴되었을 때 호출.
-    /// 기본 구현: 멀티블럭 해체 + 남은 칸 원복(원래 셀로 복구).
-    /// </summary>
-    public virtual void OnCellBroken(Vector2Int brokenCell)
-    {
-        if (Manager != null)
-            Manager.Despawn(this, brokenCell);
-    }
-
-    // ───────── 세이브/로드 ─────────
-    public struct SaveData
-    {
-        public string     DefId;
-        public int        InstId;
-        public Vector2Int Origin;
-        public int        Width;
-        public int        Height;
-        public string     PayloadJson;
-
-        // ✅ origin + (x,y) 기반으로 복원 가능한 값들은 좌표 딕셔너리 대신 배열로 저장
-        // row-major: index = x + y * Width, length = Width * Height
-        public ushort[]   OriginalSolidIds;
-    }
-
-    public abstract SaveData ToSaveData();
-    public abstract void FromSaveData(SaveData data);
 }
