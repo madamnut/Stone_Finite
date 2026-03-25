@@ -1,38 +1,39 @@
-// WorldDataGenerator.cs (?�체 교체�?
-// - ??Volcano strata 추�?
-//   1) Tuff(id=48): ?????�이??"?��? ?�이�??�로 ?�입 (?�산 구간�? ?�충지?� ?�률 ?�용)
-//   2) Andesite(id=49): ROCK ???�단?�서 "??���?�?ROCK�?치환 (?�산 구간�?
-//   3) Basalt(id=47): Andesite ?�래�?추�? "??���?�?ROCK�?치환 (?�산 구간�?
-// - ??Volcano uplift ?�용 ?�서 ?�정
-//   * uplift "?�전"??strata ?�이/?�께�?먼�? 만든 ?? uplift�?strata?�도 ?�일(??100%)�?반영
-// - ??MagmaPass(B) ?�용
-//   * �??�암�??�즈) + �??�암기둥(베�???중심??+ ?�께 ?�브) + ?��?지(?�렁??중심?�에???�률 ?�폰, 45???�각선?�로 Tuff까�?)
-//   * 모든 ?�암 줄기/�?가지: Tuff(id=48) 관??불�?(만나�?종료)
+// WorldDataGenerator.cs (?꾩껜 援먯껜蹂?
+// - ??Volcano strata 異붽?
+//   1) Tuff(id=48): ?????ъ씠??"?덈? ?믪씠留??쇰줈 ?쎌엯 (?붿궛 援ш컙留? ?꾩땐吏? ?뺣쪧 ?곸슜)
+//   2) Andesite(id=49): ROCK ???곷떒?먯꽌 "??몢猿?濡?ROCK留?移섑솚 (?붿궛 援ш컙留?
+//   3) Basalt(id=47): Andesite ?꾨옒濡?異붽? "??몢猿?濡?ROCK留?移섑솚 (?붿궛 援ш컙留?
+// - ??Volcano uplift ?곸슜 ?쒖꽌 ?섏젙
+//   * uplift "?댁쟾"??strata ?믪씠/?먭퍡瑜?癒쇱? 留뚮뱺 ?? uplift瑜?strata?먮룄 ?숈씪(??100%)濡?諛섏쁺
+// - ??MagmaPass(B) ?곸슜
+//   * 二??⑹븫諛??뚯쫰) + 二??⑹븫湲곕뫁(踰좎???以묒떖??+ ?먭퍡 ?쒕툕) + ?붽?吏(?몃쟻??以묒떖?좎뿉???뺣쪧 ?ㅽ룿, 45???媛곸꽑?쇰줈 Tuff源뚯?)
+//   * 紐⑤뱺 ?⑹븫 以꾧린/諛?媛吏: Tuff(id=48) 愿??遺덇?(留뚮굹硫?醫낅즺)
 //   * Lava fluid id=2
 // - ??Lava FloodFill
-//   * SeaSurface 기반???�니??"맵에 존재?�는 모든 Lava"�?seed�?멀?�소???�러?�필
-//   * 방향: �????�래 3방향(?�방 ?�파 금�?)
+//   * SeaSurface 湲곕컲???꾨땲??"留듭뿉 議댁옱?섎뒗 紐⑤뱺 Lava"瑜?seed濡?硫?곗냼???뚮윭?쒗븘
+//   * 諛⑺뼢: 醫????꾨옒 3諛⑺뼢(?곷갑 ?꾪뙆 湲덉?)
 // - ??Branch curve
-//   * ?��?지 ?�점?� 기존 45???�이�?결정 (Tuff 직전)
-//   * 경로??주용?�처??x�?cubic bezier ?�플�?
-//   * 구불거림?� 주용?�보??강하�?컨트�??�프?�을 steps 기반?�로 ?�게)
+//   * ?붽?吏 ?앹젏? 湲곗〈 45???덉씠濡?寃곗젙 (Tuff 吏곸쟾)
+//   * 寃쎈줈??二쇱슜?붿쿂??x留?cubic bezier ?섑뵆留?
+//   * 援щ텋嫄곕┝? 二쇱슜?붾낫??媛뺥븯寃?而⑦듃濡??ㅽ봽?뗭쓣 steps 湲곕컲?쇰줈 ?ш쾶)
 
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 using Game.Data;
+using Game.Core;
 
 namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
-        // ?�?� Solid IDs (ATT_Solid.json�??�치) ?�?�
+        // ?? Solid IDs (ATT_Solid.json怨??쇱튂) ??
         private const ushort ID_AIR  = 0;
         private const ushort ID_ROCK = 1;
         private const ushort ID_DIRT = 2;
     
-        // ??Grass 분리: id=3~9, meta=0 고정
+        // ??Grass 遺꾨━: id=3~9, meta=0 怨좎젙
         private const ushort ID_GRASS_TOP          = 3;
         private const ushort ID_GRASS_LEFT         = 4;
         private const ushort ID_GRASS_RIGHT        = 5;
@@ -88,10 +89,10 @@ namespace Game.World
         private const ushort ID_SANDSTONE_BRICK = 36; // "SandStone Brick Cell"
     
         // ??Snow biome solids
-        // NOTE: Frozen Dirt ?�제 ID??맞게 ?�정 ?�요 (?�기??46 가??
+        // NOTE: Frozen Dirt ?ㅼ젣 ID??留욊쾶 ?섏젙 ?꾩슂 (?ш린??46 媛??
         private const ushort ID_FROZEN_DIRT = 46;
     
-        // Frozen Grass 분리: id=37~43
+        // Frozen Grass 遺꾨━: id=37~43
         private const ushort ID_FROZEN_GRASS_TOP          = 37;
         private const ushort ID_FROZEN_GRASS_LEFT         = 38;
         private const ushort ID_FROZEN_GRASS_RIGHT        = 39;
@@ -108,27 +109,27 @@ namespace Game.World
         private const ushort ID_TUFF     = 48; // "Tuff"
         private const ushort ID_ANDESITE = 49; // "Andesite"
     
-        // ?�?� Fluid IDs (ATT_Fluid.json�??�치) ?�?�
+        // ?? Fluid IDs (ATT_Fluid.json怨??쇱튂) ??
         private const ushort FLUID_NONE  = 0;
         private const ushort FLUID_WATER = 1;
         private const ushort FLUID_LAVA  = 2;
     
-        // ?�?� Light ?�?�
+        // ?? Light ??
         private const byte NATURAL_MAX = 15;
     
-        // ??Seed salt (hex literal?� "?�자"�?가??
+        // ??Seed salt (hex literal? "?レ옄"留?媛??
         private const int SALT_DESERT_START = unchecked((int)0x0D35E12);
         private const int SALT_DESERT_PASS  = unchecked((int)0x0D35E12A);
         private const int SALT_SAND_BFS     = unchecked((int)0x0A11CE);
         private const int SALT_DECOR        = unchecked((int)0x00DEC0);
     
-        private const int SALT_SNOW_END     = unchecked((int)0x0510001);  // ?�의
-        private const int SALT_SNOW_PASS    = unchecked((int)0x0510005A); // ?�의
+        private const int SALT_SNOW_END     = unchecked((int)0x0510001);  // ?꾩쓽
+        private const int SALT_SNOW_PASS    = unchecked((int)0x0510005A); // ?꾩쓽
     
         // ??Magma
         private const int SALT_MAGMA = unchecked((int)0x0BADC0DE);
     
-        // 로그 ?�틸
+        // 濡쒓렇 ?좏떥
         private static void StepLog(string label, float stepStart, float totalStart)
         {
             float now = Time.realtimeSinceStartup;
@@ -227,22 +228,22 @@ namespace Game.World
     
             Debug.Log($"[WorldGen] BuildCommonAndBg START w={w} h={h} seed={seed} seaLevel={seaLevel} desertStartX={desertStartX} snowEndX={snowEndX} volcanoCoreStartX={volcanoCoreStartX}");
     
-            // Step 1) Noise heights (1D) + Volcano strata maps -> �??�음 uplift�??�이?�별�?반영
+            // Step 1) Noise heights (1D) + Volcano strata maps -> 洹??ㅼ쓬 uplift瑜??덉씠?대퀎濡?諛섏쁺
             float[] dirtH = new float[w];
             float[] rockH = new float[w];
             float[] granH = new float[w];
             float[] amphH = new float[w];
     
             // ??Volcano strata
-            float[] tuffH = new float[w]; // ?��? ?�이�?(Dirt/Rock ?�이 ?�입)
-            float[] andT  = new float[w]; // ROCK ?�단?�서 ??���?
-            float[] basT  = new float[w]; // Andesite ?�래 ??���?
+            float[] tuffH = new float[w]; // ?덈? ?믪씠留?(Dirt/Rock ?ъ씠 ?쎌엯)
+            float[] andT  = new float[w]; // ROCK ?곷떒?먯꽌 ??몢猿?
+            float[] basT  = new float[w]; // Andesite ?꾨옒 ??몢猿?
     
             for (int x = 0; x < w; x++)
             {
                 float sx = x + seed;
     
-                // (A) uplift ?�는 기본 ?�이??
+                // (A) uplift ?녿뒗 湲곕낯 ?덉씠??
                 dirtH[x] = ProceduralUtil.FractalPerlin1D(
                     sx, s.dirtNoiseBaseFrequency, s.dirtNoiseOctaves,
                     s.dirtNoisePersistence, s.dirtNoiseLacunarity,
@@ -263,16 +264,16 @@ namespace Game.World
                     s.amphibNoisePersistence, s.amphibNoiseLacunarity,
                     s.amphibBaseHeight, s.amphibRange);
     
-                // (B) uplift ?�는 Volcano strata (?�산 구간�?
+                // (B) uplift ?녿뒗 Volcano strata (?붿궛 援ш컙留?
                 if (IsVolcanoColumnEnabled(s, seed, x, w))
                 {
-                    // Tuff: ?��? ?�이�?
+                    // Tuff: ?덈? ?믪씠留?
                     tuffH[x] = ProceduralUtil.FractalPerlin1D(
                         sx + 40000, s.tuffNoiseBaseFrequency, s.tuffNoiseOctaves,
                         s.tuffNoisePersistence, s.tuffNoiseLacunarity,
                         s.tuffBaseHeight, s.tuffRange);
     
-                    // Andesite/Basalt: "?�께"�??�용 (??���?침범)
+                    // Andesite/Basalt: "?먭퍡"濡??ъ슜 (??몢猿?移⑤쾾)
                     float a = ProceduralUtil.FractalPerlin1D(
                         sx + 50000, s.andesiteNoiseBaseFrequency, s.andesiteNoiseOctaves,
                         s.andesiteNoisePersistence, s.andesiteNoiseLacunarity,
@@ -293,7 +294,7 @@ namespace Game.World
                     basT[x]  = 0f;
                 }
     
-                // (C) uplift 계산 ?? ?�이?�별�??�용 (strata??"?�과 ?�일 비율" = 1.0)
+                // (C) uplift 怨꾩궛 ?? ?덉씠?대퀎濡??곸슜 (strata??"?숆낵 ?숈씪 鍮꾩쑉" = 1.0)
                 float uplift = VolcanoUpliftAtX(s, seed, x, w);
                 if (uplift != 0f)
                 {
@@ -311,7 +312,7 @@ namespace Game.World
             StepLog("Step 1 - Noise heights (+Volcano strata -> then uplift)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 2) Layer fill & BG ?�정 (+ Volcano strata ?�용)
+            // Step 2) Layer fill & BG ?뺤젙 (+ Volcano strata ?곸슜)
             for (int x = 0; x < w; x++)
             {
                 bool volcanoOn = (tuffH[x] != 0f) || (andT[x] != 0f) || (basT[x] != 0f);
@@ -321,9 +322,9 @@ namespace Game.World
                 float granTop = granH[x];
                 float amphTop = amphH[x];
     
-                // ??Tuff band: "?????�이" (?????�에??tuffTop까�?) + rockTop보다 ?�쪽�?
-                // - ?�도: Dirt -> Tuff -> Rock
-                // - 조건: y < tuffTop AND y >= rockTop (�?????�??�단 ?��?�?tuff�?바꿈)
+                // ??Tuff band: "?????ъ씠" (?????덉뿉??tuffTop源뚯?) + rockTop蹂대떎 ?꾩そ留?
+                // - ?섎룄: Dirt -> Tuff -> Rock
+                // - 議곌굔: y < tuffTop AND y >= rockTop (利?????以??섎떒 ?쇰?瑜?tuff濡?諛붽퓞)
                 float tuffTop = tuffH[x];
     
                 // ??Andesite/Basalt invasion only within ROCK band: [granTop .. rockTop)
@@ -341,18 +342,18 @@ namespace Game.World
                     if (y < granTop) id = ID_GRANITE;
                     if (y < amphTop) id = ID_AMPHIBOLITE;
     
-                    // ??Volcano strata ?�용
+                    // ??Volcano strata ?곸슜
                     if (volcanoOn)
                     {
-                        // (1) Tuff: ?????�이?�서�? ?��? ?�이맵으�?DIRT 치환
-                        //     - y가 rockTop보다 "?????�으면서
-                        //     - y가 tuffTop보다 "?�래"�?(�?[rockTop .. tuffTop) )
+                        // (1) Tuff: ?????ъ씠?먯꽌留? ?덈? ?믪씠留듭쑝濡?DIRT 移섑솚
+                        //     - y媛 rockTop蹂대떎 "?????덉쑝硫댁꽌
+                        //     - y媛 tuffTop蹂대떎 "?꾨옒"硫?(利?[rockTop .. tuffTop) )
                         if (id == ID_DIRT && tuffTop > 0f && y >= rockTop && y < tuffTop)
                         {
                             id = ID_TUFF;
                         }
     
-                        // (2) Andesite/Basalt: ROCK ?�에?�만, ?�단 ??��께로 ROCK�?치환
+                        // (2) Andesite/Basalt: ROCK ?좎뿉?쒕쭔, ?곷떒 ??몢猿섎줈 ROCK留?移섑솚
                         if (id == ID_ROCK && y >= rockBandBottom && y < rockBandTop)
                         {
                             // Andesite: [rockTop - aT .. rockTop)
@@ -381,7 +382,7 @@ namespace Game.World
             StepLog("Step 2 - Layer fill & BG (+Volcano strata)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // ??Step 2.5) Magma (SeaColumnFill ?�전)
+            // ??Step 2.5) Magma (SeaColumnFill ?댁쟾)
             ApplyVolcanoMagmaPass(s, seed, volcanoCoreStartX, seaLevel, commonSolid, commonMeta, commonFluid);
             StepLog("Step 2.5 - MagmaPass (before SeaColumnFill)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
@@ -409,7 +410,7 @@ namespace Game.World
             {
                 if (!cave[x, y]) continue;
     
-                // ??lava가 ?�는 ?�?� ?�굴�??��? ?�음
+                // ??lava媛 ?덈뒗 ?? ?숆뎬濡??レ? ?딆쓬
                 if (commonFluid[x, y] == FLUID_LAVA) continue;
     
                 commonSolid[x, y] = ID_AIR;
@@ -420,36 +421,36 @@ namespace Game.World
             StepLog("Step 6 - Caves carve (noise)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 7) Fluid infiltration flood fill (sea?� ?�결??공간�? seaLevel ?�로 금�?)
+            // Step 7) Fluid infiltration flood fill (sea? ?곌껐??怨듦컙留? seaLevel ?꾨줈 湲덉?)
             FloodFillFluidFromSeaSurface(commonSolid, commonFluid, w, h, seaLevel, FLUID_WATER);
             StepLog("Step 7 - Water flood fill (no upward)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // ??Step 7.1) Lava flood fill (모든 lava seed, �????�래�?
+            // ??Step 7.1) Lava flood fill (紐⑤뱺 lava seed, 醫????꾨옒留?
             FloodFillFluidFromAllExistingCells_3Dir(commonSolid, commonFluid, w, h, FLUID_LAVA);
             StepLog("Step 7.1 - Lava flood fill (3-dir, all seeds)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 7.5) PyramidPass (??desertStart ~ volcanoStart 중앙)
+            // Step 7.5) PyramidPass (??desertStart ~ volcanoStart 以묒븰)
             ApplyPyramidPass(desertStartX, volcanoCoreStartX, seaLevel, commonSolid, commonMeta, w, h);
             StepLog("Step 7.5 - PyramidPass (between desert & volcano)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // ??FloodFill ?�후??Crevasse: (1) ?�레바스 구간 물→?�음 (2) 구덩???�기
+            // ??FloodFill ?댄썑??Crevasse: (1) ?щ젅諛붿뒪 援ш컙 臾쇄넂?쇱쓬 (2) 援щ뜦???リ린
             ApplyCrevasseFreezeAndCarvePass(s, seed, commonSolid, commonMeta, commonFluid);
             StepLog("Step 7.6 - CrevasseFreeze+Carve (after floodfill)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 7.7) VolcanoPass (?�재 ?�암 미구?? 지�??�기??Step1?�서 처리??
+            // Step 7.7) VolcanoPass (?꾩옱 ?⑹븫 誘멸뎄?? 吏痢??듦린??Step1?먯꽌 泥섎━??
             StepLog("Step 7.7 - VolcanoPass (reserved)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 7.8) DesertPass (??Volcano 구간?� ?�용 ?�외)
+            // Step 7.8) DesertPass (??Volcano 援ш컙? ?곸슜 ?쒖쇅)
             ApplyDesertPass(s, seed, desertStartX, commonSolid, commonMeta, commonFluid);
             StepLog("Step 7.8 - DesertPass (skip volcano)", t0, totalStart);
             t0 = Time.realtimeSinceStartup;
     
-            // Step 7.9) SnowPass (??DesertPass 바로 ?�음)
+            // Step 7.9) SnowPass (??DesertPass 諛붾줈 ?ㅼ쓬)
             ApplySnowPass(s, seed, snowEndX, commonSolid, commonMeta, commonFluid);
             StepLog("Step 7.9 - SnowPass", t0, totalStart);
             t0 = Time.realtimeSinceStartup;

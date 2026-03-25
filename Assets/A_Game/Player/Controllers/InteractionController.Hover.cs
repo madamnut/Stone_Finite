@@ -3,6 +3,7 @@ using UnityEngine;
 
 using Game.Data;
 using Game.World;
+using Game.Core;
 
 namespace Game.Player
 {

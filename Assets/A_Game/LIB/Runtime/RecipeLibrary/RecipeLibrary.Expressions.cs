@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
-using Game.Player;
+using Game.Core;
 
 
 namespace Game.Data

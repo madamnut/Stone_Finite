@@ -1,7 +1,7 @@
 using UnityEngine;
 
 using Game.Data;
-using Game.Player;
+using Game.Core;
 
 namespace Game.World
 {

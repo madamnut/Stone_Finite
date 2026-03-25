@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 using Game.Data;
-using Game.Player;
 using Game.Lobby;
+using Game.Core;
 
 namespace Game.World
 {
@@ -71,11 +71,31 @@ namespace Game.World
         {
             W = settings.width;
             H = settings.height;
+
+            ResolvePlayerInventoryReference();
     
             tickCurr.Clear();
             tickNext.Clear();
     
             CacheUtilityOccupiedIdIfNeeded();
+        }
+
+        private void ResolvePlayerInventoryReference()
+        {
+            _playerInventory = null;
+
+            if (player == null)
+                return;
+
+            var behaviours = player.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IInventoryOwner owner)
+                {
+                    _playerInventory = owner.Inventory;
+                    return;
+                }
+            }
         }
     
         private void LogBootContext()

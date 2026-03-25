@@ -1,12 +1,11 @@
 using UnityEngine;
-using Game.Player;
 
 
 namespace Game.World
 {
     public class ForgeWorkbench : Multiblock
     {
-        public override void OnInteract(Game.Player.Player player, Vector2Int hitCell)
+        public override void OnInteract(Vector2Int hitCell)
         {
             Manager.OpenModule("ForgeCraft", this);
         }

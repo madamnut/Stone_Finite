@@ -13,7 +13,7 @@ namespace Game.Lobby
         public static string   worldName { get; private set; }
         public static int      seed      { get; private set; }
     
-        // LobyManager?먯꽌 ?곕뒗 硫뷀?? ?숈씪??援ъ“
+        // LobyManager????????ㅻ쿋獒?癲ル슢????? ????곕럡??????깼??
         [System.Serializable]
         private class WorldMetaData
         {
@@ -34,7 +34,7 @@ namespace Game.Lobby
             loadType  = LoadType.LoadWorld;
             worldName = name;
     
-            // 湲곕낯媛?0
+            // ??れ삀???筌?0
             seed = 0;
     
             try
@@ -44,7 +44,7 @@ namespace Game.Lobby
     
                 if (!File.Exists(metaPath))
                 {
-                    Debug.LogWarning($"[WorldLoadContext] world_meta.json ?놁쓬: {metaPath}");
+                    Debug.LogWarning($"[WorldLoadContext] world_meta.json not found: {metaPath}");
                     return;
                 }
     
@@ -52,7 +52,7 @@ namespace Game.Lobby
                 var meta    = JsonUtility.FromJson<WorldMetaData>(json);
                 if (meta == null)
                 {
-                    Debug.LogWarning($"[WorldLoadContext] world_meta.json ?뚯떛 ?ㅽ뙣: {metaPath}");
+                    Debug.LogWarning($"[WorldLoadContext] Failed to parse world_meta.json: {metaPath}");
                     return;
                 }
     
@@ -60,7 +60,7 @@ namespace Game.Lobby
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[WorldLoadContext] SetLoadWorld ?ㅽ뙣: {ex.Message}");
+                Debug.LogError($"[WorldLoadContext] SetLoadWorld failed: {ex.Message}");
             }
         }
     
@@ -68,10 +68,10 @@ namespace Game.Lobby
         {
             worldName = null;
             seed      = 0;
-            // loadType? 援녹씠 珥덇린???꾩슂 ?놁쑝硫?洹몃?濡???
+            // loadType?? ???????縕?猿녿뎨????ш끽維?????⑤챶?뺧┼???숆강筌?????
         }
     
-        // ???寃쎈줈: ?쇱떆?ㅽ꽩???꾨옒 Worlds/<name>/
+        // ?????濡ろ뜑?灌鍮? ??繹먮굝六???袁⑸룈????ш끽維??Worlds/<name>/
         public static string GetSavePath()
         {
             return Path.Combine(Application.persistentDataPath, "Worlds", worldName);

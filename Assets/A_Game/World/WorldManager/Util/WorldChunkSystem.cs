@@ -4,47 +4,48 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// �?�� ?� / 로드 / ?�로??/ ?�?�맵 리프?�시 / ?�이???�이???�스�?까�? ?�당?�는 ?�스??
-/// (WorldManager?�서 ?�존?�만 주입?�서 ?�용)
+/// 泥?겕 ? / 濡쒕뱶 / ?몃줈??/ ??쇰㏊ 由ы봽?덉떆 / ?쇱씠???덉씠???띿뒪泥?源뚯? ?대떦?섎뒗 ?쒖뒪??
+/// (WorldManager?먯꽌 ?섏〈?깅쭔 二쇱엯?댁꽌 ?ъ슜)
 ///
-/// WorldData 구조(?�규):
+/// WorldData 援ъ“(?좉퇋):
 ///   bg / utility(id+meta) / solid(id+meta) / fluid(id+amount) / naturalLight / artificialLight
 ///
-/// Chunk 컴포?�트 ?�제(?�드�?:
+/// Chunk 而댄룷?뚰듃 ?꾩젣(?꾨뱶紐?:
 ///   - Tilemap bgTilemap;
-///   - Tilemap utilityTilemap;    // ??추�?
+///   - Tilemap utilityTilemap;    // ??異붽?
 ///   - Tilemap solidTilemap;
-///   - Tilemap platformTilemap;   // ??추�? (콜라?�더 ?�용, ?�더 OFF ?�제)
-///   - Tilemap liquidTilemap;     (?�드�??��?)
+///   - Tilemap platformTilemap;   // ??異붽? (肄쒕씪?대뜑 ?꾩슜, ?뚮뜑 OFF ?꾩젣)
+///   - Tilemap liquidTilemap;     (?꾨뱶紐??좎?)
 ///   - TileBase[] bgBuffer, utilityBuffer, solidBuffer, platformBuffer, liquidBuffer; // ??
 ///   - bool bgDirty, utilityDirty, solidDirty, platformDirty, liquidDirty, lightDirty; // ??
 ///
-/// Liquid Mask ?�제(Chunk.cs??추�????�드):
+/// Liquid Mask ?꾩젣(Chunk.cs??異붽????꾨뱶):
 ///   - Texture2D liquidTypeTex, liquidAmountTex (16x16)
 ///   - Color32[] liquidTypePixels, liquidAmtPixels (256)
 ///   - MaterialPropertyBlock liquidMpb
 ///   - TilemapRenderer liquidRenderer
 ///
-/// Light Overlay ?�제(Chunk.cs??추�????�드):
+/// Light Overlay ?꾩젣(Chunk.cs??異붽????꾨뱶):
 ///   - MeshRenderer lightOverlayRenderer
 ///   - Texture2D lightTex (18x18)
 ///   - Color32[] lightPixels (18*18)
 ///   - MaterialPropertyBlock lightMpb
 ///
-/// Tile ?�책:
-/// - BG ?�?? CellLibrary.GetBgTile(id)
-/// - Utility ?�?? CellLibrary.GetUtilityTile(id, meta)                    // ??추�?
-/// - Solid ?�???�각): CellLibrary.GetSolidTile(id, meta)
-/// - Platform 콜라?�더 ?�?? CellLibrary.GetPlatformColliderTile(id, meta)  // ??추�?
-/// - Fluid ?�?? CellLibrary.GetFluidTile(fluidId, amount)
+/// Tile ?뺤콉:
+/// - BG ??? CellLibrary.GetBgTile(id)
+/// - Utility ??? CellLibrary.GetUtilityTile(id, meta)                    // ??異붽?
+/// - Solid ????쒓컖): CellLibrary.GetSolidTile(id, meta)
+/// - Platform 肄쒕씪?대뜑 ??? CellLibrary.GetPlatformColliderTile(id, meta)  // ??異붽?
+/// - Fluid ??? CellLibrary.GetFluidTile(fluidId, amount)
 /// </summary>
 using Game.Data;
+using Game.Core;
 
 namespace Game.World
 {
     public class WorldChunkSystem
     {
-        // ?�?�?�?�?�?�?�?�?� 기본 참조/?�정 ?�?�?�?�?�?�?�?�?�
+        // ????????? 湲곕낯 李몄“/?ㅼ젙 ?????????
         private readonly int worldWidth;
         private readonly int worldHeight;
         private readonly int chunkSize;
@@ -57,13 +58,13 @@ namespace Game.World
     
         private readonly CellLibrary cellLibrary;
     
-        // (?�재 ?�크립트 ?�에??직접 ?�출?�진 ?��?�? ?��? ?�책???��?)
+        // (?꾩옱 ?ㅽ겕由쏀듃 ?댁뿉??吏곸젒 ?몄텧?섏쭊 ?딆?留? ?몃? ?뺤콉???좎?)
         private readonly System.Action<int, int> recalcLightAt;
     
-        // ?�간???�라 바뀌는 ?�역 밝기 ?�프??(0~15)
+        // ?쒓컙???곕씪 諛붾뚮뒗 ?꾩뿭 諛앷린 ?ㅽ봽??(0~15)
         private ushort globalBrightnessOffset = 0;
     
-        // ?�?�?�?�?�?�?�?�?� ?� / 로드 ??/ ?�성 �?�� ?�?�?�?�?�?�?�?�?�
+        // ????????? ? / 濡쒕뱶 ??/ ?쒖꽦 泥?겕 ?????????
         private readonly Queue<GameObject> chunkPool = new();
         private readonly List<Vector2Int> loadList = new();
         private int loadIndex = 0;
@@ -71,12 +72,12 @@ namespace Game.World
         private readonly HashSet<Vector2Int> currentNeeded = new();
         private readonly Dictionary<Vector2Int, GameObject> activeChunks = new();
     
-        // ?�?�?�?�?�?�?�?�?� ?�티 �?�� 집합 ?�?�?�?�?�?�?�?�?�
+        // ????????? ?뷀떚 泥?겕 吏묓빀 ?????????
         private readonly HashSet<Vector2Int> solidDirtyChunks = new();
-        private readonly HashSet<Vector2Int> platformDirtyChunks = new(); // ??추�?
+        private readonly HashSet<Vector2Int> platformDirtyChunks = new(); // ??異붽?
         private readonly HashSet<Vector2Int> liquidDirtyChunks = new();
         private readonly HashSet<Vector2Int> bgDirtyChunks = new();
-        private readonly HashSet<Vector2Int> utilityDirtyChunks = new(); // ??추�?
+        private readonly HashSet<Vector2Int> utilityDirtyChunks = new(); // ??異붽?
         private readonly HashSet<Vector2Int> lightDirtyChunks = new();
     
         private bool isLoading = false;
@@ -86,7 +87,7 @@ namespace Game.World
     
         const int LIGHT_MAX = 15;
     
-        // ?�?�?�?�?�?�?�?�?� ?�성???�?�?�?�?�?�?�?�?�
+        // ????????? ?앹꽦???????????
         public WorldChunkSystem(
             int worldWidth,
             int worldHeight,
@@ -114,9 +115,9 @@ namespace Game.World
             this.recalcLightAt = recalcLightAt;
         }
     
-        // ?�?�?�?�?�?�?�?�?� ?��??�서 ?�팅/?�출??API ?�?�?�?�?�?�?�?�?�
+        // ????????? ?몃??먯꽌 ?명똿/?몄텧??API ?????????
     
-        /// <summary>초기 �?�� ?� ?�성 (WorldManager.Awake ?�서 ?�출)</summary>
+        /// <summary>珥덇린 泥?겕 ? ?앹꽦 (WorldManager.Awake ?먯꽌 ?몄텧)</summary>
         public void InitializePool(int initialPoolSize)
         {
             for (int i = 0; i < initialPoolSize; i++)
@@ -127,33 +128,33 @@ namespace Game.World
             }
         }
     
-        /// <summary>Awake ?? ?�재 ?�레?�어 ?�치 기�??�로 lastPlayerChunk 초기??/summary>
+        /// <summary>Awake ?? ?꾩옱 ?뚮젅?댁뼱 ?꾩튂 湲곗??쇰줈 lastPlayerChunk 珥덇린??/summary>
         public void ResetLastPlayerChunk(Vector3 playerPosition)
         {
             lastPlayerChunk = GetPlayerChunk(playerPosition);
         }
     
-        /// <summary>?�간???�른 ?�역 밝기 ?�프??WorldManager?�서 계산) 값을 반영</summary>
+        /// <summary>?쒓컙???곕Ⅸ ?꾩뿭 諛앷린 ?ㅽ봽??WorldManager?먯꽌 怨꾩궛) 媛믪쓣 諛섏쁺</summary>
         public void SetGlobalBrightnessOffset(ushort offset)
         {
             globalBrightnessOffset = offset;
         }
     
         /// <summary>
-        /// ?�레?�어 ?�치 기�??�로 �?�� 로드/?�로???��? 구성?�고,
-        /// ?�요 ??코루?�으�??�제 로드�?진행?�다.
+        /// ?뚮젅?댁뼱 ?꾩튂 湲곗??쇰줈 泥?겕 濡쒕뱶/?몃줈???먮? 援ъ꽦?섍퀬,
+        /// ?꾩슂 ??肄붾（?댁쑝濡??ㅼ젣 濡쒕뱶瑜?吏꾪뻾?쒕떎.
         /// </summary>
         public void UpdateVisibleChunks(Vector3 playerPosition, MonoBehaviour coroutineHost)
         {
             Vector2Int playerChunk = GetPlayerChunk(playerPosition);
     
-            // 같�? �?��??머물???�고, 로드 ?�도 비었�? ?��? �?��가 ???�으�?계산 ?�킵
+            // 媛숈? 泥?겕??癒몃Ъ???덇퀬, 濡쒕뱶 ?먮룄 鍮꾩뿀怨? ?대? 泥?겕媛 ???덉쑝硫?怨꾩궛 ?ㅽ궢
             if (playerChunk == lastPlayerChunk &&
                 loadList.Count == 0 &&
                 activeChunks.Count > 0)
                 return;
     
-            // ?�간?�동 ?��??�로 멀�??�동?�으�?로드 ??초기??
+            // ?쒓컙?대룞 ?섏??쇰줈 硫由??대룞?덉쑝硫?濡쒕뱶 ??珥덇린??
             if ((playerChunk - lastPlayerChunk).sqrMagnitude > (chunkRadius * chunkRadius * 4))
             {
                 loadList.Clear();
@@ -161,13 +162,13 @@ namespace Game.World
             }
             lastPlayerChunk = playerChunk;
     
-            // ?�효 �?�� 범위 계산
+            // ?좏슚 泥?겕 踰붿쐞 怨꾩궛
             int cxMin = 0;
             int cyMin = 0;
             int cxMax = Mathf.Max(0, (worldWidth - 1) / chunkSize);
             int cyMax = Mathf.Max(0, (worldHeight - 1) / chunkSize);
     
-            // ?�요??�?�� 집합 구성
+            // ?꾩슂??泥?겕 吏묓빀 援ъ꽦
             currentNeeded.Clear();
             for (int dy = -chunkRadius; dy <= chunkRadius; dy++)
             for (int dx = -chunkRadius; dx <= chunkRadius; dx++)
@@ -178,7 +179,7 @@ namespace Game.World
                 currentNeeded.Add(new Vector2Int(cx, cy));
             }
     
-            // ?�로???�??계산
+            // ?몃줈?????怨꾩궛
             unloadList.Clear();
             foreach (var coord in activeChunks.Keys)
                 if (!currentNeeded.Contains(coord)) unloadList.Add(coord);
@@ -188,7 +189,7 @@ namespace Game.World
                 ReturnToPool(activeChunks[coord]);
                 activeChunks.Remove(coord);
     
-                // ?�시 ?�아?�을 ???�는 ?�티 기록 ?�거
+                // ?뱀떆 ?⑥븘?덉쓣 ???덈뒗 ?뷀떚 湲곕줉 ?쒓굅
                 bgDirtyChunks.Remove(coord);
                 utilityDirtyChunks.Remove(coord);
                 solidDirtyChunks.Remove(coord);
@@ -197,7 +198,7 @@ namespace Game.World
                 lightDirtyChunks.Remove(coord);
             }
     
-            // 로드 ?�??리스???�구??(?�직 ?�는 �?���?
+            // 濡쒕뱶 ???由ъ뒪???ш뎄??(?꾩쭅 ?녿뒗 泥?겕留?
             loadList.Clear();
             foreach (var c in currentNeeded)
             {
@@ -205,7 +206,7 @@ namespace Game.World
                     loadList.Add(c);
             }
     
-            // ?�레?�어?�??거리 기�? ?�렬 (가??가까운 �?��부??
+            // ?뚮젅?댁뼱???嫄곕━ 湲곗? ?뺣젹 (媛??媛源뚯슫 泥?겕遺??
             loadList.Sort((a, b) =>
             {
                 int ax = a.x - playerChunk.x;
@@ -225,8 +226,8 @@ namespace Game.World
         }
     
         /// <summary>
-        /// ?�티 ?�래그�? 켜진 �?��???�???�이?��? ?�제�??�시 ?�팅.
-        /// (WorldManager??FixedUpdate ?�에???�출)
+        /// ?뷀떚 ?뚮옒洹멸? 耳쒖쭊 泥?겕??????쇱씠?몃? ?ㅼ젣濡??ㅼ떆 ?명똿.
+        /// (WorldManager??FixedUpdate ?깆뿉???몄텧)
         /// </summary>
         public void ProcessDirtyChunks()
         {
@@ -268,7 +269,7 @@ namespace Game.World
                 utilityDirtyChunks.Clear();
             }
     
-            // Solid (+ PlatformCollider 같이 갱신)
+            // Solid (+ PlatformCollider 媛숈씠 媛깆떊)
             if (solidDirtyChunks.Count > 0)
             {
                 foreach (var coord in solidDirtyChunks)
@@ -283,12 +284,12 @@ namespace Game.World
                 }
                 solidDirtyChunks.Clear();
     
-                // ???�기??platformDirtyChunks�?"?��? ?�거"?�려�?Clear가 맞다.
-                // (Solid 갱신?�서 platform???�께 갱신?�으므�?
+                // ???ш린??platformDirtyChunks瑜?"?꾨? ?쒓굅"?섎젮硫?Clear媛 留욌떎.
+                // (Solid 媛깆떊?먯꽌 platform???④퍡 媛깆떊?덉쑝誘濡?
                 platformDirtyChunks.Clear();
             }
     
-            // (?�전?�치) PlatformDirty�??�아?�을 경우
+            // (?덉쟾?μ튂) PlatformDirty留??⑥븘?덉쓣 寃쎌슦
             if (platformDirtyChunks.Count > 0)
             {
                 foreach (var coord in platformDirtyChunks)
@@ -335,7 +336,7 @@ namespace Game.World
         }
     
         /// <summary>
-        /// ?�드 좌표 기�??�로 ?�당?�는 �?���?dirty ?�시.
+        /// ?붾뱶 醫뚰몴 湲곗??쇰줈 ?대떦?섎뒗 泥?겕瑜?dirty ?쒖떆.
         /// </summary>
         public void MarkChunkDirty(
             int worldX,
@@ -378,7 +379,7 @@ namespace Game.World
         }
     
         /// <summary>
-        /// ?�드 좌표 1칸이 ?�한 �?��??lightDirty�?켠다.
+        /// ?붾뱶 醫뚰몴 1移몄씠 ?랁븳 泥?겕??lightDirty瑜?耳좊떎.
         /// </summary>
         public void MarkLightDirtyCell(int worldX, int worldY)
         {
@@ -438,7 +439,7 @@ namespace Game.World
             }
         }
     
-        // ?�?�?�?�?�?�?�?�?� ?��? 구현 ?�?�?�?�?�?�?�?�?�
+        // ????????? ?대? 援ы쁽 ?????????
     
         private IEnumerator ProcessLoadQueue()
         {
@@ -471,7 +472,7 @@ namespace Game.World
     
         private Vector2Int GetPlayerChunk(Vector3 p)
         {
-            // ???�드가 "?�=1?�닛" ?�제?�면 ??계산??맞다(기존 ?��?).
+            // ???붾뱶媛 "?=1?좊떅" ?꾩젣?쇰㈃ ??怨꾩궛??留욌떎(湲곗〈 ?좎?).
             return new Vector2Int(
                 Mathf.FloorToInt(p.x / chunkSize),
                 Mathf.FloorToInt(p.y / chunkSize)
@@ -540,7 +541,7 @@ namespace Game.World
                 var u = worldMap.utility[wx, wy];
                 utilBuf[idx] = (u.id != 0) ? cellLibrary.GetUtilityTile(u.id, u.meta) : null;
     
-                // Solid(?�각) + PlatformCollider(?�용 ?�?�맵)
+                // Solid(?쒓컖) + PlatformCollider(?꾩슜 ??쇰㏊)
                 var s = worldMap.solid[wx, wy];
                 if (s.id != 0)
                 {
@@ -569,7 +570,7 @@ namespace Game.World
             if (c.platformTilemap != null) c.platformTilemap.SetTilesBlock(bounds, platBuf);
             c.liquidTilemap.SetTilesBlock(bounds, liqBuf);
     
-            // ===== Liquid Mask: 초기 1??굽기 + MPB ?�용 =====
+            // ===== Liquid Mask: 珥덇린 1??援쎄린 + MPB ?곸슜 =====
             for (int y = 0; y < chunkSize; y++)
             for (int x = 0; x < chunkSize; x++)
             {
@@ -606,7 +607,7 @@ namespace Game.World
             c.liquidMpb.SetVector("_ChunkOriginWS", new Vector4(origin.x, origin.y, 0f, 0f));
             c.liquidRenderer.SetPropertyBlock(c.liquidMpb);
     
-            // Solid collider 갱신
+            // Solid collider 媛깆떊
             var coll = c.solidTilemap.GetComponent<TilemapCollider2D>();
             if (coll != null)
             {
@@ -614,7 +615,7 @@ namespace Game.World
                 coll.ProcessTilemapChanges();
             }
     
-            // Platform collider 갱신
+            // Platform collider 媛깆떊
             if (c.platformTilemap != null)
             {
                 var pColl = c.platformTilemap.GetComponent<TilemapCollider2D>();
@@ -627,7 +628,7 @@ namespace Game.World
     
             activeChunks[coord] = go;
     
-            // ?�이??초기???�스�?
+            // ?쇱씠??珥덇린???띿뒪泥?
             RefreshLightLayer(coord);
     
             c.bgDirty = false;
@@ -786,7 +787,7 @@ namespace Game.World
     
                     c.liquidTilemap.SetTilesBlock(bounds, buf);
     
-                    // ===== Liquid Mask: Dirty 갱신 + MPB ?�용 =====
+                    // ===== Liquid Mask: Dirty 媛깆떊 + MPB ?곸슜 =====
                     for (int y = 0; y < chunkSize; y++)
                     for (int x = 0; x < chunkSize; x++)
                     {

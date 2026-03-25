@@ -1,10 +1,10 @@
-// ClayKiln.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪? - ?怨뺤┷ ???遺우㉦(_fuelTicksLeft > 0)?????춸 meta=1, ?袁⑤빍筌?meta=0
+// ClayKiln.cs (?熬곣뫕????흮?우뮂?? - ??⑤벡??????븐슦??_fuelTicksLeft > 0)?????異?meta=1, ?熬곣뫀鍮띸춯?meta=0
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 
 using Game.Data;
-using Game.Player;
+using Game.Core;
 
 namespace Game.World
 {
@@ -91,10 +91,10 @@ namespace Game.World
         const int FIRE_HOLD_TICKS = 5;
         int _fireHoldTicksLeft = 0;
     
-        // ??겸봺??"??????됱벉"(?怨뺤┷ ???걟 疫꿸퀣?)
+        // ??寃몃뉴??"???????깅쾳"(??⑤벡?????嫄??リ옇??)
         public bool Isburning => _fuelTicksLeft > 0;
     
-        // VFX??hold ??釉?
+        // VFX??hold ????
         bool IsFireActiveFx => _fuelTicksLeft > 0 || _fireHoldTicksLeft > 0;
     
         public float FuelProgress01
@@ -155,7 +155,7 @@ namespace Game.World
             CleanupZeroCountSlots();
         }
     
-        public override void OnInteract(Game.Player.Player player, Vector2Int hitCell)
+        public override void OnInteract(Vector2Int hitCell)
         {
             Manager.OpenModule("Clay Kiln", this);
         }
@@ -202,7 +202,7 @@ namespace Game.World
             _laneB.In  = _fireInB;
             _laneB.Out = _fireOutB;
     
-            bool wasBurning = Isburning; // ??meta 疫꿸퀣??? "?怨뺤┷揶쎛 ??????덇돌"
+            bool wasBurning = Isburning; // ??meta ?リ옇???? "??⑤벡?룡뤆?쎛 ???????뉖룎"
             bool wasFireFxOn = IsFireActiveFx;
     
             if (_laneA.IngredientChanged())
@@ -224,7 +224,7 @@ namespace Game.World
     
             bool anyCanProcess = (canFireA && !outBlockedA) || (canFireB && !outBlockedB);
     
-            // 1) ?怨뺤┷揶쎛 ??곸몵筌? 筌ｌ꼶??揶쎛?館釉??怨뱀넺?癒?퐣筌??癒곗넅 ??뺣즲
+            // 1) ??⑤벡?룡뤆?쎛 ??怨몃さ嶺? 嶺뚳퐣瑗???띠럾??繞③뇡???⑤??????ｇ춯???믨퀣????類ｌ┣
             if (_fuelTicksLeft <= 0)
             {
                 if (!string.IsNullOrEmpty(_fuelResultItemId))
@@ -241,7 +241,7 @@ namespace Game.World
                 }
             }
     
-            // 2) ?怨뺤┷ 揶쏅Ŋ??
+            // 2) ??⑤벡???띠룆흮??
             if (_fuelTicksLeft > 0)
             {
                 _fuelTicksLeft -= 1;
@@ -250,27 +250,27 @@ namespace Game.World
                 if (_fuelTicksLeft > 0) _fireHoldTicksLeft = 0;
             }
     
-            // 2.5) ?怨뺤┷ ?ル굝利???hold ??뽰삂
+            // 2.5) ??⑤벡????リ턁筌???hold ??戮곗굚
             if (wasBurning && _fuelTicksLeft <= 0)
             {
                 _fireHoldTicksLeft = FIRE_HOLD_TICKS;
             }
     
-            // 2.6) hold 揶쏅Ŋ??
+            // 2.6) hold ?띠룆흮??
             if (_fuelTicksLeft <= 0 && _fireHoldTicksLeft > 0)
             {
                 _fireHoldTicksLeft -= 1;
                 if (_fireHoldTicksLeft < 0) _fireHoldTicksLeft = 0;
             }
     
-            // 3) Fire 筌욊쑵六? "????뽰삂 ???븍뜃??ON" 疫꿸퀣? + 揶?lane 癰귢쑬以???끸뵲 筌욊쑵六?
+            // 3) Fire 嶺뚯쉳?듸쭛? "????戮곗굚 ???釉띾쐝??ON" ?リ옇?? + ??lane ?곌랙?т빳????몃뎡 嶺뚯쉳?듸쭛?
             if (wasBurning)
             {
                 TickLaneFire(_laneA, canFireA, needA, resA, amtA, outBlockedA);
                 TickLaneFire(_laneB, canFireB, needB, resB, amtB, outBlockedB);
             }
     
-            // 4) ?怨뺤┷揶쎛 ??멸텢??겹늺 ?봔?怨빿?筌ｌ꼶??
+            // 4) ??⑤벡?룡뤆?쎛 ??硫명뀬??寃밸듆 ?遊붋??⑤뮈?嶺뚳퐣瑗??
             if (wasBurning && _fuelTicksLeft <= 0)
             {
                 TryPushFuelResultToFuelOut();
@@ -282,14 +282,14 @@ namespace Game.World
             _fireInB  = _laneB.In;
             _fireOutB = _laneB.Out;
     
-            // ??meta??"?怨뺤┷揶쎛 ????餓? 疫꿸퀣???곗쨮筌???녿┛??
+            // ??meta??"??⑤벡?룡뤆?쎛 ????繞? ?リ옇????怨쀬Ŧ嶺????욋뵛??
             bool isBurningNow = Isburning;
             if (wasBurning != isBurningNow)
             {
                 RequestApplyKilnMeta(isBurningNow);
             }
     
-            // VFX edge???袁⑹뒄 ???筌? ??由???怨뺤쨮 ??딅맙(?룐뫂遊??active筌?獄쏅뗀???늺 ??
+            // VFX edge???熬곣뫗?????嶺? ???????⑤벡夷????낅쭥(?猷먮쳜???active嶺??꾩룆????????
     
             CleanupZeroCountSlots();
         }
@@ -329,7 +329,7 @@ namespace Game.World
         void RequestApplyKilnMeta(bool burning)
         {
             if (Manager == null) return;
-            // ???怨뺤┷ ???遺우㉦????meta=6, ?袁⑤빍筌?meta=0
+            // ????⑤벡??????븐슦??????meta=6, ?熬곣뫀鍮띸춯?meta=0
             Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
         }
     
@@ -469,7 +469,7 @@ namespace Game.World
     
             CleanupZeroCountSlots();
     
-            // ???癒곗넅 筌앸맩??meta=1
+            // ????믨퀣??嶺뚯빖留??meta=1
             RequestApplyKilnMeta(true);
         }
     
@@ -765,7 +765,7 @@ namespace Game.World
     
             CleanupZeroCountSlots();
     
-            // ??嚥≪뮆諭?筌욊낱??meta??"?怨뺤┷ ???遺우㉦" 疫꿸퀣???곗쨮 筌띿쉸??
+            // ???β돦裕녻キ?嶺뚯쉳???meta??"??⑤벡??????븐슦?? ?リ옇????怨쀬Ŧ 嶺뚮씮???
             RequestApplyKilnMeta(Isburning);
         }
     }

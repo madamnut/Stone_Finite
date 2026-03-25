@@ -1,6 +1,8 @@
 using UnityEngine;
+using Game.Player;
+using Game.Core;
 
-namespace Game.Player
+namespace Game.UI
 {
     
     public static class ModuleSlotSyncUtility

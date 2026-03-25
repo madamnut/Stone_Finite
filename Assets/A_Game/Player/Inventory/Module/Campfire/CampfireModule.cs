@@ -3,8 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using Game.World;
+using Game.Player;
+using Game.Core;
 
-namespace Game.Player
+namespace Game.UI
 {
     public class CampfireModule : MonoBehaviour
     {
@@ -20,7 +22,7 @@ namespace Game.Player
     
         Campfire _campfire;
     
-        // ?ㅻ깄???낅젰 ?щ’ 蹂寃?媛먯???
+        // ???怨좊룴??????곸죷 ?????怨뚮뼚?????좊즴????
         ItemData _prevFuelIn;
         int _prevFuelInCount;
         int _prevFuelInDur;
@@ -29,7 +31,7 @@ namespace Game.Player
         int _prevIngInCount;
         int _prevIngInDur;
     
-        // ?ㅻ깄??異쒕젰 ?щ’ 蹂寃?媛먯??? ?좎?媛 爰쇰깉?붿?)
+        // ???怨좊룴????⑥レ툓???????怨뚮뼚?????좊즴???? ?????좊읈? ??⑥ル땻濚???)
         ItemData _prevFuelOut;
         int _prevFuelOutCount;
         int _prevFuelOutDur;
@@ -42,13 +44,13 @@ namespace Game.Player
         {
             _campfire = campfire;
     
-            // 濡쒖뺄 ?щ’ 紐⑤뱶
+            // ?棺??짆?쏆춾?????癲ル슢?꾤땟???
             SetupSlot(fuelIn,  denyPut: false, denyInteraction: false);
-            SetupSlot(fuelOut, denyPut: true,  denyInteraction: false); // 異쒕젰: ?ｊ린留?湲덉?, 鍮쇨린???덉슜
+            SetupSlot(fuelOut, denyPut: true,  denyInteraction: false); // ??⑥レ툓?? ?壤굿??몃탿癲???ヂ???, ????곷뎨?????源낅츛
             SetupSlot(ingIn,   denyPut: false, denyInteraction: false);
-            SetupSlot(ingOut,  denyPut: true,  denyInteraction: false); // 異쒕젰: ?ｊ린留?湲덉?, 鍮쇨린???덉슜
+            SetupSlot(ingOut,  denyPut: true,  denyInteraction: false); // ??⑥レ툓?? ?壤굿??몃탿癲???ヂ???, ????곷뎨?????源낅츛
     
-            // 理쒖큹 UI 諛섏쁺
+            // 癲ル슔?됭짆??UI ?袁⑸즵???
             PullFromCampfire();
             SnapshotAll();
             RefreshGauges();
@@ -63,31 +65,31 @@ namespace Game.Player
         {
             if (_campfire == null) return;
     
-            // 1) ?좎?媛 異쒕젰 ?щ’?먯꽌 爰쇰깉?붿? 癒쇱? 媛먯??댁꽌 Campfire??諛섏쁺
+            // 1) ?????좊읈? ??⑥レ툓????????????⑥ル땻濚??? ?沃섅굥?? ??좊즴?????⑤똾留?Campfire???袁⑸즵???
             if (OutputsChanged())
             {
                 PushOutputsToCampfire();
                 SnapshotOutputs();
             }
     
-            // 2) ?낅젰 蹂寃쎌씠 ?덉쓣 ?뚮쭔 Campfire??諛섏쁺
+            // 2) ????곸죷 ?怨뚮뼚??濡ろ뜑??????源낃도 ?????Campfire???袁⑸즵???
             if (InputsChanged())
             {
                 PushInputsToCampfire();
                 SnapshotInputs();
             }
     
-            // 3) ?쒖떆 ?숆린??
+            // 3) ??筌?六?????뗫탿??
             PullFromCampfire();
-            SnapshotAll(); // Pull ?댄썑 ?ㅻ깄?룹쓣 ?ㅼ떆 留욎떠????뼱?곌린/源쒕묀??諛⑹?)
+            SnapshotAll(); // Pull ??熬곣뫖?????怨좊룴??猷?獄????怨뺣빰 癲ル슢???????????ㅼ뒧??嚥싲갭흮獒뺣끇?????袁⑸젻泳?)
     
-            // 4) 寃뚯씠吏
+            // 4) ?濡ろ뜐???ル쵐??
             RefreshGauges();
         }
     
         bool InputsChanged()
         {
-            // ?곕즺 ?낅젰
+            // ???ㅻ깹??????곸죷
             var f = fuelIn != null ? fuelIn.Item : null;
             int fc = f != null ? f.Count : 0;
             int fd = f != null ? f.Durability : 0;
@@ -95,7 +97,7 @@ namespace Game.Player
             if (ModuleSlotSyncUtility.HasChanged(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, f))
                 return true;
     
-            // ?щ즺 ?낅젰
+            // ??嶺?????곸죷
             var g = ingIn != null ? ingIn.Item : null;
             int gc = g != null ? g.Count : 0;
             int gd = g != null ? g.Durability : 0;
@@ -108,7 +110,7 @@ namespace Game.Player
     
         bool OutputsChanged()
         {
-            // ?곕즺 異쒕젰
+            // ???ㅻ깹????⑥レ툓??
             var f = fuelOut != null ? fuelOut.Item : null;
             int fc = f != null ? f.Count : 0;
             int fd = f != null ? f.Durability : 0;
@@ -116,7 +118,7 @@ namespace Game.Player
             if (ModuleSlotSyncUtility.HasChanged(_prevFuelOut, _prevFuelOutCount, _prevFuelOutDur, f))
                 return true;
     
-            // ?щ즺 異쒕젰
+            // ??嶺???⑥レ툓??
             var g = ingOut != null ? ingOut.Item : null;
             int gc = g != null ? g.Count : 0;
             int gd = g != null ? g.Durability : 0;
@@ -158,8 +160,8 @@ namespace Game.Player
     
         void PushOutputsToCampfire()
         {
-            // 異쒕젰? Campfire媛 ?앹꽦/愿由ы븯吏留?
-            // ?좎?媛 "爰쇰궡??UI ?щ’??鍮꾩썙吏? 寃곌낵??Campfire?먮룄 諛섏쁺?섏뼱????
+            // ??⑥レ툓??? Campfire??좊읈? ??獄쏅똻?????굿?域밸Ŧ肉ョ뵳?異?堉온癲?
+            // ?????좊읈? "??⑥ル땻雅??UI ????????????? ?濡ろ뜏????Campfire???筌??袁⑸즵????筌뚯슦苑????
             if (_campfire == null) return;
     
             if (fuelOut != null)

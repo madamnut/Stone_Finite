@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Mob ?�리???��??�트�?+ ?�폰 ?�퍼.
-/// mobId ??Mob ?�리??매핑.
-/// ?�체 corpseId ??mobId + "_Corpse" 규칙?�로 ?�동 ?�성.
+/// Mob ?????쇈궘?觀愿???????????깅렰??+ ?????怨뺤쭕 ????
+/// mobId ??Mob ?????쇈궘?觀愿???轅붽틓?????紐??
+/// ??癲???corpseId ??mobId + "_Corpse" ????????????????癲????袁⑸즴???
 /// </summary>
 using Game.World;
 public class MobLibrary : MonoBehaviour
@@ -12,10 +12,10 @@ public class MobLibrary : MonoBehaviour
     [System.Serializable]
     public class MobEntry
     {
-        [Tooltip("?�라?? Cow, Bird_White 같�? 고유 ID (?�이�?코드?�서 ?�용)")]
+        [Tooltip("Unique mob ID, for example Cow or Bird_White")]
         public string mobId;
 
-        [Tooltip("?�제 Mob ?�리??(Mob : Entity ?�속)")]
+        [Tooltip("Actual mob prefab. Mob must inherit from Entity.")]
         public Mob prefab;
     }
 
@@ -42,7 +42,7 @@ public class MobLibrary : MonoBehaviour
 
             if (_byId.ContainsKey(e.mobId))
             {
-                Debug.LogWarning($"[MobLibrary] 중복 mobId='{e.mobId}' 무시??");
+                Debug.LogWarning($"[MobLibrary] Duplicate mobId='{e.mobId}' ignored.");
                 continue;
             }
 
@@ -50,7 +50,7 @@ public class MobLibrary : MonoBehaviour
         }
     }
 
-    /// <summary>mobId�??�리??반환</summary>
+    /// <summary>mobId???????쇈궘?觀愿????ш끽維뽳쭩???/summary>
     public Mob GetPrefab(string mobId)
     {
         if (string.IsNullOrEmpty(mobId) || _byId == null)
@@ -60,8 +60,8 @@ public class MobLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// mobId 기�? ?�폰 + corpseId ?�동 부??
-    /// corpseId 규칙: mobId + "_Corpse"
+    /// mobId ??????? ?????怨뺤쭕 + corpseId ???癲?????뉖???
+    /// corpseId ?????? mobId + "_Corpse"
     /// </summary>
     public Mob SpawnMob(string mobId, Vector3 position, EntityManager entityManager, Transform parentOverride = null)
     {
@@ -70,7 +70,7 @@ public class MobLibrary : MonoBehaviour
 
         if (_byId == null || !_byId.TryGetValue(mobId, out var entry) || entry.prefab == null)
         {
-            Debug.LogWarning($"[MobLibrary] mobId='{mobId}' ???�당?�는 ?�리?�을 찾�? 못했?�니??");
+            Debug.LogWarning($"[MobLibrary] Could not find prefab for mobId='{mobId}'.");
             return null;
         }
 
@@ -80,15 +80,15 @@ public class MobLibrary : MonoBehaviour
 
         if (inst != null)
         {
-            // MobId 보정
+            // MobId ???ㅼ뒧????
             if (string.IsNullOrEmpty(inst.MobId))
                 inst.MobId = mobId;
 
-            // ?�동 ?�체 ID 지??
+            // ???癲???癲???ID ?轅붽틓?????
             string corpseId = mobId + "_Corpse";
             inst.SetCorpseId(corpseId);
 
-            // ?�티???�록
+            // ??????????μ떜媛?걫??곸돥??
             if (entityManager != null)
                 entityManager.Register(inst);
         }

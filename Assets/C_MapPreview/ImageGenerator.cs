@@ -1,5 +1,5 @@
 // ImageGenerator.cs
-// ??변�? Lava(FLUID_LAVA)가 AIR???�을 ??빨간?�으�??�시
+// ???곌떠??? Lava(FLUID_LAVA)?띠럾? AIR?????깅굵 ????紐욤??源녿さ????戮?뻣
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +9,7 @@ public class ImageGenerator : MonoBehaviour
 {
     [Header("Generator")]
     public WorldGenSettings settings;
-    [Tooltip("?�리뷰에 ?�용???�드")]
+    [Tooltip("Seed used for the preview world")]
     public int seed = 0;
 
     [Header("Target")]
@@ -18,14 +18,15 @@ public class ImageGenerator : MonoBehaviour
     public bool flipY = true;
 
     [Header("Unknown ID Color")]
-    public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 미�????�는 ?�외
+    public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 亦껋꼶梨??????裕????깅뇶
 
-    [Header("Name ??Color (?�스?�터?�서 직접 지??")]
+    [Header("Name to Color Mapping")]
+
     public Color air  = new Color(0, 0, 0, 0);
     public Color rock = new Color(0.35f, 0.35f, 0.35f, 1);
     public Color dirt = new Color(0.47f, 0.28f, 0.19f, 1);
 
-    // Grass(3~9) ?�?�색
+    // Grass(3~9) ????戮?돰
     public Color grass = new Color(0.20f, 0.71f, 0.27f, 1);
 
     public Color clay = new Color(0.62f, 0.40f, 0.33f, 1);
@@ -44,7 +45,7 @@ public class ImageGenerator : MonoBehaviour
     // ??Desert additions
     public Color dead_Bush = new Color(0.45f, 0.36f, 0.22f, 1);
 
-    // Agave(6?�?? ?�?�색(?�리뷰에?????�으�?
+    // Agave(6???? ????戮?돰(?熬곣뱿遊???ｈ굢??????源녿さ??
     public Color agave  = new Color(0.22f, 0.58f, 0.24f, 1);
     public Color cactus = new Color(0.15f, 0.55f, 0.18f, 1);
 
@@ -82,7 +83,7 @@ public class ImageGenerator : MonoBehaviour
 
     Texture2D tex;
 
-    // ?�?� Solid IDs (ATT_Solid.json 기�?) ?�?�
+    // ???? Solid IDs (ATT_Solid.json ?リ옇??) ????
     const ushort ID_AIR  = 0;
     const ushort ID_ROCK = 1;
     const ushort ID_DIRT = 2;
@@ -121,8 +122,8 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_AGAVE_5 = 2012;
     const ushort ID_CACTUS  = 2013;
 
-    // ??Snow additions (ATT_Solid.json 기�?)
-    // NOTE: Frozen Dirt ?�제 ID�?맞춰????(?�기??46 가??
+    // ??Snow additions (ATT_Solid.json ?リ옇??)
+    // NOTE: Frozen Dirt ???깆젷 ID??嶺뚮씮??????(?????46 ?띠럾???
     const ushort ID_FROZEN_DIRT = 46;
 
     // Frozen Grass 37~43
@@ -160,7 +161,7 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_GRANITE     = 4000;
     const ushort ID_AMPHIBOLITE = 4001;
 
-    // ?�?� Fluid IDs (ATT_Fluid.json 기�?) ?�?�
+    // ???? Fluid IDs (ATT_Fluid.json ?リ옇??) ????
     const ushort FLUID_NONE  = 0;
     const ushort FLUID_WATER = 1;
     const ushort FLUID_LAVA  = 2;
@@ -236,7 +237,7 @@ public class ImageGenerator : MonoBehaviour
 
     Color ResolveColor(ushort solidId, ushort fluidId)
     {
-        // ??fluid ?�선 처리 (AIR ?�에�?보이?�록)
+        // ??fluid ??⑥ろ맖 嶺뚳퐣瑗??(AIR ?熬곣뫖?좂춯??곌랜???熬곣뫁夷?
         if (solidId == ID_AIR)
         {
             if (fluidId == FLUID_LAVA)  return lava;

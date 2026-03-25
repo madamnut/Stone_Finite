@@ -1,20 +1,20 @@
 using System;
 
 
-namespace Game.World
+namespace Game.Core
 {
     [Serializable]
     public sealed class WorldData
     {
         public const byte MaxFluid = 128;
     
-        public ushort[,]     bg;               // ?�경
-        public SolidCell[,]  solid;            // ?�경: id + meta
-        public UtilityCell[,] utility;         // ?�틸리티: id + meta
-        public FluidCell[,]  fluid;            // ?�체: id + amount
+        public ushort[,]     bg;               // ?꾧꼍
+        public SolidCell[,]  solid;            // ?꾧꼍: id + meta
+        public UtilityCell[,] utility;         // ?좏떥由ы떚: id + meta
+        public FluidCell[,]  fluid;            // ?좎껜: id + amount
     
-        public ushort[,] naturalLight;         // ?�연�?
-        public ushort[,] artificialLight;      // ?�공�?
+        public ushort[,] naturalLight;         // ?먯뿰愿?
+        public ushort[,] artificialLight;      // ?멸났愿?
     
         public WorldData(int width, int height)
         {
@@ -139,22 +139,22 @@ namespace Game.World
     [Serializable]
     public struct SolidCell
     {
-        public ushort id;    // 본체 ID
+        public ushort id;    // 蹂몄껜 ID
         public ushort meta;  // 2 bytes meta
     }
     
     [Serializable]
     public struct UtilityCell
     {
-        public ushort id;    // ?�틸리티 ID
+        public ushort id;    // ?좏떥由ы떚 ID
         public ushort meta;  // 2 bytes meta
     }
     
     [Serializable]
     public struct FluidCell
     {
-        public ushort id;      // ?�체 ID (?�으�?0)
-        public byte   amount;  // 0 = ?�음, 1~128 = ?�체??
+        public ushort id;      // ?좎껜 ID (?놁쑝硫?0)
+        public byte   amount;  // 0 = ?놁쓬, 1~128 = ?좎껜??
     }
     #endregion
 }

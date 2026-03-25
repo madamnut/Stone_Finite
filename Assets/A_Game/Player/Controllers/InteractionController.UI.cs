@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 
 using Game.Data;
 using Game.World;
+using Game.UI;
+using Game.Core;
 
 namespace Game.Player
 {

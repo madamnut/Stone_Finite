@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 
-using Game.World;
-using Game.Player;
+using Game.Core;
 namespace Game.Data
 {
     public partial class RecipeLibrary

@@ -2,7 +2,12 @@
   "name": "Game.Runtime",
   "rootNamespace": "",
   "references": [
+    "Game.AudioSupport",
+    "Game.Core",
+    "Game.Data",
     "Game.Lobby",
+    "Game.World",
+    "Game.VfxSupport",
     "Unity.TextMeshPro"
   ],
   "includePlatforms": [],

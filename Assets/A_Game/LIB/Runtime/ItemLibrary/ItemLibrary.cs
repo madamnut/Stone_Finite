@@ -8,15 +8,15 @@ namespace Game.Data
 {
     public partial class ItemLibrary : MonoBehaviour
     {
-        [Header("Sprite Atlas (?�일 ?�프?�이?�용)")]
+        [Header("Sprite Atlas (single-sprite lookup)")]
         public SpriteAtlas itemAtlas;
     
         public List<TextAsset> jsonFiles = new List<TextAsset>();
     
-        // key: itemId, value: ?�의 ?�본(JObject)
+        // key: itemId, value: ?筌먦끉踰????沅?JObject)
         private Dictionary<string, JObject> allItemDict;
     
-        // ?�프?�이??캐시
+        // ???덈뒆??源녿턄??嶺?흮??
         private readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(128);
     
         public JObject GetItemJson(string itemId)
@@ -24,7 +24,7 @@ namespace Game.Data
             if (allItemDict.TryGetValue(itemId, out var obj))
                 return obj;
     
-            Debug.LogWarning($"?�이???�이???�음: {itemId}");
+            Debug.LogWarning($"[ItemLibrary] Item definition not found: {itemId}");
             return null;
         }
     

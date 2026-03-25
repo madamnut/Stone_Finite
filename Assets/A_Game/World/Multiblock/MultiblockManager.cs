@@ -1,10 +1,10 @@
-// MultiblockManager.cs (?꾩껜 援먯껜蹂?
+// MultiblockManager.cs (????썹땟????????怨뺤툍??
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 using Game.Data;
-using Game.Player;
+using Game.Support;
 
 namespace Game.World
 {
@@ -18,18 +18,18 @@ namespace Game.World
         [SerializeField] ItemLibrary itemLibrary;
         public ItemLibrary ItemLibrary => itemLibrary;
     
-        [Header("UI Bridge")]
-        public InteractionController interaction;
-    
+        [Header("Module Requests")]
+        public Transform playerTransform;
+        public Action<string, Multiblock> moduleOpenHandler;
         [Header("Modules (Prefabs)")]
         public GameObject primalCraftModule;
-        public GameObject forgeCraftModule; // ??異붽?
+        public GameObject forgeCraftModule; // ?????ㅻ쿋??
         public GameObject campfireModule;
         public GameObject woodenCrateModule;
         public GameObject clayKilnModule;
         public GameObject brickFurnaceModule;
-        public GameObject toolbenchModule;    // ??異붽?
-        public GameObject cokeOvenModule;     // ??異붽?
+        public GameObject toolbenchModule;    // ?????ㅻ쿋??
+        public GameObject cokeOvenModule;     // ?????ㅻ쿋??
     
         [Header("VFX")]
         public VfxManager vfx;

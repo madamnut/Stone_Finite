@@ -5,8 +5,10 @@ using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 
 using Game.Data;
+using Game.Player;
+using Game.Core;
 
-namespace Game.Player
+namespace Game.UI
 {
     public class CrucibleView : MonoBehaviour
     {
@@ -52,7 +54,7 @@ namespace Game.Player
                 return;
             }
     
-            // ???듭떖: Details["layers"]瑜?諛섎뱶??List<object>濡??듭씪?댁꽌 諛뺤븘?붾떎
+            // ??????? Details["layers"]???袁⑸즵?쀫쓧???List<object>?????????⑤똾留??袁⑸즴甕겸넃???釉먮폇??
             _layersListRef = EnsureLayersListRef(_crucibleItem);
     
             var layers = NormalizeLayers(_layersListRef); // bottom->top
@@ -112,7 +114,7 @@ namespace Game.Player
             if (parentW <= 0.01f) parentW = ((RectTransform)transform).rect.width;
             if (parentH <= 0.01f) parentH = ((RectTransform)transform).rect.height;
     
-            // layers bottom->top, UI??top->bottom ?앹꽦
+            // layers bottom->top, UI??top->bottom ??獄쏅똻??
             for (int i = layers.Count - 1; i >= 0; i--)
             {
                 var (itemId, amount) = layers[i];
@@ -164,14 +166,14 @@ namespace Game.Player
             _prevSig = sig;
         }
     
-        // ???ш린 怨좎튇 遺遺? IList ?꾨? 諛쏆븘??List<object>濡??듭씪??SetDetail濡??ㅼ떆 諛뺢린
+        // ????????關履????딅텑??? IList ??? ?袁⑸즵?룸돁???List<object>????????SetDetail?????怨뺣빰 ?袁⑸즴甕곗떓逾?
         List<object> EnsureLayersListRef(ItemData c)
         {
             object lo = null;
             if (c.Details != null)
                 c.Details.TryGetValue("layers", out lo);
     
-            // ?놁쑝硫??앹꽦
+            // ???⑤챶?뺧┼???獄쏅똻??
             if (lo == null)
             {
                 var created = new List<object>();
@@ -179,7 +181,7 @@ namespace Game.Player
                 return created;
             }
     
-            // ?대? List<object>
+            // ???? List<object>
             if (lo is List<object> listObj)
                 return listObj;
     
@@ -187,12 +189,12 @@ namespace Game.Player
             if (lo is JArray ja)
             {
                 var converted = new List<object>(ja.Count);
-                for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]); // JObject ?좎?
+                for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]); // JObject ???
                 c.SetDetail("layers", converted);
                 return converted;
             }
     
-            // ???遺遺??ш린 嫄몃┝: List<Dictionary<...>> / List<JObject> / 湲고? IList
+            // ??????딅텑???????癲꾧퀗?э㎖?? List<Dictionary<...>> / List<JObject> / ??れ삀?? IList
             if (lo is IList ilist && lo is not string)
             {
                 var converted = new List<object>(ilist.Count);
@@ -203,7 +205,7 @@ namespace Game.Player
                 return converted;
             }
     
-            // ?댁긽 ??낆씠硫?援먯껜
+            // ???⑤?彛??????怨룻꼧癲???????
             var fallback = new List<object>();
             c.SetDetail("layers", fallback);
             return fallback;

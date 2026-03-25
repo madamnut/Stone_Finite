@@ -18,7 +18,7 @@ namespace Game.Data
         {
             if (textAsset == null)
             {
-                Debug.LogWarning("? ë‹¹?˜ì? ?Šì? JSON ?Œì¼???ˆìŠµ?ˆë‹¤.");
+                Debug.LogWarning("A null JSON file entry was found in ItemLibrary.");
                 return;
             }
     
@@ -29,7 +29,7 @@ namespace Game.Data
             }
             catch (Exception ex)
             {
-                Debug.LogError($"JSON ?Œì‹± ?¤ë¥˜ ({textAsset.name}): {ex.Message}");
+                Debug.LogError($"Failed to parse item JSON ({textAsset.name}): {ex.Message}");
                 return;
             }
     

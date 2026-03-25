@@ -1,5 +1,5 @@
-// CellLibrary.cs (?�체 교체�?
-// ??Solid/Utility??type 지??추�? 버전
+// CellLibrary.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪?
+// ??Solid/Utility??type 筌왖???곕떽? 甕곌쑴??
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,7 +7,7 @@ using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
 
 
-using Game.World;
+using Game.Core;
 namespace Game.Data
 {
     [DefaultExecutionOrder(-10000)]

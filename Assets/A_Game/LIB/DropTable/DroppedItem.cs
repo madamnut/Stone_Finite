@@ -5,149 +5,153 @@ using Newtonsoft.Json;
 
 using Game.Data;
 using Game.World;
-using Game.Player;
-public class DroppedItem : Entity
+using Game.Core;
+
+namespace Game.World
 {
-    [Header("Rendering")]
-    public SpriteRenderer spriteRenderer;
-
-    [Header("References")]
-    [SerializeField] private ItemLibrary itemLibrary; // spriteName -> Sprite 蹂듭썝
-
-    public ItemData ItemData { get; private set; }
-
-    public override EntityKind Kind => EntityKind.DroppedItem;
-
-    public override void SetSimActive(bool active)
+    public class DroppedItem : Entity
     {
-        base.SetSimActive(active);
-    }
+        [Header("Rendering")]
+        public SpriteRenderer spriteRenderer;
 
-    // ItemData "?꾩껜" ?ㅻ깄??Icon? ?쒖쇅: spriteName?쇰줈 蹂듭썝)
-    [Serializable]
-    private class DroppedItemPayload
-    {
-        public string itemId;
-        public string name;
-        public string spriteName;
-        public string itemType;
-        public int maxStack;
+        [Header("References")]
+        [SerializeField] private ItemLibrary itemLibrary; // spriteName -> Sprite ?怨뚮옖甕??
 
-        public int maxDurability;
-        public int durability;
-        public int count;
+        public ItemData ItemData { get; private set; }
 
-        public List<string> tags;
-        public Dictionary<string, object> details;
+        public override EntityKind Kind => EntityKind.DroppedItem;
 
-        public Dictionary<string, Dictionary<string, object>> breakActions;
-        public Dictionary<string, Dictionary<string, object>> toolActions;
-        public Dictionary<string, Dictionary<string, object>> weaponActions;
-    }
-
-    public override EntitySaveData ToSaveData()
-    {
-        DroppedItemPayload payload = null;
-
-        if (ItemData != null)
+        public override void SetSimActive(bool active)
         {
-            payload = new DroppedItemPayload
+            base.SetSimActive(active);
+        }
+
+        // ItemData "??ш끽維?? ???怨좊룴??Icon?? ??筌믨퀡?? spriteName???⑥???怨뚮옖甕??
+        [Serializable]
+        private class DroppedItemPayload
+        {
+            public string itemId;
+            public string name;
+            public string spriteName;
+            public string itemType;
+            public int maxStack;
+
+            public int maxDurability;
+            public int durability;
+            public int count;
+
+            public List<string> tags;
+            public Dictionary<string, object> details;
+
+            public Dictionary<string, Dictionary<string, object>> breakActions;
+            public Dictionary<string, Dictionary<string, object>> toolActions;
+            public Dictionary<string, Dictionary<string, object>> weaponActions;
+        }
+
+        public override EntitySaveData ToSaveData()
+        {
+            DroppedItemPayload payload = null;
+
+            if (ItemData != null)
             {
-                itemId        = ItemData.ItemId,
-                name          = ItemData.Name,
-                spriteName    = ItemData.SpriteName,
-                itemType      = ItemData.ItemType,
-                maxStack      = ItemData.MaxStack,
+                payload = new DroppedItemPayload
+                {
+                    itemId        = ItemData.ItemId,
+                    name          = ItemData.Name,
+                    spriteName    = ItemData.SpriteName,
+                    itemType      = ItemData.ItemType,
+                    maxStack      = ItemData.MaxStack,
 
-                maxDurability = ItemData.MaxDurability,
-                durability    = ItemData.Durability,
-                count         = ItemData.Count,
+                    maxDurability = ItemData.MaxDurability,
+                    durability    = ItemData.Durability,
+                    count         = ItemData.Count,
 
-                tags          = ItemData.Tags,
-                details       = ItemData.Details,
+                    tags          = ItemData.Tags,
+                    details       = ItemData.Details,
 
-                breakActions  = ItemData.BreakActions,
-                toolActions   = ItemData.ToolActions,
-                weaponActions = ItemData.WeaponActions
+                    breakActions  = ItemData.BreakActions,
+                    toolActions   = ItemData.ToolActions,
+                    weaponActions = ItemData.WeaponActions
+                };
+            }
+
+            return new EntitySaveData
+            {
+                Kind        = EntityKind.DroppedItem,
+                Position    = transform.position,
+                PayloadJson = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty
             };
         }
 
-        return new EntitySaveData
+        public override void FromSaveData(EntitySaveData data)
         {
-            Kind        = EntityKind.DroppedItem,
-            Position    = transform.position,
-            PayloadJson = (payload != null) ? JsonConvert.SerializeObject(payload) : string.Empty
-        };
-    }
+            transform.position = data.Position;
 
-    public override void FromSaveData(EntitySaveData data)
-    {
-        transform.position = data.Position;
+            if (string.IsNullOrEmpty(data.PayloadJson))
+            {
+                Initialize(null);
+                return;
+            }
 
-        if (string.IsNullOrEmpty(data.PayloadJson))
-        {
-            Initialize(null);
-            return;
+            DroppedItemPayload payload;
+            try
+            {
+                payload = JsonConvert.DeserializeObject<DroppedItemPayload>(data.PayloadJson);
+            }
+            catch
+            {
+                Initialize(null);
+                return;
+            }
+
+            Sprite icon = null;
+            if (itemLibrary != null && !string.IsNullOrEmpty(payload.spriteName))
+                icon = itemLibrary.GetSprite(payload.spriteName);
+
+            var rebuilt = new ItemData(
+                itemId:        payload.itemId,
+                name:          payload.name,
+                spriteName:    payload.spriteName,
+                itemType:      payload.itemType,
+                maxStack:      payload.maxStack,
+                maxDurability: payload.maxDurability,
+                durability:    payload.durability,
+                toolActions:   payload.toolActions,
+                weaponActions: payload.weaponActions,
+                breakActions:  payload.breakActions,
+                tags:          payload.tags,
+                details:       payload.details,
+                icon:          icon,
+                count:         payload.count
+            );
+
+            Initialize(rebuilt);
         }
 
-        DroppedItemPayload payload;
-        try
+        // ??筌먦끇????ш끽維쀩??????뚰룙/?棺??짆?삠궘??????源놁졆 ItemData ??낆뒩???
+        public void Initialize(ItemData data)
         {
-            payload = JsonConvert.DeserializeObject<DroppedItemPayload>(data.PayloadJson);
+            ItemData = data;
+
+            if (spriteRenderer == null)
+                return;
+
+            if (data == null)
+            {
+                spriteRenderer.sprite = null;
+                return;
+            }
+
+            if (data.Icon != null)
+            {
+                spriteRenderer.sprite = data.Icon;
+                return;
+            }
+
+            if (itemLibrary != null && !string.IsNullOrEmpty(data.SpriteName))
+                spriteRenderer.sprite = itemLibrary.GetSprite(data.SpriteName);
+            else
+                spriteRenderer.sprite = null;
         }
-        catch
-        {
-            Initialize(null);
-            return;
-        }
-
-        Sprite icon = null;
-        if (itemLibrary != null && !string.IsNullOrEmpty(payload.spriteName))
-            icon = itemLibrary.GetSprite(payload.spriteName);
-
-        var rebuilt = new ItemData(
-            itemId:        payload.itemId,
-            name:          payload.name,
-            spriteName:    payload.spriteName,
-            itemType:      payload.itemType,
-            maxStack:      payload.maxStack,
-            maxDurability: payload.maxDurability,
-            durability:    payload.durability,
-            toolActions:   payload.toolActions,
-            weaponActions: payload.weaponActions,
-            breakActions:  payload.breakActions,
-            tags:          payload.tags,
-            details:       payload.details,
-            icon:          icon,
-            count:         payload.count
-        );
-
-        Initialize(rebuilt);
-    }
-
-    // ?쒕엻 ?꾩씠???ㅽ룿/濡쒕뱶 ???ㅼ젣 ItemData 二쇱엯
-    public void Initialize(ItemData data)
-    {
-        ItemData = data;
-
-        if (spriteRenderer == null)
-            return;
-
-        if (data == null)
-        {
-            spriteRenderer.sprite = null;
-            return;
-        }
-
-        if (data.Icon != null)
-        {
-            spriteRenderer.sprite = data.Icon;
-            return;
-        }
-
-        if (itemLibrary != null && !string.IsNullOrEmpty(data.SpriteName))
-            spriteRenderer.sprite = itemLibrary.GetSprite(data.SpriteName);
-        else
-            spriteRenderer.sprite = null;
     }
 }

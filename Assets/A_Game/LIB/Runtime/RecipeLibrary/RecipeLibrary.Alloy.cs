@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
-using Game.Player;
+using Game.Core;
 
 
 namespace Game.Data

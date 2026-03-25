@@ -2,6 +2,7 @@
 using UnityEngine;
 
 using Game.World;
+using Game.Support;
 
 namespace Game.Player
 {
@@ -100,7 +101,7 @@ namespace Game.Player
     
             Vector3 curP = player.position;
     
-            // X : dp 湲곕컲
+            // X : dp 疫꿸퀡而?
             Vector3 dp = curP - _prevP;
             if (!followX) dp.x = 0f;
             dp.y = 0f;
@@ -110,7 +111,7 @@ namespace Game.Player
             if (l1A) { Move3(l1A, l1B, l1C, dp, kx1); Wrap3(ref l1A, ref l1B, ref l1C, w1, curP.x); }
             if (l2A) { Move3(l2A, l2B, l2C, dp, kx2); Wrap3(ref l2A, ref l2B, ref l2C, w2, curP.x); }
     
-            // Y : 湲곗????鍮?李⑥씠 利됱떆 ?곸슜
+            // Y : 疫꿸퀣???????筌△뫁??筌앸맩???怨몄뒠
             if (followY)
             {
                 float dy = curP.y - yBaseline;
@@ -153,7 +154,7 @@ namespace Game.Player
             if (sun)  sun.localPosition  = Vector3.Lerp(sun.localPosition,  sunTarget,  k);
             if (moon) moon.localPosition = Vector3.Lerp(moon.localPosition, moonTarget, k);
     
-            // ?꾩튂 湲곕컲 媛볥젅?대줈 蹂듦?: BackGround?먯꽌 GodRay???섍만 寃??놁쓬
+            // ?袁⑺뒄 疫꿸퀡而?揶쏅낄???以?癰귣벀?: BackGround?癒?퐣 GodRay????띾쭔 野???곸벉
         }
     
         void UpdateBrightness()

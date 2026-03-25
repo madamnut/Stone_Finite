@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 
 using Game.Data;
 using Game.World;
+using Game.Core;
 
 namespace Game.Player
 {
@@ -697,7 +698,7 @@ namespace Game.Player
             var mb = multiblockManager.GetAtCell(new Vector2Int(cx, cy));
             if (mb != null)
             {
-                mb.OnInteract(player, new Vector2Int(cx, cy));
+                mb.OnInteract(new Vector2Int(cx, cy));
                 return true;
             }
     

@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.U2D;
+using Game.Player;
+using Game.UI;
 
-namespace Game.Player
+namespace Game.UI
 {
     
     public class Heart : MonoBehaviour

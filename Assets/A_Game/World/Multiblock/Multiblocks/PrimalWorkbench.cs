@@ -1,13 +1,12 @@
 // PrimalWorkbench.cs
 using UnityEngine;
-using Game.Player;
 
 
 namespace Game.World
 {
     public class PrimalWorkbench : Multiblock
     {
-        public override void OnInteract(Game.Player.Player player, Vector2Int hitCell)
+        public override void OnInteract(Vector2Int hitCell)
         {
             // ?逾?癰궰野? owner(this) ?袁⑤뼎
             Manager.OpenModule("PrimalCraft", this);

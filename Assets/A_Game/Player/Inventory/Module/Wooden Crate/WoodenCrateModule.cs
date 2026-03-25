@@ -2,8 +2,10 @@
 using UnityEngine;
 
 using Game.World;
+using Game.Player;
+using Game.Core;
 
-namespace Game.Player
+namespace Game.UI
 {
     public class WoodenCrateModule : MonoBehaviour
     {
@@ -40,7 +42,7 @@ namespace Game.Player
                 var s = t.GetComponent<ItemSlot>();
                 if (s == null) { idx++; continue; }
     
-                s.index = idx;          // ???몃뜳??怨좎젙 (row*5 + col)
+                s.index = idx;          // ???嶺뚮ㅎ??????關履??(row*5 + col)
                 s.useLocalStorage = false;
                 s.denyUserPut = false;
                 s.denyUserInteraction = false;

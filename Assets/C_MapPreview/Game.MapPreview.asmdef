@@ -1,0 +1,17 @@
+{
+  "name": "Game.MapPreview",
+  "rootNamespace": "",
+  "references": [
+    "Game.Runtime",
+    "Game.World"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

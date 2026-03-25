@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using Game.Data;
-using Game.Player;
+using Game.Core;
 
 namespace Game.World
 {
@@ -17,7 +17,7 @@ namespace Game.World
                 worldTick,
                 tickCurr,
                 tickNext,
-                playerComp,
+                _playerInventory,
                 player,
                 entityManager,
                 multiblockManager
@@ -82,7 +82,9 @@ namespace Game.World
             var pos = player.position;
             player.position = new Vector3(_loadedPlayerPos.x, _loadedPlayerPos.y, pos.z);
     
-            var slots = playerComp.Inventory.items;
+            if (_playerInventory == null) return;
+
+            var slots = _playerInventory.items;
             int n = Mathf.Min(slots.Count, _loadedInventory.Count);
     
             for (int i = 0; i < n; i++)
@@ -94,7 +96,7 @@ namespace Game.World
             for (int i = n; i < slots.Count; i++)
                 slots[i] = null;
     
-            playerComp.Inventory.NotifyChanged();
+            _playerInventory.NotifyChanged();
         }
     }
 }

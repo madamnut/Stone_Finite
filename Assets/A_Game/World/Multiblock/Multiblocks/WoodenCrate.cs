@@ -1,11 +1,11 @@
-// WoodenCrate.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪?
+// WoodenCrate.cs (?熬곣뫕????흮?우뮂??
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 
 using Game.Data;
-using Game.Player;
+using Game.Core;
 
 namespace Game.World
 {
@@ -44,9 +44,9 @@ namespace Game.World
             _droppedOnDestroy = false;
         }
     
-        public override void OnInteract(Game.Player.Player player, Vector2Int hitCell)
+        public override void OnInteract(Vector2Int hitCell)
         {
-            // ?遺욧퍕??鍮? 筌뤴뫀諭?id = "Wooden Crate"
+            // ??븐슙????? 嶺뚮ㅄ維獄?id = "Wooden Crate"
             Manager.OpenModule("Wooden Crate", this);
         }
     
@@ -102,7 +102,7 @@ namespace Game.World
             _inventory.NotifyChanged();
         }
     
-        // ItemData "?袁⑷퍥" ??산퉬??Icon?? ??뽰뇚: spriteName??곗쨮 癰귣벊??
+        // ItemData "?熬곣뫕?? ???고돩??Icon?? ??戮곕뇶: spriteName??怨쀬Ŧ ?곌랜踰??
         [Serializable]
         class ItemPayload
         {
@@ -127,7 +127,7 @@ namespace Game.World
         [Serializable]
         class WoodenCratePayload
         {
-            public List<ItemPayload> items; // size = 25, null ??됱뒠
+            public List<ItemPayload> items; // size = 25, null ???깅뮔
         }
     
         public override SaveData ToSaveData()
@@ -277,7 +277,7 @@ namespace Game.World
                 );
             }
     
-            // ??롢돢筌왖 ?????????怨쀬뵠?怨? ??筌욁룂? 野껋럩???? null ?醫?
+            // ??濡?룫嶺뚯솘? ??????????⑥щ턄??? ??嶺뚯쉧猷? ?롪퍔????? null ???
             _inventory.NotifyChanged();
         }
     }

@@ -1,5 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using Game.UI;
+using Game.Core;
+using Game.Support;
+using Game.World;
 
 namespace Game.Player
 {

@@ -1,12 +1,15 @@
 using UnityEngine;
+using Game.Player;
+using Game.UI;
+using Game.Core;
 
-namespace Game.Player
+namespace Game.UI
 {
     
     public class Hotbar : MonoBehaviour
     {
-        public Player player;
-        public Transform hotbarRoot; // ?먯떇 "0"~"9"
+        public Game.Player.Player player;
+        public Transform hotbarRoot; // ???癲?"0"~"9"
     
         private ItemSlot[] _slots = new ItemSlot[10];
         private InventoryData _inv;
@@ -23,7 +26,7 @@ namespace Game.Player
             _inv = player != null ? player.Inventory : null;
             if (_inv != null) _inv.OnChanged += Refresh;
             Refresh();
-            SetScope(0); // 珥덇린 ?좏깮 0
+            SetScope(0); // ?逆???⑸걦??????節떷??0
         }
     
         void OnDestroy()
@@ -35,10 +38,10 @@ namespace Game.Player
         {
             for (int i = 0; i < 10; i++)
             {
-                var it = (_inv != null && i < _inv.items.Count) ? _inv.items[i] : null; // Row4 誘몃윭(0~9)
+                var it = (_inv != null && i < _inv.items.Count) ? _inv.items[i] : null; // Row4 ???遺븍き?寃밸윿??0~9)
                 _slots[i].Set(it);
             }
-            // ?꾩씠??媛깆떊 ???뚮몢由??ъ쟻??
+            // ?????밸븶??뫢?????ル봿?????????????????
             for (int i = 0; i < 10; i++) _slots[i].SetScope(i == _scope);
         }
     

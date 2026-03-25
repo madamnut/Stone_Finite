@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 /// - corpseId + ?꾩튂留????濡쒕뱶
 /// </summary>
 using Game.World;
-using Game.Player;
 public class Corpse : Entity
 {
     [Header("Corpse Info")]

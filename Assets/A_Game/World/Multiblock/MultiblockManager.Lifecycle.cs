@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Game.Player;
 
 
 namespace Game.World
@@ -12,19 +11,19 @@ namespace Game.World
         {
             RegisterFactory("Clay Kiln", () => new ClayKiln());
             RegisterFactory("Primal Workbench", () => new PrimalWorkbench());
-            RegisterFactory("Forge Workbench", () => new ForgeWorkbench()); // ??異붽?
+            RegisterFactory("Forge Workbench", () => new ForgeWorkbench()); // ???곕떽?
             RegisterFactory("Campfire", () => new Campfire());
             RegisterFactory("Wooden Crate", () => new WoodenCrate());
             RegisterFactory("Brick Furnace", () => new BrickFurnace());
-            RegisterFactory("Toolbench", () => new Toolbench()); // ??異붽?
+            RegisterFactory("Toolbench", () => new Toolbench()); // ???곕떽?
     
-            RegisterFactory("Coke Oven", () => new CokeOven());   // ??異붽? (Def.key? ?숈씪?댁빞 ??
+            RegisterFactory("Coke Oven", () => new CokeOven());   // ???곕떽? (Def.key?? ??덉뵬??곷튊 ??
         }
     
         void Start()
         {
-            if (vfx != null && interaction != null && interaction.player != null)
-                vfx.SetPlayer(interaction.player.transform);
+            if (vfx != null && playerTransform != null)
+                vfx.SetPlayer(playerTransform);
         }
     
         void FixedUpdate()
