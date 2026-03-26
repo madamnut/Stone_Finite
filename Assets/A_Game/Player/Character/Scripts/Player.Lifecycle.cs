@@ -11,13 +11,11 @@ namespace Game.Player
             Inventory = new InventoryData(InventoryCapacity);
     
             rb = rb != null ? rb : GetComponent<Rigidbody2D>();
+            groundProbe = groundProbe != null ? groundProbe : GetComponentInChildren<GroundProbe>(true);
+            fluidProbe = fluidProbe != null ? fluidProbe : GetComponentInChildren<FluidProbe>(true);
+            pickupSensor = pickupSensor != null ? pickupSensor : GetComponentInChildren<PickupSensor>(true);
+            platformDropThroughService = platformDropThroughService != null ? platformDropThroughService : GetComponentInChildren<PlatformDropThroughService>(true);
             _defaultGravityScale = rb.gravityScale;
-    
-            // ?????삸????뺚댘 ?袁り숲 餓Β??
-            _platformContactFilter = new ContactFilter2D();
-            _platformContactFilter.useLayerMask = true;
-            _platformContactFilter.layerMask = platformLayerMask;
-            _platformContactFilter.useTriggers = false;
     
             if (playerPhysicsCollider == null)
                 Debug.LogError("[Player] playerPhysicsCollider is not assigned. Assign the non-trigger collider used for physics.");
@@ -51,10 +49,19 @@ namespace Game.Player
             _leftLegBaseRot = leftLegRenderer.transform.localRotation;
             _rightLegBaseRot = rightLegRenderer.transform.localRotation;
     
-            _fluidFilter = new ContactFilter2D();
-            _fluidFilter.useLayerMask = true;
-            _fluidFilter.layerMask = fluidLayerMask;
-            _fluidFilter.useTriggers = true;
+            if (groundProbe == null)
+                Debug.LogError("[Player] groundProbe is not assigned. Assign a GroundProbe component.");
+
+            if (fluidProbe == null)
+                Debug.LogError("[Player] fluidProbe is not assigned. Assign a FluidProbe component.");
+
+            if (pickupSensor != null)
+                pickupSensor.Bind(this);
+            else
+                Debug.LogWarning("[Player] pickupSensor is not assigned. Dropped item pickup will not work until a PickupSensor is wired.");
+
+            if (platformDropThroughService == null)
+                Debug.LogWarning("[Player] platformDropThroughService is not assigned. Platform drop-through will not work until a PlatformDropThroughService is wired.");
     
             ApplyFacingAndSorting();
             InitHeartsUI();
@@ -67,13 +74,19 @@ namespace Game.Player
             if (_moveInput > 0.01f) SetFacing(1);
             else if (_moveInput < -0.01f) SetFacing(-1);
     
-            _isGrounded = groundCheckCollider.IsTouchingLayers(groundLayerMask);
-    
-            _fluidHits.Clear();
-            _isInFluid = bodyTriggerCollider.OverlapCollider(_fluidFilter, _fluidHits) > 0;
-    
-            _fluidHits.Clear();
-            _isHeadSubmerged = headTriggerCollider.OverlapCollider(_fluidFilter, _fluidHits) > 0;
+            _isGrounded = groundProbe != null && groundProbe.IsGrounded;
+
+            if (fluidProbe != null)
+            {
+                fluidProbe.Refresh();
+                _isInFluid = fluidProbe.IsInFluid;
+                _isHeadSubmerged = fluidProbe.IsHeadSubmerged;
+            }
+            else
+            {
+                _isInFluid = false;
+                _isHeadSubmerged = false;
+            }
     
             rb.gravityScale = _isInFluid ? 0f : _defaultGravityScale;
     
@@ -83,7 +96,7 @@ namespace Game.Player
             // - ?④쑴??????첎???삠늺 S??獄쏆꼶???곴퐣 ???쑎????
             if (!_isInFluid && _isGrounded && Input.GetKeyDown(KeyCode.S))
             {
-                TryDropThroughPlatform();
+                platformDropThroughService?.TryDropThrough();
             }
     
             bool jumpDown = Input.GetButtonDown("Jump");

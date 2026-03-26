@@ -45,31 +45,5 @@ namespace Game.World
         public IReadOnlyDictionary<int, Multiblock> Instances => _instances;
     
     
-        public Multiblock GetAtCell(Vector2Int cell)
-        {
-            _byCell.TryGetValue(cell, out var inst);
-            return inst;
-        }
-    
-        public void ApplyMetaToAllOccupiedCells(Multiblock owner, ushort targetMeta)
-        {
-            if (owner == null) return;
-            if (world == null) return;
-    
-            var cells = owner.OccupiedCells;
-            if (cells == null) return;
-    
-            for (int i = 0; i < cells.Count; i++)
-            {
-                var c = cells[i];
-    
-                ushort id = world.GetSolidId(c.x, c.y);
-                if (id == 0) continue;
-    
-                world.OverwriteSolid(c.x, c.y, id, targetMeta);
-            }
-        }
-    
-    
     }
 }

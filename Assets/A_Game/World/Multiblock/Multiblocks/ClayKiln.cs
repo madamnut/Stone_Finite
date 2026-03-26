@@ -8,7 +8,7 @@ using Game.Core;
 
 namespace Game.World
 {
-    public class ClayKiln : Multiblock
+    public partial class ClayKiln : Multiblock
     {
         public enum SlotKind
         {
@@ -160,6 +160,7 @@ namespace Game.World
             Manager.OpenModule("Clay Kiln", this);
         }
     
+        #if false
         public override void OnCellBroken(Vector2Int brokenCell)
         {
             if (!_droppedOnDestroy)
@@ -170,6 +171,7 @@ namespace Game.World
     
             base.OnCellBroken(brokenCell);
         }
+        #endif
     
         // Fire_02 : (1, 0.3)
         // Smoke   : (1, 2)
@@ -552,6 +554,7 @@ namespace Game.World
             return true;
         }
     
+        #if false
         void DropAllInternalItems()
         {
             if (World == null || World.itemDropper == null)
@@ -768,5 +771,6 @@ namespace Game.World
             // ???β돦裕녻キ?嶺뚯쉳???meta??"??⑤벡??????븐슦?? ?リ옇????怨쀬Ŧ 嶺뚮씮???
             RequestApplyKilnMeta(Isburning);
         }
+        #endif
     }
 }

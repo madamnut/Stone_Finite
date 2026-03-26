@@ -10,11 +10,14 @@ namespace Game.Player
     
     public partial class Player
     {
-        void OnTriggerEnter2D(Collider2D other)
+        internal void HandlePickupTrigger(Collider2D other)
         {
             if (!other.CompareTag("DroppedItem")) return;
     
             var drop = other.GetComponent<DroppedItem>();
+            if (drop == null)
+                return;
+
             int before = drop.ItemData.Count;
     
             int left = Inventory.AddItem(drop.ItemData);

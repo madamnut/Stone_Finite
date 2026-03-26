@@ -8,7 +8,7 @@ using Game.Core;
 
 namespace Game.World
 {
-    public class Campfire : Multiblock
+    public partial class Campfire : Multiblock
     {
         public enum SlotKind { FuelIn, FuelOut, IngredientIn, IngredientOut }
     
@@ -98,6 +98,7 @@ namespace Game.World
             Manager.OpenModule("Campfire", this);
         }
     
+        #if false
         public override void OnCellBroken(Vector2Int brokenCell)
         {
             if (!_droppedOnDestroy)
@@ -108,6 +109,7 @@ namespace Game.World
     
             base.OnCellBroken(brokenCell);
         }
+        #endif
     
         // ?????????????????? VFX ??븐슙????????????????????
         // Campfire??Fire_01 ??濡る룎嶺????? Origin ?リ옇?? (1, 0.5)
@@ -496,6 +498,7 @@ namespace Game.World
             return true;
         }
     
+        #if false
         void DropAllInternalItems()
         {
             if (World == null || World.itemDropper == null)
@@ -692,5 +695,6 @@ namespace Game.World
             // ?β돦裕녻キ???meta???熬곣뫗????⑤객臾??リ옇????怨쀬Ŧ 嶺뚮씮?????戮?뻣/嶺뚮∥?? ?リ옇??)
             RequestApplyCampfireMeta(IsFireActiveFx);
         }
+        #endif
     }
 }

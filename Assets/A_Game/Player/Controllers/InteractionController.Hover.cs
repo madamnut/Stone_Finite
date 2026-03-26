@@ -15,27 +15,8 @@ namespace Game.Player
             Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
             Vector2 mousePos2 = new Vector2(mouseWorld3.x, mouseWorld3.y);
     
-            var hits = Physics2D.OverlapPointAll(mousePos2, corpseLayerMask);
-            int bestOrder = int.MinValue;
-    
-            for (int i = 0; i < hits.Length; i++)
-            {
-                var col = hits[i];
-                if (col == null) continue;
-    
-                var corpse = col.GetComponentInParent<Corpse>();
-                if (corpse == null) continue;
-    
-                int order = 0;
-                if (corpse.mainRenderer != null)
-                    order = corpse.mainRenderer.sortingOrder;
-    
-                if (newHoverCorpse == null || order > bestOrder)
-                {
-                    newHoverCorpse = corpse;
-                    bestOrder = order;
-                }
-            }
+            if (corpseHoverQueryService != null)
+                newHoverCorpse = corpseHoverQueryService.Query(mousePos2);
     
             if (newHoverCorpse != _hoverCorpse)
             {

@@ -85,7 +85,6 @@ namespace Game.Player
                 if (ui != null)
                 {
                     ui.recipeLibrary = recipeLibrary;
-                    ui.player = player;
                     ui.Bind(toolbench);
                 }
                 return;

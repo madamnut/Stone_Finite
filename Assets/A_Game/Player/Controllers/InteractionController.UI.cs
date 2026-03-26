@@ -40,10 +40,14 @@ namespace Game.Player
             _moduleInstance.transform.SetSiblingIndex(0);
     
             var crafts = _moduleInstance.GetComponentsInChildren<CraftModule>(true);
-            foreach (var c in crafts)
+            foreach (var craft in crafts)
+                craft.recipeLibrary = recipeLibrary;
+
+            var inventoryConsumers = _moduleInstance.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (var component in inventoryConsumers)
             {
-                c.recipeLibrary = recipeLibrary;
-                c.player = player;
+                if (component is IInventoryOwnerConsumer consumer)
+                    consumer.SetInventoryOwner(player);
             }
     
             HideWorldHoverState();

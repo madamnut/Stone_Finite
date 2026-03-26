@@ -1,0 +1,189 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using Newtonsoft.Json.Linq;
+
+using Game.Data;
+using Game.Core;
+
+namespace Game.UI
+{
+    public partial class CrucibleView
+    {
+        void ForceRefresh(int capacity, List<(string itemId, int amount)> layers, int sum, string sig)
+        {
+            Clear();
+
+            if (contentRoot == null || layerPrefab == null || itemLibrary == null) return;
+            if (layers == null || layers.Count == 0) return;
+
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+
+            float parentW = contentRoot.rect.width;
+            float parentH = contentRoot.rect.height;
+
+            if (parentW <= 0.01f) parentW = ((RectTransform)transform).rect.width;
+            if (parentH <= 0.01f) parentH = ((RectTransform)transform).rect.height;
+
+            for (int i = layers.Count - 1; i >= 0; i--)
+            {
+                var (itemId, amount) = layers[i];
+                if (string.IsNullOrEmpty(itemId) || amount <= 0) continue;
+
+                float h = parentH * ((float)amount / capacity);
+                if (minLayerHeight > 0f && h < minLayerHeight) h = minLayerHeight;
+
+                var go = Instantiate(layerPrefab, contentRoot, false);
+
+                var rt = go.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, parentW);
+                    rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
+                }
+
+                var le = go.GetComponent<LayoutElement>();
+                if (le != null)
+                {
+                    le.minWidth = parentW;
+                    le.preferredWidth = parentW;
+                    le.flexibleWidth = 0f;
+                    le.minHeight = h;
+                    le.preferredHeight = h;
+                    le.flexibleHeight = 0f;
+                }
+
+                var img = go.GetComponentInChildren<Image>(true);
+                if (img != null)
+                {
+                    img.sprite = itemLibrary.GetSprite(itemId);
+                    img.enabled = (img.sprite != null);
+                    img.preserveAspect = true;
+                }
+
+                var smelts = go.GetComponent<CrucibleSmelts>();
+                if (smelts != null)
+                    smelts.Init(this, i, itemId, amount);
+            }
+
+            _prevCapacity = capacity;
+            _prevSum = sum;
+            _prevSig = sig;
+        }
+
+        List<object> EnsureLayersListRef(ItemData c)
+        {
+            object lo = null;
+            if (c.Details != null)
+                c.Details.TryGetValue("layers", out lo);
+
+            if (lo == null)
+            {
+                var created = new List<object>();
+                c.SetDetail("layers", created);
+                return created;
+            }
+
+            if (lo is List<object> listObj)
+                return listObj;
+
+            if (lo is JArray ja)
+            {
+                var converted = new List<object>(ja.Count);
+                for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]);
+                c.SetDetail("layers", converted);
+                return converted;
+            }
+
+            if (lo is IList ilist && lo is not string)
+            {
+                var converted = new List<object>(ilist.Count);
+                for (int i = 0; i < ilist.Count; i++)
+                    converted.Add(ilist[i]);
+
+                c.SetDetail("layers", converted);
+                return converted;
+            }
+
+            var fallback = new List<object>();
+            c.SetDetail("layers", fallback);
+            return fallback;
+        }
+
+        int ReadCrucibleCapacity(ItemData c)
+        {
+            if (c == null) return 0;
+            if (c.ToolActions == null) return 0;
+            if (!c.ToolActions.TryGetValue("Crucible", out Dictionary<string, object> cfg) || cfg == null) return 0;
+            if (!cfg.TryGetValue("capacity", out var capObj) || capObj == null) return 0;
+
+            if (capObj is int i) return i;
+            if (capObj is long l) return (int)l;
+            if (capObj is float f) return Mathf.RoundToInt(f);
+            if (capObj is double d) return (int)d;
+            return int.TryParse(capObj.ToString(), out int r) ? r : 0;
+        }
+
+        static int SumAmount(List<(string itemId, int amount)> layers)
+        {
+            if (layers == null) return 0;
+            int s = 0;
+            for (int i = 0; i < layers.Count; i++) s += layers[i].amount;
+            return s;
+        }
+
+        static string BuildSignature(List<(string itemId, int amount)> layers)
+        {
+            if (layers == null || layers.Count == 0) return "";
+            var sb = new System.Text.StringBuilder(128);
+            for (int i = 0; i < layers.Count; i++)
+                sb.Append(layers[i].itemId).Append(':').Append(layers[i].amount).Append('|');
+            return sb.ToString();
+        }
+
+        List<(string itemId, int amount)> NormalizeLayers(List<object> layersList)
+        {
+            if (layersList == null) return null;
+
+            var result = new List<(string, int)>();
+
+            for (int i = 0; i < layersList.Count; i++)
+            {
+                string id = null;
+                int amt = 0;
+
+                var obj = layersList[i];
+
+                if (obj is JObject jo)
+                {
+                    id = (jo["itemId"] ?? jo["fluidId"])?.ToString();
+                    amt = jo["amount"] != null ? jo["amount"].Value<int>() : 0;
+                }
+                else if (obj is Dictionary<string, object> d)
+                {
+                    if (d.TryGetValue("itemId", out var idObj) && idObj != null) id = idObj.ToString();
+                    else if (d.TryGetValue("fluidId", out var fidObj) && fidObj != null) id = fidObj.ToString();
+
+                    if (d.TryGetValue("amount", out var aObj) && aObj != null)
+                    {
+                        if (aObj is int ii) amt = ii;
+                        else if (aObj is long ll) amt = (int)ll;
+                        else if (aObj is float ff) amt = Mathf.RoundToInt(ff);
+                        else if (aObj is double dd) amt = (int)dd;
+                        else int.TryParse(aObj.ToString(), out amt);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(id) && amt > 0)
+                    result.Add((id, amt));
+            }
+
+            return result;
+        }
+    }
+}

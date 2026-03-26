@@ -1,0 +1,1295 @@
+﻿@startuml
+class Debugger {
+    + debugRoot : GameObject
+    + fpsText : TMP_Text
+    + timeText : TMP_Text
+    + seedText : TMP_Text
+    + worldManager : WorldManager
+}
+class CorpseLibrary {
+    + corpseId : string
+    + prefab : GameObject
+    + corpseId : string
+    + toolAction : string
+    + nextCorpseId : string
+    + corpsePrefabs : CorpsePrefabDef[]
+    + processDefs : CorpseProcessDef[]
+    + itemDropper : ItemDropper
+    + entityManager : EntityManager
+    + SpawnCorpse(corpseId : string, position : Vector2) : Corpse
+    + TryProcessCorpse(corpse : Corpse, toolActionName : string) : bool
+}
+class CorpsePrefabDef {
+    + corpseId : string
+    + prefab : GameObject
+    + corpseId : string
+    + toolAction : string
+    + nextCorpseId : string
+    + corpsePrefabs : CorpsePrefabDef[]
+    + processDefs : CorpseProcessDef[]
+    + itemDropper : ItemDropper
+    + entityManager : EntityManager
+    + SpawnCorpse(corpseId : string, position : Vector2) : Corpse
+    + TryProcessCorpse(corpse : Corpse, toolActionName : string) : bool
+}
+class CorpseProcessDef {
+    + corpseId : string
+    + prefab : GameObject
+    + corpseId : string
+    + toolAction : string
+    + nextCorpseId : string
+    + corpsePrefabs : CorpsePrefabDef[]
+    + processDefs : CorpseProcessDef[]
+    + itemDropper : ItemDropper
+    + entityManager : EntityManager
+    + SpawnCorpse(corpseId : string, position : Vector2) : Corpse
+    + TryProcessCorpse(corpse : Corpse, toolActionName : string) : bool
+}
+class MobLibrary {
+    + mobId : string
+    + prefab : Mob
+    + mobs : MobEntry[]
+    + GetPrefab(mobId : string) : Mob
+    + SpawnMob(mobId : string, position : Vector3, entityManager : EntityManager, parentOverride : Transform) : Mob
+}
+class MobEntry {
+    + mobId : string
+    + prefab : Mob
+    + mobs : MobEntry[]
+    + GetPrefab(mobId : string) : Mob
+    + SpawnMob(mobId : string, position : Vector3, entityManager : EntityManager, parentOverride : Transform) : Mob
+}
+class MultiblockLibrary {
+    + multiblockJson : TextAsset
+    + key : string
+    + width : int
+    + height : int
+    + pattern : string[,]
+    + result : string[,]
+}
+class Def {
+    + multiblockJson : TextAsset
+    + key : string
+    + width : int
+    + height : int
+    + pattern : string[,]
+    + result : string[,]
+}
+class UtilityLibrary {
+    + attCogwheel : TextAsset
+    + attBelt : TextAsset
+    + attSource : TextAsset
+    + attWire : TextAsset
+    + attPipe : TextAsset
+    + attTube : TextAsset
+    + size : string
+    + maxRpm : int
+    + maxRpm : int
+    + materialItemId : string
+    + color : float[]
+    + rpm : int
+    + stressCapacity : int
+    + Reload() : void
+    + TryGetCogwheel(cellName : string, CogwheelDef : out) : bool
+    + TryGetBelt(cellName : string, BeltDef : out) : bool
+    + TryGetSource(cellName : string, SourceDef : out) : bool
+}
+class CameraFollow {
+    + target : Transform
+}
+class AudioManager {
+    - sfxSource : AudioSource
+    - digClip : AudioClip
+    - placeClip : AudioClip
+    - multiblockCompleteClip : AudioClip
+    - playerTookDamageClip : AudioClip
+    - popClip : AudioClip
+    - buttonClickClip : AudioClip
+    - thrustClip : AudioClip
+    - hitClip : AudioClip
+    - bgmSource : AudioSource
+    + PlayDig() : void
+    + PlayPlace() : void
+    + PlayMultiblockComplete() : void
+    + PlayPlayerTookDamage() : void
+    + PlayPop() : void
+    + PlayButtonClick() : void
+    + PlayWeaponSwing() : void
+    + PlayWeaponThrust() : void
+    + PlayWeaponHit() : void
+}
+class VfxManager {
+    + key : string
+    + prefab : GameObject
+    + material : Material
+    + psPrefab : ParticleSystem
+    + smokePrefab : GameObject
+    + fire01Prefab : GameObject
+    + fire02Prefab : GameObject
+    + beltPrefab : GameObject
+    + SetPlayer(player : Transform) : void
+    + SetLoopVfx(ownerInstId : int, vfxKey : string, on : bool, worldPos : Vector3) : void
+    + SetRotatingLoopVfx(ownerInstId : int, vfxKey : string, on : bool, worldPos : Vector3, rpm : float, rotationDir : int) : void
+    + SetBeltLoopVfx(ownerInstId : int, vfxKey : string, on : bool, startWorldPos : Vector3, endWorldPos : Vector3, rpm : float, rotationDir : int, bodyColor : Color) : void
+    + DespawnAllForOwner(ownerInstId : int) : void
+    + CullAllLoopVfx() : void
+    + EmitBlockAtCell(s : Sprite, cx : int, cy : int, cellSize : int, grid : int, count : int) : void
+}
+class Entity <<abstract>> {
+    + Kind : EntityKind
+    + Position : Vector2
+    + PayloadJson : string
+}
+class EntitySaveData {
+    + Kind : EntityKind
+    + Position : Vector2
+    + PayloadJson : string
+}
+class EntityManager {
+    + player : Transform
+    + Register(e : Entity) : void
+    + Unregister(e : Entity) : void
+}
+class DroppedItem {
+    + spriteRenderer : SpriteRenderer
+    - itemLibrary : ItemLibrary
+    + itemId : string
+    + name : string
+    + spriteName : string
+    + itemType : string
+    + maxStack : int
+    + maxDurability : int
+    + durability : int
+    + count : int
+    + tags : List<string>
+    + Initialize(data : ItemData) : void
+}
+class DroppedItemPayload {
+    + spriteRenderer : SpriteRenderer
+    - itemLibrary : ItemLibrary
+    + itemId : string
+    + name : string
+    + spriteName : string
+    + itemType : string
+    + maxStack : int
+    + maxDurability : int
+    + durability : int
+    + count : int
+    + tags : List<string>
+    + Initialize(data : ItemData) : void
+}
+class ItemDropper {
+    + itemLibrary : ItemLibrary
+    + dropTableJson : TextAsset
+    + corpseDropTableJson : TextAsset
+    + droppedItemPrefab : GameObject
+    + entityManager : EntityManager
+    + dropRoot : Transform
+    + itemId : string
+    + probability : float
+    + min : int
+    + max : int
+    + SpawnItemDirect(itemId : string, origin : Vector3, count : int) : void
+    + SpawnDroppedItems(key : string, origin : Vector3) : void
+    + SpawnDroppedItem(data : ItemData, origin : Vector3) : DroppedItem
+    + SpawnDroppedItemAt(data : ItemData, position : Vector3, parent : Transform) : DroppedItem
+}
+class Corpse {
+    - corpseId : string
+    - corpsePosition : Vector2
+    + mainRenderer : SpriteRenderer
+    + corpseId : string
+    + SetHovered(on : bool) : void
+}
+class CorpsePayload {
+    - corpseId : string
+    - corpsePosition : Vector2
+    + mainRenderer : SpriteRenderer
+    + corpseId : string
+    + SetHovered(on : bool) : void
+}
+class Mob {
+    - mobId : string
+    - mobPosition : Vector2
+    - currentHp : int
+    - corpseIdOnDeath : string
+    - corpseLibrary : CorpseLibrary
+    + mobId : string
+    + maxHp : int
+    + currentHp : int
+    + SetCorpseId(id : string) : void
+    + SetHp(hp : int, newMaxHp : int?) : void
+}
+class MobPayload {
+    - mobId : string
+    - mobPosition : Vector2
+    - currentHp : int
+    - corpseIdOnDeath : string
+    - corpseLibrary : CorpseLibrary
+    + mobId : string
+    + maxHp : int
+    + currentHp : int
+    + SetCorpseId(id : string) : void
+    + SetHp(hp : int, newMaxHp : int?) : void
+}
+class BackGround {
+    + player : Transform
+    + layer0 : Transform
+    + layer1 : Transform
+    + layer2 : Transform
+    + world : WorldManager
+    + center : Transform
+    + sun : Transform
+    + moon : Transform
+}
+class InteractionController {
+}
+class InteractionController {
+}
+class InteractionController {
+    + inventoryPanel : GameObject
+    + pauseMenuRoot : GameObject
+    + resumeButton : Button
+    + exitButton : Button
+    + player : Player
+    + hotbar : Hotbar
+    + cursorSlot : ItemSlot
+    + breakCursorTex : Texture2D
+    + combatCursorTex : Texture2D
+    + utilityCursorTex : Texture2D
+    + worldManager : WorldManager
+    + multiblockManager : MultiblockManager
+    + gearNetworkManager : GearNetworkManager
+    + worldCamera : Camera
+    + HighLight_Solid : Sprite
+    + HighLight_Solid_CAN : Sprite
+    + HighLight_Solid_CANNOT : Sprite
+    + HighLight_BG : Sprite
+    + HighLight_BG_CAN : Sprite
+    + HighLight_BG_CANNOT : Sprite
+    + HighLight_Utility : Sprite
+    + HighLight_Utility_CAN : Sprite
+    + HighLight_Utility_CANNOT : Sprite
+    + recipeLibrary : RecipeLibrary
+    + itemLibrary : ItemLibrary
+    + corpseLibrary : CorpseLibrary
+    + cellLibrary : CellLibrary
+    + utilityLibrary : UtilityLibrary
+    + handcraftModule : GameObject
+    + sound : AudioManager
+    + corpseLayerMask : LayerMask
+    + meleeRoot : Transform
+    + meleeAngle : Transform
+    + meleeOffset : Transform
+    + meleeSprite : SpriteRenderer
+}
+class InteractionController {
+}
+class InteractionController {
+}
+class InteractionController {
+    + OnClickResume() : void
+    + OnClickQuitToLobby() : void
+    + OpenModule(modulePrefab : GameObject) : GameObject
+    - CloseInventoryPanelToIngame() : void
+    - RefreshHeldHandSprite() : void
+    - GetHeldItem() : ItemData
+    - HideWorldHoverState() : void
+    - ReturnCursorItemToInventory() : void
+    - DestroyOpenModule() : void
+}
+class Cursor {
+    + canvas : Canvas
+    + cursorSlot : ItemSlot
+    + tooltipRoot : RectTransform
+    + tooltipText : TMP_Text
+    + tooltipObject : GameObject
+    - rt : RectTransform
+}
+class Hotbar {
+    + hotbarRoot : Transform
+    - _inv : InventoryData
+    + SetScope(index : int) : void
+}
+class ItemSlot {
+    + iconImage : Image
+    + countText : TextMeshProUGUI
+    + scopeImage : Image
+    + selectedImage : Image
+    + durabilityRoot : GameObject
+    + durabilityBar : Image
+    + progressRoot : GameObject
+    + progressBar : Image
+    + inventory : InventoryData
+    - _item : ItemData
+    + Set(item : ItemData) : void
+    + Refresh() : void
+    + SetProgress(fill01 : float, show : bool) : void
+    + SetScope(on : bool) : void
+    + SetSelected(on : bool) : void
+    + OnPointerEnter(_ : PointerEventData) : void
+    + OnPointerExit(_ : PointerEventData) : void
+    + OnPointerClick(_ : PointerEventData) : void
+}
+' ItemSlot: </summary>
+class PlayerInventory {
+    - _inv : InventoryData
+    + GetSlot(index : int) : ItemSlot
+}
+class Heart {
+    + heartImage : Image
+    + SetHeart(atlas : SpriteAtlas, fill : int) : void
+}
+class RotatingVfx {
+    + Set(newRpm : float, newDir : int) : void
+}
+class GodRay {
+    + material : Material
+    + sun : Transform
+    + mainCamera : Camera
+}
+class Multiblock <<abstract>> {
+    + key : string
+    + offset : Vector2
+    + active : bool
+    + DefId : string
+    + InstId : int
+    + Origin : Vector2Int
+    + Width : int
+    + Height : int
+    + PayloadJson : string
+    + OriginalSolidIds : ushort[]
+}
+class MultiblockManager {
+    + world : WorldManager
+    + playerTransform : Transform
+    + primalCraftModule : GameObject
+    + forgeCraftModule : GameObject
+    + campfireModule : GameObject
+    + woodenCrateModule : GameObject
+    + clayKilnModule : GameObject
+    + brickFurnaceModule : GameObject
+    + toolbenchModule : GameObject
+    + cokeOvenModule : GameObject
+    + vfx : VfxManager
+    + GetAtCell(cell : Vector2Int) : Multiblock
+    + ApplyMetaToAllOccupiedCells(owner : Multiblock, targetMeta : ushort) : void
+}
+class MultiblockManager {
+    + RegisterFactory(defId : string, creator : Func<Multiblock>) : void
+}
+class MultiblockManager {
+    + Create(def : MultiblockLibrary.Def, originX : int, originY : int) : Multiblock
+    + RegisterInstance(inst : Multiblock) : void
+    + Despawn(inst : Multiblock, brokenCell : Vector2Int) : void
+    + LoadFromSaveDatas(list : List<Multiblock.SaveData>) : void
+}
+class MultiblockManager {
+    + OpenModule(moduleId : string, owner : Multiblock) : void
+}
+class Chunk {
+    + bgTilemap : Tilemap
+    + utilityTilemap : Tilemap
+    + solidTilemap : Tilemap
+    + platformTilemap : Tilemap
+    + liquidTilemap : Tilemap
+    + lightOverlayRenderer : MeshRenderer
+    + bgBuffer : TileBase[]
+    + utilityBuffer : TileBase[]
+    + solidBuffer : TileBase[]
+    + platformBuffer : TileBase[]
+    + liquidBuffer : TileBase[]
+    + liquidTypeTex : Texture2D
+    + liquidAmountTex : Texture2D
+    + liquidTypePixels : Color32[]
+    + liquidAmtPixels : Color32[]
+    + liquidMpb : MaterialPropertyBlock
+    + liquidRenderer : TilemapRenderer
+    + lightTex : Texture2D
+    + lightPixels : Color32[]
+    + lightMpb : MaterialPropertyBlock
+}
+class FallingBlock {
+    - world : WorldManager
+    - sr : SpriteRenderer
+    - triggerMask : LayerMask
+    - cellId : ushort
+    - placed : bool
+    + cellId : ushort
+    + Init(id : ushort, wm : WorldManager, overrideSprite : Sprite) : void
+    - ApplySprite() : void
+}
+class FallingBlockPayload {
+    - world : WorldManager
+    - sr : SpriteRenderer
+    - triggerMask : LayerMask
+    - cellId : ushort
+    - placed : bool
+    + cellId : ushort
+    + Init(id : ushort, wm : WorldManager, overrideSprite : Sprite) : void
+    - ApplySprite() : void
+}
+class ProceduralUtil {
+}
+class StructureTemplate {
+    + anchor : Anchor
+    + layers : Layers
+    + x : int
+    + y : int
+    + solid : int[][]
+    + deco : int[][]
+    + targets : int[]
+}
+class Anchor {
+    + anchor : Anchor
+    + layers : Layers
+    + x : int
+    + y : int
+    + solid : int[][]
+    + deco : int[][]
+    + targets : int[]
+}
+class Layers {
+    + anchor : Anchor
+    + layers : Layers
+    + x : int
+    + y : int
+    + solid : int[][]
+    + deco : int[][]
+    + targets : int[]
+}
+class WriteRule {
+    + anchor : Anchor
+    + layers : Layers
+    + x : int
+    + y : int
+    + solid : int[][]
+    + deco : int[][]
+    + targets : int[]
+}
+class StructureLoader {
+    + anchor : Anchor
+    + layers : Layers
+    + x : int
+    + y : int
+    + solid : int[][]
+    + deco : int[][]
+    + targets : int[]
+}
+class WorldDataGenerator {
+}
+class WorldDataGenerator {
+}
+class WorldDataGenerator {
+}
+class WorldDataGenerator {
+}
+class WorldDataGenerator {
+}
+class WorldGenSettings {
+}
+class WorldManager {
+    + settings : WorldGenSettings
+    + cellLibrary : CellLibrary
+    + recipeLibrary : RecipeLibrary
+    + chunkPrefab : GameObject
+    + chunkRoot : Transform
+    + player : Transform
+    + fallingBlockPrefab : FallingBlock
+    + itemDropper : ItemDropper
+    + vfx : VfxManager
+    + multiblockManager : MultiblockManager
+    + corpseLibrary : CorpseLibrary
+    + entityManager : EntityManager
+    + mobLibrary : MobLibrary
+    + itemLibrary : ItemLibrary
+    + gearNetworkManager : GearNetworkManager
+    - worldMap : WorldData
+    - chunkSystem : WorldChunkSystem
+    + worldTick : long
+    + worldMinute : int
+    + worldHour : int
+    + worldDay : int
+    - _loadedPlayerPos : Vector2
+    - _loadedInventory : List<ItemData>
+    - _playerInventory : InventoryData
+    + v : byte
+    + v : byte
+    + InBounds(x : int, y : int) : bool
+    + GetSolidId(x : int, y : int) : ushort
+    + GetBGId(x : int, y : int) : ushort
+    + GetFluidId(x : int, y : int, byte : out) : ushort
+    + GetUtility(x : int, y : int) : UtilityCell
+    + GetUtilityId(x : int, y : int) : ushort
+    + IsUtilityEmpty(x : int, y : int) : bool
+    + IsCollidable(x : int, y : int) : bool
+    - IsSupportSolid(x : int, y : int) : bool
+    - HasGravity(solidId : ushort) : bool
+}
+class WorldManager {
+    - HasAnyNeighborSupport_BGorSolid(x : int, y : int, solidMustBeCollidable : bool) : bool
+    - IsValidSupportForSolidAttach(sx : int, sy : int) : bool
+    - HasVariantMeta(id : ushort, meta : ushort) : bool
+    + SetUtilityExact(x : int, y : int, id : ushort, meta : ushort) : bool
+    + ClearUtilityExact(x : int, y : int) : bool
+    + IsUtilityAreaEmpty(center : Vector2Int, offsets : IReadOnlyList<Vector2Int>) : bool
+    + PlaceUtilityFootprint(center : Vector2Int, centerId : ushort, centerMeta : ushort, occupiedId : ushort, offsets : IReadOnlyList<Vector2Int>) : bool
+    + ClearUtilityFootprint(center : Vector2Int, offsets : IReadOnlyList<Vector2Int>) : bool
+    + PlaceGearFootprintUtility(center : Vector2Int, centerId : ushort, centerMeta : ushort, occupiedId : ushort, occupiedCells : IReadOnlyList<Vector2Int>) : bool
+    + RemoveGearFootprintUtility(center : Vector2Int, occupiedCells : IReadOnlyList<Vector2Int>) : void
+    + BreakUtility(x : int, y : int) : ushort
+    + BreakUtilityAt(x : int, y : int) : ushort
+    + OverwriteSolid(x : int, y : int, newId : ushort, newMeta : ushort) : void
+    + PlaceSolid(x : int, y : int, id : ushort) : bool
+    - PlaceSolidAtEmpty(x : int, y : int, id : ushort, relV : RelV, relH : RelH) : bool
+    + PlaceSolid(x : int, y : int, id : ushort, relV : RelV, relH : RelH) : bool
+    + PlaceSolidExact(x : int, y : int, id : ushort) : bool
+    + PlaceFluid(x : int, y : int, fluidId : ushort, amount : byte) : bool
+    + PlaceBG(x : int, y : int, id : ushort) : bool
+    + PlaceBG(x : int, y : int, id : ushort, relV : RelV, relH : RelH) : bool
+    + RemoveSolidNoDrop(x : int, y : int, emitVfx : bool) : ushort
+    + BreakSolid(x : int, y : int) : ushort
+    + BreakFluid(x : int, y : int) : FluidCell
+    + BreakBG(x : int, y : int) : ushort
+    + PlaceCell(x : int, y : int, id : ushort) : bool
+    + PlaceBgCell(x : int, y : int, id : ushort) : bool
+    + BreakCell(x : int, y : int, layer : CellLayer) : ushort
+}
+class WorldManager {
+    + OnClickSave() : void
+    - InitializeLifecycleState() : void
+    - ResolvePlayerInventoryReference() : void
+    - LogBootContext() : void
+    - TickGearNetworks() : void
+    - AdvanceWorldClock() : void
+    - BootNewWorld() : void
+    - TryBootLoadedWorld() : bool
+    - TryFindSpawnPosition(Vector3 : out) : bool
+    - InitializeChunkSystem() : void
+    - InitializeWorldClock() : void
+    - LoadMultiblocks() : void
+    - FinalizeBootInitialization() : void
+}
+class WorldManager {
+    + RecalculateLightAt(x0 : int, y0 : int) : void
+    + MarkChunkDirty(worldX : int, worldY : int, markSolid : bool, markBG : bool, markLiquid : bool, markUtility : bool) : void
+    + MarkLightDirtyCell(x : int, y : int) : void
+    + MarkLightDirtyCells(cells : List<Vector2Int>) : void
+    - MarkLightDirtyRect(x : int, y : int, w : int, h : int) : void
+    - GetArtCost(nx : int, ny : int) : int
+    - RecordLightChanged(x : int, y : int) : void
+    - RecordSeed(x : int, y : int) : void
+    - EnqueueIncrease(x : int, y : int, v : byte) : void
+    - EnqueueDecrease(x : int, y : int, oldV : byte) : void
+    - ProcessArtificialLightQueues() : void
+    - GetSourceBrightness(solidId : ushort, solidMeta : ushort, fluidId : ushort) : byte
+    - HandleSourceLightChangeAt(x : int, y : int, oldSolidId : ushort, oldSolidMeta : ushort, oldFluidId : ushort) : void
+}
+class WorldManager {
+    + SaveWorld() : void
+    - LoadPlayerData() : void
+    - LoadEntities() : void
+    - ApplyLoadedPlayerAndInventory() : void
+}
+class WorldManager {
+    - ApplyTimeSyncedBrightness(forceDirty : bool) : void
+    + GetTimeBand() : TimeBand
+}
+class WorldManager {
+    + EnqTick(x : int, y : int) : void
+    + OnCellEdited(gx : int, gy : int) : void
+    - SwapTickBuffers() : void
+}
+class IInventoryOwner <<interface>> {
+}
+class InventoryData {
+    + NotifyChanged() : void
+    + AddItem(incoming : ItemData) : int
+}
+' InventoryData: </summary>
+class ItemData {
+    + Durability : int { get; set; }
+    + Count : int { get; set; }
+    + SetDetail(key : string, value : object) : void
+    + SetDetailPath(path : string, value : object) : void
+    + ModifyDurability(amount : int) : void
+    + HasTag(tag : string) : bool
+    + HasToolAction(action : string) : bool
+    + HasWeaponAction(action : string) : bool
+    + HasBreakAction(action : string) : bool
+}
+class WorldData {
+    + bg : ushort[,]
+    + solid : SolidCell[,]
+    + utility : UtilityCell[,]
+    + fluid : FluidCell[,]
+    + naturalLight : ushort[,]
+    + artificialLight : ushort[,]
+    + id : ushort
+    + meta : ushort
+    + id : ushort
+    + meta : ushort
+    + id : ushort
+    + amount : byte
+    + SetBG(x : int, y : int, id : ushort) : void
+    + SetSolid(x : int, y : int, id : ushort, meta : ushort) : void
+    + SetSolidMeta(x : int, y : int, meta : ushort) : void
+    + SetUtility(x : int, y : int, id : ushort, meta : ushort) : void
+    + SetUtilityMeta(x : int, y : int, meta : ushort) : void
+    + SetFluid(x : int, y : int, id : ushort, amount : byte) : void
+    + SetFluidAmount(x : int, y : int, amount : byte) : void
+    + SetNaturalLight(x : int, y : int, value : ushort) : void
+    + SetArtificialLight(x : int, y : int, value : ushort) : void
+    + GetBG(x : int, y : int) : ushort
+    + GetSolid(x : int, y : int) : SolidCell
+    + GetUtility(x : int, y : int) : UtilityCell
+    + GetFluid(x : int, y : int) : FluidCell
+    + GetNaturalLight(x : int, y : int) : ushort
+    + GetArtificialLight(x : int, y : int) : ushort
+    + InBounds(x : int, y : int) : bool
+}
+class Cow {
+    + body : Transform
+    + head : Transform
+    + groundCheckCollider : Collider2D
+    + groundLayerMask : LayerMask
+    + audioSource : AudioSource
+    + mooClips : AudioClip[]
+    + breathClip : AudioClip
+    + deathClip : AudioClip
+    + corpsePrefab : Corpse
+}
+class CellLibrary {
+    + solidJson : TextAsset
+    + utilityJson : TextAsset
+    + fluidJson : TextAsset
+    + atlas : SpriteAtlas
+    + meta : ushort
+    + spriteName : string
+    + attachedAt : string
+    + brightnessOverride : sbyte
+    + id : ushort
+    + brightness : byte
+    + flags : SolidFlags
+    + isPlatform : bool
+    + type : string
+    + interaction : string
+    + name : string
+    + meta : ushort
+    + spriteName : string
+    + id : ushort
+    + name : string
+    + type : string
+    + id : ushort
+    + brightness : byte
+    + name : string
+}
+class CellLibrary {
+}
+class CellLibrary {
+    + MakeSolidCell(id : ushort, meta : ushort) : SolidCell
+    + MakeUtilityCell(id : ushort, meta : ushort) : UtilityCell
+    + MakeFluidCell(id : ushort, amount : byte) : FluidCell
+    + GetSolidName(id : ushort) : string
+    + GetSolidType(id : ushort) : string
+    + GetUtilityName(id : ushort) : string
+    + GetUtilityType(id : ushort) : string
+    + GetFluidName(id : ushort) : string
+    + GetSolidFlags(id : ushort) : SolidFlags
+    + IsPlatform(id : ushort) : bool
+    + HasSolidVariant(id : ushort, meta : ushort) : bool
+    + HasUtilityVariant(id : ushort, meta : ushort) : bool
+    + GetSolidBrightness(id : ushort) : byte
+    + GetSolidBrightness(id : ushort, meta : ushort) : byte
+    + GetFluidBrightness(id : ushort) : byte
+    + TryGetSolidIdByName(name : string, ushort : out) : bool
+    + TryGetUtilityIdByName(name : string, ushort : out) : bool
+    + TryGetFluidIdByName(name : string, ushort : out) : bool
+    + GetInteraction(id : ushort, string : out) : bool
+    + GetAttachedAt(id : ushort, meta : ushort, string : out) : bool
+}
+class CellLibrary {
+    + GetSolidSprite(id : ushort, meta : ushort) : Sprite
+    + GetSolidSprite(id : ushort) : Sprite
+    + GetUtilitySprite(id : ushort, meta : ushort) : Sprite
+    + GetUtilitySprite(id : ushort) : Sprite
+    + GetFluidSprite(id : ushort) : Sprite
+    + GetFluidSpriteByAmount(fluidId : ushort, amount : byte) : Sprite
+    + GetBgTile(id : ushort) : TileBase
+    + GetSolidTile(id : ushort, meta : ushort) : TileBase
+    + GetPlatformColliderTile(id : ushort, meta : ushort) : TileBase
+    + GetUtilityTile(id : ushort, meta : ushort) : TileBase
+    + GetFluidTile(fluidId : ushort, amount : byte) : TileBase
+    + RebuildSpriteCache() : void
+}
+class ItemLibrary {
+    + itemAtlas : SpriteAtlas
+    + GetItemJson(itemId : string) : JObject
+}
+class ItemLibrary {
+    + Create(itemId : string, count : int) : ItemData
+}
+class ItemLibrary {
+}
+class ItemLibrary {
+    + GetSprite(spriteName : string) : Sprite
+}
+class RecipeLibrary {
+    + TryApplyAlloysToCrucible(crucible : ItemData) : bool
+}
+class RecipeLibrary {
+    + cells : JObject[]
+    + TryCraft(slots : List<ItemData>, List<ItemData> : out, JArray : out, JObject : out) : bool
+}
+class RecipeLibrary {
+    + itemLibrary : ItemLibrary
+    + recipe2Json : TextAsset
+    + recipe4Json : TextAsset
+    + recipe9Json : TextAsset
+    + recipe16Json : TextAsset
+    + alloyJson : TextAsset
+    + toolbenchJson : TextAsset
+    + outId : string
+    + outAmount : int
+}
+class AlloyEntry {
+    + itemLibrary : ItemLibrary
+    + recipe2Json : TextAsset
+    + recipe4Json : TextAsset
+    + recipe9Json : TextAsset
+    + recipe16Json : TextAsset
+    + alloyJson : TextAsset
+    + toolbenchJson : TextAsset
+    + outId : string
+    + outAmount : int
+}
+class RecipeLibrary {
+}
+class RecipeLibrary {
+}
+class RecipeLibrary {
+}
+class RecipeLibrary {
+    + TryGetToolbenchCandidates(slots : List<ItemData>, List<ItemData> : out, JArray : out, JObject : out) : bool
+}
+class Player {
+    - rb : Rigidbody2D
+    - groundCheckCollider : Collider2D
+    - groundLayerMask : LayerMask
+    - platformLayerMask : LayerMask
+    - playerPhysicsCollider : Collider2D
+    - _dropCo : Coroutine
+    - _platformContactFilter : ContactFilter2D
+    - bodyTriggerCollider : Collider2D
+    - headTriggerCollider : Collider2D
+    - fluidLayerMask : LayerMask
+    - skinRoot : Transform
+    - bodyRenderer : SpriteRenderer
+    - leftArmRenderer : SpriteRenderer
+    - rightArmRenderer : SpriteRenderer
+    - leftLegRenderer : SpriteRenderer
+    - rightLegRenderer : SpriteRenderer
+    + rightHandItemRenderer : SpriteRenderer
+    - audioManager : AudioManager
+    - hungerFillImage : Image
+    - thirstFillImage : Image
+    - staminaFillImage : Image
+    - oxygenFillImage : Image
+    - heartRoot : Transform
+    - heartPrefab : GameObject
+    - heartAtlas : SpriteAtlas
+    - heartObjects : Heart[]
+    - _moveInput : float
+    - _isGrounded : bool
+    - _wasGrounded : bool
+    - _jumpRequested : bool
+    - _isFalling : bool
+    - _fallStartY : float
+    + currentFallDistance : float
+    + lastFallDistance : float
+}
+class Player {
+}
+class Player {
+    - TryDropThroughPlatform() : void
+    - CoDropThroughPlatforms() : IEnumerator
+}
+class Player {
+    + TryConsumeStaminaForAttack(staminaCost : float) : bool
+    + StartAttackCooldown(cooldown : float) : void
+    + TakeDamage(damage : int) : void
+}
+class CraftModule {
+    + craftButton : Button
+    + recipeLibrary : RecipeLibrary
+    + OnClickCraft() : void
+    + ExecuteCraft() : void
+}
+class CrucibleSmelts {
+    + Init(view : CrucibleView, layerIndexInCrucible : int, itemId : string, amount : int) : void
+    + OnPointerClick(eventData : PointerEventData) : void
+    + TryBuildTooltip(sb : StringBuilder) : void
+}
+class CrucibleView {
+    + itemLibrary : ItemLibrary
+    + contentRoot : RectTransform
+    + layerPrefab : GameObject
+    + BindCrucible(crucibleItem : ItemData) : void
+    + Refresh() : void
+    + Clear() : void
+    + BringLayerToTop(layerIndexInCrucible : int) : bool
+}
+class ICursorTooltipSource <<interface>> {
+}
+class BeltVfx {
+    + SetEndpointsWorld(startWorld : Vector2, endWorld : Vector2) : void
+    + SetEndLocal(newEndLocal : Vector2) : void
+    + GetEndLocal() : Vector2
+    + SetSpin(newRpm : float, newDir : int) : void
+    + SetBodyColor(newColor : Color) : void
+}
+class BrickFurnace {
+    + GetInputProgress01(index : int) : float
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+}
+class Campfire {
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+}
+class ClayKiln {
+    + In : ItemData
+    + Out : ItemData
+    + ticksDone : int
+    + ticksNeed : int
+    + resultItemId : string
+    + resultAmount : int
+    + prevInItemId : string
+    + prevInDur : int
+    + ResetProgress() : void
+    + IngredientChanged() : bool
+    + SnapshotIngredient() : void
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+}
+class FireLane {
+    + In : ItemData
+    + Out : ItemData
+    + ticksDone : int
+    + ticksNeed : int
+    + resultItemId : string
+    + resultAmount : int
+    + prevInItemId : string
+    + prevInDur : int
+    + ResetProgress() : void
+    + IngredientChanged() : bool
+    + SnapshotIngredient() : void
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+}
+class CokeOven {
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+}
+class ForgeWorkbench {
+}
+class Hearth {
+}
+class PrimalWorkbench {
+}
+class Toolbench {
+    + GetSlot(kind : SlotKind) : ItemData
+    + SetSlot(kind : SlotKind, item : ItemData) : void
+    + ClearPreview() : void
+    + ClearCandidates() : void
+    + SetCandidatesFromRecipe(candidates : List<ItemData>, remappedInputActions : JArray, matchedRecipe : JObject) : void
+    + SelectCandidateToPreview(candidate : ItemData) : void
+    + CanCraftSelected() : bool
+    + TryCraftSelected(inventory : InventoryData) : bool
+}
+class WoodenCrate {
+    + itemId : string
+    + name : string
+    + spriteName : string
+    + itemType : string
+    + maxStack : int
+    + maxDurability : int
+    + durability : int
+    + count : int
+    + tags : List<string>
+    + items : List<ItemPayload>
+}
+class ItemPayload {
+    + itemId : string
+    + name : string
+    + spriteName : string
+    + itemType : string
+    + maxStack : int
+    + maxDurability : int
+    + durability : int
+    + count : int
+    + tags : List<string>
+    + items : List<ItemPayload>
+}
+class WoodenCratePayload {
+    + itemId : string
+    + name : string
+    + spriteName : string
+    + itemType : string
+    + maxStack : int
+    + maxDurability : int
+    + durability : int
+    + count : int
+    + tags : List<string>
+    + items : List<ItemPayload>
+}
+class BeltLink {
+    + Contains(gearNodeId : int) : bool
+    + GetOther(gearNodeId : int) : int
+}
+class GearNetwork {
+    + StressCapacityTotal : int { get; set; }
+    + StressUsed : int { get; set; }
+    + Stalled : bool { get; set; }
+    + Clear() : void
+}
+class GearNetworkManager {
+    + world : WorldManager
+    + vfx : VfxManager
+    + maxRpm : int
+    + rpm : int
+    + stressCapacity : int
+    + maxRpm : int
+    + materialItemId : string
+    + color : Color
+    + beltKind : string
+    + count : int
+    + IsGearOccupiedCell(cell : Vector2Int) : bool
+    + TryGetGearNodeIdAtCell(anyGearCell : Vector2Int, int : out) : bool
+    + CanPlaceGear(center : Vector2Int, size : GearNode.GearSize) : bool
+    + CanPlaceGear(center : Vector2Int, gearId : string) : bool
+    + TryAddGear(center : Vector2Int, size : GearNode.GearSize, maxRpm : int, gearId : string, int : out) : bool
+    + TryAddGear(center : Vector2Int, gearId : string, int : out) : bool
+    + TryRemoveGearAt(anyGearCell : Vector2Int, string : out, List<BeltDrop> : out, List<Vector2Int> : out) : bool
+    + TryRemoveGearAt(anyGearCell : Vector2Int, string : out) : bool
+    + TryRemoveGearAt(anyGearCell : Vector2Int) : bool
+    + HasGearOccupiedVisualAt(cell : Vector2Int) : bool
+    + TryAttachSourceAtCell(anyGearCell : Vector2Int, sourceId : string, int : out) : bool
+    + TryAddSource(attachedGearCenter : Vector2Int, sourceId : string, int : out) : bool
+    + TryRemoveSource(sourceNodeId : int) : bool
+    + TryGetSourceAtGearCell(anyGearCell : Vector2Int, string : out) : bool
+    + TryRemoveSourceAtGearCell(anyGearCell : Vector2Int, string : out) : bool
+    + TryAttachBeltAtCells(startAnyGearCell : Vector2Int, endAnyGearCell : Vector2Int, beltKind : string, int : out) : bool
+    + TryRemoveBeltAtGearCell(anyGearCell : Vector2Int, BeltDrop : out) : bool
+    + TryRemoveBeltAtGearCell(anyGearCell : Vector2Int, BeltDrop : out, Vector2Int : out) : bool
+    + TryGetBeltAtGearCell(anyGearCell : Vector2Int, string : out, Vector2Int : out) : bool
+    + TryGetBeltMaterialItemId(beltKind : string, string : out) : bool
+}
+class GearNetworkManager {
+    + RegisterCogwheelSpec(gearId : string, size : GearNode.GearSize, maxRpm : int) : void
+    + RegisterSourceSpec(sourceId : string, kind : SourceNode.SourceKind, rpm : int, stressCapacity : int) : void
+    + RegisterBeltSpec(beltKind : string, maxRpm : int, materialItemId : string, color : Color) : void
+    + TickSources() : void
+    + TickNetworks() : void
+}
+class GearNetworkManager {
+    + otherGearId : int
+    + deltaK : int
+    + invertDir : bool
+    + RebuildFromWorldFullScan() : void
+}
+class GearNode {
+    + Dir : RotationDir { get; set; }
+    + Rpm : int { get; set; }
+}
+class SourceNode {
+    + IsActive : bool { get; set; }
+    + Dir : RotationDir { get; set; }
+    + Rpm : int { get; set; }
+    + SetAttachment(newGearCenter : Vector2Int) : void
+    + SetStressCapacity(newCapacity : int) : void
+    + SetBaseRpm(newBaseRpm : int) : void
+    + SetKind(newKind : SourceKind) : void
+}
+class WorldChunkSystem {
+    + InitializePool(initialPoolSize : int) : void
+    + ResetLastPlayerChunk(playerPosition : Vector3) : void
+    + SetGlobalBrightnessOffset(offset : ushort) : void
+    + UpdateVisibleChunks(playerPosition : Vector3, coroutineHost : MonoBehaviour) : void
+    + ProcessDirtyChunks() : void
+    + MarkChunkDirty(worldX : int, worldY : int, markSolid : bool, markBG : bool, markLiquid : bool, markUtility : bool) : void
+    + MarkLightDirtyCell(worldX : int, worldY : int) : void
+    + MarkLightDirtyCells(cells : List<Vector2Int>) : void
+    + MarkLightDirtyRect(x : int, y : int, w : int, h : int) : void
+    + MarkAllChunksLightDirty() : void
+    - ProcessLoadQueue() : IEnumerator
+    - GetPlayerChunk(p : Vector3) : Vector2Int
+    - GetFromPool() : GameObject
+    - ReturnToPool(go : GameObject) : void
+    - CreateChunk(coord : Vector2Int) : void
+    - RefreshChunkLayer(coord : Vector2Int, type : LayerType) : void
+    - RefreshLightLayer(coord : Vector2Int) : void
+}
+class WorldSaveSystem {
+    + itemId : string
+    + count : int
+    + durability : int
+    + mobId : string
+    + corpseId : string
+}
+class DroppedItemSavePayload {
+    + itemId : string
+    + count : int
+    + durability : int
+    + mobId : string
+    + corpseId : string
+}
+class MobSavePayload {
+    + itemId : string
+    + count : int
+    + durability : int
+    + mobId : string
+    + corpseId : string
+}
+class CorpseSavePayload {
+    + itemId : string
+    + count : int
+    + durability : int
+    + mobId : string
+    + corpseId : string
+}
+class BrickFurnaceModule {
+    + fuelIn : ItemSlot
+    + fuelOut : ItemSlot
+    + crucible : ItemSlot
+    + in0 : ItemSlot
+    + in1 : ItemSlot
+    + in2 : ItemSlot
+    + in3 : ItemSlot
+    + in4 : ItemSlot
+    + in5 : ItemSlot
+    + in6 : ItemSlot
+    + in7 : ItemSlot
+    + in8 : ItemSlot
+    + fireGauge : Image
+    + crucibleView : CrucibleView
+    + Bind(furnace : BrickFurnace) : void
+}
+class CampfireModule {
+    + fuelIn : ItemSlot
+    + fuelOut : ItemSlot
+    + ingIn : ItemSlot
+    + ingOut : ItemSlot
+    + fireGauge : Image
+    + cookGauge : Image
+    + Bind(campfire : Campfire) : void
+}
+class ClayKilnModule {
+    + fuelIn : ItemSlot
+    + fuelOut : ItemSlot
+    + fireInA : ItemSlot
+    + fireOutA : ItemSlot
+    + fireInB : ItemSlot
+    + fireOutB : ItemSlot
+    + fireGauge : Image
+    + progressGaugeA : Image
+    + progressGaugeB : Image
+    + Bind(kiln : ClayKiln) : void
+}
+class CokeOvenModule {
+    + fuelIn : ItemSlot
+    + fuelOut : ItemSlot
+    + materialIn : ItemSlot
+    + out0 : ItemSlot
+    + out1 : ItemSlot
+    + fireGauge : Image
+    + progressGauge : Image
+    + Bind(oven : CokeOven) : void
+}
+class ModuleSlotSyncUtility {
+}
+class ToolbenchModule {
+    + recipeLibrary : RecipeLibrary
+    + materialSlot : ItemSlot
+    + toolSlot : ItemSlot
+    + previewSlot : ItemSlot
+    + viewportContent : Transform
+    + candidateSlotPrefab : ItemSlot
+    + craftButton : Button
+    + Bind(toolbench : Toolbench) : void
+}
+class WoodenCrateModule {
+    + ROW0 : Transform
+    + ROW1 : Transform
+    + ROW2 : Transform
+    + ROW3 : Transform
+    + ROW4 : Transform
+    + Bind(crate : WoodenCrate) : void
+}
+MonoBehaviour <|-- Debugger
+MonoBehaviour <|-- CorpseLibrary
+MonoBehaviour <|-- MobLibrary
+MonoBehaviour <|-- MultiblockLibrary
+MonoBehaviour <|-- UtilityLibrary
+MonoBehaviour <|-- CameraFollow
+MonoBehaviour <|-- AudioManager
+MonoBehaviour <|-- VfxManager
+MonoBehaviour <|-- Entity
+MonoBehaviour <|-- EntityManager
+Entity <|-- DroppedItem
+MonoBehaviour <|-- ItemDropper
+Entity <|-- Corpse
+Entity <|-- Mob
+MonoBehaviour <|-- BackGround
+MonoBehaviour <|-- InteractionController
+MonoBehaviour <|-- Cursor
+MonoBehaviour <|-- Hotbar
+MonoBehaviour <|-- ItemSlot
+IPointerEnterHandler <|.. ItemSlot
+IPointerExitHandler <|.. ItemSlot
+IPointerClickHandler <|.. ItemSlot
+MonoBehaviour <|-- PlayerInventory
+MonoBehaviour <|-- Heart
+MonoBehaviour <|-- RotatingVfx
+MonoBehaviour <|-- GodRay
+MonoBehaviour <|-- MultiblockManager
+MonoBehaviour <|-- Chunk
+Entity <|-- FallingBlock
+ScriptableObject <|-- WorldGenSettings
+MonoBehaviour <|-- WorldManager
+Mob <|-- Cow
+MonoBehaviour <|-- CellLibrary
+MonoBehaviour <|-- ItemLibrary
+MonoBehaviour <|-- RecipeLibrary
+MonoBehaviour <|-- Player
+IInventoryOwner <|.. Player
+MonoBehaviour <|-- CraftModule
+MonoBehaviour <|-- CrucibleSmelts
+IPointerClickHandler <|.. CrucibleSmelts
+ICursorTooltipSource <|.. CrucibleSmelts
+MonoBehaviour <|-- CrucibleView
+MonoBehaviour <|-- BeltVfx
+Multiblock <|-- BrickFurnace
+Multiblock <|-- Campfire
+Multiblock <|-- ClayKiln
+Multiblock <|-- CokeOven
+Multiblock <|-- ForgeWorkbench
+MonoBehaviour <|-- Hearth
+Multiblock <|-- PrimalWorkbench
+Multiblock <|-- Toolbench
+Multiblock <|-- WoodenCrate
+MonoBehaviour <|-- GearNetworkManager
+MonoBehaviour <|-- BrickFurnaceModule
+MonoBehaviour <|-- CampfireModule
+MonoBehaviour <|-- ClayKilnModule
+MonoBehaviour <|-- CokeOvenModule
+MonoBehaviour <|-- ToolbenchModule
+MonoBehaviour <|-- WoodenCrateModule
+Debugger --> WorldManager : field
+CorpseLibrary --> ItemDropper : field
+CorpseLibrary --> EntityManager : field
+CorpseLibrary --> Corpse : parameter
+CorpsePrefabDef --> ItemDropper : field
+CorpsePrefabDef --> EntityManager : field
+CorpsePrefabDef --> Corpse : parameter
+CorpseProcessDef --> ItemDropper : field
+CorpseProcessDef --> EntityManager : field
+CorpseProcessDef --> Corpse : parameter
+MobLibrary --> Mob : field
+MobLibrary --> EntityManager : parameter
+MobEntry --> Mob : field
+MobEntry --> EntityManager : parameter
+EntityManager --> Entity : parameter
+DroppedItem --> ItemLibrary : field
+DroppedItem --> ItemData : parameter
+DroppedItemPayload --> ItemLibrary : field
+DroppedItemPayload --> ItemData : parameter
+ItemDropper --> ItemLibrary : field
+ItemDropper --> EntityManager : field
+ItemDropper --> ItemData : parameter
+Mob --> CorpseLibrary : field
+MobPayload --> CorpseLibrary : field
+BackGround --> WorldManager : field
+InteractionController --> Player : field
+InteractionController --> Hotbar : field
+InteractionController --> ItemSlot : field
+InteractionController --> WorldManager : field
+InteractionController --> MultiblockManager : field
+InteractionController --> GearNetworkManager : field
+InteractionController --> RecipeLibrary : field
+InteractionController --> ItemLibrary : field
+InteractionController --> CorpseLibrary : field
+InteractionController --> CellLibrary : field
+InteractionController --> UtilityLibrary : field
+InteractionController --> AudioManager : field
+Cursor --> ItemSlot : field
+Hotbar --> InventoryData : field
+ItemSlot --> InventoryData : field
+ItemSlot --> ItemData : field
+ItemSlot --> ItemData : parameter
+PlayerInventory --> InventoryData : field
+MultiblockManager --> WorldManager : field
+MultiblockManager --> VfxManager : field
+MultiblockManager --> Multiblock : parameter
+FallingBlock --> WorldManager : field
+FallingBlock --> WorldManager : parameter
+FallingBlockPayload --> WorldManager : field
+FallingBlockPayload --> WorldManager : parameter
+StructureTemplate --> Anchor : field
+StructureTemplate --> Layers : field
+Anchor --> Layers : field
+Layers --> Anchor : field
+WriteRule --> Anchor : field
+WriteRule --> Layers : field
+StructureLoader --> Anchor : field
+StructureLoader --> Layers : field
+WorldManager --> WorldGenSettings : field
+WorldManager --> CellLibrary : field
+WorldManager --> RecipeLibrary : field
+WorldManager --> FallingBlock : field
+WorldManager --> ItemDropper : field
+WorldManager --> VfxManager : field
+WorldManager --> MultiblockManager : field
+WorldManager --> CorpseLibrary : field
+WorldManager --> EntityManager : field
+WorldManager --> MobLibrary : field
+WorldManager --> ItemLibrary : field
+WorldManager --> GearNetworkManager : field
+WorldManager --> WorldData : field
+WorldManager --> WorldChunkSystem : field
+WorldManager --> InventoryData : field
+InventoryData --> ItemData : parameter
+Cow --> Corpse : field
+RecipeLibrary --> ItemData : parameter
+RecipeLibrary --> ItemLibrary : field
+AlloyEntry --> ItemLibrary : field
+Player --> AudioManager : field
+CraftModule --> RecipeLibrary : field
+CrucibleSmelts --> CrucibleView : parameter
+CrucibleView --> ItemLibrary : field
+CrucibleView --> ItemData : parameter
+BrickFurnace --> ItemData : parameter
+Campfire --> ItemData : parameter
+ClayKiln --> ItemData : field
+ClayKiln --> ItemData : parameter
+FireLane --> ItemData : field
+FireLane --> ItemData : parameter
+CokeOven --> ItemData : parameter
+Toolbench --> ItemData : parameter
+Toolbench --> InventoryData : parameter
+GearNetworkManager --> WorldManager : field
+GearNetworkManager --> VfxManager : field
+BrickFurnaceModule --> ItemSlot : field
+BrickFurnaceModule --> CrucibleView : field
+BrickFurnaceModule --> BrickFurnace : parameter
+CampfireModule --> ItemSlot : field
+CampfireModule --> Campfire : parameter
+ClayKilnModule --> ItemSlot : field
+ClayKilnModule --> ClayKiln : parameter
+CokeOvenModule --> ItemSlot : field
+CokeOvenModule --> CokeOven : parameter
+ToolbenchModule --> RecipeLibrary : field
+ToolbenchModule --> ItemSlot : field
+ToolbenchModule --> Toolbench : parameter
+WoodenCrateModule --> WoodenCrate : parameter
+@enduml

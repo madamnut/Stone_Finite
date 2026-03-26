@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Game.World;
+
 namespace Game.Player
 {
     
@@ -192,7 +194,7 @@ namespace Game.Player
             _attackCo = null;
         }
     
-        void OnTriggerEnter2D(Collider2D other)
+        internal void HandleCombatTrigger(Collider2D other)
         {
             if (!_attackActive)
                 return;

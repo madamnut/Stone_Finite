@@ -94,13 +94,14 @@ namespace Game.Player
         public AudioManager sound;
     
         [Header("Corpse Hover")]
-        public LayerMask corpseLayerMask;
+        public CorpseHoverQueryService corpseHoverQueryService;
     
         [Header("Melee Attack Parts")]
         public Transform meleeRoot;
         public Transform meleeAngle;
         public Transform meleeOffset;
         public SpriteRenderer meleeSprite;
+        public CombatHitSensor combatHitSensor;
     
         bool _attackActive = false;
         readonly HashSet<Mob> _hitMobsThisAttack = new HashSet<Mob>();
@@ -157,9 +158,20 @@ namespace Game.Player
             if (utilityLibrary == null)
                 utilityLibrary = FindObjectOfType<UtilityLibrary>();
     
+            InitializeBuildServices();
             InitializeMultiblockUiBridge();
             ApplyWorldCursor();
-            meleeRoot.gameObject.SetActive(false);
+            corpseHoverQueryService = corpseHoverQueryService != null ? corpseHoverQueryService : GetComponentInChildren<CorpseHoverQueryService>(true);
+            if (corpseHoverQueryService == null)
+                Debug.LogWarning("[InteractionController] corpseHoverQueryService is not assigned. Corpse hover highlighting will not work until a CorpseHoverQueryService is wired.");
+            if (meleeRoot != null)
+                combatHitSensor = combatHitSensor != null ? combatHitSensor : meleeRoot.GetComponentInChildren<CombatHitSensor>(true);
+            if (combatHitSensor != null)
+                combatHitSensor.Bind(this);
+            else
+                Debug.LogWarning("[InteractionController] combatHitSensor is not assigned. Melee hit detection will not work until a CombatHitSensor is wired.");
+            if (meleeRoot != null)
+                meleeRoot.gameObject.SetActive(false);
         }
     
         void Update()

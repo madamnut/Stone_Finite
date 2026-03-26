@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 namespace Game.Player
@@ -6,51 +5,6 @@ namespace Game.Player
     
     public partial class Player
     {
-        private void TryDropThroughPlatform()
-        {
-            if (playerPhysicsCollider == null) return;
-    
-            if (_dropCo != null) return;
-    
-            _dropPlatforms.Clear();
-    
-            var contacts = new Collider2D[16];
-            int n = rb.GetContacts(_platformContactFilter, contacts);
-            for (int i = 0; i < n; i++)
-            {
-                var c = contacts[i];
-                if (c == null) continue;
-                if (!_dropPlatforms.Contains(c))
-                    _dropPlatforms.Add(c);
-            }
-    
-            if (_dropPlatforms.Count == 0) return;
-    
-            _dropCo = StartCoroutine(CoDropThroughPlatforms());
-        }
-    
-        private IEnumerator CoDropThroughPlatforms()
-        {
-            for (int i = 0; i < _dropPlatforms.Count; i++)
-            {
-                var p = _dropPlatforms[i];
-                if (p != null)
-                    Physics2D.IgnoreCollision(playerPhysicsCollider, p, true);
-            }
-    
-            yield return new WaitForSeconds(dropThroughTime);
-    
-            for (int i = 0; i < _dropPlatforms.Count; i++)
-            {
-                var p = _dropPlatforms[i];
-                if (p != null)
-                    Physics2D.IgnoreCollision(playerPhysicsCollider, p, false);
-            }
-    
-            _dropPlatforms.Clear();
-            _dropCo = null;
-        }
-    
         void SetFacing(int dir)
         {
             if (dir != -1 && dir != 1) return;

@@ -1,0 +1,22 @@
+{
+  "name": "Game.Player",
+  "rootNamespace": "",
+  "references": [
+    "Game.AudioSupport",
+    "Game.Core",
+    "Game.Data",
+    "Game.UI",
+    "Game.World",
+    "Game.VfxSupport",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
