@@ -1,3 +1,6 @@
+﻿
+
+
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,13 +14,16 @@ namespace Game.World
     {
         private sealed class BootstrapService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public BootstrapService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void InitializeLifecycleState()
             {
                 _ctx.Width = _ctx.Settings.width;
@@ -31,6 +37,7 @@ namespace Game.World
                 CacheUtilityOccupiedIdIfNeeded();
             }
 
+            
             public void LogBootContext()
             {
                 string dirBoot = WorldLoadContext.GetSavePath();
@@ -38,6 +45,7 @@ namespace Game.World
                 Debug.Log($"[BOOT] loadType={WorldLoadContext.loadType}, seed={WorldLoadContext.seed}, saveExists={File.Exists(pathBoot)}, path={pathBoot}");
             }
 
+            
             public void TickGearNetworks()
             {
                 if (_ctx.GearNetworkManager == null)
@@ -47,6 +55,7 @@ namespace Game.World
                 _ctx.GearNetworkManager.TickNetworks();
             }
 
+            
             public void AdvanceWorldClock()
             {
                 _ctx.LastLoggedSecondTick += _ctx.TicksPerSecond;
@@ -62,6 +71,7 @@ namespace Game.World
                 _ctx.ApplyTimeSyncedBrightness(forceDirty: false);
             }
 
+            
             public void BootNewWorld()
             {
                 Debug.Log("[BOOT] NewWorld branch: Generate -> SaveWorld()");
@@ -80,6 +90,7 @@ namespace Game.World
                 _ctx.SaveWorld();
             }
 
+            
             public bool TryBootLoadedWorld()
             {
                 if (!_ctx.LoadWorldFromDisk(out var loadedWorldMap, out var loadedMultiblocks))
@@ -97,6 +108,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public void FinalizeBootInitialization()
             {
                 InitializeChunkSystem();
@@ -110,6 +122,7 @@ namespace Game.World
                 LoadMultiblocks();
             }
 
+            
             bool TryFindSpawnPosition(out Vector3 spawnPosition)
             {
                 spawnPosition = _ctx.PlayerTransform.position;
@@ -142,6 +155,7 @@ namespace Game.World
                 return false;
             }
 
+            
             void ResolvePlayerInventoryReference()
             {
                 _ctx.PlayerInventory = null;
@@ -160,6 +174,7 @@ namespace Game.World
                 }
             }
 
+            
             void CacheUtilityOccupiedIdIfNeeded()
             {
                 if (_ctx.UtilityOccupiedId != 0) return;
@@ -169,6 +184,7 @@ namespace Game.World
                     _ctx.UtilityOccupiedId = occ;
             }
 
+            
             void InitializeChunkSystem()
             {
                 _ctx.ChunkSystem = new WorldChunkSystem(
@@ -186,6 +202,7 @@ namespace Game.World
                 _ctx.ChunkSystem.InitializePool(_ctx.InitialPoolSize);
             }
 
+            
             void InitializeWorldClock()
             {
                 if (WorldLoadContext.loadType == WorldLoadContext.LoadType.NewWorld)
@@ -218,6 +235,7 @@ namespace Game.World
                 _ctx.WorldHour = _ctx.WorldMinute / 60;
             }
 
+            
             void LoadMultiblocks()
             {
                 if (_ctx.MultiblockManager == null)

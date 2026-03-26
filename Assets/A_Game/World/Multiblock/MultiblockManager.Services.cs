@@ -1,13 +1,18 @@
+﻿
+
+
 namespace Game.World
 {
     public partial class MultiblockManager
     {
+
         MultiblockServiceContext _serviceContext;
         MultiblockLifecycleService _lifecycleService;
         MultiblockPersistenceService _persistenceService;
         MultiblockUiBridgeService _uiBridgeService;
         MultiblockQueryService _queryService;
 
+        
         void InitializeServices()
         {
             _serviceContext ??= new MultiblockServiceContext(this);

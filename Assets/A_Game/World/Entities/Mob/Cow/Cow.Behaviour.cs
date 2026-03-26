@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using UnityEngine;
 
@@ -5,9 +8,11 @@ namespace Game.World
 {
 public partial class Cow
 {
+    
     void Update()
     {
         bool grounded = IsGrounded();
+
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -22,6 +27,7 @@ public partial class Cow
             scale.x = -Mathf.Abs(scale.x);
             body.localScale = scale;
         }
+        
         else if (aiMoveDir > 0 && facing != 1)
         {
             facing = 1;
@@ -82,6 +88,7 @@ public partial class Cow
         }
     }
 
+    
     void SetNextState()
     {
         if (state == CowState.Idle)
@@ -97,6 +104,7 @@ public partial class Cow
         }
     }
 
+    
     void SetSpriteOrder()
     {
         SetOrder(body, 0);
@@ -107,6 +115,7 @@ public partial class Cow
         SetOrder(head, 2);
     }
 
+    
     void SetOrder(Transform t, int order)
     {
         if (t == null) return;
@@ -114,6 +123,7 @@ public partial class Cow
         if (sr != null) sr.sortingOrder = order;
     }
 
+    
     bool IsGrounded()
     {
         if (groundCheckCollider == null)
@@ -126,6 +136,7 @@ public partial class Cow
     }
 
 #if UNITY_EDITOR
+    
     void OnDrawGizmosSelected()
     {
         if (groundCheckCollider is BoxCollider2D box)
@@ -137,6 +148,7 @@ public partial class Cow
     }
 #endif
 
+    
     protected override void OnDamaged(int amount)
     {
         base.OnDamaged(amount);
@@ -150,6 +162,7 @@ public partial class Cow
         _hitFlashRoutine = StartCoroutine(HitFlash());
     }
 
+    
     IEnumerator HitFlash()
     {
         int len = _hitRenderers.Length;
@@ -174,6 +187,7 @@ public partial class Cow
                 sr.color = hitFlashColor;
         }
 
+        
         yield return new WaitForSeconds(hitFlashTime);
 
         for (int i = 0; i < len; i++)
@@ -186,6 +200,7 @@ public partial class Cow
         _hitFlashRoutine = null;
     }
 
+    
     protected override void OnDeath()
     {
         if (deathClip != null)

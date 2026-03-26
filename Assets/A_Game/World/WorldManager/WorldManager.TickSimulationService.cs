@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
@@ -6,13 +9,16 @@ namespace Game.World
     {
         private sealed class TickSimulationService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public TickSimulationService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void EnqTick(int x, int y)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return;
@@ -23,6 +29,7 @@ namespace Game.World
                 }
             }
 
+            
             public void OnCellEdited(int gx, int gy)
             {
                 if ((uint)gx >= (uint)_ctx.Width || (uint)gy >= (uint)_ctx.Height) return;
@@ -34,6 +41,7 @@ namespace Game.World
                 EnqTick(gx, gy - 1);
             }
 
+            
             public void StepTick()
             {
                 if (_ctx.TickCurrent.Count == 0) SwapTickBuffers();
@@ -48,6 +56,7 @@ namespace Game.World
                 _ctx.TickCurrent.Clear();
             }
 
+            
             void SwapTickBuffers()
             {
                 var t = _ctx.TickCurrent;
@@ -56,6 +65,7 @@ namespace Game.World
                 _ctx.TickNext.Clear();
             }
 
+            
             void StepAttachmentAt(int x, int y)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return;

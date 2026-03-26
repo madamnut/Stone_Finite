@@ -879,7 +879,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   world: {fileID: 557152421}
   itemLibrary: {fileID: 236639235}
-  interaction: {fileID: 1746062758}
+  playerTransform: {fileID: 0}
   primalCraftModule: {fileID: 8683761661018755451, guid: 1afadc5995fd5bd48a4d947498d2e6ed, type: 3}
   forgeCraftModule: {fileID: 8683761661018755451, guid: ce2901f1748fbd2419a98a0b955f5176, type: 3}
   campfireModule: {fileID: 8683761661018755451, guid: 0ffd85b8869380c439e4a992432c783a, type: 3}
@@ -3976,7 +3976,6 @@ MonoBehaviour:
   chunkRoot: {fileID: 105343928}
   initialPoolSize: 200
   player: {fileID: 1746062756}
-  playerComp: {fileID: 1746062761}
   ChunkRadius: 16
   maxLoadsPerFrame: 8
   fallingBlockPrefab: {fileID: 1588647022827329498, guid: 2c99c2732ee406642aeee96ca9e2f995, type: 3}
@@ -8193,7 +8192,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c43251beb03e31e49816c4cb414122bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 1746062761}
+  inventoryOwnerComponent: {fileID: 1746062761}
   hotbarRoot: {fileID: 1278894244}
 --- !u!1001 &1282387996
 PrefabInstance:
@@ -10843,13 +10842,12 @@ MonoBehaviour:
   utilityLibrary: {fileID: 739783372}
   handcraftModule: {fileID: 6778416462143988762, guid: 71cadf85a05d18f4397e0a40c3ad9bb1, type: 3}
   sound: {fileID: 2008242133}
-  corpseLayerMask:
-    serializedVersion: 2
-    m_Bits: 1024
+  corpseHoverQueryService: {fileID: 0}
   meleeRoot: {fileID: 2028487067}
   meleeAngle: {fileID: 850270879}
   meleeOffset: {fileID: 7867981903111705926}
   meleeSprite: {fileID: 8289067240059878660}
+  combatHitSensor: {fileID: 0}
 --- !u!114 &1746062761
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10865,20 +10863,10 @@ MonoBehaviour:
   moveSpeed: 10
   jumpForce: 21
   rb: {fileID: 1746062762}
-  groundCheckCollider: {fileID: 430136573}
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 167772160
-  dropThroughTime: 0.15
-  platformLayerMask:
-    serializedVersion: 2
-    m_Bits: 134217728
+  groundProbe: {fileID: 0}
   playerPhysicsCollider: {fileID: 1746062764}
-  bodyTriggerCollider: {fileID: 1046670681}
-  headTriggerCollider: {fileID: 288829799}
-  fluidLayerMask:
-    serializedVersion: 2
-    m_Bits: 67108864
+  platformDropThroughService: {fileID: 0}
+  fluidProbe: {fileID: 0}
   fluidMoveSpeedMultiplier: 0.4
   fluidHorizontalDamping: 8
   fluidVerticalDamping: 2
@@ -10898,6 +10886,7 @@ MonoBehaviour:
   walkReturnSpeed: 10
   damageFlashDuration: 0.1
   audioManager: {fileID: 2008242133}
+  pickupSensor: {fileID: 0}
   hungerFillImage: {fileID: 560989412}
   thirstFillImage: {fileID: 438314666}
   staminaFillImage: {fileID: 140984909}
@@ -12308,7 +12297,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f65b00de948b5404aa96420040a18a04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 1746062761}
+  inventoryOwnerComponent: {fileID: 1746062761}
   row0: {fileID: 298572553}
   row1: {fileID: 681590735}
   row2: {fileID: 777103435}

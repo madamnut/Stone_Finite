@@ -1,3 +1,6 @@
+﻿
+
+
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -13,6 +16,7 @@ namespace Game.World
         [System.Serializable]
         private class DroppedItemSavePayload
         {
+
             public string itemId;
             public int count;
             public int durability;
@@ -30,6 +34,7 @@ namespace Game.World
             public string corpseId;
         }
 
+        
         public static void LoadEntities(
             string path,
             EntityManager entityManager,
@@ -85,6 +90,7 @@ namespace Game.World
             }
         }
 
+        
         static bool TryRestoreEntity(
             EntitySaveData data,
             EntityManager entityManager,
@@ -110,6 +116,7 @@ namespace Game.World
             }
         }
 
+        
         static bool TryRestoreDroppedItem(
             EntitySaveData data,
             EntityManager entityManager,
@@ -143,6 +150,7 @@ namespace Game.World
             return WorldEntityFactory.SpawnDroppedItem(entityManager, itemDropper, droppedItemPrefab, item, data.Position) != null;
         }
 
+        
         static bool TryRestoreMob(
             EntitySaveData data,
             EntityManager entityManager,
@@ -172,6 +180,7 @@ namespace Game.World
             return true;
         }
 
+        
         static bool TryRestoreCorpse(
             EntitySaveData data,
             CorpseLibrary corpseLibrary)

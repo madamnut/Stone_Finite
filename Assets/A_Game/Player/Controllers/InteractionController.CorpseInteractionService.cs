@@ -1,16 +1,22 @@
+﻿
+
+
 namespace Game.Player
 {
     public partial class InteractionController
     {
         private sealed class CorpseInteractionService
         {
+
             readonly InteractionController _owner;
 
+            
             public CorpseInteractionService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public bool TryCorpseInteraction()
             {
                 if (_owner._state != GameState.Ingame) return false;

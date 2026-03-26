@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +12,7 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+
         private const ushort ID_AIR = 0;
         private const ushort ID_ROCK = 1;
         private const ushort ID_DIRT = 2;
@@ -88,6 +92,7 @@ namespace Game.World
         private const int SALT_SNOW_PASS = unchecked((int)0x0510005A);
         private const int SALT_MAGMA = unchecked((int)0x0BADC0DE);
 
+        
         private static void StepLog(string label, float stepStart, float totalStart)
         {
             float now = Time.realtimeSinceStartup;

@@ -1,9 +1,13 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
 {
     public sealed partial class GearNetworkManager
     {
+        
         void LateUpdate()
         {
             EnsureVfxRef();
@@ -13,6 +17,7 @@ namespace Game.World
             {
                 foreach (var kv in _gearNodes)
                 {
+
                     int nodeId = kv.Key;
                     var gear = kv.Value;
 

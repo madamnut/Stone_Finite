@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using TMPro;
 
@@ -7,12 +10,13 @@ using Game.Lobby;
 public class Debugger : MonoBehaviour
 {
     [Header("Toggle Root")]
-    public GameObject debugRoot; // F3濡??좉?
+
+    public GameObject debugRoot; 
 
     [Header("UI Text")]
-    public TMP_Text fpsText;     // "FPS: 0"
-    public TMP_Text timeText;    // "Time: 00:00 [Band]"
-    public TMP_Text seedText;    // "Seed: 123456"
+    public TMP_Text fpsText;     
+    public TMP_Text timeText;    
+    public TMP_Text seedText;    
 
     [Header("World Time Source")]
     public WorldManager worldManager;
@@ -24,6 +28,7 @@ public class Debugger : MonoBehaviour
     int frames;
     float t;
 
+    
     void Start()
     {
         if (debugRoot) debugRoot.SetActive(true);
@@ -32,6 +37,7 @@ public class Debugger : MonoBehaviour
         if (seedText) seedText.text = $"Seed: {WorldLoadContext.seed}";
     }
 
+    
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.F3) && debugRoot)
@@ -54,7 +60,7 @@ public class Debugger : MonoBehaviour
             {
                 int hh = worldManager.worldHour;
                 int mm = worldManager.worldMinute % 60;
-                var band = worldManager.GetTimeBand(); // WorldManager.TimeBand
+                var band = worldManager.GetTimeBand(); 
                 timeText.text = $"Time: {hh:00}:{mm:00} [{band}]";
             }
             else

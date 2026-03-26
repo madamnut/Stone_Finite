@@ -1,5 +1,6 @@
-// CellLibrary.cs (?袁⑷퍥 ?대Ŋ猿쒑퉪?
-// ??Solid/Utility??type 筌왖???곕떽? 甕곌쑴??
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace Game.Data
     public partial class CellLibrary : MonoBehaviour
     {
         [Header("Solid Json (ATT_Solid.json)")]
+
         public TextAsset solidJson;
     
         [Header("Utility Json (ATT_Utility.json)")]
@@ -38,7 +40,7 @@ namespace Game.Data
             public ushort meta;
             public string spriteName;
             public string attachedAt;
-            public sbyte brightnessOverride; // -1 none, else 0..15
+            public sbyte brightnessOverride; 
         }
     
         struct SolidDef
@@ -47,10 +49,10 @@ namespace Game.Data
             public byte brightness;
             public SolidFlags flags;
             public bool isPlatform;
-            public string type;        // ??
-            public string interaction; // optional
-            public string name;        // json key
-            public Dictionary<ushort, SolidVariantDef> variants; // meta -> variant
+            public string type;        
+            public string interaction; 
+            public string name;        
+            public Dictionary<ushort, SolidVariantDef> variants; 
         }
     
         struct UtilityVariantDef
@@ -62,8 +64,8 @@ namespace Game.Data
         struct UtilityDef
         {
             public ushort id;
-            public string name; // json key
-            public string type; // ??
+            public string name; 
+            public string type; 
             public Dictionary<ushort, UtilityVariantDef> variants;
         }
     
@@ -96,6 +98,7 @@ namespace Game.Data
     
         static readonly byte[] _amountToLevel = BuildAmountToLevel();
     
+        
         static byte[] BuildAmountToLevel()
         {
             var map = new byte[WorldData.MaxFluid + 1];

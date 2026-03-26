@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.Core;
@@ -8,13 +11,16 @@ namespace Game.World
     {
         private sealed class FluidSimulationService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public FluidSimulationService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void StepFluidAt(int x, int y)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return;
@@ -39,6 +45,7 @@ namespace Game.World
                     return;
                 }
 
+                
                 bool Blocked(int gx, int gy)
                 {
                     if (!_ctx.WorldMap.InBounds(gx, gy)) return true;
@@ -121,6 +128,7 @@ namespace Game.World
                     takeR = total - takeL;
                     if (takeR > flowR) { takeR = flowR; takeL = total - takeR; }
                 }
+                
                 else if (flowL > 0) takeL = Mathf.Min(total, flowL);
                 else takeR = Mathf.Min(total, flowR);
 
@@ -132,6 +140,7 @@ namespace Game.World
                 if (takeR > 0) _ctx.OnCellEdited(xr, y);
             }
 
+            
             void SetFluidInternal(int x, int y, ushort id, int newAmount)
             {
                 var oldS = _ctx.WorldMap.GetSolid(x, y);
@@ -150,6 +159,7 @@ namespace Game.World
                 _ctx.HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
             }
 
+            
             void MoveFluidInternal(int fx, int fy, int tx, int ty, ushort id, int amount)
             {
                 if (amount <= 0) return;

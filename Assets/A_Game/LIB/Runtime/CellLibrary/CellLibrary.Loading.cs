@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -8,6 +11,7 @@ namespace Game.Data
 {
     public partial class CellLibrary
     {
+        
         void Awake()
         {
             BuildSolidCache();
@@ -17,15 +21,19 @@ namespace Game.Data
             BuildTileCache();
         }
     
+        
         static uint MakeKey(ushort id, ushort meta) => ((uint)id << 16) | meta;
+        
         static uint MakeFluidLevelKey(ushort fluidId, byte level) => ((uint)fluidId << 16) | level;
     
+        
         void BuildSolidCache()
         {
             _solidById.Clear();
             _solidIdByName.Clear();
     
             if (solidJson == null || string.IsNullOrEmpty(solidJson.text))
+
                 return;
     
             var root = JObject.Parse(solidJson.text);
@@ -40,7 +48,7 @@ namespace Game.Data
                 if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
                 ushort id = (ushort)idInt;
     
-                // ??type (미기?�면 Default)
+                
                 string type = o["type"]?.Value<string>();
                 if (string.IsNullOrEmpty(type)) type = "Default";
     
@@ -125,6 +133,7 @@ namespace Game.Data
             }
         }
     
+        
         void BuildUtilityCache()
         {
             _utilityById.Clear();
@@ -145,7 +154,7 @@ namespace Game.Data
                 if (idInt > ushort.MaxValue) idInt = ushort.MaxValue;
                 ushort id = (ushort)idInt;
     
-                // ??type (미기?�면 Default)
+                
                 string type = o["type"]?.Value<string>();
                 if (string.IsNullOrEmpty(type)) type = "Default";
     
@@ -190,6 +199,7 @@ namespace Game.Data
             }
         }
     
+        
         void BuildFluidCache()
         {
             _fluidById.Clear();
@@ -222,6 +232,7 @@ namespace Game.Data
             }
         }
     
+        
         void BuildSpriteCache()
         {
             _solidSpriteByKey.Clear();
@@ -277,6 +288,7 @@ namespace Game.Data
             }
         }
     
+        
         void BuildTileCache()
         {
             _bgTileById.Clear();

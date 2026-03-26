@@ -1,21 +1,28 @@
+﻿
+
+
 namespace Game.World
 {
     public partial class WorldManager
     {
         private sealed class RuntimeLoopService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public RuntimeLoopService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void UpdateFrame()
             {
                 _ctx.UpdateVisibleChunks();
             }
 
+            
             public void FixedUpdateFrame()
             {
                 _ctx.BootstrapService.TickGearNetworks();

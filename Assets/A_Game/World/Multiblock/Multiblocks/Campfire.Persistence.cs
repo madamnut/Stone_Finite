@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 
@@ -7,10 +10,12 @@ namespace Game.World
 {
     public partial class Campfire
     {
+        
         public override void OnCellBroken(Vector2Int brokenCell)
         {
             if (!_droppedOnDestroy)
             {
+
                 _droppedOnDestroy = true;
                 DropAllInternalItems();
             }
@@ -18,6 +23,7 @@ namespace Game.World
             base.OnCellBroken(brokenCell);
         }
 
+        
         void DropAllInternalItems()
         {
             if (World == null || World.entityManager == null)
@@ -34,6 +40,7 @@ namespace Game.World
             DropSlot(ref _ingOut, origin);
         }
 
+        
         void DropSlot(ref ItemData slot, Vector2 origin)
         {
             if (slot == null) return;
@@ -60,10 +67,12 @@ namespace Game.World
             slot = null;
         }
 
+        
         public override SaveData ToSaveData()
         {
             JObject root = new JObject();
 
+            
             JObject PackItem(ItemData it)
             {
                 if (it == null || it.Count <= 0) return null;
@@ -102,6 +111,7 @@ namespace Game.World
             };
         }
 
+        
         public override void FromSaveData(SaveData data)
         {
             RestoreBaseSaveData(data);

@@ -1,4 +1,6 @@
-// WoodenCrate.cs (?熬곣뫕????흮?우뮂??
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,9 +13,10 @@ namespace Game.World
 {
     public class WoodenCrate : Multiblock
     {
+
         public const int StorageWidth  = 5;
         public const int StorageHeight = 5;
-        public const int Capacity      = StorageWidth * StorageHeight; // 25
+        public const int Capacity      = StorageWidth * StorageHeight; 
     
         InventoryData _inventory;
         bool _droppedOnDestroy = false;
@@ -27,6 +30,7 @@ namespace Game.World
             }
         }
     
+        
         public override void Initialize(
             WorldManager world,
             string defId,
@@ -44,12 +48,14 @@ namespace Game.World
             _droppedOnDestroy = false;
         }
     
+        
         public override void OnInteract(Vector2Int hitCell)
         {
-            // ??븐슙????? 嶺뚮ㅄ維獄?id = "Wooden Crate"
+            
             Manager.OpenModule("Wooden Crate", this);
         }
     
+        
         public override void OnCellBroken(Vector2Int brokenCell)
         {
             if (!_droppedOnDestroy)
@@ -61,6 +67,7 @@ namespace Game.World
             base.OnCellBroken(brokenCell);
         }
     
+        
         void DropAllInternalItems()
         {
             if (World == null || World.itemDropper == null) return;
@@ -102,7 +109,7 @@ namespace Game.World
             _inventory.NotifyChanged();
         }
     
-        // ItemData "?熬곣뫕?? ???고돩??Icon?? ??戮곕뇶: spriteName??怨쀬Ŧ ?곌랜踰??
+        
         [Serializable]
         class ItemPayload
         {
@@ -127,9 +134,10 @@ namespace Game.World
         [Serializable]
         class WoodenCratePayload
         {
-            public List<ItemPayload> items; // size = 25, null ???깅뮔
+            public List<ItemPayload> items; 
         }
     
+        
         public override SaveData ToSaveData()
         {
             WoodenCratePayload payload = null;
@@ -172,7 +180,7 @@ namespace Game.World
                 }
             }
     
-            // OriginalSolidIds (row-major)
+            
             ushort[] orig = new ushort[Width * Height];
             for (int y = 0; y < Height; y++)
             for (int x = 0; x < Width; x++)
@@ -193,6 +201,7 @@ namespace Game.World
             };
         }
     
+        
         public override void FromSaveData(SaveData data)
         {
             DefId  = data.DefId;
@@ -206,7 +215,7 @@ namespace Game.World
                 for (int x = 0; x < Width; x++)
                     occupiedCells.Add(new Vector2Int(Origin.x + x, Origin.y + y));
     
-            // originalSolidIds restore (row-major)
+            
             originalSolidIds.Clear();
             if (data.OriginalSolidIds != null && data.OriginalSolidIds.Length == Width * Height)
             {
@@ -277,7 +286,7 @@ namespace Game.World
                 );
             }
     
-            // ??濡?룫嶺뚯솘? ??????????⑥щ턄??? ??嶺뚯쉧猷? ?롪퍔????? null ???
+            
             _inventory.NotifyChanged();
         }
     }

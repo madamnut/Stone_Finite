@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 
@@ -5,11 +8,13 @@ namespace Game.World
 {
     public class ForgeWorkbench : Multiblock
     {
+        
         public override void OnInteract(Vector2Int hitCell)
         {
             Manager.OpenModule("ForgeCraft", this);
         }
     
+        
         public override SaveData ToSaveData()
         {
             return new SaveData
@@ -23,8 +28,10 @@ namespace Game.World
             };
         }
     
+        
         public override void FromSaveData(SaveData data)
         {
+
             DefId  = data.DefId;
             InstId = data.InstId;
             Origin = data.Origin;

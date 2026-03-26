@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,8 +13,10 @@ namespace Game.UI
 {
     public partial class CraftModule
     {
+        
         void ScanAndPreview()
         {
+
             _matched = null;
             _inActions = null;
 
@@ -49,11 +54,13 @@ namespace Game.UI
             }
         }
 
+        
         public void OnClickCraft()
         {
             ExecuteCraft();
         }
 
+        
         public void ExecuteCraft()
         {
             if (recipeLibrary == null) return;
@@ -89,6 +96,7 @@ namespace Game.UI
             ScanAndPreview();
         }
 
+        
         void ApplyInputActions(JArray actions)
         {
             if (actions == null) return;
@@ -115,6 +123,7 @@ namespace Game.UI
                     else
                         slot.Refresh();
                 }
+                
                 else if (type == "durability")
                 {
                     if (slot.Item.MaxDurability <= 0) continue;
@@ -126,6 +135,7 @@ namespace Game.UI
                     else
                         slot.Refresh();
                 }
+                
                 else if (type == "consumeMetal")
                 {
                     if (slot.Item.Details == null) continue;
@@ -137,6 +147,7 @@ namespace Game.UI
                     {
                         layers = list;
                     }
+                    
                     else if (layersObj is JArray jarr)
                     {
                         layers = new List<object>(jarr.Count);
@@ -161,17 +172,22 @@ namespace Game.UI
                         {
                             topAmt = jo.Value<int?>("amount") ?? 0;
                         }
+                        
                         else if (top is Dictionary<string, object> dict)
                         {
                             if (dict.TryGetValue("amount", out var aObj) && aObj != null)
                             {
                                 if (aObj is int ai) topAmt = ai;
+                                
                                 else if (aObj is long al) topAmt = (int)al;
+                                
                                 else if (aObj is float af) topAmt = Mathf.RoundToInt(af);
+                                
                                 else if (aObj is double ad) topAmt = (int)ad;
                                 else int.TryParse(aObj.ToString(), out topAmt);
                             }
                         }
+                        
                         else if (top is JToken tok && tok.Type == JTokenType.Object)
                         {
                             topAmt = ((JObject)tok).Value<int?>("amount") ?? 0;
@@ -195,8 +211,10 @@ namespace Game.UI
                         {
                             if (top is JObject jo2)
                                 jo2["amount"] = left;
+                            
                             else if (top is Dictionary<string, object> dict2)
                                 dict2["amount"] = left;
+                            
                             else if (top is JToken tok2 && tok2.Type == JTokenType.Object)
                                 ((JObject)tok2)["amount"] = left;
                         }
@@ -207,6 +225,7 @@ namespace Game.UI
             }
         }
 
+        
         void ResolveInventoryOwner()
         {
             _inventoryOwner = inventoryOwnerComponent as IInventoryOwner;
@@ -214,6 +233,7 @@ namespace Game.UI
                 Debug.LogWarning($"[CraftModule] Assigned component on {name} does not implement IInventoryOwner.", this);
         }
 
+        
         InventoryData GetInventory()
         {
             if (_inventoryOwner == null)
@@ -221,6 +241,7 @@ namespace Game.UI
             return _inventoryOwner != null ? _inventoryOwner.Inventory : null;
         }
 
+        
         public void SetInventoryOwner(IInventoryOwner inventoryOwner)
         {
             _inventoryOwner = inventoryOwner;

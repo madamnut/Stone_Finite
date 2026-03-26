@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,8 +14,10 @@ namespace Game.World
     {
         private sealed class WorldServiceContext
         {
+
             readonly WorldManager _owner;
 
+            
             public WorldServiceContext(WorldManager owner)
             {
                 _owner = owner;
@@ -80,60 +85,79 @@ namespace Game.World
             public FluidSimulationService FluidSimulationService => _owner._fluidSimulationService;
             public GravitySimulationService GravitySimulationService => _owner._gravitySimulationService;
 
+            
             public void MarkChunkDirty(int x, int y, bool markSolid = true, bool markBG = false, bool markLiquid = false, bool markUtility = false)
                 => _owner.MarkChunkDirty(x, y, markSolid, markBG, markLiquid, markUtility);
 
+            
             public void OnCellEdited(int x, int y)
                 => _owner.OnCellEdited(x, y);
 
+            
             public void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldSolidMeta, ushort oldFluidId)
                 => _owner.HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
 
+            
             public void RecalculateLightAt(int x, int y)
                 => _owner.RecalculateLightAt(x, y);
 
+            
             public void MarkLightDirtyCell(int x, int y)
                 => _owner.MarkLightDirtyCell(x, y);
 
+            
             public void MarkLightDirtyCells(List<Vector2Int> cells)
                 => _owner.MarkLightDirtyCells(cells);
 
+            
             public void MarkLightDirtyRect(int x, int y, int w, int h)
                 => _owner.MarkLightDirtyRect(x, y, w, h);
 
+            
             public void ApplyTimeSyncedBrightness(bool forceDirty)
                 => _owner._runtimeStateService.ApplyTimeSyncedBrightness(forceDirty);
 
+            
             public bool IsCollidable(int x, int y)
                 => _owner.IsCollidable(x, y);
 
+            
             public bool HasGravity(ushort id)
                 => _owner.HasGravity(id);
 
+            
             public ushort BreakSolid(int x, int y)
                 => _owner.BreakSolid(x, y);
 
+            
             public bool IsSupportSolid(int x, int y)
                 => _owner.IsSupportSolid(x, y);
 
+            
             public bool InBounds(int x, int y)
                 => _owner.InBounds(x, y);
 
+            
             public ushort GetSolidId(int x, int y)
                 => _owner.GetSolidId(x, y);
 
+            
             public ushort GetBGId(int x, int y)
                 => _owner.GetBGId(x, y);
 
+            
             public ushort GetUtilityId(int x, int y)
                 => _owner.GetUtilityId(x, y);
 
+            
             public UtilityCell GetUtility(int x, int y)
                 => _owner.GetUtility(x, y);
 
+            
             public void SaveWorld()
                 => _owner.SaveWorld();
 
+            
             public void UpdateVisibleChunks()
             {
                 if (_owner.chunkSystem == null || _owner.player == null)
@@ -142,17 +166,21 @@ namespace Game.World
                 _owner.chunkSystem.UpdateVisibleChunks(_owner.player.position, _owner);
             }
 
+            
             public void ProcessDirtyChunks()
             {
                 _owner.chunkSystem?.ProcessDirtyChunks();
             }
 
+            
             public bool LoadWorldFromDisk(out WorldData loaded, out List<Multiblock.SaveData> multiblocks)
                 => _owner.LoadWorldFromDisk(out loaded, out multiblocks);
 
+            
             public void LoadPlayerData()
                 => _owner.LoadPlayerData();
 
+            
             public void LoadEntities()
                 => _owner.LoadEntities();
         }

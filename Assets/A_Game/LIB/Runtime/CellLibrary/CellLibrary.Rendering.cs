@@ -1,3 +1,6 @@
+ï»¿
+
+
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -6,18 +9,25 @@ namespace Game.Data
 {
     public partial class CellLibrary
     {
+        
         public Sprite GetSolidSprite(ushort id, ushort meta) => _solidSpriteByKey.TryGetValue(MakeKey(id, meta), out var sp) ? sp : null;
+        
         public Sprite GetSolidSprite(ushort id) => GetSolidSprite(id, 0);
     
+        
         public Sprite GetUtilitySprite(ushort id, ushort meta) => _utilitySpriteByKey.TryGetValue(MakeKey(id, meta), out var sp) ? sp : null;
+        
         public Sprite GetUtilitySprite(ushort id) => GetUtilitySprite(id, 0);
     
+        
         public Sprite GetFluidSprite(ushort id) => _fluidBaseSpriteById.TryGetValue(id, out var sp) ? sp : null;
     
+        
         public Sprite GetFluidSpriteByAmount(ushort fluidId, byte amount)
         {
             if (fluidId == 0 || amount == 0) return null;
     
+
             byte lvl = _amountToLevel[amount];
             if (_fluidLevelSpritesById.TryGetValue(fluidId, out var arr))
             {
@@ -27,7 +37,8 @@ namespace Game.Data
             return GetFluidSprite(fluidId);
         }
     
-        // ?€?€?€?€?€?€?€?€?€ Tiles ?€?€?€?€?€?€?€?€?€
+        
+        
         public TileBase GetBgTile(ushort id)
         {
             if (id == 0) return null;
@@ -45,6 +56,7 @@ namespace Game.Data
             return tile;
         }
     
+        
         public TileBase GetSolidTile(ushort id, ushort meta)
         {
             if (id == 0) return null;
@@ -66,6 +78,7 @@ namespace Game.Data
             return tile;
         }
     
+        
         public TileBase GetPlatformColliderTile(ushort id, ushort meta)
         {
             if (id == 0) return null;
@@ -85,6 +98,7 @@ namespace Game.Data
             return tile;
         }
     
+        
         public TileBase GetUtilityTile(ushort id, ushort meta)
         {
             if (id == 0) return null;
@@ -104,6 +118,7 @@ namespace Game.Data
             return tile;
         }
     
+        
         public TileBase GetFluidTile(ushort fluidId, byte amount)
         {
             if (fluidId == 0 || amount == 0) return null;
@@ -132,6 +147,7 @@ namespace Game.Data
             return tile;
         }
     
+        
         public void RebuildSpriteCache()
         {
             BuildSpriteCache();

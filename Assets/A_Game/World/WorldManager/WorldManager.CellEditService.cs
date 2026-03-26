@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,13 +13,16 @@ namespace Game.World
     {
         private sealed class CellEditService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public CellEditService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void OverwriteSolid(int x, int y, ushort newId, ushort newMeta = 0)
             {
                 var cur = _ctx.WorldMap.GetSolid(x, y);
@@ -34,9 +40,11 @@ namespace Game.World
                 _ctx.HandleSourceLightChangeAt(x, y, oldSolidId, oldSolidMeta, oldFluidId);
             }
 
+            
             public bool PlaceSolid(int x, int y, ushort id)
                 => PlaceSolid(x, y, id, RelV.Neutral, RelH.Neutral);
 
+            
             public bool PlaceSolid(int x, int y, ushort id, RelV relV, RelH relH)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -49,6 +57,7 @@ namespace Game.World
                     if (!_ctx.IsSupportSolid(x, y))
                         return false;
 
+                    
                     bool TryNeighbor(int nx, int ny, RelV nRelV, RelH nRelH)
                     {
                         if (!_ctx.WorldMap.InBounds(nx, ny)) return false;
@@ -62,6 +71,7 @@ namespace Game.World
                         if (TryNeighbor(x + 1, y, RelV.Neutral, RelH.Left)) return true;
                         if (TryNeighbor(x - 1, y, RelV.Neutral, RelH.Right)) return true;
                     }
+                    
                     else if (relH == RelH.Right)
                     {
                         if (TryNeighbor(x - 1, y, RelV.Neutral, RelH.Right)) return true;
@@ -78,6 +88,7 @@ namespace Game.World
                         if (TryNeighbor(x, y - 1, RelV.Up, RelH.Neutral)) return true;
                         if (TryNeighbor(x, y + 1, RelV.Down, RelH.Neutral)) return true;
                     }
+                    
                     else if (relV == RelV.Down)
                     {
                         if (TryNeighbor(x, y + 1, RelV.Down, RelH.Neutral)) return true;
@@ -95,6 +106,7 @@ namespace Game.World
                 return PlaceSolidAtEmpty(x, y, id, relV, relH);
             }
 
+            
             public bool PlaceSolidExact(int x, int y, ushort id)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -116,6 +128,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public bool PlaceFluid(int x, int y, ushort fluidId, byte amount)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -149,9 +162,11 @@ namespace Game.World
                 return insert > 0;
             }
 
+            
             public bool PlaceBG(int x, int y, ushort id)
                 => PlaceBG(x, y, id, RelV.Neutral, RelH.Neutral);
 
+            
             public bool PlaceBG(int x, int y, ushort id, RelV relV, RelH relH)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -170,6 +185,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public ushort RemoveSolidNoDrop(int x, int y, bool emitVfx = false)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return 0;
@@ -194,6 +210,7 @@ namespace Game.World
                 return oldSolidId;
             }
 
+            
             public ushort BreakSolid(int x, int y)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return 0;
@@ -249,6 +266,7 @@ namespace Game.World
                 return removed;
             }
 
+            
             public FluidCell BreakFluid(int x, int y)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return default;
@@ -271,6 +289,7 @@ namespace Game.World
                 return removed;
             }
 
+            
             public ushort BreakBG(int x, int y)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return 0;
@@ -289,14 +308,18 @@ namespace Game.World
                 return removed;
             }
 
+            
             public bool PlaceCell(int x, int y, ushort id) => PlaceSolid(x, y, id);
+            
             public bool PlaceBgCell(int x, int y, ushort id) => PlaceBG(x, y, id);
 
+            
             public ushort BreakCell(int x, int y, CellLayer layer)
             {
                 return layer == CellLayer.Solid ? BreakSolid(x, y) : BreakBG(x, y);
             }
 
+            
             bool PlaceSolidAtEmpty(int x, int y, ushort id, RelV relV, RelH relH)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -318,6 +341,7 @@ namespace Game.World
                 if (hasBgHere && _ctx.EditSupportService.HasVariantMeta(id, META_BG))
                     candidates.Add(META_BG);
 
+                
                 void Add(ushort first, ushort second)
                 {
                     if (_ctx.EditSupportService.HasVariantMeta(id, first)) candidates.Add(first);
@@ -325,11 +349,15 @@ namespace Game.World
                 }
 
                 if (relH == RelH.Left) Add(META_LEFT, META_RIGHT);
+                
                 else if (relH == RelH.Right) Add(META_RIGHT, META_LEFT);
+                
                 else Add(META_LEFT, META_RIGHT);
 
                 if (relV == RelV.Up) Add(META_UP, META_DOWN);
+                
                 else if (relV == RelV.Down) Add(META_DOWN, META_UP);
+                
                 else Add(META_DOWN, META_UP);
 
                 var seen = new HashSet<ushort>();
@@ -342,6 +370,7 @@ namespace Game.World
                 ushort chosenMeta = 0;
                 bool found = false;
 
+                
                 bool HasSupportFor(ushort m)
                 {
                     int sx = x, sy = y;

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -7,6 +10,7 @@ namespace Game.World
     {
         private enum LayerType { BG, Utility, Solid, Platform, Liquid }
 
+        
         private void CreateChunk(Vector2Int coord)
         {
             int cxMax = Mathf.Max(0, (worldWidth - 1) / chunkSize);
@@ -15,6 +19,7 @@ namespace Game.World
 
             var go = GetFromPool();
             go.SetActive(true);
+
             go.name = $"Chunk_{coord.x}_{coord.y}";
             go.transform.localPosition = new Vector3(coord.x * chunkSize, coord.y * chunkSize, 0f);
 
@@ -144,6 +149,7 @@ namespace Game.World
             c.lightDirty = false;
         }
 
+        
         private void RefreshChunkLayer(Vector2Int coord, LayerType type)
         {
             if (!activeChunks.TryGetValue(coord, out var go)) return;
@@ -331,6 +337,7 @@ namespace Game.World
             }
         }
 
+        
         private void RefreshLightLayer(Vector2Int coord)
         {
             if (!activeChunks.TryGetValue(coord, out var go)) return;

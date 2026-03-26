@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,13 +13,16 @@ namespace Game.Player
     {
         private sealed class MultiblockInteractionService
         {
+
             readonly InteractionController _owner;
 
+            
             public MultiblockInteractionService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public bool TryCellInteraction()
             {
                 if (_owner._state != GameState.Ingame) return false;
@@ -32,6 +38,7 @@ namespace Game.Player
                 return false;
             }
 
+            
             public bool HandleBuildMultiblock(ItemData held, int cx, int cy, Dictionary<string, object> param)
             {
                 ushort solidId = _owner.worldManager.GetSolidId(cx, cy);

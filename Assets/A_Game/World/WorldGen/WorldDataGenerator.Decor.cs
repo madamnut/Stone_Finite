@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +10,7 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         private static void PlaceTrees(WorldGenSettings s, int seed, int desertStartX, int snowEndX, ushort[,] commonSolid, ushort[,] commonMeta)
         {
             int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
@@ -18,10 +22,11 @@ namespace Game.World
             {
                 bool treeRoll = (rand.NextDouble() <= s.treeDensity);
     
+
                 int y = h - 1;
                 while (y > 0 && commonSolid[x, y] == ID_AIR) y--;
     
-                // Snow: FrozenGrass ??FrozenTrunk
+                
                 if (IsInSnowBiome(s, x, w, snowEndX))
                 {
                     ushort ground = commonSolid[x, y];
@@ -34,7 +39,7 @@ namespace Game.World
                     continue;
                 }
     
-                // Desert: cactus/agave (??Volcano 구간 ?�외)
+                
                 if (x >= desertStartX && !IsInVolcanoBiome(s, x, w))
                 {
                     if (!treeRoll) continue;
@@ -42,11 +47,12 @@ namespace Game.World
                     if (!IsOpenSky(x, y, commonSolid)) continue;
     
                     if (rand.NextDouble() < 0.5) TryPlaceCactus(rand, x, y, commonSolid, commonMeta);
+                    
                     else TryPlaceAgave(rand, x, y, commonSolid, commonMeta);
                     continue;
                 }
     
-                // Warm: tree template
+                
                 if (!treeRoll) continue;
     
                 if (tpl == null || tpl.layers == null || tpl.layers.deco == null) continue;
@@ -100,11 +106,12 @@ namespace Game.World
             }
         }
     
+        
         private static void TryPlaceFrozenTrunk(System.Random rand, int x, int groundY, ushort[,] solid, ushort[,] meta)
         {
             int h = solid.GetLength(1);
     
-            int height = rand.Next(4, 8); // 4~7
+            int height = rand.Next(4, 8); 
             int startY = groundY + 1;
     
             for (int i = 0; i < height; i++)
@@ -130,6 +137,7 @@ namespace Game.World
             }
         }
     
+        
         private static void TryPlaceCactus(System.Random rand, int x, int groundY, ushort[,] solid, ushort[,] meta)
         {
             int h = solid.GetLength(1);
@@ -152,6 +160,7 @@ namespace Game.World
             }
         }
     
+        
         private static void TryPlaceAgave(System.Random rand, int centerX, int groundY, ushort[,] solid, ushort[,] meta)
         {
             int w = solid.GetLength(0);
@@ -187,6 +196,7 @@ namespace Game.World
             }
         }
     
+        
         private static void PlaceDecorAfterTrees(WorldGenSettings s, int seed, int desertStartX, int snowEndX, ushort[,] commonSolid, ushort[,] commonMeta)
         {
             int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
@@ -220,6 +230,7 @@ namespace Game.World
                             commonMeta[x, ya]  = 0;
                             placed = true;
                         }
+                        
                         else if (rand.NextDouble() < 0.10)
                         {
                             commonSolid[x, ya] = ID_FROZEN_BUSH;
@@ -237,7 +248,7 @@ namespace Game.World
                     continue;
                 }
     
-                // Desert decor (??Volcano 구간 ?�외)
+                
                 if (x >= desertStartX && !IsInVolcanoBiome(s, x, w))
                 {
                     if (here != ID_SAND) continue;
@@ -263,42 +274,44 @@ namespace Game.World
     
                 if (here >= ID_GRASS_TOP && here <= ID_GRASS_TOPLEFTRIGHT)
                 {
-                    // ===== Flax (30%) =====
+                    
                     int yb = y + 2;
                     if (yb < h &&
                         commonSolid[x, ya] == ID_AIR &&
                         commonSolid[x, yb] == ID_AIR &&
                         rand.NextDouble() < 0.30)
                     {
-                        commonSolid[x, ya] = ID_FLAX_BOTTOM; // 2021
+                        commonSolid[x, ya] = ID_FLAX_BOTTOM; 
                         commonMeta[x, ya]  = 0;
     
-                        commonSolid[x, yb] = ID_FLAX_TOP;    // 2020
+                        commonSolid[x, yb] = ID_FLAX_TOP;    
                         commonMeta[x, yb]  = 0;
                         continue;
                     }
     
-                    // ===== Single-tile decor =====
+                    
                     double r = rand.NextDouble();
     
                     if (r < 0.30)
                     {
-                        commonSolid[x, ya] = ID_PLANT;       // 30%
+                        commonSolid[x, ya] = ID_PLANT;       
                         commonMeta[x, ya]  = 0;
                     }
+                    
                     else if (r < 0.45)
                     {
-                        commonSolid[x, ya] = ID_BUSH;        // 15%
+                        commonSolid[x, ya] = ID_BUSH;        
                         commonMeta[x, ya]  = 0;
                     }
+                    
                     else if (r < 0.55)
                     {
-                        commonSolid[x, ya] = ID_SMALL_STONE_PILE; // 10%
+                        commonSolid[x, ya] = ID_SMALL_STONE_PILE; 
                         commonMeta[x, ya]  = 0;
                     }
-                    // else: 45% �??��? 45%? ???�제로는
-                    // flax ?�패??70% 중에??
-                    // 30 + 15 + 10 = 55%, ?�머지 15%??공백
+                    
+                    
+                    
     
                     continue;
                 }

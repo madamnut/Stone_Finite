@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,6 +14,7 @@ namespace Game.UI
 {
     public partial class CrucibleView
     {
+        
         void ForceRefresh(int capacity, List<(string itemId, int amount)> layers, int sum, string sig)
         {
             Clear();
@@ -20,6 +24,7 @@ namespace Game.UI
 
             Canvas.ForceUpdateCanvases();
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+
 
             float parentW = contentRoot.rect.width;
             float parentH = contentRoot.rect.height;
@@ -76,6 +81,7 @@ namespace Game.UI
             _prevSig = sig;
         }
 
+        
         List<object> EnsureLayersListRef(ItemData c)
         {
             object lo = null;
@@ -115,6 +121,7 @@ namespace Game.UI
             return fallback;
         }
 
+        
         int ReadCrucibleCapacity(ItemData c)
         {
             if (c == null) return 0;
@@ -129,6 +136,7 @@ namespace Game.UI
             return int.TryParse(capObj.ToString(), out int r) ? r : 0;
         }
 
+        
         static int SumAmount(List<(string itemId, int amount)> layers)
         {
             if (layers == null) return 0;
@@ -137,6 +145,7 @@ namespace Game.UI
             return s;
         }
 
+        
         static string BuildSignature(List<(string itemId, int amount)> layers)
         {
             if (layers == null || layers.Count == 0) return "";
@@ -164,16 +173,21 @@ namespace Game.UI
                     id = (jo["itemId"] ?? jo["fluidId"])?.ToString();
                     amt = jo["amount"] != null ? jo["amount"].Value<int>() : 0;
                 }
+                
                 else if (obj is Dictionary<string, object> d)
                 {
                     if (d.TryGetValue("itemId", out var idObj) && idObj != null) id = idObj.ToString();
+                    
                     else if (d.TryGetValue("fluidId", out var fidObj) && fidObj != null) id = fidObj.ToString();
 
                     if (d.TryGetValue("amount", out var aObj) && aObj != null)
                     {
                         if (aObj is int ii) amt = ii;
+                        
                         else if (aObj is long ll) amt = (int)ll;
+                        
                         else if (aObj is float ff) amt = Mathf.RoundToInt(ff);
+                        
                         else if (aObj is double dd) amt = (int)dd;
                         else int.TryParse(aObj.ToString(), out amt);
                     }

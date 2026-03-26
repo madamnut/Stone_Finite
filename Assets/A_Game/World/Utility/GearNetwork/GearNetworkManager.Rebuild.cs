@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,6 +8,7 @@ namespace Game.World
 {
     public sealed partial class GearNetworkManager
     {
+        
         public void RebuildFromWorldFullScan()
         {
             ClearAll();
@@ -12,6 +16,7 @@ namespace Game.World
             BuildAllNetworks();
         }
 
+        
         void ClearAll()
         {
             _gearNodes.Clear();
@@ -30,22 +35,26 @@ namespace Game.World
             _networks.Clear();
             _nodeIdToNetworkId.Clear();
 
+
             _nextNodeId = 1;
             _nextNetworkId = 1;
         }
 
+        
         void RebuildNetworksFrom(int startGearNodeId)
         {
             ClearNetworks();
             BuildAllNetworks();
         }
 
+        
         void RebuildNetworksAround(Vector2Int center)
         {
             ClearNetworks();
             BuildAllNetworks();
         }
 
+        
         void ClearNetworks()
         {
             _networks.Clear();
@@ -53,6 +62,7 @@ namespace Game.World
             _nextNetworkId = 1;
         }
 
+        
         void BuildAllNetworks()
         {
             var visited = new HashSet<int>();
@@ -72,6 +82,7 @@ namespace Game.World
             }
         }
 
+        
         void BFSBuildNetwork(int startGearId, GearNetwork network, HashSet<int> visited)
         {
             var queue = new Queue<int>();
@@ -107,6 +118,7 @@ namespace Game.World
             public bool invertDir;
         }
 
+        
         IEnumerable<GearConnection> EnumerateConnections(int gearId)
         {
             var a = _gearNodes[gearId];
@@ -151,6 +163,7 @@ namespace Game.World
             }
         }
 
+        
         void SolveNetwork(GearNetwork network)
         {
             int capacity = 0;
@@ -203,6 +216,7 @@ namespace Game.World
                         parityByGear[bId] = pb;
                         q.Enqueue(bId);
                     }
+                    
                     else if (kByGear[bId] != kb || parityByGear[bId] != pb)
                     {
                         network.Stalled = true;
@@ -231,12 +245,14 @@ namespace Game.World
                 var seedDirCand = p ? Opp(srcGearDir) : srcGearDir;
 
                 if (seedDir == null) seedDir = seedDirCand;
+                
                 else if (seedDir.Value != seedDirCand) { network.Stalled = true; break; }
 
                 float denom = Pow2(k);
                 float baseCand = srpm / denom;
 
                 if (baseRpm == null) baseRpm = baseCand;
+                
                 else if (Mathf.Abs(baseRpm.Value - baseCand) > 0.01f) { network.Stalled = true; break; }
             }
 
@@ -268,12 +284,14 @@ namespace Game.World
             }
         }
 
+        
         void EnqueueBreak(Vector2Int center)
         {
             if (_pendingBreakSet.Add(center))
                 _pendingBreakCenters.Add(center);
         }
 
+        
         static int GetDeltaK(GearNode.GearSize from, GearNode.GearSize to)
         {
             if (from == GearNode.GearSize.Big && to == GearNode.GearSize.Small) return +1;
@@ -281,6 +299,7 @@ namespace Game.World
             return 0;
         }
 
+        
         static float Pow2(int k)
         {
             if (k == 0) return 1f;
@@ -288,11 +307,13 @@ namespace Game.World
             return 1f / (float)(1 << (-k));
         }
 
+        
         static GearNode.RotationDir Opp(GearNode.RotationDir d)
         {
             return (d == GearNode.RotationDir.CW) ? GearNode.RotationDir.CCW : GearNode.RotationDir.CW;
         }
 
+        
         static bool TryMapSourceKind(string sourceId, out SourceNode.SourceKind kind)
         {
             kind = SourceNode.SourceKind.Waterwheel;
@@ -303,6 +324,7 @@ namespace Game.World
             return false;
         }
 
+        
         static List<Vector2Int> BuildOccupiedCells(Vector2Int center, GearNode.GearSize size)
         {
             if (size != GearNode.GearSize.Big)
@@ -317,6 +339,7 @@ namespace Game.World
             };
         }
 
+        
         static List<Vector2Int> BuildFootprintOffsets(GearNode.GearSize size)
         {
             if (size == GearNode.GearSize.Big)
@@ -334,6 +357,7 @@ namespace Game.World
             return new List<Vector2Int> { Vector2Int.zero };
         }
 
+        
         void RegisterOccupiedCells(int nodeId, IReadOnlyList<Vector2Int> occupiedCells)
         {
             if (occupiedCells == null) return;
@@ -351,6 +375,7 @@ namespace Game.World
             }
         }
 
+        
         void UnregisterOccupiedCells(int nodeId, IReadOnlyList<Vector2Int> occupiedCells)
         {
             if (occupiedCells == null) return;
@@ -367,6 +392,7 @@ namespace Game.World
             }
         }
 
+        
         static bool AreConnected(GearNode a, GearNode b)
         {
             if (a.Size == GearNode.GearSize.Big && b.Size == GearNode.GearSize.Big)

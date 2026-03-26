@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 
 namespace Game.World
@@ -6,15 +9,19 @@ namespace Game.World
     {
         private sealed class EditSupportService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public EditSupportService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public bool HasAnyNeighborSupport_BGorSolid(int x, int y, bool solidMustBeCollidable)
             {
+                
                 bool Check(int nx, int ny)
                 {
                     if (!_ctx.WorldMap.InBounds(nx, ny)) return false;
@@ -37,6 +44,7 @@ namespace Game.World
                 return false;
             }
 
+            
             public bool IsValidSupportForSolidAttach(int sx, int sy)
             {
                 if (!_ctx.WorldMap.InBounds(sx, sy)) return false;
@@ -46,6 +54,7 @@ namespace Game.World
                 return _ctx.IsSupportSolid(sx, sy);
             }
 
+            
             public bool HasVariantMeta(ushort id, ushort meta)
             {
                 return _ctx.CellLibrary.HasSolidVariant(id, meta);

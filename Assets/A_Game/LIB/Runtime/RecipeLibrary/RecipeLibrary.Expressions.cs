@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -8,11 +11,13 @@ namespace Game.Data
 {
     public partial class RecipeLibrary
     {
-        // Input conditions and expression helpers
+        
+        
         bool EvalAllConditions(JArray conds, List<ItemData> slots, int[] assign)
         {
             for (int i = 0; i < conds.Count; i++)
             {
+
                 var c = conds[i] as JObject;
                 if (c == null) return false;
     
@@ -33,6 +38,7 @@ namespace Game.Data
             return true;
         }
     
+        
         bool Compare(object left, string op, object right)
         {
             bool lNum = TryToNumber(left, out double ln);
@@ -61,6 +67,7 @@ namespace Game.Data
             return false;
         }
     
+        
         bool TryToNumber(object v, out double num)
         {
             num = 0;
@@ -80,6 +87,7 @@ namespace Game.Data
             return double.TryParse(v.ToString(), out num);
         }
     
+        
         void NormalizeInputActions(JArray remapped, List<ItemData> slots, int[] assign)
         {
             if (remapped == null) return;
@@ -107,6 +115,7 @@ namespace Game.Data
             }
         }
     
+        
         object ResolveExpr(string expr, List<ItemData> slots, int[] assign)
         {
             if (string.IsNullOrEmpty(expr)) return null;
@@ -137,6 +146,7 @@ namespace Game.Data
             return null;
         }
     
+        
         string ResolveExprToString(string expr, List<ItemData> slots, int[] assign)
         {
             if (string.IsNullOrEmpty(expr)) return null;
@@ -144,6 +154,7 @@ namespace Game.Data
             return v?.ToString();
         }
     
+        
         object ResolveOnItem(ItemData it, string path)
         {
             if (it == null || string.IsNullOrEmpty(path)) return null;
@@ -173,6 +184,7 @@ namespace Game.Data
             return null;
         }
     
+        
         object ResolveFromDetails(ItemData it, string path)
         {
             if (it?.Details == null || string.IsNullOrEmpty(path)) return null;
@@ -217,12 +229,14 @@ namespace Game.Data
                         if (real < 0 || real >= ja.Count) return null;
                         curr = ja[real];
                     }
+                    
                     else if (curr is List<object> list)
                     {
                         int real = idx < 0 ? list.Count + idx : idx;
                         if (real < 0 || real >= list.Count) return null;
                         curr = list[real];
                     }
+                    
                     else if (curr is System.Collections.IList ilist)
                     {
                         int real = idx < 0 ? ilist.Count + idx : idx;
@@ -243,6 +257,7 @@ namespace Game.Data
             return curr;
         }
     
+        
         bool TryGetFromMap(object curr, string key, out object value)
         {
             value = null;
@@ -266,6 +281,7 @@ namespace Game.Data
             return false;
         }
     
+        
         string BuildId(string prefix, string metal, string suffix)
         {
             string p = string.IsNullOrWhiteSpace(prefix) ? null : prefix.Trim();

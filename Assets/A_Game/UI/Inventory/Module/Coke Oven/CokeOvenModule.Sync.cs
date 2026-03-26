@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.World;
@@ -7,12 +10,14 @@ namespace Game.UI
 {
     public partial class CokeOvenModule
     {
+        
         void PushInputsToOven()
         {
             if (_oven == null) return;
 
             if (fuelIn != null)
             {
+
                 var cur = fuelIn.Item;
                 if (ModuleSlotSyncUtility.HasChanged(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, cur))
                     _oven.SetSlot(CokeOven.SlotKind.FuelIn, cur);
@@ -26,6 +31,7 @@ namespace Game.UI
             }
         }
 
+        
         void PushOutputsToOven()
         {
             if (_oven == null) return;
@@ -52,6 +58,7 @@ namespace Game.UI
             }
         }
 
+        
         void PullFromOven()
         {
             if (_oven == null) return;
@@ -63,11 +70,13 @@ namespace Game.UI
             SetSlotIfDifferent(out1, _oven.GetSlot(CokeOven.SlotKind.MaterialOut1));
         }
 
+        
         void SetSlotIfDifferent(ItemSlot ui, ItemData data)
         {
             ModuleSlotSyncUtility.SetSlotIfDifferent(ui, data);
         }
 
+        
         void RefreshGaugesAndProgress()
         {
             if (_oven == null) return;
@@ -80,6 +89,7 @@ namespace Game.UI
                 progressGauge.fillAmount = cokeP;
         }
 
+        
         bool InputsChanged()
         {
             bool changed = false;
@@ -99,6 +109,7 @@ namespace Game.UI
             return changed;
         }
 
+        
         bool OutputsChanged()
         {
             bool changed = false;
@@ -124,12 +135,14 @@ namespace Game.UI
             return changed;
         }
 
+        
         void CaptureInputSnapshots()
         {
             ModuleSlotSyncUtility.Capture(fuelIn, ref _prevFuelIn, ref _prevFuelInCount, ref _prevFuelInDur);
             ModuleSlotSyncUtility.Capture(materialIn, ref _prevMatIn, ref _prevMatInCount, ref _prevMatInDur);
         }
 
+        
         void CaptureOutputSnapshots()
         {
             ModuleSlotSyncUtility.Capture(fuelOut, ref _prevFuelOut, ref _prevFuelOutCount, ref _prevFuelOutDur);

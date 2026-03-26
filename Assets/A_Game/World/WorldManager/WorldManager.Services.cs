@@ -1,7 +1,11 @@
+﻿
+
+
 namespace Game.World
 {
     public partial class WorldManager
     {
+
         WorldServiceContext _serviceContext;
         BootstrapService _bootstrapService;
         PersistenceService _persistenceService;
@@ -18,6 +22,7 @@ namespace Game.World
         GravitySimulationService _gravitySimulationService;
         RandomTickSimulationService _randomTickSimulationService;
 
+        
         void InitializeManagerServices()
         {
             _serviceContext ??= new WorldServiceContext(this);

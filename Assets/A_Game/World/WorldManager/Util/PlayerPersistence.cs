@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -10,8 +13,10 @@ namespace Game.World
 {
     internal static class PlayerPersistence
     {
+
         const string PlayerSaveFile = "player.bin";
 
+        
         public static void SavePlayerData(InventoryData playerInventory, Transform playerTransform)
         {
             try
@@ -62,6 +67,7 @@ namespace Game.World
             }
         }
 
+        
         public static bool LoadPlayerData(
             ItemLibrary itemLibrary,
             out Vector2 playerPosition,

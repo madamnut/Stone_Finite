@@ -1,3 +1,6 @@
+﻿
+
+
 using Game.Core;
 
 namespace Game.Player
@@ -6,13 +9,16 @@ namespace Game.Player
     {
         private sealed class HeldItemService
         {
+
             readonly InteractionController _owner;
 
+            
             public HeldItemService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public bool TryGetHeldItem(out ItemData held)
             {
                 held = null;
@@ -28,6 +34,7 @@ namespace Game.Player
                 return held != null && held.Count > 0;
             }
 
+            
             public bool Consume(ItemData held, int amount)
             {
                 if (held == null || amount <= 0)

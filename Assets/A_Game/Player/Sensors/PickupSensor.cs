@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.Player
@@ -6,17 +9,21 @@ namespace Game.Player
     {
         [SerializeField] private Player owner;
 
+        
         void Awake()
         {
             if (owner == null)
                 owner = GetComponentInParent<Player>();
         }
 
+        
         public void Bind(Player player)
         {
+
             owner = player;
         }
 
+        
         void OnTriggerEnter2D(Collider2D other)
         {
             owner?.HandlePickupTrigger(other);

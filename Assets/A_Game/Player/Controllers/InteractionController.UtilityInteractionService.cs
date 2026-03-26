@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,13 +13,16 @@ namespace Game.Player
     {
         private sealed class UtilityInteractionService
         {
+
             readonly InteractionController _owner;
 
+            
             public UtilityInteractionService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public bool TryGetPlaceUtilityParam(
                 Dictionary<string, object> placeParam,
                 out string type,
@@ -41,6 +47,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool TryGetCellParam(Dictionary<string, object> p, out string cell)
             {
                 cell = null;
@@ -50,6 +57,7 @@ namespace Game.Player
                 return !string.IsNullOrEmpty(cell);
             }
 
+            
             public bool TryGetCogwheelPlacementSpec(string cell, out GearNode.GearSize size, out int maxRpm)
             {
                 size = GearNode.GearSize.Small;
@@ -66,6 +74,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool IsUtilityOccupiedCell(int x, int y)
             {
                 if (_owner.worldManager == null) return false;
@@ -74,6 +83,7 @@ namespace Game.Player
                 return (_owner._utilityOccupiedId != 0 && uid == _owner._utilityOccupiedId);
             }
 
+            
             public bool IsUtilityCenterCell(int x, int y)
             {
                 if (_owner.worldManager == null) return false;
@@ -82,6 +92,7 @@ namespace Game.Player
                 return (_owner._utilityOccupiedId == 0 || uid != _owner._utilityOccupiedId);
             }
 
+            
             public void BreakUtilityAtCursor()
             {
                 if (_owner.worldManager == null) return;
@@ -99,6 +110,7 @@ namespace Game.Player
                 _owner.sound.PlayDig();
             }
 
+            
             public bool HandlePlaceUtility(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
             {
                 if (_owner.worldManager == null || _owner.gearNetworkManager == null || _owner.cellLibrary == null)

@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,6 +8,7 @@ namespace Game.World
 {
     public partial class WorldChunkSystem
     {
+        
         public void ProcessDirtyChunks()
         {
             if (solidDirtyChunks.Count == 0 &&
@@ -13,6 +17,7 @@ namespace Game.World
                 bgDirtyChunks.Count == 0 &&
                 utilityDirtyChunks.Count == 0 &&
                 lightDirtyChunks.Count == 0)
+
                 return;
 
             if (bgDirtyChunks.Count > 0)
@@ -102,6 +107,7 @@ namespace Game.World
             }
         }
 
+        
         public void MarkChunkDirty(int worldX, int worldY, bool markSolid, bool markBG = false, bool markLiquid = false, bool markUtility = false)
         {
             int cx = Mathf.FloorToInt(worldX / (float)chunkSize);
@@ -135,6 +141,7 @@ namespace Game.World
             }
         }
 
+        
         public void MarkLightDirtyCell(int worldX, int worldY)
         {
             int x = Mathf.Clamp(worldX, 0, worldWidth - 1);
@@ -151,6 +158,7 @@ namespace Game.World
             lightDirtyChunks.Add(coord);
         }
 
+        
         public void MarkLightDirtyCells(List<Vector2Int> cells)
         {
             for (int i = 0; i < cells.Count; i++)
@@ -160,6 +168,7 @@ namespace Game.World
             }
         }
 
+        
         public void MarkLightDirtyRect(int x, int y, int w, int h)
         {
             int x0 = Mathf.Clamp(x, 0, worldWidth - 1);
@@ -184,6 +193,7 @@ namespace Game.World
             }
         }
 
+        
         public void MarkAllChunksLightDirty()
         {
             foreach (var kv in activeChunks)

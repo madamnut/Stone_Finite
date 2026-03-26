@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,13 +13,16 @@ namespace Game.Player
     {
         private sealed class GearInteractionService
         {
+
             readonly InteractionController _owner;
 
+            
             public GearInteractionService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public bool HandlePlaceSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
             {
                 if (_owner.gearNetworkManager == null || _owner.worldManager == null || _owner.worldManager.cellLibrary == null)
@@ -47,6 +53,7 @@ namespace Game.Player
 
                 if (cell == "Windmill")
                     _owner.gearNetworkManager.RegisterSourceSpec(cell, SourceNode.SourceKind.Windmill, sourceDef.rpm, sourceDef.stressCapacity);
+                
                 else if (cell == "Waterwheel")
                     _owner.gearNetworkManager.RegisterSourceSpec(cell, SourceNode.SourceKind.Waterwheel, sourceDef.rpm, sourceDef.stressCapacity);
                 else
@@ -66,6 +73,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool HandlePlaceBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
             {
                 if (_owner.gearNetworkManager == null || _owner.worldManager == null || _owner.worldManager.cellLibrary == null)
@@ -161,6 +169,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool HandlePlaceGear(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
             {
                 if (_owner.worldManager == null || _owner.gearNetworkManager == null)
@@ -194,6 +203,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool HandleAttachSource(ItemData held, int cx, int cy, Dictionary<string, object> param)
             {
                 if (_owner.gearNetworkManager == null)
@@ -203,6 +213,7 @@ namespace Game.Player
                 if (param != null)
                 {
                     if (param.TryGetValue("sourceKind", out var sk) && sk != null) sourceKind = sk.ToString();
+                    
                     else if (param.TryGetValue("kind", out var k) && k != null) sourceKind = k.ToString();
                 }
 
@@ -222,6 +233,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             public bool HandleAttachBelt(ItemData held, int cx, int cy, Dictionary<string, object> param)
             {
                 if (_owner.gearNetworkManager == null)
@@ -231,6 +243,7 @@ namespace Game.Player
                 if (param != null)
                 {
                     if (param.TryGetValue("beltKind", out var bk) && bk != null) beltKind = bk.ToString();
+                    
                     else if (param.TryGetValue("kind", out var k) && k != null) beltKind = k.ToString();
                 }
 
@@ -297,6 +310,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             bool TryGetGearPlaceInfo(Dictionary<string, object> placeParam, out string gearId, out string cellName)
             {
                 gearId = null;
@@ -308,7 +322,9 @@ namespace Game.Player
                 if (placeParam == null) return false;
 
                 if (placeParam.TryGetValue("gearId", out var g0) && g0 != null) gearId = g0.ToString();
+                
                 else if (placeParam.TryGetValue("gear", out var g1) && g1 != null) gearId = g1.ToString();
+                
                 else if (placeParam.TryGetValue("cell", out var c0) && c0 != null) gearId = c0.ToString();
 
                 if (placeParam.TryGetValue("cell", out var c1) && c1 != null) cellName = c1.ToString();

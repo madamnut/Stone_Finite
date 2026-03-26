@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.Player
@@ -5,15 +8,18 @@ namespace Game.Player
     
     public partial class Player
     {
+        
         void SetFacing(int dir)
         {
             if (dir != -1 && dir != 1) return;
             if (_facing == dir) return;
     
+
             _facing = dir;
             ApplyFacingAndSorting();
         }
     
+        
         void ApplyFacingAndSorting()
         {
             float sign = (_facing == -1) ? 1f : -1f;
@@ -39,6 +45,7 @@ namespace Game.Player
             }
         }
     
+        
         void UpdateWalkAnimation()
         {
             bool isMovingHoriz = Mathf.Abs(_moveInput) > 0.01f;

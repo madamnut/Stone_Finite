@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -6,8 +9,10 @@ namespace Game.World
 {
     internal static class EntityPersistence
     {
+
         const string EntitySaveFile = "entities.bin";
 
+        
         public static void SaveEntities(EntityManager em)
         {
             try

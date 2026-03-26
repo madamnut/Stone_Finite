@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using Game.Core;
 
@@ -6,6 +9,7 @@ namespace Game.Player
     
     public partial class Player
     {
+        
         void Awake()
         {
             Inventory = new InventoryData(InventoryCapacity);
@@ -15,6 +19,7 @@ namespace Game.Player
             fluidProbe = fluidProbe != null ? fluidProbe : GetComponentInChildren<FluidProbe>(true);
             pickupSensor = pickupSensor != null ? pickupSensor : GetComponentInChildren<PickupSensor>(true);
             platformDropThroughService = platformDropThroughService != null ? platformDropThroughService : GetComponentInChildren<PlatformDropThroughService>(true);
+
             _defaultGravityScale = rb.gravityScale;
     
             if (playerPhysicsCollider == null)
@@ -67,11 +72,13 @@ namespace Game.Player
             InitHeartsUI();
         }
     
+        
         void Update()
         {
             _moveInput = Input.GetAxisRaw("Horizontal");
     
             if (_moveInput > 0.01f) SetFacing(1);
+            
             else if (_moveInput < -0.01f) SetFacing(-1);
     
             _isGrounded = groundProbe != null && groundProbe.IsGrounded;
@@ -90,10 +97,10 @@ namespace Game.Player
     
             rb.gravityScale = _isInFluid ? 0f : _defaultGravityScale;
     
-            // ?????삸??????첎?疫?
-            // - S ??"KeyDown 1???癒?춸 獄쏆꼷??
-            // - ?袁ⓥ뀮????됰선??dropThroughTime(0.1s)筌??얜똻?????癒?짗 癰귣벀??
-            // - ?④쑴??????첎???삠늺 S??獄쏆꼶???곴퐣 ???쑎????
+            
+            
+            
+            
             if (!_isInFluid && _isGrounded && Input.GetKeyDown(KeyCode.S))
             {
                 platformDropThroughService?.TryDropThrough();
@@ -117,8 +124,8 @@ namespace Game.Player
                     stamina -= staminaJumpCost;
                 }
     
-                // ???癒곕늄 ????甕곌쑬??? ?醫???롫┷, "?怨몃뱟 餓????삸????쇰쵟"??곗쨮 ????袁? 椰꾨챶???얜똾釉?怨몃뱟??롫뮉 野?獄쎻뫗?:
-                //    ?癒?짗 ????袁⑤뮉 ??띿뺏 餓??癒?뮉 椰꾧퀣???類?)?????춸 ??됱뒠
+                
+                
                 if (jumpHeld && _isGrounded && !_wasGrounded && rb.velocity.y <= 0.01f && stamina >= staminaJumpCost)
                 {
                     _jumpRequested = true;
@@ -193,6 +200,7 @@ namespace Game.Player
             UpdateHeartsUI();
         }
     
+        
         void FixedUpdate()
         {
             float fdt = Time.fixedDeltaTime;

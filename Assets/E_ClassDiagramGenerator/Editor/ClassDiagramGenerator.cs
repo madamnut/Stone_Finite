@@ -1,4 +1,5 @@
-// Assets/ClassDiagramGenerator/Editor/ClassDiagramGenerator.cs
+﻿
+
 
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,8 @@ namespace ClassDiagramGenerator
             PlantUML_URL
         }
 
-        // -------- State ----------
+        
+
         private ExportFormat _exportFormat = ExportFormat.PlantUMLFile;
         private string _lastDiagramURL = "";
         private string _outputPath = "Assets/Scripts/ClassDiagram.puml";
@@ -27,19 +29,19 @@ namespace ClassDiagramGenerator
         private Vector2 _outerScroll;
         private bool _includeAssociations = true;
 
-        // Sélection scripts
+        
         private ScriptSelectionManager _scriptManager = new ScriptSelectionManager();
         private Vector2 _scriptScroll;
         private string _scriptSearch = "";
         private bool _scriptsScanned = false;
 
-        // Cible à scanner (asset simple : dossier ou .cs)
+        
         private DefaultAsset _scanTarget;
 
         private Texture2D _bgTex;
         private const float BG_OVERLAY_ALPHA = 0.26f;
 
-        private static readonly Color COL_BG = new(0.12f, 0.12f, 0.14f, 1f); // fallback
+        private static readonly Color COL_BG = new(0.12f, 0.12f, 0.14f, 1f); 
         private static readonly Color COL_PANEL = new(0.16f, 0.17f, 0.20f, 1f);
         private static readonly Color COL_PANEL_2 = new(0.20f, 0.21f, 0.24f, 1f);
         private static readonly Color COL_BORDER = new(0.30f, 0.32f, 0.36f, 1f);
@@ -52,29 +54,32 @@ namespace ClassDiagramGenerator
         private static readonly Color ACCENT_V_HOVER = new(0.54f, 0.45f, 0.80f, 1f);
         private static readonly Color ACCENT_B_HOVER = new(0.52f, 0.74f, 1.00f, 1f);
 
-        // Textures + styles (lazy)
+        
         private Texture2D _texPanel, _texPanel2;
         private GUIStyle _titleStyle, _subtitleStyle, _cardHeaderStyle, _cardBodyStyle, _dirStyle;
 
+        
         private Texture2D GetHeaderIcon() => Resources.Load<Texture2D>("Icon 160x160 - Diagram Generator");
 
         [MenuItem("Tools/Diagram Generator")]
+        
         static void ShowWindow()
         {
             var w = GetWindow<ClassDiagramGenerator>("Diagram Generator");
             w.minSize = new Vector2(600, 420);
         }
 
-        // --- remplace entièrement ta méthode OnEnable() ---
+        
+        
         private void OnEnable()
         {
             _bgTex = Resources.Load<Texture2D>("settings_bg");
             if (_bgTex == null)
                 _bgTex = Resources.Load<Texture2D>("inspector_bg");
 
-            // ⚠️ Ne PAS appeler EnsureThemeAssets() ici (provoque "You can only call GUI functions from inside OnGUI")
+            
 
-            // Auto-scan discret au démarrage (si Assets/Scripts existe)
+            
             string root = AssetDatabase.IsValidFolder("Assets/Scripts") ? "Assets/Scripts" : null;
             if (!string.IsNullOrEmpty(root))
             {
@@ -90,10 +95,11 @@ namespace ClassDiagramGenerator
             }
         }
 
-        // --- remplace entièrement ta méthode EnsureThemeAssets() ---
+        
+        
         private void EnsureThemeAssets()
         {
-            // Ce helper manipule GUI.skin / EditorStyles → il DOIT être appelé depuis OnGUI()
+            
             if (Event.current == null) return;
 
             if (_texPanel == null) _texPanel = MakeTex(2, 2, COL_PANEL);
@@ -121,7 +127,7 @@ namespace ClassDiagramGenerator
 
             if (_cardBodyStyle == null)
             {
-                // GUI.skin.box est OK ici car on est dans OnGUI()
+                
                 _cardBodyStyle = new GUIStyle(GUI.skin.box)
                 {
                     padding = new RectOffset(12, 12, 10, 12),
@@ -137,6 +143,7 @@ namespace ClassDiagramGenerator
             }
         }
 
+        
         private void OnGUI()
         {
             EnsureThemeAssets();
@@ -154,7 +161,8 @@ namespace ClassDiagramGenerator
             DrawFooter();
         }
 
-        // ---------- Background ----------
+        
+        
         void DrawBackground()
         {
             var r = new Rect(0, 0, position.width, position.height);
@@ -166,7 +174,8 @@ namespace ClassDiagramGenerator
             else EditorGUI.DrawRect(r, COL_BG);
         }
 
-        // ---------- Header ----------
+        
+        
         void DrawHeader()
         {
             GUILayout.Space(6);
@@ -188,16 +197,17 @@ namespace ClassDiagramGenerator
             GUILayout.Space(2);
         }
 
-        // ---------- Toolbar (lightweight) ----------
+        
+        
         void DrawToolbar()
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                // Onglets format
+                
                 DrawFormatTabs();
                 GUILayout.FlexibleSpace();
 
-                // Bouton Generate (toolbar)
+                
                 if (ToolbarPrimary("Generate"))
                     GenerateDiagram(_exportFormat);
             }
@@ -205,6 +215,7 @@ namespace ClassDiagramGenerator
             GUILayout.Space(4);
         }
 
+        
         void DrawFormatTabs()
         {
             using (new EditorGUILayout.HorizontalScope())
@@ -218,17 +229,18 @@ namespace ClassDiagramGenerator
                     var r = GUILayoutUtility.GetRect(content, EditorStyles.toolbarButton, GUILayout.Width(110),
                         GUILayout.Height(20));
 
-                    // fond + état
+                    
                     var bg = active ? ACCENT_BLUE : new Color(0, 0, 0, 0f);
                     EditorGUI.DrawRect(r, bg);
 
-                    // soulignement / hover
+                    
                     bool hover = r.Contains(Event.current.mousePosition);
                     if (active)
                     {
                         var underline = new Rect(r.x, r.yMax - 2, r.width, 2);
                         EditorGUI.DrawRect(underline, hover ? ACCENT_B_HOVER : ACCENT_VIOLET);
                     }
+                    
                     else if (hover)
                     {
                         var outline = new Rect(r.x, r.yMax - 1, r.width, 1);
@@ -250,6 +262,7 @@ namespace ClassDiagramGenerator
             }
         }
 
+        
         bool ToolbarPrimary(string label)
         {
             var r = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.toolbarButton, GUILayout.Width(92));
@@ -260,7 +273,8 @@ namespace ClassDiagramGenerator
             return GUI.Button(r, label, s);
         }
 
-        // ---------- Cards ----------
+        
+        
         void DrawCard(string title, Action body)
         {
             var header = GUILayoutUtility.GetRect(1, 24, GUILayout.ExpandWidth(true));
@@ -281,13 +295,16 @@ namespace ClassDiagramGenerator
             GUILayout.Space(10);
         }
 
+        
         void DrawSelectionCard()
         {
-            // --- Ligne "Select & Scan" (remise en place)
+            
             using (new EditorGUILayout.HorizontalScope())
             {
                 _scanTarget = (DefaultAsset)EditorGUILayout.ObjectField(
+                    
                     new GUIContent("Folder / .cs", "Choose a folder or a .cs file"),
+                    
                     _scanTarget, typeof(DefaultAsset), false,
                     GUILayout.ExpandWidth(true), GUILayout.MinWidth(200));
 
@@ -297,7 +314,7 @@ namespace ClassDiagramGenerator
                 GUILayout.FlexibleSpace();
             }
 
-            // --- Drop zone visible
+            
             GUILayout.Space(6);
             var dz = GUILayoutUtility.GetRect(1, 64, GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(dz, COL_PANEL);
@@ -383,6 +400,7 @@ namespace ClassDiagramGenerator
             EditorGUILayout.EndScrollView();
         }
 
+        
         void DrawExportCard()
         {
             using (new EditorGUILayout.HorizontalScope())
@@ -417,16 +435,19 @@ namespace ClassDiagramGenerator
             }
         }
 
+        
         void DrawAdvancedCard()
         {
             _includeAssociations = EditorGUILayout.ToggleLeft(
+                
                 new GUIContent("Include associations (fields/parameters of other classes)"),
                 _includeAssociations);
 
             GUILayout.Space(2);
         }
 
-        // ---------- Footer ----------
+        
+        
         void DrawFooter()
         {
             var line = GUILayoutUtility.GetRect(1, 1, GUILayout.ExpandWidth(true));
@@ -444,7 +465,8 @@ namespace ClassDiagramGenerator
             GUILayout.Label("© 2025 ClassDiagramGenerator • v2.0.1", sig);
         }
 
-        // ---------- Buttons ----------
+        
+        
         bool PrimaryButton(string label, float height)
         {
             var rect = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniButton,
@@ -465,6 +487,7 @@ namespace ClassDiagramGenerator
             return GUI.Button(rect, label, style);
         }
 
+        
         bool SecondaryButton(string label, float height = 28f)
         {
             var rect = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniButton,
@@ -475,6 +498,7 @@ namespace ClassDiagramGenerator
             return GUI.Button(rect, label, style);
         }
 
+        
         bool MiniButton(string label, float width)
         {
             var rect = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniButton, GUILayout.Width(width));
@@ -484,7 +508,8 @@ namespace ClassDiagramGenerator
             return GUI.Button(rect, label, s);
         }
 
-        // ---------- Drag & Drop ----------
+        
+        
         void HandleDragAndDrop(Rect dropArea)
         {
             var e = Event.current;
@@ -510,6 +535,7 @@ namespace ClassDiagramGenerator
                     {
                         if (AssetDatabase.IsValidFolder(p))
                             toAdd.AddRange(Directory.GetFiles(p, "*.cs", SearchOption.AllDirectories));
+                        
                         else if (p.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
                             toAdd.Add(p);
                     }
@@ -521,7 +547,8 @@ namespace ClassDiagramGenerator
             e.Use();
         }
 
-        // ---------- Scan helper ----------
+        
+        
         void ScanSelectionTarget()
         {
             if (_scanTarget == null)
@@ -543,6 +570,7 @@ namespace ClassDiagramGenerator
                 _scriptsScanned = true;
                 _status = $"Scanned: {_scriptManager.Scripts.Count} files under '{path}'.";
             }
+            
             else if (path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
             {
                 AddCsFiles(new[] { path });
@@ -555,6 +583,7 @@ namespace ClassDiagramGenerator
             Repaint();
         }
 
+        
         void AddCsFiles(IEnumerable<string> paths)
         {
             var set = new HashSet<string>(_scriptManager.Scripts.Select(s => s.Path), StringComparer.OrdinalIgnoreCase);
@@ -578,7 +607,8 @@ namespace ClassDiagramGenerator
             Repaint();
         }
 
-        // ---------- Utils ----------
+        
+        
         private static Texture2D MakeTex(int w, int h, Color c)
         {
             var tex = new Texture2D(w, h);
@@ -589,6 +619,7 @@ namespace ClassDiagramGenerator
             return tex;
         }
 
+        
         private static string AbsoluteToAssetPathSafe(string absolute)
         {
             if (string.IsNullOrEmpty(absolute)) return null;
@@ -599,7 +630,8 @@ namespace ClassDiagramGenerator
             return null;
         }
 
-        // ---------- Generation (inchangé) ----------
+        
+        
         private void GenerateDiagram(ExportFormat format)
         {
             if (!_scriptsScanned || _scriptManager.Scripts.Count == 0)
@@ -642,6 +674,7 @@ namespace ClassDiagramGenerator
                 EditorUtility.DisplayDialog("Done!", $"Diagram generated:\n{_outputPath}\nOpen it with PlantUML!",
                     "OK");
             }
+            
             else if (format == ExportFormat.PlantUML_URL)
             {
                 _lastDiagramURL = PlantUMLTextToUrl(plantuml);
@@ -650,6 +683,7 @@ namespace ClassDiagramGenerator
             }
         }
 
+        
         public static string PlantUMLTextToUrl(string uml)
         {
             byte[] data = Encoding.UTF8.GetBytes(uml);
@@ -669,6 +703,7 @@ namespace ClassDiagramGenerator
 
         private static readonly string _encode = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
 
+        
         public static string PlantUmlBase64Encode(byte[] data)
         {
             var sb = new StringBuilder();
@@ -688,7 +723,7 @@ namespace ClassDiagramGenerator
             return sb.ToString();
         }
 
-        // -------- Models / Parser / Generator (inchangé) --------
+        
         public class UmlClass
         {
             public string Name;
@@ -730,6 +765,7 @@ namespace ClassDiagramGenerator
             public string Type;
         }
 
+        
         private static List<string> SafeSplitBaseTypes(string input)
         {
             var result = new List<string>();
@@ -744,11 +780,13 @@ namespace ClassDiagramGenerator
                     depth++;
                     sb.Append(c);
                 }
+                
                 else if (c == '>')
                 {
                     depth = Math.Max(0, depth - 1);
                     sb.Append(c);
                 }
+                
                 else if (c == ',' && depth == 0)
                 {
                     result.Add(sb.ToString().Trim());
@@ -761,6 +799,7 @@ namespace ClassDiagramGenerator
 
             return result;
         }
+        
         
         private static string StripGenerics(string typeName)
         {
@@ -786,6 +825,7 @@ namespace ClassDiagramGenerator
                 new(@"(public|private|protected|internal)\s+([\w<>,\[\]]+)\s+(\w+)\s*\(([^)]*)\)",
                     RegexOptions.Multiline);
 
+            
             public List<UmlClass> ParseClasses(string content)
             {
                 var classes = new List<UmlClass>();
@@ -795,6 +835,7 @@ namespace ClassDiagramGenerator
                     var isInterface = match.Groups[3].Value == "interface";
                     var className = match.Groups[4].Value;
                     var bases = match.Groups[6].Success
+                        
                         ? SafeSplitBaseTypes(match.Groups[6].Value)
                         : null;
                     string baseClass = null;
@@ -855,6 +896,7 @@ namespace ClassDiagramGenerator
                 return classes;
             }
 
+            
             private static string GetVisibilitySymbol(string kw)
             {
                 if (kw.Contains("public")) return "+";
@@ -864,6 +906,7 @@ namespace ClassDiagramGenerator
                 return "";
             }
 
+            
             private static List<UmlParameter> ParseParameters(string raw)
             {
                 var list = new List<UmlParameter>();
@@ -881,6 +924,7 @@ namespace ClassDiagramGenerator
 
         public static class PlantUmlGenerator
         {
+            
             public static string GeneratePlantUml(List<UmlClass> classes, bool includeAssociations)
             {
                 var sb = new StringBuilder();

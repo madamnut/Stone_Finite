@@ -1,3 +1,6 @@
+Ôªø
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +10,7 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         private static void ApplyDesertPass(WorldGenSettings s, int seed, int desertStartX, ushort[,] commonSolid, ushort[,] commonMeta, ushort[,] commonFluid)
         {
             int w = commonSolid.GetLength(0);
@@ -15,6 +19,7 @@ namespace Game.World
             int transLen = Mathf.Max(0, s.desertTransitionLen);
             float transChance = Mathf.Clamp01(s.desertTransitionChance);
     
+
             int transStartX = desertStartX - transLen;
     
             var rand = new System.Random(seed ^ SALT_DESERT_PASS);
@@ -23,7 +28,7 @@ namespace Game.World
     
             for (int x = 0; x < w; x++)
             {
-                // ??Volcano Íµ¨Í∞Ñ?êÏÑú???¨Îßâ ?®Ïä§ Í∏àÏ?
+                
                 if (IsInVolcanoBiome(s, x, w)) continue;
     
                 bool inCore = (x >= desertStartX);
@@ -74,6 +79,7 @@ namespace Game.World
             }
         }
     
+        
         private static bool HasNeighborWithinR(ushort[,] solid, int w, int h, int cx, int cy, int r, ushort target)
         {
             int x0 = cx - r; if (x0 < 0) x0 = 0;
@@ -90,6 +96,7 @@ namespace Game.World
             return false;
         }
     
+        
         private static void SeaColumnFill(ushort[,] commonSolid, ushort[,] commonFluid, int w, int h, int seaLevel, ushort fluidId)
         {
             int y0 = seaLevel;
@@ -101,7 +108,7 @@ namespace Game.World
                     if (commonSolid[x, y] != ID_AIR)
                         break;
     
-                    // ???¥Î? ?§Î•∏ ?†Ï≤¥(?? lava)Í∞Ä ?àÏúºÎ©?Î∞îÎã§ Î¨ºÏù¥ Í¥Ä????ñ¥?∞Ï? ?äÏùå
+                    
                     if (commonFluid[x, y] != FLUID_NONE)
                         break;
     
@@ -110,6 +117,7 @@ namespace Game.World
             }
         }
     
+        
         private static void FloodFillFluidFromSeaSurface(ushort[,] commonSolid, ushort[,] commonFluid, int w, int h, int seaLevel, ushort fluidId)
         {
             int ySeed = seaLevel;
@@ -146,7 +154,7 @@ namespace Game.World
     
                     if (commonSolid[nx, ny] != ID_AIR) continue;
     
-                    // ??lava???àÎ? Î¨ºÎ°ú Î∞îÍæ∏ÏßÄ ?äÏùå + Î¨??ÑÌåå??Ï∞®Îã®
+                    
                     if (commonFluid[nx, ny] == FLUID_LAVA) continue;
     
                     if (commonFluid[nx, ny] == FLUID_NONE)
@@ -158,21 +166,22 @@ namespace Game.World
             }
         }
     
-        // ??Lava FloodFill: "?ÑÏû¨ Ï°¥Ïû¨?òÎäî Î™®Îì† lava"Î•?seedÎ°? Ï¢????ÑÎûòÎß??ïÏÇ∞
+        
+        
         private static void FloodFillFluidFromAllExistingCells_3Dir(
             ushort[,] commonSolid, ushort[,] commonFluid,
             int w, int h,
             ushort fluidId
         )
         {
-            // Ï¢????ÑÎûò (?ÅÎ∞© ?ÑÌåå Í∏àÏ?)
+            
             int[] dx = { -1, 1, 0 };
             int[] dy = {  0, 0,-1 };
     
             var visited = new bool[w, h];
             var q = new Queue<(int x, int y)>();
     
-            // seed: Îß??ÑÏ≤¥?êÏÑú Í∏∞Ï°¥ fluidIdÎ•??ÑÎ? ?êÏóê ?£Ïùå
+            
             for (int x = 0; x < w; x++)
             for (int y = 0; y < h; y++)
             {
@@ -198,7 +207,7 @@ namespace Game.World
     
                     if (commonSolid[nx, ny] != ID_AIR) continue;
     
-                    // ?§Î•∏ ?†Ï≤¥(?? Î¨?Î°úÎäî ?àÎ? Ïπ®Î≤î/??ñ¥?∞Í∏∞ Í∏àÏ?
+                    
                     if (commonFluid[nx, ny] != FLUID_NONE && commonFluid[nx, ny] != fluidId) continue;
     
                     if (commonFluid[nx, ny] == FLUID_NONE)
@@ -210,9 +219,10 @@ namespace Game.World
             }
         }
     
-        // ?¥Ìïò: ?àÍ? Î∂ôÏó¨Ï§Ä Í∏∞Ï°¥ ÏΩîÎìú Í∑∏Î?Î°?(ApplySandAndGravelAndClay ~ PropagateNaturalLight)
-        // -----------------------------------------------------------------------
+        
+        
     
+        
         private static void ApplySandAndGravelAndClay(WorldGenSettings s, int seed, int desertStartX, ushort[,] commonSolid, ushort[,] commonMeta, ushort[,] commonFluid)
         {
             float tStart = Time.realtimeSinceStartup;
@@ -404,6 +414,7 @@ namespace Game.World
                             commonSolid[x, y] = ID_GRAVEL;
                             commonMeta[x, y]  = 0;
                         }
+                        
                         else if (r < 0.80)
                         {
                             commonSolid[x, y] = ID_CLAY;
@@ -416,7 +427,7 @@ namespace Game.World
             const int waterNearR = 2;
             for (int x = 0; x < w; x++)
             {
-                // ??Volcano Íµ¨Í∞Ñ?Ä ?¨Ïïî???úÏô∏
+                
                 if (IsInVolcanoBiome(s, x, w)) continue;
     
                 bool inCore = (x >= desertStartX);
@@ -445,6 +456,7 @@ namespace Game.World
             Debug.Log($"[WorldGen] ApplySandAndGravelAndClay (BFS) TOTAL: {(tEnd - tStart) * 1000f:F1} ms");
         }
     
+        
         private static void ApplyClayClusters(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
         {
             int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
@@ -470,10 +482,12 @@ namespace Game.World
             }
         }
     
+        
         private static void ApplyOreClusters(WorldGenSettings s, int seed, ushort[,] commonSolid, ushort[,] commonMeta)
         {
             int w = commonSolid.GetLength(0), h = commonSolid.GetLength(1);
     
+            
             void apply(int minH, int maxH, float mean, float std, float den, float exp, float maxf, ushort oreId)
             {
                 var seeds    = ProceduralUtil.SampleSeedPositions(w, minH, maxH, den);
@@ -508,6 +522,7 @@ namespace Game.World
                   s.ironSeedDensity, s.ironExpansionProb, s.ironMaxGrowthFactor, ID_ORE_IRON);
         }
     
+        
         private static bool TryComputeGrassId(int x, int y, ushort[,] commonSolid, out ushort grassId)
         {
             int w = commonSolid.GetLength(0);
@@ -543,6 +558,7 @@ namespace Game.World
             }
         }
     
+        
         private static bool TryComputeFrozenGrassId(int x, int y, ushort[,] commonSolid, out ushort grassId)
         {
             int w = commonSolid.GetLength(0);
@@ -578,6 +594,7 @@ namespace Game.World
             }
         }
     
+        
         private static bool IsOpenSky(int x, int y, ushort[,] solid)
         {
             int h = solid.GetLength(1);
@@ -588,6 +605,7 @@ namespace Game.World
             return true;
         }
     
+        
         private static bool IsInSnowBiome(WorldGenSettings s, int x, int w, int snowEndX)
         {
             int transLen = Mathf.Max(0, s.snowTransitionLen);
@@ -595,6 +613,7 @@ namespace Game.World
             return (x >= 0 && x <= snowEndX) || (x > snowEndX && x <= transEndX);
         }
     
+        
         private static void ApplySnowPass(WorldGenSettings s, int seed, int snowEndX, ushort[,] solid, ushort[,] meta, ushort[,] fluid)
         {
             int w = solid.GetLength(0);
@@ -606,7 +625,7 @@ namespace Game.World
     
             var rand = new System.Random(seed ^ SALT_SNOW_PASS);
     
-            // (1) Dirt -> Frozen Dirt
+            
             for (int x = 0; x < w; x++)
             {
                 bool inCore = (x >= 0 && x <= snowEndX);
@@ -625,7 +644,7 @@ namespace Game.World
                 }
             }
     
-            // (2) Rock -> Ice (near Frozen Dirt or Dirt within R=2)
+            
             const int R = 2;
             for (int x = 0; x < w; x++)
             {
@@ -651,7 +670,7 @@ namespace Game.World
                 }
             }
     
-            // (3) Freeze water surface: air+water where above is not water
+            
             for (int x = 0; x < w; x++)
             {
                 bool inCore = (x >= 0 && x <= snowEndX);

@@ -1,6 +1,5 @@
-// GearNode.cs (?ÑÏ≤¥ ÍµêÏ≤¥Î≥?
-// Î≥ÄÍ≤?
-// - ?êÏú†Í≥µÍ∞Ñ(OccupiedCells) ?úÍ±∞ (Utility ?àÏù¥?¥Í? ?¥Îãπ)
+Ôªø
+
 
 using UnityEngine;
 using System.Collections.Generic;
@@ -13,6 +12,7 @@ namespace Game.World
         public enum GearSize { Small, Big }
         public enum RotationDir { CW, CCW }
     
+
         public int NodeId { get; private set; }
     
         public Vector2Int Center { get; private set; }
@@ -25,6 +25,7 @@ namespace Game.World
     
         readonly List<Vector2Int> _occupiedCells;
     
+        
         public GearNode(
             int nodeId,
             Vector2Int center,
@@ -42,6 +43,7 @@ namespace Game.World
             Rpm = 0;
         }
     
+        
         static List<Vector2Int> BuildOccupiedCells(Vector2Int center, GearSize size)
         {
             if (size != GearSize.Big)

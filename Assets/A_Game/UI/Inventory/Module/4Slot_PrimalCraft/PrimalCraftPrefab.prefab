@@ -178,7 +178,7 @@ MonoBehaviour:
   - {fileID: 4963175409691897662}
   craftButton: {fileID: 6387529087788119677}
   recipeLibrary: {fileID: 0}
-  player: {fileID: 0}
+  inventoryOwnerComponent: {fileID: 0}
 --- !u!1001 &2166531425800445150
 PrefabInstance:
   m_ObjectHideFlags: 0

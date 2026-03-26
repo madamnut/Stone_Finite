@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,8 +12,10 @@ namespace Game.Player
 {
     public partial class InteractionController
     {
+        
         void UpdateCorpseHoverState()
         {
+
             Corpse newHoverCorpse = null;
             Vector3 mouseWorld3 = worldCamera.ScreenToWorldPoint(Input.mousePosition);
             Vector2 mousePos2 = new Vector2(mouseWorld3.x, mouseWorld3.y);
@@ -30,6 +35,7 @@ namespace Game.Player
             }
         }
     
+        
         void UpdateHighlight()
         {
             if (!GetMouseCell(out int cx, out int cy))
@@ -147,6 +153,7 @@ namespace Game.Player
             {
                 bool blocked = hasSolid;
                 if (hasBg && blocked) _hlSR.sprite = HighLight_BG_CANNOT;
+                
                 else if (hasBg) _hlSR.sprite = HighLight_BG_CAN;
                 else _hlSR.sprite = HighLight_BG;
             }
@@ -154,6 +161,7 @@ namespace Game.Player
             PulseHighlight();
         }
     
+        
         void PulseHighlight()
         {
             _hlGO.SetActive(true);
@@ -164,6 +172,7 @@ namespace Game.Player
             _hlGO.transform.localScale = Vector3.one * s;
         }
     
+        
         bool GetMouseCell(out int x, out int y)
         {
             Vector3 wp = worldCamera.ScreenToWorldPoint(Input.mousePosition);

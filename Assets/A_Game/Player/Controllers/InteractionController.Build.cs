@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,6 +11,7 @@ namespace Game.Player
 {
     public partial class InteractionController
     {
+        
         bool TryGetPlaceUtilityParam(
             Dictionary<string, object> placeParam,
             out string type,
@@ -15,20 +19,25 @@ namespace Game.Player
             out Dictionary<string, object> typeObj)
             => _utilityInteractionService.TryGetPlaceUtilityParam(placeParam, out type, out cell, out typeObj);
 
+        
         bool TryGetCogwheelPlacementSpec(string cell, out GearNode.GearSize size, out int maxRpm)
             => _utilityInteractionService.TryGetCogwheelPlacementSpec(cell, out size, out maxRpm);
 
+        
         bool IsUtilityOccupiedCell(int x, int y)
             => _utilityInteractionService.IsUtilityOccupiedCell(x, y);
 
+        
         bool IsUtilityCenterCell(int x, int y)
             => _utilityInteractionService.IsUtilityCenterCell(x, y);
 
+        
         void HandleLeftClick()
         {
             if (_combatMode && _layerMode != LayerMode.Utility)
             {
                 TryWeaponAttack();
+
                 return;
             }
 
@@ -41,6 +50,7 @@ namespace Game.Player
             _blockInteractionService.BreakAtCursor();
         }
 
+        
         void HandleRightClick()
         {
             if (_corpseInteractionService.TryCorpseInteraction())
@@ -66,6 +76,7 @@ namespace Game.Player
             }
         }
 
+        
         bool TryItemInteraction()
         {
             if (_state != GameState.Ingame) return false;
@@ -103,6 +114,7 @@ namespace Game.Player
             return false;
         }
 
+        
         bool TryItemInteraction_UtilityOnly()
         {
             if (_state != GameState.Ingame) return false;

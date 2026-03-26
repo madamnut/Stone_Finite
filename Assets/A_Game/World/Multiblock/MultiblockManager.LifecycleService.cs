@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,13 +11,16 @@ namespace Game.World
     {
         private sealed class MultiblockLifecycleService
         {
+
             readonly MultiblockServiceContext _ctx;
 
+            
             public MultiblockLifecycleService(MultiblockServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void RegisterBuiltInFactories()
             {
                 RegisterFactory("Clay Kiln", () => new ClayKiln());
@@ -27,12 +33,14 @@ namespace Game.World
                 RegisterFactory("Coke Oven", () => new CokeOven());
             }
 
+            
             public void BindPlayerToVfx()
             {
                 if (_ctx.Vfx != null && _ctx.PlayerTransform != null)
                     _ctx.Vfx.SetPlayer(_ctx.PlayerTransform);
             }
 
+            
             public void TickInstances()
             {
                 if (_ctx.Instances.Count == 0) return;
@@ -51,11 +59,13 @@ namespace Game.World
                 }
             }
 
+            
             public void RegisterFactory(string defId, Func<Multiblock> creator)
             {
                 _ctx.FactoryByDefId[defId] = creator;
             }
 
+            
             void ApplyVfxRequests(Multiblock mb)
             {
                 if (_ctx.Vfx == null) return;

@@ -2112,10 +2112,13 @@ MonoBehaviour:
   selectedImage: {fileID: 8281291618100804394}
   durabilityRoot: {fileID: 6016827819736141124}
   durabilityBar: {fileID: 5170750218393465940}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &4809217465920917760
 GameObject:
   m_ObjectHideFlags: 0
@@ -2460,10 +2463,13 @@ MonoBehaviour:
   selectedImage: {fileID: 4633574617516521738}
   durabilityRoot: {fileID: 549382806897523516}
   durabilityBar: {fileID: 3711901207934336686}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &5354798816170188505
 GameObject:
   m_ObjectHideFlags: 0
@@ -2674,10 +2680,13 @@ MonoBehaviour:
   selectedImage: {fileID: 5457176340795706884}
   durabilityRoot: {fileID: 3291602935181933234}
   durabilityBar: {fileID: 1544027033744160252}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &5639685827437086953
 GameObject:
   m_ObjectHideFlags: 0
@@ -4171,10 +4180,13 @@ MonoBehaviour:
   selectedImage: {fileID: 7364216444801793349}
   durabilityRoot: {fileID: 121552213178303475}
   durabilityBar: {fileID: 4014486104421071943}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &8417703100720005726
 GameObject:
   m_ObjectHideFlags: 0
@@ -4369,10 +4381,13 @@ MonoBehaviour:
   selectedImage: {fileID: 8132445410207979175}
   durabilityRoot: {fileID: 7538275689566408289}
   durabilityBar: {fileID: 5353261724986425539}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &8649132363368288977
 GameObject:
   m_ObjectHideFlags: 0
@@ -4433,10 +4448,13 @@ MonoBehaviour:
   selectedImage: {fileID: 320349228938704360}
   durabilityRoot: {fileID: 2185041991492753136}
   durabilityBar: {fileID: 1607476483916211762}
+  progressRoot: {fileID: 0}
+  progressBar: {fileID: 0}
   index: -1
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &8836000055656266867
 GameObject:
   m_ObjectHideFlags: 0

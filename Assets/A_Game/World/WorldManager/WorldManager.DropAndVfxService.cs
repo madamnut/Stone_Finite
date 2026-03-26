@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.Core;
@@ -8,13 +11,16 @@ namespace Game.World
     {
         private sealed class DropAndVfxService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public DropAndVfxService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void EmitUtilityBreakVfx(ushort utilityId, ushort utilityMeta, int x, int y)
             {
                 if (_ctx.Vfx == null || _ctx.CellLibrary == null)
@@ -24,6 +30,7 @@ namespace Game.World
                 _ctx.Vfx.EmitBlockAtCell(sprite, x, y, 1, grid: 3, count: -1);
             }
 
+            
             public void EmitSolidBreakVfx(ushort solidId, ushort solidMeta, int x, int y, int grid = 3)
             {
                 if (_ctx.Vfx == null || _ctx.CellLibrary == null)
@@ -33,6 +40,7 @@ namespace Game.World
                 _ctx.Vfx.EmitBlockAtCell(sprite, x, y, 1, grid: grid, count: -1);
             }
 
+            
             public void SpawnUtilityDrops(ushort utilityId, Vector3 position)
             {
                 if (_ctx.ItemDropper == null || _ctx.CellLibrary == null)
@@ -43,6 +51,7 @@ namespace Game.World
                     _ctx.ItemDropper.SpawnDroppedItems(key, position);
             }
 
+            
             public void SpawnSolidDrops(ushort solidId, Vector3 position)
             {
                 if (_ctx.ItemDropper == null || _ctx.CellLibrary == null)
@@ -53,6 +62,7 @@ namespace Game.World
                     _ctx.ItemDropper.SpawnDroppedItems(key, position);
             }
 
+            
             public void SpawnItemDropById(string itemId, Vector3 position)
             {
                 if (_ctx.ItemDropper == null || string.IsNullOrEmpty(itemId) || _ctx.ItemLibrary == null)

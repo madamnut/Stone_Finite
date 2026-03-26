@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using UnityEngine.Serialization;
 using Game.Core;
@@ -9,6 +12,7 @@ namespace Game.UI
         [Header("Bindings")]
         [FormerlySerializedAs("player")]
         [SerializeField] private MonoBehaviour inventoryOwnerComponent;
+
         public Transform hotbarRoot;
 
         private readonly ItemSlot[] _slots = new ItemSlot[10];
@@ -16,12 +20,14 @@ namespace Game.UI
         private InventoryData _inv;
         private int _scope;
 
+        
         void Awake()
         {
             for (int i = 0; i < 10; i++)
                 _slots[i] = hotbarRoot.Find(i.ToString()).GetComponent<ItemSlot>();
         }
 
+        
         void Start()
         {
             ResolveInventoryOwner();
@@ -31,11 +37,13 @@ namespace Game.UI
             SetScope(0);
         }
 
+        
         void OnDestroy()
         {
             if (_inv != null) _inv.OnChanged -= Refresh;
         }
 
+        
         void Refresh()
         {
             for (int i = 0; i < 10; i++)
@@ -48,6 +56,7 @@ namespace Game.UI
                 _slots[i].SetScope(i == _scope);
         }
 
+        
         public void SetScope(int index)
         {
             if (index < 0) index = 0;
@@ -60,6 +69,7 @@ namespace Game.UI
 
         public int CurrentScope => _scope;
 
+        
         void ResolveInventoryOwner()
         {
             _inventoryOwner = inventoryOwnerComponent as IInventoryOwner;
@@ -67,6 +77,7 @@ namespace Game.UI
                 Debug.LogWarning($"[Hotbar] Assigned component on {name} does not implement IInventoryOwner.", this);
         }
 
+        
         public void SetInventoryOwner(IInventoryOwner inventoryOwner)
         {
             _inventoryOwner = inventoryOwner;

@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using UnityEngine;
 
@@ -7,13 +10,16 @@ namespace Game.World
     {
         private sealed class RuntimeStateService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public RuntimeStateService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public IEnumerator CreateAutosaveLoop()
             {
                 var wait = new WaitForSecondsRealtime(300f);
@@ -24,6 +30,7 @@ namespace Game.World
                 }
             }
 
+            
             public void ApplyTimeSyncedBrightness(bool forceDirty)
             {
                 int m = _ctx.WorldHour * 60 + (_ctx.WorldMinute % 60);
@@ -48,6 +55,7 @@ namespace Game.World
                 }
             }
 
+            
             public TimeBand GetTimeBand()
             {
                 int h = _ctx.WorldHour;

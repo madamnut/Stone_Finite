@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,6 +15,7 @@ namespace Game.UI
     public partial class CrucibleView : MonoBehaviour
     {
         [Header("Deps")]
+
         public ItemLibrary itemLibrary;
     
         [Header("UI")]
@@ -27,12 +31,14 @@ namespace Game.UI
         int _prevSum;
         string _prevSig;
     
+        
         public void BindCrucible(ItemData crucibleItem)
         {
             _crucibleItem = crucibleItem;
             Refresh();
         }
     
+        
         public void Refresh()
         {
             if (_crucibleItem == null || _crucibleItem.Count <= 0)
@@ -53,10 +59,10 @@ namespace Game.UI
                 return;
             }
     
-            // ??????? Details["layers"]???袁⑸즵?쀫쓧???List<object>?????????⑤똾留??袁⑸즴甕겸넃???釉먮폇??
+            
             _layersListRef = EnsureLayersListRef(_crucibleItem);
     
-            var layers = NormalizeLayers(_layersListRef); // bottom->top
+            var layers = NormalizeLayers(_layersListRef); 
             int sum = SumAmount(layers);
             string sig = BuildSignature(layers);
     
@@ -66,6 +72,7 @@ namespace Game.UI
             ForceRefresh(cap, layers, sum, sig);
         }
     
+        
         public void Clear()
         {
             if (contentRoot != null)
@@ -79,6 +86,7 @@ namespace Game.UI
             _prevSig = null;
         }
     
+        
         public bool BringLayerToTop(int layerIndexInCrucible)
         {
             if (_crucibleItem == null) return false;
@@ -114,7 +122,7 @@ namespace Game.UI
             if (parentW <= 0.01f) parentW = ((RectTransform)transform).rect.width;
             if (parentH <= 0.01f) parentH = ((RectTransform)transform).rect.height;
     
-            // layers bottom->top, UI??top->bottom ??獄쏅똻??
+            
             for (int i = layers.Count - 1; i >= 0; i--)
             {
                 var (itemId, amount) = layers[i];
@@ -166,14 +174,14 @@ namespace Game.UI
             _prevSig = sig;
         }
     
-        // ????????關履????딅텑??? IList ??? ?袁⑸즵?룸돁???List<object>????????SetDetail?????怨뺣빰 ?袁⑸즴甕곗떓逾?
+        
         List<object> EnsureLayersListRef(ItemData c)
         {
             object lo = null;
             if (c.Details != null)
                 c.Details.TryGetValue("layers", out lo);
     
-            // ???⑤챶?뺧┼???獄쏅똻??
+            
             if (lo == null)
             {
                 var created = new List<object>();
@@ -181,20 +189,20 @@ namespace Game.UI
                 return created;
             }
     
-            // ???? List<object>
+            
             if (lo is List<object> listObj)
                 return listObj;
     
-            // JArray -> List<object>
+            
             if (lo is JArray ja)
             {
                 var converted = new List<object>(ja.Count);
-                for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]); // JObject ???
+                for (int i = 0; i < ja.Count; i++) converted.Add(ja[i]); 
                 c.SetDetail("layers", converted);
                 return converted;
             }
     
-            // ??????딅텑???????癲꾧퀗?э㎖?? List<Dictionary<...>> / List<JObject> / ??れ삀?? IList
+            
             if (lo is IList ilist && lo is not string)
             {
                 var converted = new List<object>(ilist.Count);
@@ -205,7 +213,7 @@ namespace Game.UI
                 return converted;
             }
     
-            // ???⑤?彛??????怨룻꼧癲???????
+            
             var fallback = new List<object>();
             c.SetDetail("layers", fallback);
             return fallback;

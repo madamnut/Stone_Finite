@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,13 +10,16 @@ namespace Game.World
     {
         private sealed class MultiblockPersistenceService
         {
+
             readonly MultiblockServiceContext _ctx;
 
+            
             public MultiblockPersistenceService(MultiblockServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public Multiblock Create(MultiblockLibrary.Def def, int originX, int originY)
             {
                 int width = def.width;
@@ -42,6 +48,7 @@ namespace Game.World
                 {
                     int wx = originX + x;
                     int wy = originY + y;
+                    
                     inst.originalSolidIds[new Vector2Int(wx, wy)] = _ctx.World.GetSolidId(wx, wy);
                 }
 
@@ -60,6 +67,7 @@ namespace Game.World
                 return inst;
             }
 
+            
             public void RegisterInstance(Multiblock inst)
             {
                 _ctx.Instances.Add(inst.InstId, inst);
@@ -67,6 +75,7 @@ namespace Game.World
                     _ctx.ByCell[cell] = inst;
             }
 
+            
             public void Despawn(Multiblock inst, Vector2Int brokenCell)
             {
                 _ctx.Instances.Remove(inst.InstId);
@@ -90,6 +99,7 @@ namespace Game.World
                 Debug.Log($"{LOG_MB} Despawn multiblock instId={inst.InstId}, def={inst.DefId}, restoreExcept={brokenCell}");
             }
 
+            
             public void LoadFromSaveDatas(List<Multiblock.SaveData> list)
             {
                 if (_ctx.Vfx != null && _ctx.Instances.Count > 0)

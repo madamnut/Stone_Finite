@@ -1,3 +1,6 @@
+ï»¿
+
+
 using UnityEngine;
 
 using Game.World;
@@ -9,6 +12,7 @@ using UnityEditor;
 public sealed class GridGizmo : MonoBehaviour
 {
     [Header("Tile Prefabs (must have SpriteRenderer)")]
+
     public GameObject tilePrefabA;
     public GameObject tilePrefabB;
 
@@ -29,6 +33,7 @@ public sealed class GridGizmo : MonoBehaviour
     bool _rebuildQueued;
 #endif
 
+    
     void OnEnable()
     {
 #if UNITY_EDITOR
@@ -38,17 +43,20 @@ public sealed class GridGizmo : MonoBehaviour
 #endif
     }
 
+    
     void OnDisable() => Clear();
 
+    
     void OnValidate()
     {
-        // OnValidate?ì„œ InstantiatePrefab ?Œë¦¬ë©??´ë? OnValidateê°€ ?°ì‡„ë¡??°ì?ë©´ì„œ ë¡œê·¸ ??°œ ê°€??
+        
 #if UNITY_EDITOR
         QueueRebuild();
 #endif
     }
 
 #if UNITY_EDITOR
+    
     void QueueRebuild()
     {
         if (_rebuildQueued) return;
@@ -57,12 +65,13 @@ public sealed class GridGizmo : MonoBehaviour
         EditorApplication.delayCall += () =>
         {
             _rebuildQueued = false;
-            if (this == null) return; // destroyed
+            if (this == null) return; 
             Rebuild();
         };
     }
 #endif
 
+    
     public void Rebuild()
     {
         if (tilePrefabA == null || tilePrefabB == null) { Clear(); return; }
@@ -132,6 +141,7 @@ public sealed class GridGizmo : MonoBehaviour
         }
     }
 
+    
     void Clear()
     {
         _instances = null;
@@ -141,6 +151,7 @@ public sealed class GridGizmo : MonoBehaviour
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying) DestroyImmediate(_root.gameObject);
+            
             else Destroy(_root.gameObject);
 #else
             Destroy(_root.gameObject);

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using Game.World;
 
@@ -7,8 +10,10 @@ namespace Game.Player
     {
         [SerializeField] private LayerMask corpseLayerMask;
 
+
         readonly Collider2D[] _hits = new Collider2D[16];
 
+        
         public Corpse Query(Vector2 worldPoint)
         {
             Corpse bestCorpse = null;

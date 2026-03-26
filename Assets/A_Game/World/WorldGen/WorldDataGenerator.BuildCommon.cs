@@ -1,9 +1,13 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         private static void BuildCommonAndBg(
             WorldGenSettings s, int seed,
             out ushort[,] commonSolid,
@@ -12,6 +16,7 @@ namespace Game.World
             out ushort[,] commonFluid
         )
         {
+
             int w = s.width, h = s.height;
 
             float totalStart = Time.realtimeSinceStartup;
@@ -137,6 +142,7 @@ namespace Game.World
                         {
                             if (aT > 0f && y >= rockBandTop - aT)
                                 id = ID_ANDESITE;
+                            
                             else if (bT > 0f && y >= rockBandTop - aT - bT)
                                 id = ID_BASALT;
                         }

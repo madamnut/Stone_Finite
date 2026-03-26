@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using UnityEngine.Serialization;
 using Game.Core;
@@ -12,12 +15,14 @@ namespace Game.UI
         [SerializeField] private MonoBehaviour inventoryOwnerComponent;
 
         [Header("Inventory Rows (0 ~ 4)")]
+
         public Transform row0, row1, row2, row3, row4;
 
         private readonly ItemSlot[] _slots = new ItemSlot[50];
         private IInventoryOwner _inventoryOwner;
         private InventoryData _inv;
 
+        
         void Awake()
         {
             int i = 0;
@@ -28,6 +33,7 @@ namespace Game.UI
             MapRow(row3, ref i);
         }
 
+        
         void OnEnable()
         {
             ResolveInventoryOwner();
@@ -40,12 +46,14 @@ namespace Game.UI
             Refresh();
         }
 
+        
         void OnDisable()
         {
             if (_inv != null) _inv.OnChanged -= Refresh;
             _inv = null;
         }
 
+        
         void Refresh()
         {
             for (int i = 0; i < _slots.Length; i++)
@@ -55,6 +63,7 @@ namespace Game.UI
             }
         }
 
+        
         void MapRow(Transform row, ref int idx)
         {
             for (int c = 0; c < 10; c++)
@@ -65,8 +74,10 @@ namespace Game.UI
             }
         }
 
+        
         public ItemSlot GetSlot(int index) => _slots[index];
 
+        
         void ResolveInventoryOwner()
         {
             _inventoryOwner = inventoryOwnerComponent as IInventoryOwner;
@@ -74,6 +85,7 @@ namespace Game.UI
                 Debug.LogWarning($"[PlayerInventory] Assigned component on {name} does not implement IInventoryOwner.", this);
         }
 
+        
         public void SetInventoryOwner(IInventoryOwner inventoryOwner)
         {
             _inventoryOwner = inventoryOwner;

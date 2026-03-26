@@ -1,11 +1,16 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
 {
     public sealed partial class GearNetworkManager
     {
+        
         public bool TryAttachSourceAtCell(Vector2Int anyGearCell, string sourceId, out int sourceNodeId)
         {
+
             sourceNodeId = -1;
 
             if (string.IsNullOrEmpty(sourceId)) return false;
@@ -17,6 +22,7 @@ namespace Game.World
             return TryAddSource(gear.Center, sourceId, out sourceNodeId);
         }
 
+        
         public bool TryAddSource(Vector2Int attachedGearCenter, string sourceId, out int sourceNodeId)
         {
             sourceNodeId = -1;
@@ -67,6 +73,7 @@ namespace Game.World
             return true;
         }
 
+        
         public bool TryRemoveSource(int sourceNodeId)
         {
             if (!_sourceNodes.TryGetValue(sourceNodeId, out var source))
@@ -88,6 +95,7 @@ namespace Game.World
             return true;
         }
 
+        
         public bool TryGetSourceAtGearCell(Vector2Int anyGearCell, out string sourceId)
         {
             sourceId = null;
@@ -102,6 +110,7 @@ namespace Game.World
             return _sourceIdByNodeId.TryGetValue(sourceNodeId, out sourceId);
         }
 
+        
         public bool TryRemoveSourceAtGearCell(Vector2Int anyGearCell, out string sourceId)
         {
             sourceId = null;

@@ -1,34 +1,42 @@
+﻿
+
+
 using System.Collections.Generic;
 
 namespace Game.Core
 {
     
-    /// <summary>
-    /// ??뽯땾 ?紐껉뭣?醫듼봺 ?怨쀬뵠?????關?? ?④쑴留?
-    /// ??MonoBehaviour ?袁⑤뻷 ????堉??⑤끃肉??뺣즲 ?癒??嚥?苡?new 嚥???밴쉐 揶쎛??
-    /// ??OnChanged ??源?紐껋쨮 UI ?源녿퓠??揶쏄퉮??Hook 椰?????됱벉
-    /// </summary>
+    
+    
+    
+    
+    
     public class InventoryData
     {
         public readonly List<ItemData> items = new();
+
         public int Capacity { get; }
     
+        
         public delegate void Changed();
         public event Changed OnChanged;
     
+        
         public InventoryData(int capacity)
         {
             Capacity = capacity;
             for (int i = 0; i < capacity; i++)
-                items.Add(null);                        // ??????
+                items.Add(null);                        
         }
     
-        /// <summary>?紐??癒?퐣 揶쏅벡??揶쏄퉮?????뵝</summary>
+        
+        
         public void NotifyChanged() => OnChanged?.Invoke();
     
-        /// <summary>
-        /// ItemData.Count 筌띾슦寃??節딇? 筌??節? ??롮쎗??獄쏆꼹???뺣뼄.
-        /// </summary>
+        
+        
+        
+        
         public int AddItem(ItemData incoming)
         {
             if (incoming == null || incoming.Count <= 0)
@@ -36,7 +44,7 @@ namespace Game.Core
     
             int left = incoming.Count;
     
-            /* 1) 揶쏆늿? ID ??쎄문 筌?쑴??묾?*/
+            
             foreach (var it in items)
             {
                 if (it == null) continue;
@@ -50,7 +58,7 @@ namespace Game.Core
                 if (left == 0) { OnChanged?.Invoke(); return 0; }
             }
     
-            /* 2) ??????筌?쑴??묾?*/
+            
             for (int i = 0; i < Capacity && left > 0; i++)
             {
                 if (items[i] != null) continue;
@@ -77,7 +85,7 @@ namespace Game.Core
             }
     
             OnChanged?.Invoke();
-            return left;           // 0 ???袁⑥쎗 ??륁뒠
+            return left;           
         }
     }
 }

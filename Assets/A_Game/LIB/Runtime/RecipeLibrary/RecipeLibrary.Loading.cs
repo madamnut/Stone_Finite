@@ -1,3 +1,6 @@
+﻿
+
+
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -6,6 +9,7 @@ namespace Game.Data
 {
     public partial class RecipeLibrary
     {
+        
         void Awake()
         {
             if (recipe2Json != null && !string.IsNullOrEmpty(recipe2Json.text))
@@ -21,8 +25,10 @@ namespace Game.Data
             LoadToolbench();
         }
     
+        
         void LoadToolbench()
         {
+
             _toolbench = null;
             if (toolbenchJson == null || string.IsNullOrEmpty(toolbenchJson.text))
                 return;
@@ -46,6 +52,7 @@ namespace Game.Data
             }
         }
     
+        
         void LoadAlloys()
         {
             _alloys.Clear();

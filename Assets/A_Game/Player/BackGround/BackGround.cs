@@ -1,4 +1,6 @@
-// BackGround.cs
+﻿
+
+
 using UnityEngine;
 
 using Game.World;
@@ -9,6 +11,7 @@ namespace Game.Player
     public class BackGround : MonoBehaviour
     {
         [Header("Follow Target")]
+
         public Transform player;
     
         [Header("Axes")]
@@ -16,9 +19,9 @@ namespace Game.Player
         public bool followY = true;
     
         [Header("Layers (assign a single centered segment per layer)")]
-        public Transform layer0; // far
-        public Transform layer1; // mid
-        public Transform layer2; // near
+        public Transform layer0; 
+        public Transform layer1; 
+        public Transform layer2; 
     
         [Header("Lag Weights (X only)")]
         [Range(0f, 1f)] public float weight0 = 0.8f;
@@ -27,9 +30,9 @@ namespace Game.Player
     
         [Header("Y Follow (Surface Absolute)")]
         public float yBaseline = 810f;
-        [Range(0f, 1f)] public float yParallax0 = 0.98f; // far
-        [Range(0f, 1f)] public float yParallax1 = 0.99f; // mid
-        [Range(0f, 1f)] public float yParallax2 = 1.00f; // near
+        [Range(0f, 1f)] public float yParallax0 = 0.98f; 
+        [Range(0f, 1f)] public float yParallax1 = 0.99f; 
+        [Range(0f, 1f)] public float yParallax2 = 1.00f; 
     
         [Header("Sun & Moon (children of Center)")]
         public WorldManager world;
@@ -52,7 +55,7 @@ namespace Game.Player
         public Color32 bright = new Color32(255, 255, 255, 255);
         [Range(0.05f, 5f)] public float brightnessSmoothTime = 0.6f;
     
-        // runtime
+        
         Transform l0A, l0B, l0C; float w0; float kx0;
         Transform l1A, l1B, l1C; float w1; float kx1;
         Transform l2A, l2B, l2C; float w2; float kx2;
@@ -65,6 +68,7 @@ namespace Game.Player
         float _L, _Lvel;
         float _baseY0, _baseY1, _baseY2;
     
+        
         void Start()
         {
             if (!player) { enabled = false; return; }
@@ -95,13 +99,14 @@ namespace Game.Player
             if (l2B) _baseY2 = l2B.position.y;
         }
     
+        
         void LateUpdate()
         {
             if (!player) return;
     
             Vector3 curP = player.position;
     
-            // X : dp 疫꿸퀡而?
+            
             Vector3 dp = curP - _prevP;
             if (!followX) dp.x = 0f;
             dp.y = 0f;
@@ -111,7 +116,7 @@ namespace Game.Player
             if (l1A) { Move3(l1A, l1B, l1C, dp, kx1); Wrap3(ref l1A, ref l1B, ref l1C, w1, curP.x); }
             if (l2A) { Move3(l2A, l2B, l2C, dp, kx2); Wrap3(ref l2A, ref l2B, ref l2C, w2, curP.x); }
     
-            // Y : 疫꿸퀣???????筌△뫁??筌앸맩???怨몄뒠
+            
             if (followY)
             {
                 float dy = curP.y - yBaseline;
@@ -136,6 +141,7 @@ namespace Game.Player
             _prevP = curP;
         }
     
+        
         void UpdateSunMoon()
         {
             if (!center || world == null) return;
@@ -154,9 +160,10 @@ namespace Game.Player
             if (sun)  sun.localPosition  = Vector3.Lerp(sun.localPosition,  sunTarget,  k);
             if (moon) moon.localPosition = Vector3.Lerp(moon.localPosition, moonTarget, k);
     
-            // ?袁⑺뒄 疫꿸퀡而?揶쏅낄???以?癰귣벀?: BackGround?癒?퐣 GodRay????띾쭔 野???곸벉
+            
         }
     
+        
         void UpdateBrightness()
         {
             if (!world) return;
@@ -178,6 +185,7 @@ namespace Game.Player
             ApplyColor(l2A_sprs, c); ApplyColor(l2B_sprs, c); ApplyColor(l2C_sprs, c);
         }
     
+        
         void ApplyColor(SpriteRenderer[] arr, Color c)
         {
             if (arr == null) return;
@@ -190,6 +198,7 @@ namespace Game.Player
             }
         }
     
+        
         void Set3Y(Transform A, Transform B, Transform C, float y)
         {
             if (A) A.position = new Vector3(A.position.x, y, A.position.z);
@@ -197,6 +206,7 @@ namespace Game.Player
             if (C) C.position = new Vector3(C.position.x, y, C.position.z);
         }
     
+        
         void InitLayer(Transform center, out Transform A, out Transform B, out Transform C, out float width)
         {
             width = ComputeWorldWidth(center);
@@ -217,6 +227,7 @@ namespace Game.Player
             SortByX(ref A, ref B, ref C);
         }
     
+        
         float ComputeWorldWidth(Transform t)
         {
             var rends = t.GetComponentsInChildren<Renderer>();
@@ -225,12 +236,14 @@ namespace Game.Player
             return b.size.x;
         }
     
+        
         void Move3(Transform A, Transform B, Transform C, Vector3 dp, float kx)
         {
             Vector3 mv = new Vector3(dp.x * kx, 0f, 0f);
             A.position += mv; B.position += mv; C.position += mv;
         }
     
+        
         void Wrap3(ref Transform A, ref Transform B, ref Transform C, float width, float px)
         {
             SortByX(ref A, ref B, ref C);
@@ -247,6 +260,7 @@ namespace Game.Player
             }
         }
     
+        
         void SortByX(ref Transform A, ref Transform B, ref Transform C)
         {
             if (A.position.x > B.position.x) Swap(ref A, ref B);
@@ -254,6 +268,7 @@ namespace Game.Player
             if (A.position.x > B.position.x) Swap(ref A, ref B);
         }
     
+        
         void Swap(ref Transform a, ref Transform b)
         {
             var t = a; a = b; b = t;

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.Core;
@@ -7,8 +10,10 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         public static WorldData Generate(WorldGenSettings s, int seed, CellLibrary cellLibrary)
         {
+
             int w = s.width;
             int h = s.height;
 
@@ -67,6 +72,7 @@ namespace Game.World
             return world;
         }
 
+        
         public static ushort[,] GenerateCommonSolid(WorldGenSettings s, int seed, out ushort[,] bg, out ushort[,] commonFluid)
         {
             BuildCommonAndBg(s, seed, out var commonSolid, out _, out bg, out commonFluid);

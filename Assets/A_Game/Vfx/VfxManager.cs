@@ -1,10 +1,5 @@
-// VfxManager.cs (?熬곣뫕????흮?우뮂??
-// - ?リ옇???Smoke/Fire loop VFX ???
-// - Rotating VFX: vfxKey -> prefab ???筌뤾쑬裕????댉?????嶺뚮씞?뗩뇡?List)??怨쀬Ŧ ?繹먮굞夷?
-// - Belt VFX: prefab 1?띠룇裕녶퐲????? ??源껊쭜?? ?筌???????낅슣???
-// - SetRotatingLoopVfx ?잙갭梨????????띠럾???
-// - (ownerInstId, vfxKey) ??亦??繞벿살탮???꾩렮維? ???
-// - Block Break Particles ?袁⑤?獄???잙갭梨??????
+﻿
+
 
 using System;
 using System.Collections.Generic;
@@ -17,62 +12,67 @@ namespace Game.Support
         [Serializable]
         public struct VfxKeyPrefabPair
         {
+
             public string key;
             public GameObject prefab;
         }
 
         [Header("Block Break Particles")]
-        public Material material;       // Sprites/Default ?リ옇?↑????ロ깵??1??
-        public ParticleSystem psPrefab; // ??怨뺣폃????戮?츩???熬곣뱿遊??
+        public Material material;       
+        public ParticleSystem psPrefab; 
 
         [Header("Loop VFX Prefabs (Fixed Keys)")]
-        // ?リ옇??? "Smoke", "Fire_01", "Fire_02"
+        
         public GameObject smokePrefab;
         public GameObject fire01Prefab;
         public GameObject fire02Prefab;
 
         [Header("Rotating VFX Prefabs (Inspector Mapping)")]
-        // ?? key="Wooden Cogwheel", prefab=WoodenCogwheelVfxPrefab
+        
         public List<VfxKeyPrefabPair> rotatingPrefabs = new List<VfxKeyPrefabPair>();
 
         [Header("Belt VFX Prefab (Single)")]
         public GameObject beltPrefab;
 
         [Header("Loop VFX Culling")]
-        public float activeRange = 40f;  // ??????怨룹꽑 ?リ옇?? 濾곌쑨??????????
+        public float activeRange = 40f;  
 
         readonly Dictionary<(Sprite, int), Mesh[]> _meshCache = new Dictionary<(Sprite, int), Mesh[]>();
         readonly Dictionary<Texture, Material> _matByTex = new Dictionary<Texture, Material>();
 
-        // ?猷먮쳜??VFX ?筌뤾쑬裕??怨룸츩 ??㉱?? (ownerInstId, vfxKey) -> GameObject
+        
         readonly Dictionary<(int, string), GameObject> _loop = new Dictionary<(int, string), GameObject>();
 
-        // rotating key -> prefab cache (?????????キ?
+        
         readonly Dictionary<string, GameObject> _rotatingByKey = new Dictionary<string, GameObject>(StringComparer.Ordinal);
 
         Transform _player;
         bool _rotatingCacheBuilt = false;
 
+        
         void Awake()
         {
             BuildRotatingCache();
         }
 
+        
         void OnValidate()
         {
             _rotatingCacheBuilt = false;
             BuildRotatingCache();
         }
 
+        
         public void SetPlayer(Transform player)
         {
             _player = player;
             CullAllLoopVfx();
         }
 
-        // ??????????????????????????????????????????????????????????
-        // Loop VFX API (?リ옇???
-        // ??????????????????????????????????????????????????????????
+        
+        
+        
+        
         public void SetLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos)
         {
             var key = (ownerInstId, vfxKey);
@@ -105,9 +105,10 @@ namespace Game.Support
             if (!inst.activeSelf) inst.SetActive(true);
         }
 
-        // ??????????????????????????????????????????????????????????
-        // Rotating Loop VFX API (?リ옇???
-        // ??????????????????????????????????????????????????????????
+        
+        
+        
+        
         public void SetRotatingLoopVfx(int ownerInstId, string vfxKey, bool on, Vector3 worldPos, float rpm, int rotationDir)
         {
             var key = (ownerInstId, vfxKey);
@@ -145,12 +146,13 @@ namespace Game.Support
             if (!inst.activeSelf) inst.SetActive(true);
         }
 
-        // ??????????????????????????????????????????????????????????
-        // Belt Loop VFX API (??ル맪??
-        // - ?熬곣뱿遊?獄?? beltPrefab 1?띠룇裕녶퐲?????
-        // - ??源껊쭜?? bodyColor???낅슣???
-        // - (ownerInstId, vfxKey) ???댁Ŧ ??亦??(vfxKey??beltKind 雅?굝???
-        // ??????????????????????????????????????????????????????????
+        
+        
+        
+        
+        
+        
+        
         public void SetBeltLoopVfx(
             int ownerInstId,
             string vfxKey,
@@ -195,7 +197,9 @@ namespace Game.Support
             if (bv != null)
             {
                 bv.SetEndpointsWorld(
+                    
                     new Vector2(startWorldPos.x, startWorldPos.y),
+                    
                     new Vector2(endWorldPos.x, endWorldPos.y)
                 );
                 bv.SetSpin(rpm, rotationDir);
@@ -205,6 +209,7 @@ namespace Game.Support
             if (!inst.activeSelf) inst.SetActive(true);
         }
 
+        
         public void DespawnAllForOwner(int ownerInstId)
         {
             var toRemove = new List<(int, string)>();
@@ -221,6 +226,7 @@ namespace Game.Support
                 _loop.Remove(toRemove[i]);
         }
 
+        
         public void CullAllLoopVfx()
         {
             if (_player == null) return;
@@ -236,6 +242,7 @@ namespace Game.Support
             }
         }
 
+        
         GameObject GetLoopPrefab(string vfxKey)
         {
             return vfxKey switch
@@ -247,6 +254,7 @@ namespace Game.Support
             };
         }
 
+        
         GameObject GetRotatingPrefab(string vfxKey)
         {
             if (!_rotatingCacheBuilt) BuildRotatingCache();
@@ -257,6 +265,7 @@ namespace Game.Support
             return _rotatingByKey.TryGetValue(vfxKey, out var prefab) ? prefab : null;
         }
 
+        
         void BuildRotatingCache()
         {
             _rotatingByKey.Clear();
@@ -274,6 +283,7 @@ namespace Game.Support
             }
         }
 
+        
         bool IsInRange(Vector3 p)
         {
             if (_player == null) return true;
@@ -281,9 +291,10 @@ namespace Game.Support
             return (_player.position - p).sqrMagnitude <= r * r;
         }
 
-        // ??????????????????????????????????????????????????????????
-        // Block Break Particles (?リ옇???  <<< ?잙갭梨??????
-        // ??????????????????????????????????????????????????????????
+        
+        
+        
+        
         public void EmitBlockAtCell(Sprite s, int cx, int cy, int cellSize, int grid = 2, int count = -1)
         {
             Vector3 pos = new Vector3(
@@ -312,6 +323,7 @@ namespace Game.Support
             main.stopAction = ParticleSystemStopAction.Destroy;
         }
 
+        
         Mesh[] GetShardMeshes(Sprite s, int grid)
         {
             var key = (s, grid);
@@ -347,16 +359,24 @@ namespace Game.Support
                 var m = new Mesh();
                 m.vertices = new[]
                 {
+                    
                     new Vector3(-0.5f, -0.5f, 0f),
+                    
                     new Vector3(-0.5f, +0.5f, 0f),
+                    
                     new Vector3(+0.5f, +0.5f, 0f),
+                    
                     new Vector3(+0.5f, -0.5f, 0f),
                 };
                 m.uv = new[]
                 {
+                    
                     new Vector2(u0, v0),
+                    
                     new Vector2(u0, v1),
+                    
                     new Vector2(u1, v1),
+                    
                     new Vector2(u1, v0),
                 };
                 m.triangles = new[] { 0, 1, 2, 0, 2, 3 };
@@ -368,6 +388,7 @@ namespace Game.Support
             return meshes;
         }
 
+        
         Material GetMat(Texture tex)
         {
             if (_matByTex.TryGetValue(tex, out var m) && m != null)

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
@@ -6,13 +9,16 @@ namespace Game.World
     {
         private sealed class RandomTickSimulationService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public RandomTickSimulationService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void DoRandomTicks()
             {
                 if (!Application.isPlaying) return;

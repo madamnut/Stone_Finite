@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,13 +10,16 @@ namespace Game.World
     {
         private sealed class UtilityEditService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public UtilityEditService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public bool SetUtilityExact(int x, int y, ushort id, ushort meta = 0)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -23,6 +29,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public bool ClearUtilityExact(int x, int y)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return false;
@@ -32,6 +39,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public bool IsUtilityAreaEmpty(Vector2Int center, IReadOnlyList<Vector2Int> offsets)
             {
                 if (offsets == null || offsets.Count == 0) return false;
@@ -49,6 +57,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public bool PlaceUtilityFootprint(
                 Vector2Int center,
                 ushort centerId,
@@ -76,6 +85,7 @@ namespace Game.World
                 return true;
             }
 
+            
             public bool ClearUtilityFootprint(Vector2Int center, IReadOnlyList<Vector2Int> offsets)
             {
                 if (offsets == null || offsets.Count == 0) return false;
@@ -99,6 +109,7 @@ namespace Game.World
                 return any;
             }
 
+            
             public bool PlaceGearFootprintUtility(
                 Vector2Int center,
                 ushort centerId,
@@ -140,16 +151,19 @@ namespace Game.World
                 return true;
             }
 
+            
             public void RemoveGearFootprintUtility(Vector2Int center, IReadOnlyList<Vector2Int> occupiedCells)
             {
                 ClearGearFootprintUtility(center, occupiedCells);
             }
 
+            
             public ushort BreakUtility(int x, int y)
             {
                 return BreakUtilityAt(x, y);
             }
 
+            
             public ushort BreakUtilityAt(int x, int y)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return 0;
@@ -184,6 +198,7 @@ namespace Game.World
                         {
                             hasSourceSolid = true;
                         }
+                        
                         else if (centerSolidTypeBeforeBreak == "Belt" &&
                                  _ctx.GearNetworkManager.TryGetBeltAtGearCell(cell, out _, out otherBeltCenter))
                         {
@@ -228,6 +243,7 @@ namespace Game.World
                 return u.id;
             }
 
+            
             public void ClearGearFootprintUtility(Vector2Int center, IReadOnlyList<Vector2Int> occupiedCells)
             {
                 CacheUtilityOccupiedIdIfNeeded();
@@ -255,6 +271,7 @@ namespace Game.World
                 }
             }
 
+            
             public void CacheUtilityOccupiedIdIfNeeded()
             {
                 if (_ctx.UtilityOccupiedId != 0) return;

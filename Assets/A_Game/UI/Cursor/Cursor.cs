@@ -1,4 +1,6 @@
-// Cursor.cs (?????밸븶?????????⑤벡???
+﻿
+
+
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -13,19 +15,21 @@ namespace Game.UI
     public class Cursor : MonoBehaviour
     {
         [Header("Cursor Canvas")]
+
         public Canvas canvas;
         public ItemSlot cursorSlot;
     
         [Header("Tooltip")]
-        public RectTransform tooltipRoot;  // ???????썹땟怨ロ떐??????걘??
-        public TMP_Text tooltipText;       // ?????쇨덧??????筌뤾쑬已??
-        public GameObject tooltipObject;   // ???ㅼ뒧????釉뚰??먮궪???鶯ㅺ동??????
+        public RectTransform tooltipRoot;  
+        public TMP_Text tooltipText;       
+        public GameObject tooltipObject;   
         public Vector2 tooltipOffset = new(16, -16);
         public Vector2 tooltipPadding = new(8, 8);
     
         private RectTransform rt;
         private readonly List<RaycastResult> _hits = new List<RaycastResult>(8);
     
+        
         void Awake()
         {
             rt = GetComponent<RectTransform>();
@@ -33,6 +37,7 @@ namespace Game.UI
             if (tooltipObject != null) tooltipObject.SetActive(false);
         }
     
+        
         void Update()
         {
             if (rt == null || canvas == null) return;
@@ -52,7 +57,7 @@ namespace Game.UI
                     rt.anchoredPosition = local;
             }
     
-            // ???? ??꿔꺂???????? ????
+            
             ItemSlot hoverSlot = null;
             ICursorTooltipSource hoverTip = null;
     
@@ -66,7 +71,7 @@ namespace Game.UI
                 {
                     var go = _hits[i].gameObject;
     
-                    // 1) ItemSlot ?????????
+                    
                     var s = go.GetComponentInParent<ItemSlot>();
                     if (s != null && s != cursorSlot)
                     {
@@ -74,7 +79,7 @@ namespace Game.UI
                         break;
                     }
     
-                    // 2) ?????쇨덧?筌먦렜逾?ICursorTooltipSource ?????밸븶??????嶺????癲ル슢??㎖猷⑷덩??????????
+                    
                     if (hoverTip == null)
                     {
                         var t = go.GetComponentInParent<ICursorTooltipSource>();
@@ -83,12 +88,12 @@ namespace Game.UI
                 }
             }
     
-            // ???? ?????썹땟怨ロ떐????ル봿????????
+            
             bool showTooltip = false;
     
             if (tooltipText != null)
             {
-                // A) ItemSlot ?????썹땟怨ロ떐??????????黎??筌??믨퀡??
+                
                 if (hoverSlot != null && hoverSlot.Item != null)
                 {
                     var it = hoverSlot.Item;
@@ -141,7 +146,8 @@ namespace Game.UI
                     tooltipText.text = sb.ToString();
                     showTooltip = true;
                 }
-                // B) ICursorTooltipSource ?????썹땟怨ロ떐?????????濚밸Ŧ援잏몭????
+                
+                
                 else if (hoverTip != null)
                 {
                     var sb = new StringBuilder(128);
@@ -160,7 +166,7 @@ namespace Game.UI
                 {
                     if (!tooltipObject.activeSelf) tooltipObject.SetActive(true);
     
-                    // ???? ?????걘????????????거?쭛????β뼯援?????????????????
+                    
                     if (canvas.renderMode != RenderMode.WorldSpace)
                     {
                         var canvasRT = (RectTransform)canvas.transform;
@@ -201,6 +207,7 @@ namespace Game.UI
             if (Input.GetMouseButtonDown(1)) HandleClick(PointerEventData.InputButton.Right);
         }
     
+        
         static void AppendActionKeysInline(
             StringBuilder sb,
             IDictionary<string, Dictionary<string, object>> actions)
@@ -230,6 +237,7 @@ namespace Game.UI
             }
         }
     
+        
         static void AppendDetailRecursive(StringBuilder sb, string indent, string key, object value)
         {
             if (value is Dictionary<string, object> dict)
@@ -238,6 +246,7 @@ namespace Game.UI
                 foreach (var kv in dict)
                     AppendDetailRecursive(sb, indent + "  ", kv.Key, kv.Value);
             }
+            
             else if (value is System.Collections.IList list && value is not string)
             {
                 sb.Append(indent).Append(key).AppendLine(": [");
@@ -259,6 +268,7 @@ namespace Game.UI
             }
         }
     
+        
         void HandleClick(PointerEventData.InputButton btn)
         {
             if (EventSystem.current == null || cursorSlot == null) return;
@@ -277,8 +287,8 @@ namespace Game.UI
             }
             if (slotView == null) return;
     
-            // ???嶺??????轅붽틓??熬곥끇釉???????? ??壤굿??뚯돩???쑩??⑹땡? "?????밸븶??뫢??????????轅붽틓??影?뽧걤???? ?????ㅿ폎??
-            // (?????밸븶?????????? ItemSlot.onClick???????????轅붽틓??影?뽧걤??
+            
+            
             if (slotView.useAsButton)
                 return;
     
@@ -404,7 +414,7 @@ namespace Game.UI
                 return;
             }
     
-            // ===== ??꿔꺂???沃???????る?????ш끽維뽳쭩??????β뼯援????る쑏?=====
+            
             var inv = slotView.inventory;
             var items = inv.items;
             int idx = slotView.index;
@@ -425,11 +435,13 @@ namespace Game.UI
                     cursorSlot.Set(slotInv);
                     items[idx] = null;
                 }
+                
                 else if (slotInv == null)
                 {
                     items[idx] = cur;
                     cursorSlot.Set(null);
                 }
+                
                 else if (sameInv && roomInv > 0)
                 {
                     int move = cur.Count < roomInv ? cur.Count : roomInv;

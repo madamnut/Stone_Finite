@@ -1,5 +1,5 @@
-// ImageGenerator.cs
-// ???곌떠??? Lava(FLUID_LAVA)?띠럾? AIR?????깅굵 ????紐욤??源녿さ????戮?뻣
+﻿
+
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +8,7 @@ using Game.World;
 public class ImageGenerator : MonoBehaviour
 {
     [Header("Generator")]
+
     public WorldGenSettings settings;
     [Tooltip("Seed used for the preview world")]
     public int seed = 0;
@@ -18,7 +19,7 @@ public class ImageGenerator : MonoBehaviour
     public bool flipY = true;
 
     [Header("Unknown ID Color")]
-    public Color unknownColor = new Color(1f, 0f, 1f, 1f); // 亦껋꼶梨??????裕????깅뇶
+    public Color unknownColor = new Color(1f, 0f, 1f, 1f); 
 
     [Header("Name to Color Mapping")]
 
@@ -26,7 +27,7 @@ public class ImageGenerator : MonoBehaviour
     public Color rock = new Color(0.35f, 0.35f, 0.35f, 1);
     public Color dirt = new Color(0.47f, 0.28f, 0.19f, 1);
 
-    // Grass(3~9) ????戮?돰
+    
     public Color grass = new Color(0.20f, 0.71f, 0.27f, 1);
 
     public Color clay = new Color(0.62f, 0.40f, 0.33f, 1);
@@ -42,18 +43,18 @@ public class ImageGenerator : MonoBehaviour
     public Color stone_Pile       = new Color(0.51f, 0.51f, 0.51f, 1);
     public Color small_Stone_Pile = new Color(0.59f, 0.59f, 0.59f, 1);
 
-    // ??Desert additions
+    
     public Color dead_Bush = new Color(0.45f, 0.36f, 0.22f, 1);
 
-    // Agave(6???? ????戮?돰(?熬곣뱿遊???ｈ굢??????源녿さ??
+    
     public Color agave  = new Color(0.22f, 0.58f, 0.24f, 1);
     public Color cactus = new Color(0.15f, 0.55f, 0.18f, 1);
 
-    // ??Sandstone / Pyramid
+    
     public Color sandstone      = new Color(0.78f, 0.70f, 0.45f, 1);
     public Color sandstoneBrick = new Color(0.73f, 0.64f, 0.40f, 1);
 
-    // ??Snow biome additions
+    
     public Color frozenDirt   = new Color(0.40f, 0.33f, 0.30f, 1);
     public Color frozenGrass  = new Color(0.70f, 0.92f, 0.78f, 1);
     public Color iceCell      = new Color(0.70f, 0.85f, 0.95f, 0.95f);
@@ -63,7 +64,7 @@ public class ImageGenerator : MonoBehaviour
     public Color frozenPlant  = new Color(0.78f, 0.92f, 0.88f, 1f);
     public Color frozenBush   = new Color(0.74f, 0.88f, 0.84f, 1f);
 
-    // ??Volcano biome additions
+    
     public Color basalt   = new Color(0.18f, 0.18f, 0.20f, 1f);
     public Color tuff     = new Color(0.58f, 0.55f, 0.50f, 1f);
     public Color andesite = new Color(0.45f, 0.45f, 0.48f, 1f);
@@ -78,17 +79,17 @@ public class ImageGenerator : MonoBehaviour
     [Header("Fluid")]
     public Color water = new Color(0.20f, 0.43f, 0.82f, 0.78f);
 
-    // ??Lava preview color
+    
     public Color lava  = new Color(0.95f, 0.15f, 0.05f, 0.95f);
 
     Texture2D tex;
 
-    // ???? Solid IDs (ATT_Solid.json ?リ옇??) ????
+    
     const ushort ID_AIR  = 0;
     const ushort ID_ROCK = 1;
     const ushort ID_DIRT = 2;
 
-    // Grass 3~9
+    
     const ushort ID_GRASS_TOP          = 3;
     const ushort ID_GRASS_LEFT         = 4;
     const ushort ID_GRASS_RIGHT        = 5;
@@ -110,10 +111,10 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_STONE_PILE       = 2004;
     const ushort ID_SMALL_STONE_PILE = 2005;
 
-    // ??Desert additions
+    
     const ushort ID_DEAD_BUSH = 2006;
 
-    // ??Agave 6 tiles
+    
     const ushort ID_AGAVE_0 = 2007;
     const ushort ID_AGAVE_1 = 2008;
     const ushort ID_AGAVE_2 = 2009;
@@ -122,11 +123,11 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_AGAVE_5 = 2012;
     const ushort ID_CACTUS  = 2013;
 
-    // ??Snow additions (ATT_Solid.json ?リ옇??)
-    // NOTE: Frozen Dirt ???깆젷 ID??嶺뚮씮??????(?????46 ?띠럾???
+    
+    
     const ushort ID_FROZEN_DIRT = 46;
 
-    // Frozen Grass 37~43
+    
     const ushort ID_FROZEN_GRASS_TOP          = 37;
     const ushort ID_FROZEN_GRASS_LEFT         = 38;
     const ushort ID_FROZEN_GRASS_RIGHT        = 39;
@@ -138,18 +139,18 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_ICE_CELL  = 44;
     const ushort ID_SNOW_CELL = 45;
 
-    // ??Volcano solids
+    
     const ushort ID_BASALT   = 47;
     const ushort ID_TUFF     = 48;
     const ushort ID_ANDESITE = 49;
 
-    // Snow decor
+    
     const ushort ID_SNOW         = 2014;
     const ushort ID_FROZEN_BUSH  = 2015;
     const ushort ID_FROZEN_PLANT = 2016;
     const ushort ID_FROZEN_TRUNK = 2017;
 
-    // ??Sandstone + Pyramid brick
+    
     const ushort ID_SANDSTONE       = 35;
     const ushort ID_SANDSTONE_BRICK = 36;
 
@@ -161,11 +162,12 @@ public class ImageGenerator : MonoBehaviour
     const ushort ID_GRANITE     = 4000;
     const ushort ID_AMPHIBOLITE = 4001;
 
-    // ???? Fluid IDs (ATT_Fluid.json ?リ옇??) ????
+    
     const ushort FLUID_NONE  = 0;
     const ushort FLUID_WATER = 1;
     const ushort FLUID_LAVA  = 2;
 
+    
     void Start()
     {
         if (settings == null || targetUI == null)
@@ -176,6 +178,7 @@ public class ImageGenerator : MonoBehaviour
         Repaint();
     }
 
+    
     public void Repaint()
     {
         if (settings == null || targetUI == null) return;
@@ -188,6 +191,7 @@ public class ImageGenerator : MonoBehaviour
         Paint(commonSolid, commonFluid);
     }
 
+    
     void EnsureTexture(int w, int h)
     {
         var t2d = targetUI.texture as Texture2D;
@@ -205,6 +209,7 @@ public class ImageGenerator : MonoBehaviour
         }
     }
 
+    
     void Paint(ushort[,] commonSolid, ushort[,] commonFluid)
     {
         int w = commonSolid.GetLength(0);
@@ -235,9 +240,10 @@ public class ImageGenerator : MonoBehaviour
         tex.Apply(false, false);
     }
 
+    
     Color ResolveColor(ushort solidId, ushort fluidId)
     {
-        // ??fluid ??⑥ろ맖 嶺뚳퐣瑗??(AIR ?熬곣뫖?좂춯??곌랜???熬곣뫁夷?
+        
         if (solidId == ID_AIR)
         {
             if (fluidId == FLUID_LAVA)  return lava;
@@ -247,6 +253,7 @@ public class ImageGenerator : MonoBehaviour
         return ResolveSolidColorById(solidId);
     }
 
+    
     Color ResolveSolidColorById(ushort id)
     {
         switch (id)
@@ -255,7 +262,7 @@ public class ImageGenerator : MonoBehaviour
             case ID_ROCK: return rock;
             case ID_DIRT: return dirt;
 
-            // Grass 3~9
+            
             case ID_GRASS_TOP:
             case ID_GRASS_LEFT:
             case ID_GRASS_RIGHT:
@@ -280,7 +287,7 @@ public class ImageGenerator : MonoBehaviour
 
             case ID_DEAD_BUSH: return dead_Bush;
 
-            // Agave 6 tiles
+            
             case ID_AGAVE_0:
             case ID_AGAVE_1:
             case ID_AGAVE_2:
@@ -294,12 +301,12 @@ public class ImageGenerator : MonoBehaviour
             case ID_SANDSTONE:       return sandstone;
             case ID_SANDSTONE_BRICK: return sandstoneBrick;
 
-            // ??Volcano solids
+            
             case ID_BASALT:   return basalt;
             case ID_TUFF:     return tuff;
             case ID_ANDESITE: return andesite;
 
-            // ??Snow biome solids/decor
+            
             case ID_FROZEN_DIRT: return frozenDirt;
 
             case ID_FROZEN_GRASS_TOP:
@@ -331,6 +338,7 @@ public class ImageGenerator : MonoBehaviour
         }
     }
 
+    
     static Color32 ToC32(Color c)
     {
         return new Color32(

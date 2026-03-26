@@ -1,9 +1,6 @@
-// InteractionController.cs (?????밸븶?????????⑤벡???
-// ??PlaceSource/PlaceBelt ???怨쀫뮝力??????+ CogwheelOccupied ?????⑤뜪??
-// ?????????ш끽維뽳쭩???
-// - Utility ?轅붽틓??熬곥끇釉??? Cogwheel??????筌?/?????
-// - Solid/BG ?轅붽틓??熬곥끇釉??? Source/Belt ????筌?
-// - CogwheelOccupied ????????筌먦끆???// - Belt ????筌? ??????????숈???2???ル봿??誘⑸쿋??λ쑏??轅붽틓??影?뽧걤??
+﻿
+
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,6 +21,7 @@ namespace Game.Player
         public enum GameState { Ingame, Inpanel, Inmenu }
         enum LayerMode { Solid, BG, Utility }
     
+
         const string LOG_MB = "[MBUILD]";
     
         [Header("UI")]
@@ -36,8 +34,8 @@ namespace Game.Player
     
         [Header("Key Settings")]
         public KeyCode toggleInventoryKey = KeyCode.E;
-        public KeyCode toggleBreakModeKey = KeyCode.V;   // Solid<->BG
-        public KeyCode toggleUtilityModeKey = KeyCode.T; // Utility ???
+        public KeyCode toggleBreakModeKey = KeyCode.V;   
+        public KeyCode toggleUtilityModeKey = KeyCode.T; 
     
         [Header("Player/Hotbar/Cursor")]
         public Player player;
@@ -129,6 +127,7 @@ namespace Game.Player
     
         ushort _utilityOccupiedId = 0;
     
+        
         void Awake()
         {
             inventoryPanel.SetActive(true);
@@ -174,6 +173,7 @@ namespace Game.Player
                 meleeRoot.gameObject.SetActive(false);
         }
     
+        
         void Update()
         {
             float scroll = Input.mouseScrollDelta.y;
@@ -191,14 +191,23 @@ namespace Game.Player
                 int prevScope = _hotbarScope;
     
                 if      (Input.GetKeyDown(KeyCode.Alpha1)) _hotbarScope = 0;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha2)) _hotbarScope = 1;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha3)) _hotbarScope = 2;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha4)) _hotbarScope = 3;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha5)) _hotbarScope = 4;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha6)) _hotbarScope = 5;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha7)) _hotbarScope = 6;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha8)) _hotbarScope = 7;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha9)) _hotbarScope = 8;
+                
                 else if (Input.GetKeyDown(KeyCode.Alpha0)) _hotbarScope = 9;
     
                 if (_hotbarScope != prevScope)
@@ -243,6 +252,7 @@ namespace Game.Player
                     _combatMode = true;
                     ApplyWorldCursor();
                 }
+                
                 else if (!hasWeapon && _combatMode)
                 {
                     _combatMode = false;
@@ -258,6 +268,7 @@ namespace Game.Player
                 CancelBeltPlacement();
     
                 if (_state == GameState.Ingame) OpenModule(handcraftModule);
+                
                 else if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
             }
     
@@ -266,6 +277,7 @@ namespace Game.Player
                 CancelBeltPlacement();
     
                 if (_state == GameState.Inpanel) CloseInventoryPanelToIngame();
+                
                 else if (_state == GameState.Inmenu)
                 {
                     _state = GameState.Ingame;
@@ -306,6 +318,7 @@ namespace Game.Player
             if (Input.GetMouseButtonDown(1)) HandleRightClick();
         }
     
+        
         void ApplyWorldCursor()
         {
             if (_layerMode == LayerMode.Utility)
@@ -320,6 +333,7 @@ namespace Game.Player
                 UnityEngine.Cursor.SetCursor(breakCursorTex, breakHotspot, CursorMode.Auto);
         }
     
+        
         void ApplyHighlightBaseSprite()
         {
             if (_hlSR == null) return;
@@ -333,6 +347,7 @@ namespace Game.Player
             _hlSR.sprite = (_layerMode == LayerMode.Solid) ? HighLight_Solid : HighLight_BG;
         }
     
+        
         void CancelBeltPlacement()
         {
             _beltPending = false;

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.Core;
@@ -7,6 +10,7 @@ namespace Game.UI
 {
     public partial class BrickFurnaceModule
     {
+        
         void PullFromFurnace()
         {
             if (_furnace == null) return;
@@ -26,6 +30,7 @@ namespace Game.UI
             SetInputSlotUI(8, _furnace.GetSlot(BrickFurnace.SlotKind.In8));
         }
 
+        
         void SetInputSlotUI(int i, ItemData item)
         {
             var slot = GetInputSlot(i);
@@ -33,12 +38,14 @@ namespace Game.UI
             slot.Set(item);
         }
 
+        
         void PushInputsToFurnace()
         {
             if (_furnace == null) return;
 
             if (fuelIn != null)
             {
+
                 var cur = fuelIn.Item;
                 if (ModuleSlotSyncUtility.HasChanged(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, cur))
                     _furnace.SetSlot(BrickFurnace.SlotKind.FuelIn, cur);
@@ -74,6 +81,7 @@ namespace Game.UI
             }
         }
 
+        
         void PushOutputsToFurnace()
         {
             if (_furnace == null) return;
@@ -86,6 +94,7 @@ namespace Game.UI
             }
         }
 
+        
         ItemSlot GetInputSlot(int i)
         {
             switch (i)
@@ -103,6 +112,7 @@ namespace Game.UI
             return null;
         }
 
+        
         void RefreshGaugesAndProgress()
         {
             if (_furnace == null) return;
@@ -120,6 +130,7 @@ namespace Game.UI
             }
         }
 
+        
         void RefreshCrucibleView()
         {
             if (crucibleView == null) return;
@@ -136,12 +147,14 @@ namespace Game.UI
             crucibleView.Refresh();
         }
 
+        
         void CaptureSnapshots()
         {
             CaptureInputSnapshots();
             CaptureOutputSnapshots();
         }
 
+        
         void CaptureInputSnapshots()
         {
             ModuleSlotSyncUtility.Capture(fuelIn, ref _prevFuelIn, ref _prevFuelInCount, ref _prevFuelInDur);
@@ -158,11 +171,13 @@ namespace Game.UI
             }
         }
 
+        
         void CaptureOutputSnapshots()
         {
             ModuleSlotSyncUtility.Capture(fuelOut, ref _prevFuelOut, ref _prevFuelOutCount, ref _prevFuelOutDur);
         }
 
+        
         bool InputsChanged()
         {
             var curFuelIn = (fuelIn != null) ? fuelIn.Item : null;
@@ -183,6 +198,7 @@ namespace Game.UI
             return false;
         }
 
+        
         bool OutputChanged()
         {
             var curFuelOut = (fuelOut != null) ? fuelOut.Item : null;

@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.Player
@@ -9,6 +12,7 @@ namespace Game.Player
 
         public bool IsGrounded => probeCollider != null && probeCollider.IsTouchingLayers(groundLayerMask);
 
+        
         void Awake()
         {
             if (probeCollider == null)

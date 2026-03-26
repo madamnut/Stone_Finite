@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿
+
+
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -6,6 +9,7 @@ namespace ClassDiagramGenerator
 {
     public class ScriptEntry
     {
+
         public string Path;
         public bool IsSelected = true;
         public string FileName => System.IO.Path.GetFileName(Path);
@@ -16,6 +20,7 @@ namespace ClassDiagramGenerator
     {
         public List<ScriptEntry> Scripts { get; private set; } = new List<ScriptEntry>();
 
+        
         public void Scan(string folder, string extension = ".cs")
         {
             Scripts.Clear();
@@ -29,6 +34,7 @@ namespace ClassDiagramGenerator
                 .ToList();
         }
 
+        
         public void AddFiles(IEnumerable<string> paths)
         {
             foreach (var p in paths)
@@ -40,6 +46,7 @@ namespace ClassDiagramGenerator
             }
         }
 
+        
         public List<ScriptEntry> GetSelected() => Scripts.Where(s => s.IsSelected).ToList();
     }
 }

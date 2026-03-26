@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -9,6 +12,7 @@ namespace Game.Data
 {
     public partial class RecipeLibrary
     {
+        
         public bool TryApplyAlloysToCrucible(ItemData crucible)
         {
             if (_alloys.Count == 0) return false;
@@ -16,6 +20,7 @@ namespace Game.Data
             if (!crucible.Details.TryGetValue("layers", out var layersObj) || layersObj == null) return false;
             if (layersObj is not IList layers) return false;
     
+
             bool changed = false;
     
             while (true)
@@ -69,6 +74,7 @@ namespace Game.Data
             return changed;
         }
     
+        
         bool TryReadLayer(object layerObj, out string itemId, out int amount)
         {
             itemId = null;
@@ -88,7 +94,9 @@ namespace Game.Data
                 if (dict.TryGetValue("amount", out var amtObj))
                 {
                     if (amtObj is int i) amount = i;
+                    
                     else if (amtObj is long l) amount = (int)l;
+                    
                     else if (amtObj != null && int.TryParse(amtObj.ToString(), out int p)) amount = p;
                 }
     
@@ -98,6 +106,7 @@ namespace Game.Data
             return false;
         }
     
+        
         void SetLayerAmount(IList layers, int index, int newAmount)
         {
             if (layers == null) return;
@@ -118,6 +127,7 @@ namespace Game.Data
             }
         }
     
+        
         void ConsumeFromTop(IList layers, string itemId, int need)
         {
             if (layers == null) return;
@@ -132,10 +142,12 @@ namespace Game.Data
                 need -= take;
     
                 if (left <= 0) layers.RemoveAt(i);
+                
                 else SetLayerAmount(layers, i, left);
             }
         }
     
+        
         void AddOrStackAtTop(IList layers, string itemId, int addAmount)
         {
             if (layers == null) return;

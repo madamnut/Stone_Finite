@@ -1,4 +1,4 @@
-# ClassDiagramGenerator
+﻿# ClassDiagramGenerator
 
 A modern Unity Editor tool to **generate PlantUML class diagrams** from your C# scripts.
 Pick any folder (or the whole project), select scripts, and export a `.puml` file or a shareable PlantUML URL — all from the Unity Editor.

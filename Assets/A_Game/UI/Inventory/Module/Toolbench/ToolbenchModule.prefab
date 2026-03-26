@@ -550,7 +550,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   recipeLibrary: {fileID: 0}
-  player: {fileID: 0}
+  inventoryOwnerComponent: {fileID: 0}
   materialSlot: {fileID: 439233541133174182}
   toolSlot: {fileID: 4321458100082087902}
   previewSlot: {fileID: 7425842015604614576}

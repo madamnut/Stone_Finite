@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -8,8 +11,10 @@ namespace Game.World
 {
     internal static class WorldBinaryMapPersistence
     {
+
         const string SaveFile = "world.bin";
 
+        
         public static void SaveWorld(
             int width,
             int height,
@@ -126,6 +131,7 @@ namespace Game.World
             }
         }
 
+        
         public static bool LoadWorldFromDisk(
             out WorldData loaded,
             out int width,

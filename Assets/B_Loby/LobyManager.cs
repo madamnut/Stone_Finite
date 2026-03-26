@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +17,7 @@ namespace Game.Lobby
     public class LobyManager : MonoBehaviour
     {
         [Header("Panels")]
+
         public GameObject singlePanel;
         public GameObject newGamePanel;
         public GameObject creditPanel;
@@ -56,8 +60,8 @@ namespace Game.Lobby
         public Vector2 lobbyCursorHotspot = new Vector2(9, 24);
     
         [Header("UI Click SFX (Lobby Only)")]
-        public AudioSource uiSfxSource;     // ????癲??????濾????????????AudioSource ??????????
-        public AudioClip buttonClickClip;   // ????????????????????????????
+        public AudioSource uiSfxSource;     
+        public AudioClip buttonClickClip;   
     
         float splashAnimTimer;
         static readonly Regex FileNameSafeRegex = new Regex(@"[^a-zA-Z0-9 _\\-\\(\\)\\[\\]\\.]", RegexOptions.Compiled);
@@ -65,6 +69,7 @@ namespace Game.Lobby
         string _selectedWorldName;
         readonly Dictionary<GameObject, string> _entryToWorld = new();
     
+        
         void Start()
         {
             ApplyLobbyCursor();
@@ -72,7 +77,7 @@ namespace Game.Lobby
             SetAllPanelsOff();
             ApplyRandomSplashText();
     
-            // ???耀붾굝?????????붾눀?????????????????????????밸븶筌믩끃?????
+            
             BindClickSound(singlePlayButton);
             BindClickSound(multiPlayButton);
             BindClickSound(optionsButton);
@@ -88,7 +93,7 @@ namespace Game.Lobby
     
             BindClickSound(creditBackButton);
     
-            // ===== ???????????????????癲??沃섃뫂???=====
+            
             if (singlePlayButton) singlePlayButton.onClick.AddListener(() => { singlePanel.SetActive(true); newGamePanel.SetActive(false); });
             if (multiPlayButton)  multiPlayButton.interactable = false;
             if (optionsButton)    optionsButton.interactable = false;
@@ -112,12 +117,15 @@ namespace Game.Lobby
             RebuildScrollContent();
         }
     
+        
         void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (newGamePanel && newGamePanel.activeSelf) newGamePanel.SetActive(false);
+                
                 else if (singlePanel && singlePanel.activeSelf) singlePanel.SetActive(false);
+                
                 else if (creditPanel && creditPanel.activeSelf) creditPanel.SetActive(false);
             }
     
@@ -132,19 +140,23 @@ namespace Game.Lobby
             RebuildScrollContent();
         }
     
+        
         void OnTransformChildrenChanged() => RebuildScrollContent();
     
+        
         void PlayUiClick()
         {
             uiSfxSource.PlayOneShot(buttonClickClip);
         }
     
+        
         void BindClickSound(Button btn)
         {
             if (!btn) return;
             btn.onClick.AddListener(PlayUiClick);
         }
     
+        
         void ApplyLobbyCursor()
         {
             if (!lobbyCursorTex) return;
@@ -158,6 +170,7 @@ namespace Game.Lobby
             );
         }
     
+        
         void SetAllPanelsOff()
         {
             if (singlePanel) singlePanel.SetActive(false);
@@ -165,12 +178,13 @@ namespace Game.Lobby
             if (creditPanel) creditPanel.SetActive(false);
         }
     
+        
         void OnClickStartNewGame()
         {
             string worldNameRaw = worldNameInput ? worldNameInput.text.Trim() : "";
             if (string.IsNullOrEmpty(worldNameRaw)) { Debug.LogWarning("worldName empty"); return; }
     
-            // ????????띻샵??????μ떜媛?걫?繹먃???耀붾굝????鶯ㅺ동??筌믡룓愿???????
+            
             string worldName = FileNameSafeRegex.Replace(worldNameRaw, "");
             if (string.IsNullOrEmpty(worldName)) { Debug.LogWarning("invalid worldName"); return; }
     
@@ -178,7 +192,7 @@ namespace Game.Lobby
             int seedValue = 0;
             if (!string.IsNullOrEmpty(seedText)) int.TryParse(seedText, out seedValue);
     
-            // ????????耀붾굝?????? ????ш끽維뽳쭩???
+            
             string worldsRoot = Path.Combine(Application.persistentDataPath, "Worlds");
             string worldDir = Path.Combine(worldsRoot, worldName);
             if (!Directory.Exists(worldsRoot)) Directory.CreateDirectory(worldsRoot);
@@ -192,11 +206,12 @@ namespace Game.Lobby
             };
             File.WriteAllText(Path.Combine(worldDir, "world_meta.json"), JsonUtility.ToJson(meta, true));
     
-            // ???????????繹먮굝????饔낅떽???嶺뚮슢梨뜹ㅇ??????????癲????ル㎦??
+            
             WorldLoadContext.SetNewWorld(worldName, seedValue);
             SceneManager.LoadScene(ingameSceneName);
         }
     
+        
         void OnClickExit()
         {
     #if UNITY_EDITOR
@@ -206,6 +221,7 @@ namespace Game.Lobby
     #endif
         }
     
+        
         void OnWorldNameChanged(string text)
         {
             string filtered = FileNameSafeRegex.Replace(text, "");
@@ -217,6 +233,7 @@ namespace Game.Lobby
             }
         }
     
+        
         void OnSeedChanged(string text)
         {
             string filtered = Regex.Replace(text, @"[^0-9]", "");
@@ -228,6 +245,7 @@ namespace Game.Lobby
             }
         }
     
+        
         void ApplyRandomSplashText()
         {
             if (!splashText) return;
@@ -245,7 +263,8 @@ namespace Game.Lobby
             catch { splashText.text = "The Beginning!"; }
         }
     
-        // === ????椰????耀붾굝?????????붾눀?袁⑸븸亦껋꼷伊???===
+        
+        
         public void RefreshWorldList()
         {
             if (!worldListContentRoot) return;
@@ -281,6 +300,7 @@ namespace Game.Lobby
             }
         }
     
+        
         void OnEntryClick(GameObject entry)
         {
             PlayUiClick();
@@ -295,6 +315,7 @@ namespace Game.Lobby
             }
         }
     
+        
         void OnEntryDoubleClick(GameObject entry)
         {
             PlayUiClick();
@@ -303,8 +324,10 @@ namespace Game.Lobby
             LoadSelectedWorld();
         }
     
+        
         void OnContinue() => LoadSelectedWorld();
     
+        
         void LoadSelectedWorld()
         {
             if (string.IsNullOrEmpty(_selectedWorldName)) return;
@@ -318,19 +341,20 @@ namespace Game.Lobby
                 return;
             }
     
-            // lastPlayed ?????ル뒌????
+            
             try
             {
                 var meta = JsonUtility.FromJson<WorldMetaData>(File.ReadAllText(metaPath));
                 meta.lastPlayed = DateTime.UtcNow.ToString("o");
                 File.WriteAllText(metaPath, JsonUtility.ToJson(meta, true));
             }
-            catch { /* ???癲ル슢캉????*/ }
+            catch {  }
     
             WorldLoadContext.SetLoadWorld(_selectedWorldName);
             SceneManager.LoadScene(ingameSceneName);
         }
     
+        
         void RebuildScrollContent()
         {
             if (!worldListContentRoot) return;
@@ -362,7 +386,7 @@ namespace Game.Lobby
         }
     }
     
-    // ???????ㅻ쑋??????椰?????????饔낅떽?????怨뚮옩鴉딅퀫???
+    
     public class WorldEntryClickHandler : MonoBehaviour, IPointerClickHandler
     {
         public System.Action onSingleClick;
@@ -371,12 +395,14 @@ namespace Game.Lobby
         float lastClickTime;
         const float doubleClickThreshold = 0.25f;
     
+        
         public void Init(System.Action singleClick, System.Action doubleClick)
         {
             onSingleClick = singleClick;
             onDoubleClick = doubleClick;
         }
     
+        
         public void OnPointerClick(PointerEventData eventData)
         {
             float t = Time.unscaledTime;

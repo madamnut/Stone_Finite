@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,21 +15,23 @@ namespace Game.World
     public class DroppedItem : Entity
     {
         [Header("Rendering")]
+
         public SpriteRenderer spriteRenderer;
 
         [Header("References")]
-        [SerializeField] private ItemLibrary itemLibrary; // spriteName -> Sprite ?怨뚮옖甕??
+        [SerializeField] private ItemLibrary itemLibrary; 
 
         public ItemData ItemData { get; private set; }
 
         public override EntityKind Kind => EntityKind.DroppedItem;
 
+        
         public override void SetSimActive(bool active)
         {
             base.SetSimActive(active);
         }
 
-        // ItemData "??ш끽維?? ???怨좊룴??Icon?? ??筌믨퀡?? spriteName???⑥???怨뚮옖甕??
+        
         [Serializable]
         private class DroppedItemPayload
         {
@@ -48,6 +53,7 @@ namespace Game.World
             public Dictionary<string, Dictionary<string, object>> weaponActions;
         }
 
+        
         public override EntitySaveData ToSaveData()
         {
             DroppedItemPayload payload = null;
@@ -83,6 +89,7 @@ namespace Game.World
             };
         }
 
+        
         public override void FromSaveData(EntitySaveData data)
         {
             transform.position = data.Position;
@@ -128,7 +135,8 @@ namespace Game.World
             Initialize(rebuilt);
         }
 
-        // ??筌먦끇????ш끽維쀩??????뚰룙/?棺??짆?삠궘??????源놁졆 ItemData ??낆뒩???
+        
+        
         public void Initialize(ItemData data)
         {
             ItemData = data;

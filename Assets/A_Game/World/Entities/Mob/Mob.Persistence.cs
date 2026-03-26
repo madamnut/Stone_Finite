@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -9,11 +12,13 @@ public partial class Mob
     [Serializable]
     private class MobPayload
     {
+
         public string mobId;
         public int maxHp;
         public int currentHp;
     }
 
+    
     public override EntitySaveData ToSaveData()
     {
         mobPosition = transform.position;
@@ -33,6 +38,7 @@ public partial class Mob
         };
     }
 
+    
     public override void FromSaveData(EntitySaveData data)
     {
         MobPosition = data.Position;
@@ -48,6 +54,7 @@ public partial class Mob
 
                     if (payload.maxHp > 0)
                         maxHp = payload.maxHp;
+                    
                     else if (maxHp < 1)
                         maxHp = 1;
 

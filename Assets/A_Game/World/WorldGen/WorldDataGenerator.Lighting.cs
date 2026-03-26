@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +12,7 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         private static void PropagateNaturalLight(WorldData world, CellLibrary cellLibrary)
         {
             int w = world.bg.GetLength(0);
@@ -21,6 +25,7 @@ namespace Game.World
                 world.SetArtificialLight(x, y, 0);
             }
     
+
             byte[,] atten = new byte[w, h];
             for (int x = 0; x < w; x++)
             for (int y = 0; y < h; y++)

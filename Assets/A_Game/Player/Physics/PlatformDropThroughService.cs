@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,10 +15,12 @@ namespace Game.Player
         [SerializeField] private float dropThroughTime = 0.10f;
 
         readonly List<Collider2D> _dropPlatforms = new List<Collider2D>(16);
+
         readonly Collider2D[] _contacts = new Collider2D[16];
         ContactFilter2D _platformContactFilter;
         Coroutine _dropCo;
 
+        
         void Awake()
         {
             if (body == null)
@@ -29,6 +34,7 @@ namespace Game.Player
             };
         }
 
+        
         public bool TryDropThrough()
         {
             if (body == null || playerPhysicsCollider == null || _dropCo != null)
@@ -55,6 +61,7 @@ namespace Game.Player
             return true;
         }
 
+        
         IEnumerator CoDropThroughPlatforms()
         {
             for (int i = 0; i < _dropPlatforms.Count; i++)
@@ -64,6 +71,7 @@ namespace Game.Player
                     Physics2D.IgnoreCollision(playerPhysicsCollider, platform, true);
             }
 
+            
             yield return new WaitForSeconds(dropThroughTime);
 
             for (int i = 0; i < _dropPlatforms.Count; i++)

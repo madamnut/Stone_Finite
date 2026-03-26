@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using UnityEngine;
 
@@ -5,6 +8,7 @@ namespace Game.World
 {
     public partial class WorldChunkSystem
     {
+        
         public void InitializePool(int initialPoolSize)
         {
             for (int i = 0; i < initialPoolSize; i++)
@@ -15,16 +19,20 @@ namespace Game.World
             }
         }
 
+        
         public void ResetLastPlayerChunk(Vector3 playerPosition)
         {
             lastPlayerChunk = GetPlayerChunk(playerPosition);
         }
 
+        
         public void SetGlobalBrightnessOffset(ushort offset)
         {
+
             globalBrightnessOffset = offset;
         }
 
+        
         public void UpdateVisibleChunks(Vector3 playerPosition, MonoBehaviour coroutineHost)
         {
             Vector2Int playerChunk = GetPlayerChunk(playerPosition);
@@ -96,6 +104,7 @@ namespace Game.World
                 coroutineHost.StartCoroutine(ProcessLoadQueue());
         }
 
+        
         private IEnumerator ProcessLoadQueue()
         {
             isLoading = true;
@@ -126,6 +135,7 @@ namespace Game.World
             isLoading = false;
         }
 
+        
         private Vector2Int GetPlayerChunk(Vector3 p)
         {
             return new Vector2Int(
@@ -134,6 +144,7 @@ namespace Game.World
             );
         }
 
+        
         private GameObject GetFromPool()
         {
             if (chunkPool.Count > 0) return chunkPool.Dequeue();
@@ -142,6 +153,7 @@ namespace Game.World
             return go;
         }
 
+        
         private void ReturnToPool(GameObject go)
         {
             go.SetActive(false);

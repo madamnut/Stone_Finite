@@ -1,4 +1,6 @@
-// WoodenCrateModule.cs
+﻿
+
+
 using UnityEngine;
 
 using Game.World;
@@ -9,6 +11,7 @@ namespace Game.UI
     public class WoodenCrateModule : MonoBehaviour
     {
         [Header("Rows (ROW0 ~ ROW4)")]
+
         public Transform ROW0;
         public Transform ROW1;
         public Transform ROW2;
@@ -19,6 +22,7 @@ namespace Game.UI
         WoodenCrate _crate;
         InventoryData _inv;
     
+        
         void Awake()
         {
             int idx = 0;
@@ -29,6 +33,7 @@ namespace Game.UI
             MapRow(ROW4, ref idx);
         }
     
+        
         void MapRow(Transform row, ref int idx)
         {
             if (row == null) { idx += 5; return; }
@@ -41,7 +46,7 @@ namespace Game.UI
                 var s = t.GetComponent<ItemSlot>();
                 if (s == null) { idx++; continue; }
     
-                s.index = idx;          // ???嶺뚮ㅎ??????關履??(row*5 + col)
+                s.index = idx;          
                 s.useLocalStorage = false;
                 s.denyUserPut = false;
                 s.denyUserInteraction = false;
@@ -51,6 +56,7 @@ namespace Game.UI
             }
         }
     
+        
         public void Bind(WoodenCrate crate)
         {
             UnbindInventory();
@@ -58,7 +64,7 @@ namespace Game.UI
             _crate = crate;
             _inv = (_crate != null) ? _crate.Inventory : null;
     
-            // Rebind slot inventory references to the crate inventory.
+            
             for (int i = 0; i < _slots.Length; i++)
                 if (_slots[i] != null) _slots[i].inventory = _inv;
     
@@ -66,6 +72,7 @@ namespace Game.UI
             Refresh();
         }
     
+        
         void OnDisable()
         {
             UnbindInventory();
@@ -73,16 +80,19 @@ namespace Game.UI
             _crate = null;
         }
     
+        
         void BindInventory()
         {
             if (_inv != null) _inv.OnChanged += Refresh;
         }
     
+        
         void UnbindInventory()
         {
             if (_inv != null) _inv.OnChanged -= Refresh;
         }
     
+        
         void Refresh()
         {
             for (int i = 0; i < _slots.Length; i++)

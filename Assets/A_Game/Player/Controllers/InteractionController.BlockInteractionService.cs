@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,13 +14,16 @@ namespace Game.Player
     {
         private sealed class BlockInteractionService
         {
+
             readonly InteractionController _owner;
 
+            
             public BlockInteractionService(InteractionController owner)
             {
                 _owner = owner;
             }
 
+            
             public void BreakAtCursor()
             {
                 if (!_owner.GetMouseCell(out int cx, out int cy)) return;
@@ -49,6 +55,7 @@ namespace Game.Player
                 }
             }
 
+            
             public bool HandlePlace(ItemData held, int cx, int cy, Dictionary<string, object> placeParam)
             {
                 string layerStr = placeParam.TryGetValue("layer", out var layerObj) ? layerObj?.ToString() : null;
@@ -68,6 +75,7 @@ namespace Game.Player
                         ? WorldManager.CellLayer.BG
                         : WorldManager.CellLayer.Solid;
                 }
+                
                 else if (string.Equals(layerStr, "BG", StringComparison.OrdinalIgnoreCase))
                 {
                     targetLayer = WorldManager.CellLayer.BG;
@@ -100,6 +108,7 @@ namespace Game.Player
                 return true;
             }
 
+            
             void ComputeRelativeDirs(int cx, int cy, out WorldManager.RelV relV, out WorldManager.RelH relH)
             {
                 float half = _owner.cellSize * 0.5f;
@@ -114,10 +123,12 @@ namespace Game.Player
                 const float EPS = 0.001f;
 
                 if (dy > EPS) relV = WorldManager.RelV.Up;
+                
                 else if (dy < -EPS) relV = WorldManager.RelV.Down;
                 else relV = WorldManager.RelV.Neutral;
 
                 if (dx > EPS) relH = WorldManager.RelH.Right;
+                
                 else if (dx < -EPS) relH = WorldManager.RelH.Left;
                 else relH = WorldManager.RelH.Neutral;
             }

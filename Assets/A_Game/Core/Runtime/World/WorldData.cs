@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 
 
@@ -6,16 +9,18 @@ namespace Game.Core
     [Serializable]
     public sealed class WorldData
     {
+
         public const byte MaxFluid = 128;
     
-        public ushort[,]     bg;               // ?꾧꼍
-        public SolidCell[,]  solid;            // ?꾧꼍: id + meta
-        public UtilityCell[,] utility;         // ?좏떥由ы떚: id + meta
-        public FluidCell[,]  fluid;            // ?좎껜: id + amount
+        public ushort[,]     bg;               
+        public SolidCell[,]  solid;            
+        public UtilityCell[,] utility;         
+        public FluidCell[,]  fluid;            
     
-        public ushort[,] naturalLight;         // ?먯뿰愿?
-        public ushort[,] artificialLight;      // ?멸났愿?
+        public ushort[,] naturalLight;         
+        public ushort[,] artificialLight;      
     
+        
         public WorldData(int width, int height)
         {
             bg              = new ushort      [width, height];
@@ -27,12 +32,14 @@ namespace Game.Core
         }
     
         #region Set
+        
         public void SetBG(int x, int y, ushort id)
         {
             if (!InBounds(x, y)) return;
             bg[x, y] = id;
         }
     
+        
         public void SetSolid(int x, int y, ushort id, ushort meta)
         {
             if (!InBounds(x, y)) return;
@@ -40,12 +47,14 @@ namespace Game.Core
             solid[x, y].meta = meta;
         }
     
+        
         public void SetSolidMeta(int x, int y, ushort meta)
         {
             if (!InBounds(x, y)) return;
             solid[x, y].meta = meta;
         }
     
+        
         public void SetUtility(int x, int y, ushort id, ushort meta)
         {
             if (!InBounds(x, y)) return;
@@ -53,12 +62,14 @@ namespace Game.Core
             utility[x, y].meta = meta;
         }
     
+        
         public void SetUtilityMeta(int x, int y, ushort meta)
         {
             if (!InBounds(x, y)) return;
             utility[x, y].meta = meta;
         }
     
+        
         public void SetFluid(int x, int y, ushort id, byte amount)
         {
             if (!InBounds(x, y)) return;
@@ -66,18 +77,21 @@ namespace Game.Core
             fluid[x, y].amount = amount;
         }
     
+        
         public void SetFluidAmount(int x, int y, byte amount)
         {
             if (!InBounds(x, y)) return;
             fluid[x, y].amount = amount;
         }
     
+        
         public void SetNaturalLight(int x, int y, ushort value)
         {
             if (!InBounds(x, y)) return;
             naturalLight[x, y] = value;
         }
     
+        
         public void SetArtificialLight(int x, int y, ushort value)
         {
             if (!InBounds(x, y)) return;
@@ -86,36 +100,42 @@ namespace Game.Core
         #endregion
     
         #region Get
+        
         public ushort GetBG(int x, int y)
         {
             if (!InBounds(x, y)) return 0;
             return bg[x, y];
         }
     
+        
         public SolidCell GetSolid(int x, int y)
         {
             if (!InBounds(x, y)) return default;
             return solid[x, y];
         }
     
+        
         public UtilityCell GetUtility(int x, int y)
         {
             if (!InBounds(x, y)) return default;
             return utility[x, y];
         }
     
+        
         public FluidCell GetFluid(int x, int y)
         {
             if (!InBounds(x, y)) return default;
             return fluid[x, y];
         }
     
+        
         public ushort GetNaturalLight(int x, int y)
         {
             if (!InBounds(x, y)) return 0;
             return naturalLight[x, y];
         }
     
+        
         public ushort GetArtificialLight(int x, int y)
         {
             if (!InBounds(x, y)) return 0;
@@ -124,6 +144,7 @@ namespace Game.Core
         #endregion
     
         #region Bounds
+        
         public bool InBounds(int x, int y)
         {
             return
@@ -139,22 +160,22 @@ namespace Game.Core
     [Serializable]
     public struct SolidCell
     {
-        public ushort id;    // 蹂몄껜 ID
-        public ushort meta;  // 2 bytes meta
+        public ushort id;    
+        public ushort meta;  
     }
     
     [Serializable]
     public struct UtilityCell
     {
-        public ushort id;    // ?좏떥由ы떚 ID
-        public ushort meta;  // 2 bytes meta
+        public ushort id;    
+        public ushort meta;  
     }
     
     [Serializable]
     public struct FluidCell
     {
-        public ushort id;      // ?좎껜 ID (?놁쑝硫?0)
-        public byte   amount;  // 0 = ?놁쓬, 1~128 = ?좎껜??
+        public ushort id;      
+        public byte   amount;  
     }
     #endregion
 }

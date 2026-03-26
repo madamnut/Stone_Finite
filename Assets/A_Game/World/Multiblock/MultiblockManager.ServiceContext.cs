@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,8 +14,10 @@ namespace Game.World
     {
         private sealed class MultiblockServiceContext
         {
+
             readonly MultiblockManager _owner;
 
+            
             public MultiblockServiceContext(MultiblockManager owner)
             {
                 _owner = owner;

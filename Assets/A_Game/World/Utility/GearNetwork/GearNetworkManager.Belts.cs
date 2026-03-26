@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,16 +8,19 @@ namespace Game.World
 {
     public sealed partial class GearNetworkManager
     {
+        
         bool IsWaterAt(int x, int y)
         {
             if (world == null) return false;
             if (!world.InBounds(x, y)) return false;
+
 
             byte amt;
             ushort fid = world.GetFluidId(x, y, out amt);
             return fid == 1 && amt > 0;
         }
 
+        
         public bool TryAttachBeltAtCells(Vector2Int startAnyGearCell, Vector2Int endAnyGearCell, string beltKind, out int materialCost)
         {
             materialCost = 0;
@@ -50,6 +56,7 @@ namespace Game.World
             return true;
         }
 
+        
         public bool TryRemoveBeltAtGearCell(Vector2Int anyGearCell, out BeltDrop droppedBelt)
         {
             droppedBelt = default;
@@ -93,6 +100,7 @@ namespace Game.World
             return false;
         }
 
+        
         public bool TryRemoveBeltAtGearCell(Vector2Int anyGearCell, out BeltDrop droppedBelt, out Vector2Int otherGearCenter)
         {
             droppedBelt = default;
@@ -135,6 +143,7 @@ namespace Game.World
             return false;
         }
 
+        
         public bool TryGetBeltAtGearCell(Vector2Int anyGearCell, out string beltKind, out Vector2Int otherGearCenter)
         {
             beltKind = null;
@@ -173,6 +182,7 @@ namespace Game.World
             return false;
         }
 
+        
         bool HasAnyBeltOnGear(int gearNodeId)
         {
             if (_beltByStartGearNodeId.ContainsKey(gearNodeId))
@@ -184,6 +194,7 @@ namespace Game.World
             return false;
         }
 
+        
         void RemoveBeltsConnectedToGear(int gearNodeId, List<BeltDrop> drops)
         {
             if (_beltByStartGearNodeId.TryGetValue(gearNodeId, out var outLink))
@@ -222,6 +233,7 @@ namespace Game.World
             }
         }
 
+        
         void RemoveBeltInternal(int startGearNodeId, int endGearNodeId, string beltKind)
         {
             EnsureVfxRef();
@@ -242,11 +254,13 @@ namespace Game.World
                 RebuildNetworksFrom(startGearNodeId);
         }
 
+        
         static int CalcBeltCost(Vector2Int a, Vector2Int b)
         {
             return 2;
         }
 
+        
         public bool TryGetBeltMaterialItemId(string beltKind, out string materialItemId)
         {
             materialItemId = null;

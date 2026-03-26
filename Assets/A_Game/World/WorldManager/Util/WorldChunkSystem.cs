@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +11,7 @@ namespace Game.World
 {
     public partial class WorldChunkSystem
     {
+
         private readonly int worldWidth;
         private readonly int worldHeight;
         private readonly int chunkSize;
@@ -43,6 +47,7 @@ namespace Game.World
 
         const int LIGHT_MAX = 15;
 
+        
         public WorldChunkSystem(
             int worldWidth,
             int worldHeight,

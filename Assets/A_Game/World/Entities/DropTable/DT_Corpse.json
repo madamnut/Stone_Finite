@@ -1,4 +1,4 @@
-{
+﻿{
   "Cow_Corpse": [
     { "itemId": "Large Raw Hide", "probability": 1.0, "min": 2, "max": 3 },
     { "itemId": "Animal Fat",     "probability": 1.0, "min": 4, "max": 6 }

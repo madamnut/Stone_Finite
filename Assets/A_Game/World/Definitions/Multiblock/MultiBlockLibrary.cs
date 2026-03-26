@@ -1,34 +1,37 @@
-// MultiblockLibrary.cs (?꾩껜 援먯껜蹂? - JSON row0(留??? -> ?대? y=0(留??꾨옒)濡??뚯떛 ??Y ?ㅼ쭛湲?
+﻿
+
+
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-/// <summary>
-/// 硫?곕툝???⑦꽩/寃곌낵 ?뺤쓽 + ?щ즺(? ?대쫫) ??硫?곕툝???꾨낫 ??“???꾨떞.
-/// (?뺥솗 留ㅼ묶: pattern??null/鍮덈Ц?먯뿴/?꾨씫 ?덉슜?섏? ?딆쓬)
-///
-/// JSON ?щ㎎(??:
-/// {
-///   "Clay Kiln": [
-///     {
-///       "pattern": [
-///         ["Clay", "Clay"],
-///         ["Clay", "Clay"]
-///       ],
-///       "result": [
-///         ["Clay Kiln_TL", "Clay Kiln_TR"],
-///         ["Clay Kiln_BL", "Clay Kiln_BR"]
-///       ]
-///     }
-///   ]
-/// }
-/// </summary>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace Game.World
 {
 public class MultiblockLibrary : MonoBehaviour
 {
     [Header("Multiblock Json")]
     [Tooltip("硫?곕툝???뺤쓽 JSON (?? Clay Kiln ?⑦꽩/寃곌낵 ??")]
+
     public TextAsset multiblockJson;
 
     public class Def
@@ -36,8 +39,8 @@ public class MultiblockLibrary : MonoBehaviour
         public string    key;
         public int       width;
         public int       height;
-        public string[,] pattern; // pattern[x,y] where y=0 is bottom
-        public string[,] result;  // result[x,y] where y=0 is bottom
+        public string[,] pattern; 
+        public string[,] result;  
     }
 
     static bool _initialized;
@@ -45,6 +48,7 @@ public class MultiblockLibrary : MonoBehaviour
     static readonly Dictionary<string, List<Def>> _byIngredient = new Dictionary<string, List<Def>>();
     static readonly Dictionary<string, List<Def>> _byKey = new Dictionary<string, List<Def>>();
 
+    
     void Awake()
     {
         if (_initialized) return;
@@ -59,6 +63,7 @@ public class MultiblockLibrary : MonoBehaviour
             _initialized = true;
     }
 
+    
     static bool LoadFromJson(string json)
     {
         JObject root;
@@ -181,7 +186,7 @@ public class MultiblockLibrary : MonoBehaviour
                 var pattern = new string[width, height];
                 var result  = new string[width, height];
 
-                // ??JSON? row0=留??? ?대? 諛곗뿴? y=0=留??꾨옒濡??곌린 ?꾪빐 Y瑜??ㅼ쭛?댁꽌 ??ν븳??
+                
                 for (int jsonY = 0; jsonY < height; jsonY++)
                 {
                     int y = (height - 1 - jsonY);
@@ -217,7 +222,7 @@ public class MultiblockLibrary : MonoBehaviour
                 }
                 listByKey.Add(def);
 
-                // ingredient index: pattern ?대???? ?대쫫 ?꾨? ?щ즺濡??깅줉
+                
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
@@ -243,6 +248,7 @@ public class MultiblockLibrary : MonoBehaviour
         return true;
     }
 
+    
     public static bool TryGetByIngredient(string ingredientCellKey, out List<Def> defs)
     {
         if (string.IsNullOrEmpty(ingredientCellKey))
@@ -262,6 +268,7 @@ public class MultiblockLibrary : MonoBehaviour
         return false;
     }
 
+    
     public static List<Def> GetByKey(string defKey)
     {
         if (string.IsNullOrEmpty(defKey))

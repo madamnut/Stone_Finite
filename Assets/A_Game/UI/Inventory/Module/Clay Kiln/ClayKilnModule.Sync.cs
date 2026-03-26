@@ -1,3 +1,6 @@
+﻿
+
+
 using Game.World;
 using Game.Core;
 
@@ -5,8 +8,10 @@ namespace Game.UI
 {
     public partial class ClayKilnModule
     {
+        
         bool InputsChanged()
         {
+
             var f = fuelIn != null ? fuelIn.Item : null;
             if (ModuleSlotSyncUtility.HasChanged(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, f))
                 return true;
@@ -22,6 +27,7 @@ namespace Game.UI
             return false;
         }
 
+        
         bool OutputsChanged()
         {
             var f = fuelOut != null ? fuelOut.Item : null;
@@ -39,6 +45,7 @@ namespace Game.UI
             return false;
         }
 
+        
         void SnapshotInputs()
         {
             ModuleSlotSyncUtility.Capture(fuelIn, ref _prevFuelIn, ref _prevFuelInCount, ref _prevFuelInDur);
@@ -46,6 +53,7 @@ namespace Game.UI
             ModuleSlotSyncUtility.Capture(fireInB, ref _prevFireInB, ref _prevFireInBCount, ref _prevFireInBDur);
         }
 
+        
         void SnapshotOutputs()
         {
             ModuleSlotSyncUtility.Capture(fuelOut, ref _prevFuelOut, ref _prevFuelOutCount, ref _prevFuelOutDur);
@@ -53,12 +61,14 @@ namespace Game.UI
             ModuleSlotSyncUtility.Capture(fireOutB, ref _prevFireOutB, ref _prevFireOutBCount, ref _prevFireOutBDur);
         }
 
+        
         void SnapshotAll()
         {
             SnapshotInputs();
             SnapshotOutputs();
         }
 
+        
         void PullFromKiln()
         {
             if (_kiln == null) return;
@@ -71,6 +81,7 @@ namespace Game.UI
             if (fireOutB != null) fireOutB.Set(_kiln.GetSlot(ClayKiln.SlotKind.FireOutB));
         }
 
+        
         void PushInputsToKiln()
         {
             if (_kiln == null) return;
@@ -83,6 +94,7 @@ namespace Game.UI
                 _kiln.SetSlot(ClayKiln.SlotKind.FireInB, fireInB.Item);
         }
 
+        
         void PushOutputsToKiln()
         {
             if (_kiln == null) return;
@@ -95,6 +107,7 @@ namespace Game.UI
                 _kiln.SetSlot(ClayKiln.SlotKind.FireOutB, fireOutB.Item);
         }
 
+        
         void RefreshGauges()
         {
             if (_kiln == null) return;

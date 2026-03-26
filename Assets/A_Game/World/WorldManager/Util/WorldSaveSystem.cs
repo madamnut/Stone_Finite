@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,8 +11,10 @@ namespace Game.World
 {
     public static class WorldSaveSystem
     {
+
         const string EntitySaveFile = "entities.bin";
 
+        
         public static void SaveWorld(
             int width,
             int height,
@@ -38,6 +43,7 @@ namespace Game.World
             Debug.Log("[SAVE] world saved.");
         }
 
+        
         public static bool LoadWorldFromDisk(
             out WorldData loaded,
             out int width,
@@ -58,11 +64,13 @@ namespace Game.World
             );
         }
 
+        
         public static void SavePlayerData(InventoryData playerInventory, Transform playerTransform)
         {
             PlayerPersistence.SavePlayerData(playerInventory, playerTransform);
         }
 
+        
         public static bool LoadPlayerData(
             ItemLibrary itemLibrary,
             out Vector2 playerPosition,
@@ -71,11 +79,13 @@ namespace Game.World
             return PlayerPersistence.LoadPlayerData(itemLibrary, out playerPosition, out inventory);
         }
 
+        
         public static void SaveEntities(EntityManager em)
         {
             EntityPersistence.SaveEntities(em);
         }
 
+        
         public static void LoadEntities(
             EntityManager em,
             ItemLibrary itemLibrary,

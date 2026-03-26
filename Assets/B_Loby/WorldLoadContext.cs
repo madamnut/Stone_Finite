@@ -1,4 +1,6 @@
-// WorldLoadContext.cs
+﻿
+
+
 using System.IO;
 using UnityEngine;
 
@@ -9,11 +11,12 @@ namespace Game.Lobby
     {
         public enum LoadType { NewWorld, LoadWorld }
     
+
         public static LoadType loadType  { get; private set; }
         public static string   worldName { get; private set; }
         public static int      seed      { get; private set; }
     
-        // LobyManager????????ㅻ쿋獒?癲ル슢????? ????곕럡??????깼??
+        
         [System.Serializable]
         private class WorldMetaData
         {
@@ -22,6 +25,7 @@ namespace Game.Lobby
             public string lastPlayed;
         }
     
+        
         public static void SetNewWorld(string name, int seedValue)
         {
             loadType  = LoadType.NewWorld;
@@ -29,12 +33,13 @@ namespace Game.Lobby
             seed      = seedValue;
         }
     
+        
         public static void SetLoadWorld(string name)
         {
             loadType  = LoadType.LoadWorld;
             worldName = name;
     
-            // ??れ삀???筌?0
+            
             seed = 0;
     
             try
@@ -64,14 +69,16 @@ namespace Game.Lobby
             }
         }
     
+        
         public static void Clear()
         {
             worldName = null;
             seed      = 0;
-            // loadType?? ???????縕?猿녿뎨????ш끽維?????⑤챶?뺧┼???숆강筌?????
+            
         }
     
-        // ?????濡ろ뜑?灌鍮? ??繹먮굝六???袁⑸룈????ш끽維??Worlds/<name>/
+        
+        
         public static string GetSavePath()
         {
             return Path.Combine(Application.persistentDataPath, "Worlds", worldName);

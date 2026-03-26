@@ -1,3 +1,6 @@
+﻿
+
+
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -8,9 +11,11 @@ namespace Game.World
         [System.Serializable]
         private class FallingBlockPayload
         {
+
             public ushort cellId;
         }
 
+        
         public override EntitySaveData ToSaveData()
         {
             if (placed)
@@ -29,6 +34,7 @@ namespace Game.World
             };
         }
 
+        
         public override void FromSaveData(EntitySaveData data)
         {
             transform.position = data.Position;

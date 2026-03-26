@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.Core;
@@ -6,6 +9,7 @@ namespace Game.World
 {
     public static class WorldEntityFactory
     {
+        
         public static DroppedItem SpawnDroppedItem(
             EntityManager entityManager,
             ItemDropper itemDropper,
@@ -14,6 +18,7 @@ namespace Game.World
             Vector2 position)
         {
             if (data == null || entityManager == null)
+
                 return null;
 
             if (itemDropper != null)
@@ -40,6 +45,7 @@ namespace Game.World
             return droppedItem;
         }
 
+        
         public static Mob SpawnMob(
             EntityManager entityManager,
             MobLibrary mobLibrary,
@@ -53,6 +59,7 @@ namespace Game.World
             return mobLibrary.SpawnMob(mobId, new Vector3(position.x, position.y, 0f), entityManager, parentOverride);
         }
 
+        
         public static Corpse SpawnCorpse(CorpseLibrary corpseLibrary, string corpseId, Vector2 position)
         {
             if (corpseLibrary == null || string.IsNullOrEmpty(corpseId))
@@ -61,6 +68,7 @@ namespace Game.World
             return corpseLibrary.SpawnCorpse(corpseId, position);
         }
 
+        
         public static FallingBlock SpawnFallingBlock(
             EntityManager entityManager,
             FallingBlock fallingPrefab,

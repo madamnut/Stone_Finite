@@ -1,4 +1,6 @@
-// PrimalWorkbench.cs
+﻿
+
+
 using UnityEngine;
 
 
@@ -6,12 +8,14 @@ namespace Game.World
 {
     public class PrimalWorkbench : Multiblock
     {
+        
         public override void OnInteract(Vector2Int hitCell)
         {
-            // ?逾?癰궰野? owner(this) ?袁⑤뼎
+            
             Manager.OpenModule("PrimalCraft", this);
         }
     
+        
         public override SaveData ToSaveData()
         {
             return new SaveData
@@ -25,8 +29,10 @@ namespace Game.World
             };
         }
     
+        
         public override void FromSaveData(SaveData data)
         {
+
             DefId  = data.DefId;
             InstId = data.InstId;
             Origin = data.Origin;

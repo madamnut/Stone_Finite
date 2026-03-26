@@ -1,3 +1,6 @@
+Ôªø
+
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,9 +11,10 @@ namespace Game.World
 {
     public static class ProceduralUtil
     {
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-        // Fractal Perlin 1D (Í∏∞Ï°¥ ÏßÄ???íÏù¥??
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+        
+        
+        
+        
         public static float FractalPerlin1D(
             float x,
             float baseFrequency = 0.005f,
@@ -20,6 +24,7 @@ namespace Game.World
             float baseHeight = 0f,
             float range = 0.5f)
         {
+
             float value = 0f, amplitude = 1f, frequency = baseFrequency, max = 0f;
             for (int i = 0; i < octaves; i++)
             {
@@ -32,19 +37,20 @@ namespace Game.World
             return normalized * 2f * range + baseHeight;
         }
     
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-        // ?ôÍµ¥ ÎßàÏä§??(Î©Ä?∞Ïä§ÏºÄ??A ???ÑÎ©î???åÌïë B)
-        //
-        //  - return[x, y] == true  ???ôÍµ¥(?´Î¶¥ Í≥? AIR)
-        //  - return[x, y] == false ????Ï±ÑÏõåÏß?Í≥?
-        //
-        //  WorldGenSettings ??Cave ?åÎùºÎØ∏ÌÑ∞?§ÏùÑ Í∑∏Î?Î°??¨Ïö©
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+        
+        
+        
+        
+        
+        
+        
+        
+        
         public static bool[,] GenerateNoiseCaveMask(int width, int height, int seed, WorldGenSettings s)
         {
             var cave = new bool[width, height];
     
-            // A: Î©Ä?∞Ïä§ÏºÄ???∏Ïù¥Ï¶?
+            
             float freqL   = s.caveA_FreqLarge;
             int   octL    = Mathf.Clamp(s.caveA_OctLarge, 1, 8);
             float persL   = s.caveA_PersLarge;
@@ -58,7 +64,7 @@ namespace Game.World
     
             float thresholdA = s.caveA_Threshold;
     
-            // B: ?ÑÎ©î???åÌïë + ?∏Ïù¥Ï¶?
+            
             float warpFreq = s.caveB_WarpFreq;
             int   warpOct  = Mathf.Clamp(s.caveB_WarpOct, 1, 8);
             float warpPers = s.caveB_WarpPers;
@@ -72,19 +78,20 @@ namespace Game.World
             float lacB       = s.caveB_LacBase;
             float thresholdB = s.caveB_Threshold;
     
-            // ÍπäÏù¥ ÎßàÏä§??
+            
             bool  useDepthMask = s.useCaveDepthMask;
             float depthStart   = Mathf.Clamp01(s.caveDepthStart);
             float depthEnd     = Mathf.Clamp01(s.caveDepthEnd);
     
-            // ?úÎìú ??Í∞??∏Ïù¥Ï¶??ÑÎìú???¨Ïö©??2D ?§ÌîÑ??
+            
             Vector2 seedLarge  = new Vector2(seed * 11.13f, seed * 7.91f);
             Vector2 seedDetail = new Vector2(seed * 3.21f + 123.4f, seed * 5.67f + 567.8f);
             Vector2 seedWarp1  = new Vector2(seed * 9.99f + 101.1f, seed * 4.44f + 202.2f);
             Vector2 seedWarp2  = new Vector2(seed * 7.77f + 303.3f, seed * 2.22f + 404.4f);
             Vector2 seedB      = new Vector2(seed * 13.37f + 999.9f, seed * 6.28f + 555.5f);
     
-            // Î°úÏª¨ ?®Ïàò: 2D ?ÑÎûô??Perlin [-1,1]
+            
+            
             float Frac(Vector2 p, float baseFreq, int octaves, float persistence, float lacunarity, Vector2 offset)
             {
                 float value  = 0f;
@@ -96,7 +103,7 @@ namespace Game.World
                 {
                     float nx = (p.x + offset.x) * freq;
                     float ny = (p.y + offset.y) * freq;
-                    float n  = Mathf.PerlinNoise(nx, ny) * 2f - 1f; // [-1,1]
+                    float n  = Mathf.PerlinNoise(nx, ny) * 2f - 1f; 
     
                     value  += n * amp;
                     maxAmp += amp;
@@ -106,7 +113,7 @@ namespace Game.World
                 }
     
                 if (maxAmp <= 0f) return 0f;
-                return value / maxAmp; // [-1,1]
+                return value / maxAmp; 
             }
     
             int hMinus1 = Mathf.Max(1, height - 1);
@@ -115,10 +122,10 @@ namespace Game.World
             {
                 for (int y = 0; y < height; y++)
                 {
-                    // y ?ïÍ∑ú??(0~1). Ï¢åÌëúÍ≥?Î∞©Ìñ•?Ä ?ÑÎ°ú?ùÌä∏ Í∏∞Ï??ºÎ°ú ?¥ÏÑù?¥ÏÑú ?úÎãù.
+                    
                     float normY = (float)y / hMinus1;
     
-                    // ÍπäÏù¥ ÎßàÏä§?? ?πÏ†ï Íµ¨Í∞Ñ Î∞ñÏóê?úÎäî ?ôÍµ¥ Í±∞Ïùò/?ÑÌ? ?ÜÏùå
+                    
                     float depthFactor = 1f;
                     if (useDepthMask)
                     {
@@ -129,13 +136,13 @@ namespace Game.World
                         else
                         {
                             float t = (normY - depthStart) / Mathf.Max(0.0001f, depthEnd - depthStart);
-                            depthFactor = t; // Íµ¨Í∞Ñ ?àÏóê??0??Î°?Ï¶ùÍ?
+                            depthFactor = t; 
                         }
                     }
     
                     Vector2 world = new Vector2(x, y);
     
-                    // ?Ä?Ä A: Î©Ä?∞Ïä§ÏºÄ???∏Ïù¥Ï¶??Ä?Ä
+                    
                     float largeA  = Frac(world, freqL, octL, persL, lacL, seedLarge);
                     float detailA = Frac(world, freqD, octD, persD, lacD, seedDetail);
                     float noiseA  = largeA + detailW * detailA;
@@ -144,12 +151,12 @@ namespace Game.World
                     bool caveA = false;
                     if (depthFactor > 0f)
                     {
-                        // ?ÑÏ™Ω?êÏÑú??Ï¢Ä ??Îπ°ÏÑ∏Í≤?Ïª∑Îêò?ÑÎ°ù Î≥¥Ï†ï (?êÌïòÎ©?Í≥ÑÏàò Ï°∞Ï†ï)
+                        
                         float thresholdAeff = thresholdA + (1f - depthFactor) * 0.3f;
                         caveA = (noiseA < thresholdAeff);
                     }
     
-                    // ?Ä?Ä B: ?ÑÎ©î???åÌïë + ?∏Ïù¥Ï¶??Ä?Ä
+                    
                     float warpSrcX = Frac(world, warpFreq, warpOct, warpPers, warpLac, seedWarp1);
                     float warpSrcY = Frac(world, warpFreq, warpOct, warpPers, warpLac, seedWarp2);
                     float dx       = warpSrcX * warpAmpX;
@@ -166,7 +173,7 @@ namespace Game.World
                         caveB = (noiseB < thresholdBeff);
                     }
     
-                    // ?©Ïßë?? ??Ï§??òÎÇò?ºÎèÑ ?ôÍµ¥?¥Î©¥ ?ôÍµ¥
+                    
                     bool caveFinal = (caveA || caveB) && depthFactor > 0f;
     
                     cave[x, y] = caveFinal;
@@ -176,9 +183,10 @@ namespace Game.World
             return cave;
         }
     
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-        // Ore cluster sampling & clustering
-        // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+        
+        
+        
+        
         public static List<Vector2Int> SampleSeedPositions(int width, int minHeight, int maxHeight, float seedDensity)
         {
             int valid = width * (maxHeight - minHeight + 1);
@@ -193,6 +201,7 @@ namespace Game.World
             return seeds;
         }
     
+        
         public static int SampleClusterSize(float mean, float stdDev)
         {
             float u1 = UnityEngine.Random.value, u2 = UnityEngine.Random.value;
@@ -201,21 +210,29 @@ namespace Game.World
             return Mathf.Max(1, size);
         }
     
+        
         public static Vector2Int[] GetNeighborOffsets(bool eightDir)
             => eightDir
                 ? new[]
                   {
+                      
                       new Vector2Int(1, 0), new Vector2Int(-1, 0),
+                      
                       new Vector2Int(0, 1), new Vector2Int(0, -1),
+                      
                       new Vector2Int(1, 1), new Vector2Int(1, -1),
+                      
                       new Vector2Int(-1, 1), new Vector2Int(-1, -1)
                   }
                 : new[]
                   {
+                      
                       new Vector2Int(1, 0), new Vector2Int(-1, 0),
+                      
                       new Vector2Int(0, 1), new Vector2Int(0, -1)
                   };
     
+        
         public static List<List<Vector2Int>> GenerateClusters(
             List<Vector2Int> seeds, float meanSize, float stdDevSize, float maxStepsFactor,
             float expansionProb, Vector2Int[] neighborOffsets, bool frontierRandom)
@@ -249,6 +266,7 @@ namespace Game.World
             return clusters;
         }
     
+        
         public static List<List<Vector2Int>> FilterClusters(
             List<List<Vector2Int>> clusters, bool[,] caveMap, bool[,] waterMap)
         {

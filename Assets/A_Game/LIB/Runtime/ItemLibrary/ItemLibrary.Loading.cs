@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -8,17 +11,20 @@ namespace Game.Data
 {
     public partial class ItemLibrary
     {
+        
         void Awake()
         {
             allItemDict = new Dictionary<string, JObject>();
             foreach (var textAsset in jsonFiles) MergeJson(textAsset);
         }
     
+        
         void MergeJson(TextAsset textAsset)
         {
             if (textAsset == null)
             {
                 Debug.LogWarning("A null JSON file entry was found in ItemLibrary.");
+
                 return;
             }
     

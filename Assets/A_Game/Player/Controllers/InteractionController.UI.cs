@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,14 +13,17 @@ namespace Game.Player
 {
     public partial class InteractionController
     {
+        
         public void OnClickResume()
         {
             if (_state != GameState.Inmenu) return;
+
             _state = GameState.Ingame;
             pauseMenuRoot.SetActive(false);
             Time.timeScale = 1f;
         }
     
+        
         public void OnClickQuitToLobby()
         {
             Time.timeScale = 1f;
@@ -25,6 +31,7 @@ namespace Game.Player
             SceneManager.LoadScene("Loby");
         }
     
+        
         public GameObject OpenModule(GameObject modulePrefab)
         {
             _state = GameState.Inpanel;
@@ -54,6 +61,7 @@ namespace Game.Player
             return _moduleInstance;
         }
     
+        
         private void CloseInventoryPanelToIngame()
         {
             CancelBeltPlacement();
@@ -64,6 +72,7 @@ namespace Game.Player
             inventoryPanel.SetActive(false);
         }
     
+        
         private void RefreshHeldHandSprite()
         {
             var held = GetHeldItem();
@@ -73,6 +82,7 @@ namespace Game.Player
             player.rightHandItemRenderer.sprite = showHeld ? held.Icon : null;
         }
     
+        
         private ItemData GetHeldItem()
         {
             var items = player.Inventory.items;
@@ -82,6 +92,7 @@ namespace Game.Player
             return items[_hotbarScope];
         }
     
+        
         private void HideWorldHoverState()
         {
             _hlGO.SetActive(false);
@@ -93,6 +104,7 @@ namespace Game.Player
             }
         }
     
+        
         private void ReturnCursorItemToInventory()
         {
             if (cursorSlot.Item == null)
@@ -107,6 +119,7 @@ namespace Game.Player
             }
         }
     
+        
         private void DestroyOpenModule()
         {
             if (_moduleInstance == null)

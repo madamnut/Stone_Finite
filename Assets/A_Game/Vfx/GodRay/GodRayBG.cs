@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.Support
@@ -6,20 +9,22 @@ namespace Game.Support
     [ExecuteAlways]
     public class GodRay : MonoBehaviour
     {
+
         public Material material;
         public Transform sun;
         public Camera mainCamera;
 
         [Header("Strength")]
-        [Min(0.001f)] public float maxStrength = 1.7f; // y>=0??????μ쪠??
-        [Min(0.001f)] public float yRange = 12f;       // y<0 ?띠룆흮???뺢퀡???(-yRange ~ 0)
+        [Min(0.001f)] public float maxStrength = 1.7f; 
+        [Min(0.001f)] public float yRange = 12f;       
 
+        
         void Update()
         {
             if (!material || !sun || !mainCamera) return;
             if (!material.HasProperty("_Center") || !material.HasProperty("_Intensity")) return;
 
-            // ???? ?띠룆踰좂뙴? sun.localPosition.y ?リ옇?↑?????
+            
             float y = sun.localPosition.y;
             float strength;
 
@@ -30,13 +35,13 @@ namespace Game.Support
             else
             {
                 float cy = Mathf.Clamp(y, -yRange, 0f);
-                float t = 1f - (cy * cy) / (yRange * yRange); // y=0??, -yRange??
+                float t = 1f - (cy * cy) / (yRange * yRange); 
                 strength = Mathf.Clamp01(t) * maxStrength;
             }
 
             material.SetFloat("_Intensity", strength);
 
-            // ???? ???좎댉: ??븐뼔援???レ뒭筌?????븐뻼????レ뒭筌???UV ????
+            
             Vector3 sp = mainCamera.WorldToScreenPoint(sun.position);
 
             float w = Mathf.Max(1, mainCamera.pixelWidth);

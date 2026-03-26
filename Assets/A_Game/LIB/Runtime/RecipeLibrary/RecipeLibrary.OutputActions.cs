@@ -1,3 +1,6 @@
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +13,16 @@ namespace Game.Data
 {
     public partial class RecipeLibrary
     {
-        // Output actions
+        
+        
         ItemData ApplyOutputActions(ItemData dst, JArray outActs, List<ItemData> slots, int[] assign, int outCount)
         {
             if (outActs == null || outActs.Count == 0) return dst;
     
-            // @dynamic: create ?誘る닔?
+            
             if (dst == null)
             {
+
                 ItemData created = null;
     
                 for (int i = 0; i < outActs.Count; i++)
@@ -53,7 +58,7 @@ namespace Game.Data
                 if (dst == null) return null;
             }
     
-            // ???熬곣뫁???β돦裕뉐퐲?? ?????濡レ맪 ???꾪뀞嶺??잙갭梨?????? + mul/floorInt/roundInt/fromField ?怨뺣뼺?
+            
             string overrideName = null;
             string overrideSprite = null;
             string overrideItemId = null;
@@ -65,6 +70,7 @@ namespace Game.Data
             Dictionary<string, Dictionary<string, object>> overrideWeapon = null;
             Dictionary<string, Dictionary<string, object>> overrideBreak = null;
     
+            
             double GetCurrentNumber(string field)
             {
                 if (field == "durability")
@@ -80,12 +86,15 @@ namespace Game.Data
                 return 0;
             }
     
+            
             void SetCurrentNumber(string field, double v)
             {
                 if (field == "durability") overrideDurability = v;
+                
                 else if (field == "maxDurability") overrideMaxDur = v;
             }
     
+            
             bool TryToDouble(object v, out double d)
             {
                 d = 0;
@@ -105,6 +114,7 @@ namespace Game.Data
                 return double.TryParse(v.ToString(), out d);
             }
     
+            
             object ReadFieldWithOverrides(string fieldPath)
             {
                 if (string.IsNullOrEmpty(fieldPath)) return null;
@@ -115,7 +125,7 @@ namespace Game.Data
                 if (fieldPath == "maxDurability")
                     return GetCurrentNumber("maxDurability");
     
-                // name/sprite/itemId??繞벿살탪??override????⑥ろ맖 ?꾩룇瑗??
+                
                 if (fieldPath == "name")
                     return overrideName ?? dst.Name;
     
@@ -125,7 +135,7 @@ namespace Game.Data
                 if (fieldPath == "itemId")
                     return overrideItemId ?? dst.ItemId;
     
-                // ??濡?룫嶺뚯솘???dst ?リ옇??
+                
                 return ReadField(dst, fieldPath);
             }
     
@@ -151,11 +161,13 @@ namespace Game.Data
                     {
                         hasVal = true;
                         if (jv.Type == JTokenType.Null) val = null;
+                        
                         else if (jv is JValue jvv) val = jvv.Value;
                         else val = jv.ToString();
     
                         if (val is string sv) val = ExpandTokens(sv);
                     }
+                    
                     else if (act.TryGetValue("fromInput", out var jf) && act.TryGetValue("inputField", out var jif))
                     {
                         int? from = jf.Type == JTokenType.Null ? (int?)null : jf.Value<int?>();
@@ -174,6 +186,7 @@ namespace Game.Data
                                 val = s0.Substring(0, s0.Length - strip.Length);
                         }
                     }
+                    
                     else if (act.TryGetValue("fromField", out var jff))
                     {
                         string fromField = jff.Type == JTokenType.Null ? null : jff.ToString();
@@ -183,6 +196,7 @@ namespace Game.Data
                             hasVal = true;
                         }
                     }
+                    
                     else if (act["valueFromFields"] is JArray vff)
                     {
                         string sep = act.Value<string>("separator") ?? "";
@@ -223,6 +237,7 @@ namespace Game.Data
                     {
                         var dict = ToActionDict(val);
                         if (field == "ToolActions") overrideTool = dict;
+                        
                         else if (field == "WeaponActions") overrideWeapon = dict;
                         else overrideBreak = dict;
                         continue;
@@ -254,6 +269,7 @@ namespace Game.Data
     
                     continue;
                 }
+                
                 else if (type == "copy")
                 {
                     int from = act.Value<int?>("fromInput") ?? -1;
@@ -280,6 +296,7 @@ namespace Game.Data
                     {
                         var dict = ToActionDict(val);
                         if (toField == "ToolActions") overrideTool = dict;
+                        
                         else if (toField == "WeaponActions") overrideWeapon = dict;
                         else overrideBreak = dict;
                         continue;
@@ -309,6 +326,7 @@ namespace Game.Data
                         continue;
                     }
                 }
+                
                 else if (type == "sum")
                 {
                     string outField = act.Value<string>("field");
@@ -348,12 +366,13 @@ namespace Game.Data
                         continue;
                     }
                 }
+                
                 else if (type == "mul")
                 {
                     string field = act.Value<string>("field");
                     if (string.IsNullOrEmpty(field)) continue;
     
-                    // ?熬곣뫗???durability/maxDurability嶺?mul 嶺뚯솘???(?熬곣뫗???details.* ?筌먦끉??
+                    
                     if (field != "durability" && field != "maxDurability")
                         continue;
     
@@ -363,10 +382,12 @@ namespace Game.Data
                     if (act.TryGetValue("value", out var jv))
                     {
                         if (jv.Type == JTokenType.Null) rhs = null;
+                        
                         else if (jv is JValue jvv) rhs = jvv.Value;
                         else rhs = jv.ToString();
                         hasRhs = true;
                     }
+                    
                     else if (act.TryGetValue("fromInput", out var jf) && act.TryGetValue("inputField", out var jif))
                     {
                         int? from = jf.Type == JTokenType.Null ? (int?)null : jf.Value<int?>();
@@ -380,6 +401,7 @@ namespace Game.Data
                             hasRhs = true;
                         }
                     }
+                    
                     else if (act.TryGetValue("fromField", out var jff))
                     {
                         string fromField = jff.Type == JTokenType.Null ? null : jff.ToString();
@@ -397,6 +419,7 @@ namespace Game.Data
                     double cur = GetCurrentNumber(field);
                     SetCurrentNumber(field, cur * r);
                 }
+                
                 else if (type == "floorInt" || type == "roundInt")
                 {
                     string field = act.Value<string>("field");
@@ -414,6 +437,7 @@ namespace Game.Data
     
                     SetCurrentNumber(field, cur);
                 }
+                
                 else if (type == "delete")
                 {
                     string field = act.Value<string>("field");
@@ -422,6 +446,7 @@ namespace Game.Data
                     if (field == "ToolActions" || field == "WeaponActions" || field == "BreakActions")
                     {
                         if (field == "ToolActions") overrideTool = new Dictionary<string, Dictionary<string, object>>();
+                        
                         else if (field == "WeaponActions") overrideWeapon = new Dictionary<string, Dictionary<string, object>>();
                         else overrideBreak = new Dictionary<string, Dictionary<string, object>>();
                         continue;
@@ -498,9 +523,10 @@ namespace Game.Data
             );
         }
     
-        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-        // Field reads + mutations
-        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+        
+        
+        
+        
         object ReadField(ItemData src, string field)
         {
             if (src == null || string.IsNullOrEmpty(field)) return null;
@@ -532,6 +558,7 @@ namespace Game.Data
             return null;
         }
     
+        
         object ReadFromActionRoot(Dictionary<string, Dictionary<string, object>> root, string path)
         {
             if (root == null || string.IsNullOrEmpty(path)) return null;
@@ -566,6 +593,7 @@ namespace Game.Data
             return curr;
         }
     
+        
         void SetDetailPath(ItemData dst, string path, object value)
         {
             if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
@@ -585,6 +613,7 @@ namespace Game.Data
                         d[key] = created;
                         curr = created;
                     }
+                    
                     else if (next is Dictionary<string, object> nd)
                     {
                         curr = nd;
@@ -603,6 +632,7 @@ namespace Game.Data
                 last[parts[^1]] = value;
         }
     
+        
         void DeleteFromDetails(ItemData dst, string path)
         {
             if (dst?.Details == null || string.IsNullOrEmpty(path)) return;
@@ -631,9 +661,10 @@ namespace Game.Data
                 last.Remove(parts[^1]);
         }
     
-        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-        // Action dict helpers (copy-on-write)
-        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+        
+        
+        
+        
         Dictionary<string, Dictionary<string, object>> ToActionDict(object v)
         {
             if (v == null) return null;
@@ -661,7 +692,7 @@ namespace Game.Data
     
             if (v is JObject jo)
             {
-                // JObject -> Dictionary<string, Dictionary<string, object>>
+                
                 var res = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var p in jo.Properties())
                 {
@@ -718,6 +749,7 @@ namespace Game.Data
             };
         }
     
+        
         Dictionary<string, Dictionary<string, object>> SetInActionRoot(
             Dictionary<string, Dictionary<string, object>> root,
             string path,
@@ -759,6 +791,7 @@ namespace Game.Data
                         dict[key] = created;
                         curr = created;
                     }
+                    
                     else if (next is Dictionary<string, object> nd)
                     {
                         var copied = new Dictionary<string, object>(nd);
@@ -782,6 +815,7 @@ namespace Game.Data
             return newRoot;
         }
     
+        
         Dictionary<string, Dictionary<string, object>> DeleteFromActionRoot(
             Dictionary<string, Dictionary<string, object>> root,
             string path)
@@ -834,6 +868,7 @@ namespace Game.Data
             return newRoot;
         }
     
+        
         string ExpandTokens(string s)
         {
             if (string.IsNullOrEmpty(s)) return s;

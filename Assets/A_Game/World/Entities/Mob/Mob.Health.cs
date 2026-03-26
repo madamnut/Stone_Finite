@@ -1,13 +1,18 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
 {
 public partial class Mob
 {
+    
     public virtual void TakeDamage(int amount)
     {
         if (amount <= 0) return;
         if (!IsAlive) return;
+
 
         currentHp -= amount;
         if (currentHp < 0) currentHp = 0;
@@ -18,6 +23,7 @@ public partial class Mob
             Die();
     }
 
+    
     public virtual void Heal(int amount)
     {
         if (amount <= 0) return;
@@ -28,15 +34,18 @@ public partial class Mob
             currentHp = maxHp;
     }
 
+    
     protected virtual void OnDamaged(int amount)
     {
     }
 
+    
     protected virtual void Die()
     {
         OnDeath();
     }
 
+    
     protected virtual void OnDeath()
     {
         if (!string.IsNullOrEmpty(corpseIdOnDeath))

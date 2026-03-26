@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
@@ -6,19 +9,23 @@ namespace Game.World
     {
         private sealed class MultiblockQueryService
         {
+
             readonly MultiblockServiceContext _ctx;
 
+            
             public MultiblockQueryService(MultiblockServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public Multiblock GetAtCell(Vector2Int cell)
             {
                 _ctx.ByCell.TryGetValue(cell, out var inst);
                 return inst;
             }
 
+            
             public void ApplyMetaToAllOccupiedCells(Multiblock owner, ushort targetMeta)
             {
                 if (owner == null) return;

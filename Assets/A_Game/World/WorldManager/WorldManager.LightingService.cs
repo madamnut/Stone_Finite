@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,13 +10,16 @@ namespace Game.World
     {
         private sealed class LightingService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public LightingService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void RecalculateLightAt(int x0, int y0)
             {
                 if ((uint)x0 >= (uint)_ctx.Width || (uint)y0 >= (uint)_ctx.Height) return;
@@ -61,6 +67,7 @@ namespace Game.World
                 }
             }
 
+            
             public void ProcessArtificialLightQueues()
             {
                 if (_ctx.DecreaseQueue.Count == 0 && _ctx.IncreaseQueue.Count == 0) return;
@@ -127,6 +134,7 @@ namespace Game.World
                     _ctx.MarkLightDirtyCells(_ctx.LightChangedList);
             }
 
+            
             public void HandleSourceLightChangeAt(int x, int y, ushort oldSolidId, ushort oldSolidMeta, ushort oldFluidId)
             {
                 if ((uint)x >= (uint)_ctx.Width || (uint)y >= (uint)_ctx.Height) return;
@@ -154,14 +162,17 @@ namespace Game.World
                 }
             }
 
+            
             int GetArtCost(int nx, int ny)
             {
                 int cost = ATT_AIR;
                 if (_ctx.IsCollidable(nx, ny)) cost = ATT_SOLID;
+                
                 else if (_ctx.WorldMap.GetBG(nx, ny) != 0) cost = ATT_BG;
                 return cost;
             }
 
+            
             void RecordLightChanged(int x, int y)
             {
                 var p = new Vector2Int(x, y);
@@ -169,6 +180,7 @@ namespace Game.World
                     _ctx.LightChangedList.Add(p);
             }
 
+            
             void RecordSeed(int x, int y)
             {
                 var p = new Vector2Int(x, y);
@@ -176,6 +188,7 @@ namespace Game.World
                     _ctx.SeedList.Add(p);
             }
 
+            
             void EnqueueIncrease(int x, int y, byte v)
             {
                 if (v == 0) return;
@@ -184,6 +197,7 @@ namespace Game.World
                 _ctx.IncreaseQueue.Enqueue(new IncNode(x, y, v));
             }
 
+            
             void EnqueueDecrease(int x, int y, byte oldV)
             {
                 if (oldV == 0) return;
@@ -199,6 +213,7 @@ namespace Game.World
                 _ctx.DecreaseQueue.Enqueue(new DecNode(x, y, oldV));
             }
 
+            
             byte GetSourceBrightness(ushort solidId, ushort solidMeta, ushort fluidId)
             {
                 byte sb = _ctx.CellLibrary.GetSolidBrightness(solidId, solidMeta);
@@ -206,6 +221,7 @@ namespace Game.World
                 return (sb >= lb) ? sb : lb;
             }
 
+            
             void ProcessDecreaseNeighbor(int nx, int ny, byte v)
             {
                 if ((uint)nx >= (uint)_ctx.Width || (uint)ny >= (uint)_ctx.Height)
@@ -226,6 +242,7 @@ namespace Game.World
                 }
             }
 
+            
             void ProcessIncreaseNeighbor(int nx, int ny, byte v)
             {
                 if ((uint)nx >= (uint)_ctx.Width || (uint)ny >= (uint)_ctx.Height)

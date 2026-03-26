@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +16,7 @@ namespace Game.UI
     public partial class ToolbenchModule : MonoBehaviour, IInventoryOwnerConsumer
     {
         [Header("Deps")]
+
         public RecipeLibrary recipeLibrary;
         [FormerlySerializedAs("player")]
         [SerializeField] private MonoBehaviour inventoryOwnerComponent;
@@ -49,6 +53,7 @@ namespace Game.UI
         int _prevToolCount;
         int _prevToolDur;
 
+        
         public void Bind(Toolbench toolbench)
         {
             _toolbench = toolbench;
@@ -75,6 +80,7 @@ namespace Game.UI
             RebuildCandidates();
         }
 
+        
         void Awake()
         {
             if (craftButton != null)
@@ -83,6 +89,7 @@ namespace Game.UI
             ClearViewport();
         }
 
+        
         void OnDestroy()
         {
             if (craftButton != null)
@@ -91,12 +98,14 @@ namespace Game.UI
             ClearViewport();
         }
 
+        
         void SetupSlot(ItemSlot slot, bool denyPut, bool denyInteraction)
         {
             ModuleSlotSyncUtility.ConfigureLocalSlot(slot, denyPut, denyInteraction);
             if (slot != null) slot.useAsButton = false;
         }
 
+        
         void Update()
         {
             if (_toolbench == null) return;
@@ -109,6 +118,7 @@ namespace Game.UI
             }
         }
 
+        
         bool InputsChanged()
         {
             var mat = materialSlot != null ? materialSlot.Item : null;
@@ -120,12 +130,14 @@ namespace Game.UI
             return false;
         }
 
+        
         void SnapshotInputs()
         {
             ModuleSlotSyncUtility.Capture(materialSlot, ref _prevMat, ref _prevMatCount, ref _prevMatDur);
             ModuleSlotSyncUtility.Capture(toolSlot, ref _prevTool, ref _prevToolCount, ref _prevToolDur);
         }
 
+        
         void PushInputsToToolbench()
         {
             if (_toolbench == null) return;

@@ -688,6 +688,7 @@ MonoBehaviour:
   useLocalStorage: 0
   denyUserPut: 0
   denyUserInteraction: 0
+  useAsButton: 0
 --- !u!1 &6024411563004001374
 GameObject:
   m_ObjectHideFlags: 0

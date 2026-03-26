@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,9 +12,11 @@ namespace Game.Player
     
     public partial class InteractionController
     {
+        
         void TryWeaponAttack()
         {
             if (_attackCo != null)
+
                 return;
     
             var items = player.Inventory.items;
@@ -48,27 +53,39 @@ namespace Game.Player
             if (paramDict.TryGetValue("staminaCost", out var scObj) && scObj != null)
             {
                 if (scObj is float f) staminaCost = f;
+                
                 else if (scObj is double d) staminaCost = (float)d;
+                
                 else if (scObj is int i) staminaCost = i;
+                
                 else if (scObj is long l) staminaCost = l;
+                
                 else if (float.TryParse(scObj.ToString(), out var tmp)) staminaCost = tmp;
             }
     
             if (paramDict.TryGetValue("cooldown", out var cdObj) && cdObj != null)
             {
                 if (cdObj is float f) cooldown = f;
+                
                 else if (cdObj is double d) cooldown = (float)d;
+                
                 else if (cdObj is int i) cooldown = i;
+                
                 else if (cdObj is long l) cooldown = l;
+                
                 else if (float.TryParse(cdObj.ToString(), out var tmp)) cooldown = tmp;
             }
     
             if (paramDict.TryGetValue("damage", out var dmgObj) && dmgObj != null)
             {
                 if (dmgObj is float f) damage = f;
+                
                 else if (dmgObj is double d) damage = (float)d;
+                
                 else if (dmgObj is int i) damage = i;
+                
                 else if (dmgObj is long l) damage = l;
+                
                 else if (float.TryParse(dmgObj.ToString(), out var tmp)) damage = tmp;
             }
     
@@ -104,6 +121,7 @@ namespace Game.Player
                 sound.PlayWeaponSwing();
                 _attackCo = StartCoroutine(CoSwing(angleFromUp, isLeftSide));
             }
+            
             else if (actionName == "Thrust")
             {
                 sound.PlayWeaponThrust();
@@ -111,6 +129,7 @@ namespace Game.Player
             }
         }
     
+        
         IEnumerator CoSwing(float centerAngle, bool isLeftSide)
         {
             float duration = 0.25f;
@@ -150,6 +169,7 @@ namespace Game.Player
             _attackCo = null;
         }
     
+        
         IEnumerator CoThrust(float centerAngle)
         {
             meleeAngle.rotation = Quaternion.Euler(0f, 0f, centerAngle);
@@ -194,6 +214,7 @@ namespace Game.Player
             _attackCo = null;
         }
     
+        
         internal void HandleCombatTrigger(Collider2D other)
         {
             if (!_attackActive)

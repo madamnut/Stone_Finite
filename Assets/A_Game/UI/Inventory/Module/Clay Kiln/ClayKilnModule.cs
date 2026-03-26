@@ -1,4 +1,6 @@
-// ClayKilnModule.cs (??ш끽維????????곕츅??
+﻿
+
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +12,7 @@ namespace Game.UI
     public partial class ClayKilnModule : MonoBehaviour
     {
         [Header("Slots")]
+
         public ItemSlot fuelIn;
         public ItemSlot fuelOut;
     
@@ -20,13 +23,13 @@ namespace Game.UI
         public ItemSlot fireOutB;
     
         [Header("Gauges (Filled Image)")]
-        public Image fireGauge;     // ???ㅻ깹???? ?濡ろ뜐???ル쵐??
-        public Image progressGaugeA; // A ??繹먮끏????怨룹쐾??癲ル슣???몄춿??
-        public Image progressGaugeB; // B ??繹먮끏????怨룹쐾??癲ル슣???몄춿??
+        public Image fireGauge;     
+        public Image progressGaugeA; 
+        public Image progressGaugeB; 
     
         ClayKiln _kiln;
     
-        // ?????????????????? ???怨좊룴??????곸죷 ?????怨뚮뼚?????좊즴???? ??????????????????
+        
         ItemData _prevFuelIn;
         int _prevFuelInCount;
         int _prevFuelInDur;
@@ -39,7 +42,7 @@ namespace Game.UI
         int _prevFireInBCount;
         int _prevFireInBDur;
     
-        // ?????????????????? ???怨좊룴????⑥レ툓???????怨뚮뼚?????좊즴???? ?????좊읈? ??⑥ル땻濚???) ??????????????????
+        
         ItemData _prevFuelOut;
         int _prevFuelOutCount;
         int _prevFuelOutDur;
@@ -52,75 +55,78 @@ namespace Game.UI
         int _prevFireOutBCount;
         int _prevFireOutBDur;
     
+        
         public void Bind(ClayKiln kiln)
         {
             _kiln = kiln;
     
-            // ?棺??짆?쏆춾?????癲ル슢?꾤땟???
+            
             SetupSlot(fuelIn,   denyPut: false, denyInteraction: false);
-            SetupSlot(fuelOut,  denyPut: true,  denyInteraction: false); // ??⑥レ툓?? ?壤굿??몃탿 ??ヂ???, ????곷뎨????源낅츛
+            SetupSlot(fuelOut,  denyPut: true,  denyInteraction: false); 
     
             SetupSlot(fireInA,  denyPut: false, denyInteraction: false);
-            SetupSlot(fireOutA, denyPut: true,  denyInteraction: false); // ??⑥レ툓?? ?壤굿??몃탿 ??ヂ???, ????곷뎨????源낅츛
+            SetupSlot(fireOutA, denyPut: true,  denyInteraction: false); 
     
             SetupSlot(fireInB,  denyPut: false, denyInteraction: false);
-            SetupSlot(fireOutB, denyPut: true,  denyInteraction: false); // ??⑥レ툓?? ?壤굿??몃탿 ??ヂ???, ????곷뎨????源낅츛
+            SetupSlot(fireOutB, denyPut: true,  denyInteraction: false); 
     
-            // 癲ル슔?됭짆??UI ?袁⑸즵???
+            
             PullFromKiln();
             SnapshotAll();
             RefreshGauges();
         }
     
+        
         void SetupSlot(ItemSlot slot, bool denyPut, bool denyInteraction)
         {
             ModuleSlotSyncUtility.ConfigureLocalSlot(slot, denyPut, denyInteraction);
         }
     
+        
         void Update()
         {
             if (_kiln == null) return;
     
-            // 1) ??⑥レ툓????????怨뚮뼚????源끹걬癲??????좊읈? ??⑥ル땻濚? -> Kiln???袁⑸즵???
+            
             if (OutputsChanged())
             {
                 PushOutputsToKiln();
                 SnapshotOutputs();
             }
     
-            // 2) ????곸죷???怨뚮뼚????源끹걬癲?-> Kiln???袁⑸즵???
+            
             if (InputsChanged())
             {
                 PushInputsToKiln();
                 SnapshotInputs();
             }
     
-            // 3) ??筌?六?????뗫탿??(?????棺??짆?먰맪??????袁⑸즴?????濡ろ뜏????怨멸텭?????袁⑸즵???
+            
             PullFromKiln();
-            SnapshotAll(); // Pull ??熬곣뫖?????怨좊룴?????????????ㅼ뒧??嚥싲갭흮獒뺣끇?????袁⑸젻泳?)
+            SnapshotAll(); 
     
-            // 4) ?濡ろ뜐???ル쵐??
+            
             RefreshGauges();
         }
     
         #if false
         bool InputsChanged()
         {
-            // FuelIn
+            
             var f = fuelIn != null ? fuelIn.Item : null;
             int fc = f != null ? f.Count : 0;
             int fd = f != null ? f.Durability : 0;
             if (ModuleSlotSyncUtility.HasChanged(_prevFuelIn, _prevFuelInCount, _prevFuelInDur, f))
                 return true;
     
-            // FireInA
+            
             var a = fireInA != null ? fireInA.Item : null;
             int ac = a != null ? a.Count : 0;
             int ad = a != null ? a.Durability : 0;
             if (ModuleSlotSyncUtility.HasChanged(_prevFireInA, _prevFireInACount, _prevFireInADur, a))
                 return true;
     
-            // FireInB
+            
             var b = fireInB != null ? fireInB.Item : null;
             int bc = b != null ? b.Count : 0;
             int bd = b != null ? b.Durability : 0;
@@ -132,21 +138,21 @@ namespace Game.UI
     
         bool OutputsChanged()
         {
-            // FuelOut
+            
             var f = fuelOut != null ? fuelOut.Item : null;
             int fc = f != null ? f.Count : 0;
             int fd = f != null ? f.Durability : 0;
             if (ModuleSlotSyncUtility.HasChanged(_prevFuelOut, _prevFuelOutCount, _prevFuelOutDur, f))
                 return true;
     
-            // FireOutA
+            
             var a = fireOutA != null ? fireOutA.Item : null;
             int ac = a != null ? a.Count : 0;
             int ad = a != null ? a.Durability : 0;
             if (ModuleSlotSyncUtility.HasChanged(_prevFireOutA, _prevFireOutACount, _prevFireOutADur, a))
                 return true;
     
-            // FireOutB
+            
             var b = fireOutB != null ? fireOutB.Item : null;
             int bc = b != null ? b.Count : 0;
             int bd = b != null ? b.Durability : 0;

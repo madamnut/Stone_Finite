@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -11,8 +14,10 @@ namespace Game.UI
 {
     public partial class ToolbenchModule
     {
+        
         void RebuildCandidates()
         {
+
             _candidates = null;
             _inputActions = null;
             _matchedRecipe = null;
@@ -84,6 +89,7 @@ namespace Game.UI
             }
         }
 
+        
         void ClearViewport()
         {
             for (int i = 0; i < _candSlots.Count; i++)
@@ -101,6 +107,7 @@ namespace Game.UI
                 Destroy(viewportContent.GetChild(i).gameObject);
         }
 
+        
         void OnCandidateClicked(ItemSlot slot)
         {
             if (slot == null) return;
@@ -121,6 +128,7 @@ namespace Game.UI
                 _toolbench.SetSlot(Toolbench.SlotKind.Preview, slot.Item);
         }
 
+        
         void OnClickCraft()
         {
             if (_toolbench == null) return;
@@ -178,6 +186,7 @@ namespace Game.UI
             RebuildCandidates();
         }
 
+        
         void ApplyInputActions(JArray actions)
         {
             if (actions == null) return;
@@ -186,6 +195,7 @@ namespace Game.UI
             ApplyOne(actions, 1, toolSlot);
         }
 
+        
         void ApplyOne(JArray actions, int index, ItemSlot slot)
         {
             if (slot == null || slot.Item == null) return;
@@ -207,6 +217,7 @@ namespace Game.UI
                 if (slot.Item.Count <= 0) slot.Set(null);
                 else slot.Refresh();
             }
+            
             else if (type == "durability")
             {
                 slot.Item.ModifyDurability(amount);
@@ -215,6 +226,7 @@ namespace Game.UI
             }
         }
 
+        
         void ResolveInventoryOwner()
         {
             _inventoryOwner = inventoryOwnerComponent as IInventoryOwner;
@@ -222,6 +234,7 @@ namespace Game.UI
                 Debug.LogWarning($"[ToolbenchModule] Assigned component on {name} does not implement IInventoryOwner.", this);
         }
 
+        
         InventoryData GetInventory()
         {
             if (_inventoryOwner == null)
@@ -229,6 +242,7 @@ namespace Game.UI
             return _inventoryOwner != null ? _inventoryOwner.Inventory : null;
         }
 
+        
         public void SetInventoryOwner(IInventoryOwner inventoryOwner)
         {
             _inventoryOwner = inventoryOwner;

@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,14 +15,14 @@ namespace Game.Player
     public partial class Player : MonoBehaviour, IInventoryOwner
     {
         [Header("Movement")]
-        [SerializeField] private float moveSpeed = 5f;   // ???щ뮝???????????뽦뵣
-        [SerializeField] private float jumpForce = 7f;   // ??誘⑦????
+        [SerializeField] private float moveSpeed = 5f;   
+        [SerializeField] private float jumpForce = 7f;   
     
         [Header("Components")]
-        [SerializeField] private Rigidbody2D rb;                 // Rigidbody2D
+        [SerializeField] private Rigidbody2D rb;                 
         [SerializeField] private GroundProbe groundProbe;
     
-        // ?????????????筌?????筌먯떜??????노젵): "???????⑤９苑???醫딅땻???熬곣뫖痢?????? <-> "??ш끽維??????野?濚욌꼬?댄꺍?????????熬곣뫖痢???????癲?0.1??Ignore
+        
         [Header("Platform Drop-Through")]
         [SerializeField] private Collider2D playerPhysicsCollider;
         [SerializeField] private PlatformDropThroughService platformDropThroughService;
@@ -28,31 +31,32 @@ namespace Game.Player
         [SerializeField] private FluidProbe fluidProbe;
     
         [Header("Fluid Movement (Recommended Preset)")]
-        [SerializeField] private float fluidMoveSpeedMultiplier = 0.5f; // ??醫딅땾?????щ뮝???????ъ땡?
-        [SerializeField] private float fluidHorizontalDamping = 10f;    // ??醫딅땾?????щ뮝??????
-        [SerializeField] private float fluidVerticalDamping = 6f;       // ??醫딅땾?????ㅺ강??????
-        [SerializeField] private float fluidSinkSpeed = 1.5f;           // ??醫딅땾????좊읈?癲ル슢???????源끹걬癲?癲ル슪?ｈ짆?볥쐩????좊읈???繹먮굟???癲ル슢?꾤땟?룹춻?y????뽦뵣)
-        [SerializeField] private float swimUpAcceleration = 35f;        // (雅?퍔瑗띰㎖猷≪쒜?? ??좊읈????袁⑸젻泳?????ㅼ뒭?????ル∥?뺧┼?????
-        [SerializeField] private float maxSwimUpSpeed = 6.5f;           // ??ш끽維곩ㅇ??????놁씀???癲ル슔?됭짆? ????뽦뵣(癲ル슢?꾤땟?룹춻?
+        [SerializeField] private float fluidMoveSpeedMultiplier = 0.5f; 
+        [SerializeField] private float fluidHorizontalDamping = 10f;    
+        [SerializeField] private float fluidVerticalDamping = 6f;       
+        [SerializeField] private float fluidSinkSpeed = 1.5f;           
+        [SerializeField] private float swimUpAcceleration = 35f;        
+        [SerializeField] private float maxSwimUpSpeed = 6.5f;           
     
         [Header("Visual (Skin Root)")]
-        [SerializeField] private Transform skinRoot;             // ?怨멸텭?嶺????筌믨퀡?????袁る???룸Ŧ爾??
+        [SerializeField] private Transform skinRoot;             
     
         [Header("Visual (Body + Limbs)")]
-        [SerializeField] private SpriteRenderer bodyRenderer;    // ?沃섃뫗援??????癲?????덈뭷??繹먮끏???
+        [SerializeField] private SpriteRenderer bodyRenderer;    
         [SerializeField] private SpriteRenderer leftArmRenderer;
         [SerializeField] private SpriteRenderer rightArmRenderer;
         [SerializeField] private SpriteRenderer leftLegRenderer;
         [SerializeField] private SpriteRenderer rightLegRenderer;
     
         [Header("Visual (Right Hand Item)")]
-        public SpriteRenderer rightHandItemRenderer; // ????렺???????됰Ŧ?? ??ш끽維쀩??????덈뭷??繹먮끏???
+
+        public SpriteRenderer rightHandItemRenderer; 
     
         [Header("Walk Animation")]
-        [SerializeField] private float walkSwingSpeed = 10f;     // ??嚥▲깵嫄?????????뽦뵣
-        [SerializeField] private float walkArmAmplitude = 20f;   // ?????????좊즲??????
-        [SerializeField] private float walkLegAmplitude = 25f;   // ????롫돱 ???????좊즲??????
-        [SerializeField] private float walkReturnSpeed = 10f;    // 癲ル슢?????????れ삀???????????怨뚮옖甕걔? ????뽦뵣
+        [SerializeField] private float walkSwingSpeed = 10f;     
+        [SerializeField] private float walkArmAmplitude = 20f;   
+        [SerializeField] private float walkLegAmplitude = 25f;   
+        [SerializeField] private float walkReturnSpeed = 10f;    
     
         [Header("Damage Flash")]
         [SerializeField] private float damageFlashDuration = 0.1f;
@@ -62,15 +66,15 @@ namespace Game.Player
         [SerializeField] private PickupSensor pickupSensor;
     
         [Header("UI (Survival Bars)")]
-        [SerializeField] private Image hungerFillImage;   // Filled ????
-        [SerializeField] private Image thirstFillImage;   // Filled ????
-        [SerializeField] private Image staminaFillImage;  // Filled ????(???袁ⓓㅴ벧猿뗪섬筌?쓣紐?
-        [SerializeField] private Image oxygenFillImage;   // Filled ????(??????
+        [SerializeField] private Image hungerFillImage;   
+        [SerializeField] private Image thirstFillImage;   
+        [SerializeField] private Image staminaFillImage;  
+        [SerializeField] private Image oxygenFillImage;   
     
         [Header("Hearts UI")]
-        [SerializeField] private Transform heartRoot;     // ???얜Ŧ肄???딅텑?癲?Transform
-        [SerializeField] private GameObject heartPrefab;  // ???얜Ŧ肄???ш끽諭욥걡??(Heart.cs ????
-        [SerializeField] private SpriteAtlas heartAtlas;  // 0~4 ????덈뭷??繹먮끏??????潁뺛꺈彛??????繹먮굝痢?
+        [SerializeField] private Transform heartRoot;     
+        [SerializeField] private GameObject heartPrefab;  
+        [SerializeField] private SpriteAtlas heartAtlas;  
     
         private Heart[] heartObjects;
     
@@ -79,72 +83,72 @@ namespace Game.Player
         private bool _wasGrounded;
         private bool _jumpRequested;
     
-        // ???怨뺚봼 癲꾧퀗????癲ル쉵?猷??
+        
         private bool _isFalling;
         private float _fallStartY;
-        public float currentFallDistance; // 癲ル슣???몄춿?濚????怨뺚봼 癲꾧퀗????
-        public float lastFallDistance;    // 癲ル슢???癲?癲ル슓堉곁땟? ???甕????怨뺚봼 癲꾧퀗????
+        public float currentFallDistance; 
+        public float lastFallDistance;    
     
-        // ??獄쎼뀙?????袁る뻺
+        
         [Header("Survival Stats")]
-        [Range(0, 40)] public int health = 40;   // 癲ル슔?됭짆? 癲ル슪????40
+        [Range(0, 40)] public int health = 40;   
         [Range(0, 100)] public int hunger = 100;
         [Range(0, 100)] public int thirst = 100;
-        [Range(0, 100)] public float stamina = 100f; // ???袁ⓓㅴ벧猿뗪섬筌?쓣紐?(0~100, ??癰?????れ삀??뫢????亦????椰?
+        [Range(0, 100)] public float stamina = 100f; 
     
         [Header("Oxygen")]
         [Range(0, 100)] public float oxygen = 100f;
-        [SerializeField] private float oxygenDrainPerSecond = 6f;   // ?沃섃뫗援????? ??癲ル슪?ｈ짆?볥쐩????좊즴???
-        [SerializeField] private float oxygenRecoverPerSecond = 10f;  // ?沃섃뫗援???????ル㎣??곸땡???醫딅땾????⑤９苑?? ????鴉????Ъ????亦?
-        [SerializeField] private float drownDamageInterval = 1.0f; // oxygen==0???????癲ル슣?? ????좊즲??좊뙀?
-        [SerializeField] private int drownDamage = 5;    // ?濚밸Ŧ援앭젆?5 ???紐낅뤅
+        [SerializeField] private float oxygenDrainPerSecond = 6f;   
+        [SerializeField] private float oxygenRecoverPerSecond = 10f;  
+        [SerializeField] private float drownDamageInterval = 1.0f; 
+        [SerializeField] private int drownDamage = 5;    
     
         [Header("Stamina Settings")]
-        [SerializeField] private float staminaRegenPerSecond = 2f;  // ?縕???2 ???亦?
-        [SerializeField] private float staminaMoveCostPerSecond = 4f;  // ?????濚??縕???4 ???椰?
-        [SerializeField] private float staminaJumpCost = 5f;  // ??誘⑦????5 ???椰?
+        [SerializeField] private float staminaRegenPerSecond = 2f;  
+        [SerializeField] private float staminaMoveCostPerSecond = 4f;  
+        [SerializeField] private float staminaJumpCost = 5f;  
     
-        // ????????얜굝????
-        float _attackCooldownTimer = 0f;  // 0 ??熬곣뫀?????????????좊읈???
+        
+        float _attackCooldownTimer = 0f;  
     
-        // ?嶺뚮ㅎ?믦맱???ル깼??
+        
         private const int InventoryCapacity = 50;
         public InventoryData Inventory { get; private set; }
     
-        // ??????(???癲ル슣?? ??????筌믨퀡裕?
+        
         SpriteRenderer[] _allRenderers;
         Color[] _originalColors;
         Coroutine _flashCo;
     
-        // ???щ뮝???袁⑸젻泳?떑??(-1: ??疫꿸퉫援? 1: ????렺轅곗땡?
+        
         int _facing = -1;
         float _baseSkinScaleX = 1f;
         float _baseSkinScaleY = 1f;
         float _baseSkinScaleZ = 1f;
     
-        // ??れ삀??????⑤벡源???筌?留?(??疫꿸퉫援???怨뚮옖???????덉툗 ???ㅺ컼????れ삀??)
+        
         int _leftArmOrder;
         int _rightArmOrder;
         int _leftLegOrder;
         int _rightLegOrder;
         int _rightHandItemOrder;
     
-        // ?怨뚮옖??듭춿????ル늅??씤異?에?ル씔????쒓낮裕?
+        
         float _walkAnimPhase = 0f;
         Quaternion _leftArmBaseRot;
         Quaternion _rightArmBaseRot;
         Quaternion _leftLegBaseRot;
         Quaternion _rightLegBaseRot;
     
-        // ???モ?????ㅺ컼??????)
+        
         bool _isInFluid;
         bool _isHeadSubmerged;
         bool _swimUpHeld;
     
-        // ???????
+        
         float _drownTickTimer = 0f;
     
-        // ??醫딅땾???????濚욌꼬?댄꺇????ш낄猷???
+        
         float _defaultGravityScale;
     }
 }

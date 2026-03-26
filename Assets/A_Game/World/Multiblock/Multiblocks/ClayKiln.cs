@@ -1,4 +1,6 @@
-// ClayKiln.cs (?熬곣뫕????흮?우뮂?? - ??⑤벡??????븐슦??_fuelTicksLeft > 0)?????異?meta=1, ?熬곣뫀鍮띸춯?meta=0
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
@@ -17,6 +19,7 @@ namespace Game.World
             FireInB, FireOutB
         }
     
+
         ItemData _fuelIn;
         ItemData _fuelOut;
     
@@ -46,6 +49,7 @@ namespace Game.World
             public string prevInItemId;
             public int prevInDur;
     
+            
             public void ResetProgress()
             {
                 ticksDone = 0;
@@ -54,6 +58,7 @@ namespace Game.World
                 resultAmount = 1;
             }
     
+            
             public bool IngredientChanged()
             {
                 if (In == null || In.Count <= 0)
@@ -69,6 +74,7 @@ namespace Game.World
                 return false;
             }
     
+            
             public void SnapshotIngredient()
             {
                 if (In == null || In.Count <= 0)
@@ -91,10 +97,10 @@ namespace Game.World
         const int FIRE_HOLD_TICKS = 5;
         int _fireHoldTicksLeft = 0;
     
-        // ??寃몃뉴??"???????깅쾳"(??⑤벡?????嫄??リ옇??)
+        
         public bool Isburning => _fuelTicksLeft > 0;
     
-        // VFX??hold ????
+        
         bool IsFireActiveFx => _fuelTicksLeft > 0 || _fireHoldTicksLeft > 0;
     
         public float FuelProgress01
@@ -124,6 +130,7 @@ namespace Game.World
             }
         }
     
+        
         public ItemData GetSlot(SlotKind kind)
         {
             return kind switch
@@ -138,6 +145,7 @@ namespace Game.World
             };
         }
     
+        
         public void SetSlot(SlotKind kind, ItemData item)
         {
             switch (kind)
@@ -155,6 +163,7 @@ namespace Game.World
             CleanupZeroCountSlots();
         }
     
+        
         public override void OnInteract(Vector2Int hitCell)
         {
             Manager.OpenModule("Clay Kiln", this);
@@ -173,8 +182,9 @@ namespace Game.World
         }
         #endif
     
-        // Fire_02 : (1, 0.3)
-        // Smoke   : (1, 2)
+        
+        
+        
         public override void GetVfxRequests(List<VfxRequest> outList)
         {
             if (outList == null) return;
@@ -194,6 +204,7 @@ namespace Game.World
             });
         }
     
+        
         public override void Tick()
         {
             CleanupZeroCountSlots();
@@ -204,7 +215,7 @@ namespace Game.World
             _laneB.In  = _fireInB;
             _laneB.Out = _fireOutB;
     
-            bool wasBurning = Isburning; // ??meta ?リ옇???? "??⑤벡?룡뤆?쎛 ???????뉖룎"
+            bool wasBurning = Isburning; 
             bool wasFireFxOn = IsFireActiveFx;
     
             if (_laneA.IngredientChanged())
@@ -226,7 +237,7 @@ namespace Game.World
     
             bool anyCanProcess = (canFireA && !outBlockedA) || (canFireB && !outBlockedB);
     
-            // 1) ??⑤벡?룡뤆?쎛 ??怨몃さ嶺? 嶺뚳퐣瑗???띠럾??繞③뇡???⑤??????ｇ춯???믨퀣????類ｌ┣
+            
             if (_fuelTicksLeft <= 0)
             {
                 if (!string.IsNullOrEmpty(_fuelResultItemId))
@@ -243,7 +254,7 @@ namespace Game.World
                 }
             }
     
-            // 2) ??⑤벡???띠룆흮??
+            
             if (_fuelTicksLeft > 0)
             {
                 _fuelTicksLeft -= 1;
@@ -252,27 +263,27 @@ namespace Game.World
                 if (_fuelTicksLeft > 0) _fireHoldTicksLeft = 0;
             }
     
-            // 2.5) ??⑤벡????リ턁筌???hold ??戮곗굚
+            
             if (wasBurning && _fuelTicksLeft <= 0)
             {
                 _fireHoldTicksLeft = FIRE_HOLD_TICKS;
             }
     
-            // 2.6) hold ?띠룆흮??
+            
             if (_fuelTicksLeft <= 0 && _fireHoldTicksLeft > 0)
             {
                 _fireHoldTicksLeft -= 1;
                 if (_fireHoldTicksLeft < 0) _fireHoldTicksLeft = 0;
             }
     
-            // 3) Fire 嶺뚯쉳?듸쭛? "????戮곗굚 ???釉띾쐝??ON" ?リ옇?? + ??lane ?곌랙?т빳????몃뎡 嶺뚯쉳?듸쭛?
+            
             if (wasBurning)
             {
                 TickLaneFire(_laneA, canFireA, needA, resA, amtA, outBlockedA);
                 TickLaneFire(_laneB, canFireB, needB, resB, amtB, outBlockedB);
             }
     
-            // 4) ??⑤벡?룡뤆?쎛 ??硫명뀬??寃밸듆 ?遊붋??⑤뮈?嶺뚳퐣瑗??
+            
             if (wasBurning && _fuelTicksLeft <= 0)
             {
                 TryPushFuelResultToFuelOut();
@@ -284,18 +295,19 @@ namespace Game.World
             _fireInB  = _laneB.In;
             _fireOutB = _laneB.Out;
     
-            // ??meta??"??⑤벡?룡뤆?쎛 ????繞? ?リ옇????怨쀬Ŧ嶺????욋뵛??
+            
             bool isBurningNow = Isburning;
             if (wasBurning != isBurningNow)
             {
                 RequestApplyKilnMeta(isBurningNow);
             }
     
-            // VFX edge???熬곣뫗?????嶺? ???????⑤벡夷????낅쭥(?猷먮쳜???active嶺??꾩룆????????
+            
     
             CleanupZeroCountSlots();
         }
     
+        
         void TickLaneFire(FireLane lane, bool canFire, int need, string resultItem, int amount, bool outBlocked)
         {
             if (!canFire) return;
@@ -328,13 +340,15 @@ namespace Game.World
             }
         }
     
+        
         void RequestApplyKilnMeta(bool burning)
         {
             if (Manager == null) return;
-            // ????⑤벡??????븐슦??????meta=6, ?熬곣뫀鍮띸춯?meta=0
+            
             Manager.ApplyMetaToAllOccupiedCells(this, (ushort)(burning ? 6 : 0));
         }
     
+        
         void CleanupZeroCountSlots()
         {
             if (_fuelIn != null && _fuelIn.Count <= 0) _fuelIn = null;
@@ -347,6 +361,7 @@ namespace Game.World
             if (_fireOutB != null && _fireOutB.Count <= 0) _fireOutB = null;
         }
     
+        
         bool CanFireNow(ItemData input, out int fireNeed, out string resultItem, out int amount)
         {
             fireNeed = 0;
@@ -363,8 +378,11 @@ namespace Game.World
             if (cfg.TryGetValue("fireTicks", out var ftObj) && ftObj != null)
             {
                 if (ftObj is int i) fireNeed = i;
+                
                 else if (ftObj is long l) fireNeed = (int)l;
+                
                 else if (ftObj is float f) fireNeed = Mathf.RoundToInt(f);
+                
                 else if (ftObj is double d) fireNeed = (int)d;
                 else int.TryParse(ftObj.ToString(), out fireNeed);
             }
@@ -375,8 +393,11 @@ namespace Game.World
             if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
             {
                 if (amObj is int i) amount = i;
+                
                 else if (amObj is long l) amount = (int)l;
+                
                 else if (amObj is float f) amount = Mathf.RoundToInt(f);
+                
                 else if (amObj is double d) amount = (int)d;
                 else int.TryParse(amObj.ToString(), out amount);
             }
@@ -388,6 +409,7 @@ namespace Game.World
             return true;
         }
     
+        
         bool IsFuelOutBlockedForNewFuel()
         {
             if (_fuelIn == null) return true;
@@ -405,8 +427,11 @@ namespace Game.World
             if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
             {
                 if (amObj is int i) amount = i;
+                
                 else if (amObj is long l) amount = (int)l;
+                
                 else if (amObj is float f) amount = Mathf.RoundToInt(f);
+                
                 else if (amObj is double d) amount = (int)d;
                 else int.TryParse(amObj.ToString(), out amount);
             }
@@ -421,6 +446,7 @@ namespace Game.World
             return (_fuelOut.Count + amount) > _fuelOut.MaxStack;
         }
     
+        
         void TryStartBurnFromFuelIn()
         {
             if (_fuelIn == null) return;
@@ -437,8 +463,11 @@ namespace Game.World
             if (cfg.TryGetValue("burnTicks", out var btObj) && btObj != null)
             {
                 if (btObj is int i) burnTicks = i;
+                
                 else if (btObj is long l) burnTicks = (int)l;
+                
                 else if (btObj is float f) burnTicks = Mathf.RoundToInt(f);
+                
                 else if (btObj is double d) burnTicks = (int)d;
                 else int.TryParse(btObj.ToString(), out burnTicks);
             }
@@ -449,8 +478,11 @@ namespace Game.World
             if (cfg.TryGetValue("amount", out var amObj) && amObj != null)
             {
                 if (amObj is int i) amount = i;
+                
                 else if (amObj is long l) amount = (int)l;
+                
                 else if (amObj is float f) amount = Mathf.RoundToInt(f);
+                
                 else if (amObj is double d) amount = (int)d;
                 else int.TryParse(amObj.ToString(), out amount);
             }
@@ -471,10 +503,11 @@ namespace Game.World
     
             CleanupZeroCountSlots();
     
-            // ????믨퀣??嶺뚯빖留??meta=1
+            
             RequestApplyKilnMeta(true);
         }
     
+        
         void TryPushFuelResultToFuelOut()
         {
             if (string.IsNullOrEmpty(_fuelResultItemId))
@@ -514,6 +547,7 @@ namespace Game.World
             CleanupZeroCountSlots();
         }
     
+        
         bool IsOutputFullOrBlocked(ItemData outSlot, string expectedItemId, int requiredAmount)
         {
             if (string.IsNullOrEmpty(expectedItemId))
@@ -527,6 +561,7 @@ namespace Game.World
             return (outSlot.Count + requiredAmount) > outSlot.MaxStack;
         }
     
+        
         void TryProduceResultToOut(FireLane lane, string itemId, int amount)
         {
             if (string.IsNullOrEmpty(itemId)) return;
@@ -546,6 +581,7 @@ namespace Game.World
             lane.Out.Count += amount;
         }
     
+        
         bool ConsumeOne(ItemData it)
         {
             if (it == null) return false;
@@ -768,7 +804,7 @@ namespace Game.World
     
             CleanupZeroCountSlots();
     
-            // ???β돦裕녻キ?嶺뚯쉳???meta??"??⑤벡??????븐슦?? ?リ옇????怨쀬Ŧ 嶺뚮씮???
+            
             RequestApplyKilnMeta(Isburning);
         }
         #endif

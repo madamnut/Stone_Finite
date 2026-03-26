@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 namespace Game.World
@@ -6,13 +9,16 @@ namespace Game.World
     {
         private sealed class GravitySimulationService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public GravitySimulationService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void StepGravityAt(int x, int y)
             {
                 if (!_ctx.WorldMap.InBounds(x, y)) return;

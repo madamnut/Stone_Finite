@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 
@@ -7,8 +10,10 @@ namespace Game.World
 {
     public abstract partial class Multiblock
     {
+        
         protected ushort[] SnapshotOriginalSolidIds()
         {
+
             ushort[] orig = new ushort[Width * Height];
             for (int y = 0; y < Height; y++)
             for (int x = 0; x < Width; x++)
@@ -20,6 +25,7 @@ namespace Game.World
             return orig;
         }
 
+        
         protected void RestoreBaseSaveData(SaveData data)
         {
             DefId = data.DefId;
@@ -45,6 +51,7 @@ namespace Game.World
             }
         }
 
+        
         protected ItemData UnpackSavedItem(JToken tok)
         {
             if (tok == null || tok.Type == JTokenType.Null) return null;

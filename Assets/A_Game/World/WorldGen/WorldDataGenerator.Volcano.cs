@@ -1,3 +1,6 @@
+Ôªø
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +10,7 @@ namespace Game.World
 {
     public static partial class WorldDataGenerator
     {
+        
         private static int ComputeStartX(int seed, int minX, int maxX, int width)
         {
             int lo = Mathf.Clamp(minX, 0, width - 1);
@@ -18,20 +22,24 @@ namespace Game.World
             return r.Next(lo, hi + 1);
         }
     
+        
         private static int GetVolcanoCoreStartX(WorldGenSettings s, int w)
         {
             int vw = Mathf.Clamp(s.volcanoWidth, 0, w);
             return Mathf.Clamp(w - vw, 0, w);
         }
     
+        
         private static bool IsInVolcanoBiome(WorldGenSettings s, int x, int w)
         {
             int coreStart = GetVolcanoCoreStartX(s, w);
             int transLen = Mathf.Max(0, s.volcanoTransitionLen);
+
             int transStart = coreStart - transLen;
             return (x >= coreStart && x < w) || (x >= transStart && x < coreStart);
         }
     
+        
         private static bool IsInCrevasseBiome(WorldGenSettings s, int x, int w)
         {
             int coreEnd = Mathf.Clamp(s.crevasseWidth, 0, w);
@@ -40,7 +48,8 @@ namespace Game.World
             return (x >= 0 && x < coreEnd) || (x >= coreEnd && x < transEnd);
         }
     
-        // ??Volcano column enable (core=100%, transition=chance) : strata?êÎèÑ ?ôÏùº ?ÅÏö©
+        
+        
         private static bool IsVolcanoColumnEnabled(WorldGenSettings s, int seed, int x, int w)
         {
             if (s.volcanoWidth <= 0) return false;
@@ -60,7 +69,8 @@ namespace Game.World
             return (r <= chance);
         }
     
-        // ??Volcano uplift U(x) (?ºÌÑ∞ ÏµúÎ?, ?ëÎÅù 0) + ?∏Ïù¥Ï¶?
+        
+        
         private static float VolcanoUpliftAtX(WorldGenSettings s, int seed, int x, int w)
         {
             if (s.volcanoWidth <= 0) return 0f;
@@ -84,8 +94,8 @@ namespace Game.World
             int zoneEnd = w;
             int zoneW = Mathf.Max(2, zoneEnd - zoneStart);
     
-            float t = (x - zoneStart) / (float)(zoneW - 1); // 0..1
-            float d = Mathf.Abs(t - 0.5f) * 2f;             // 0..1
+            float t = (x - zoneStart) / (float)(zoneW - 1); 
+            float d = Mathf.Abs(t - 0.5f) * 2f;             
             float shape = Mathf.Pow(Mathf.Max(0f, 1f - d), Mathf.Max(0.01f, s.volcanoShapeSharpness));
     
             float uplift = s.volcanoPeakAddHeight * shape;
@@ -93,8 +103,8 @@ namespace Game.World
             if (s.volcanoDetailAmp != 0f && s.volcanoDetailFreq > 0f)
             {
                 float nx = (x + seed) * s.volcanoDetailFreq;
-                float p = Mathf.PerlinNoise(nx, 0.1234f + seed * 0.0001f); // 0..1
-                float n = (p * 2f - 1f); // -1..1
+                float p = Mathf.PerlinNoise(nx, 0.1234f + seed * 0.0001f); 
+                float n = (p * 2f - 1f); 
     
                 float centerBoost = 1f + Mathf.Max(0f, s.volcanoDetailCenterBoost) * (1f - d);
                 uplift += n * s.volcanoDetailAmp * centerBoost * shape;
@@ -103,7 +113,8 @@ namespace Game.World
             return uplift;
         }
     
-        // ??Dormant volcano magma pass (B)
+        
+        
         private static void ApplyVolcanoMagmaPass(
             WorldGenSettings s, int seed, int volcanoCoreStartX, int seaLevel,
             ushort[,] solid, ushort[,] meta, ushort[,] fluid)
@@ -118,7 +129,7 @@ namespace Game.World
     
             int centerX = (coreStart + (w - 1)) / 2;
     
-            // anchorY: ?¥Îãπ x?êÏÑú Í∞Ä???íÏ? Amphibolite
+            
             int anchorY = -1;
             for (int y = h - 1; y >= 0; y--)
             {
@@ -132,7 +143,7 @@ namespace Game.World
     
             var rand = new System.Random(seed ^ SALT_MAGMA);
     
-            // ?úÎ©¥ ?íÏù¥(?ÑÏû¨ solid Í∏∞Ï?)
+            
             int surfaceY = h - 1;
             while (surfaceY > 0 && solid[centerX, surfaceY] == ID_AIR) surfaceY--;
     
@@ -140,9 +151,9 @@ namespace Game.World
             int stopY = Mathf.Clamp(surfaceY - stopMargin, 0, h - 1);
             if (stopY <= anchorY) stopY = Mathf.Min(anchorY + 1, h - 1);
     
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-            // 1) Main chamber (lens)
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+            
+            
+            
             int rx = Mathf.Max(1, s.magmaMainRadiusX);
             int ry = Mathf.Max(1, s.magmaMainRadiusY);
             float topSquash = Mathf.Clamp01(s.magmaTopSquash);
@@ -184,9 +195,9 @@ namespace Game.World
                 fluid[x, y] = FLUID_LAVA;
             }
     
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-            // 2) Main trunk (Bezier centerline + thickness tube)
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+            
+            
+            
             int widthStart = Mathf.Max(1, s.magmaTrunkWidthStart);
             int widthEnd   = Mathf.Max(1, s.magmaTrunkWidthEnd);
     
@@ -209,7 +220,7 @@ namespace Game.World
                 int y = anchorY + step;
                 if ((uint)y >= (uint)h) break;
     
-                float t = step * invDy; // 0..1
+                float t = step * invDy; 
                 float omt = 1f - t;
     
                 float xf =
@@ -252,9 +263,9 @@ namespace Game.World
     
             if (trunkPts.Count == 0) return;
     
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-            // 3) Branches (spawn per trunk step, endpoint=45deg ray, path=cubic bezier stronger)
-            // ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+            
+            
+            
             float branchChance = Mathf.Clamp01(s.magmaBranchChancePerStep);
     
             int bStartMin = Mathf.Max(1, s.magmaBranchWidthStartMin);
@@ -280,7 +291,7 @@ namespace Game.World
     
                 var branchPts = new List<(int x, int y)>(64);
     
-                // (A) ?ùÏ†ê Í≤∞Ï†ï: Í∏∞Ï°¥ Í∑úÏπô Í∑∏Î?Î°?"45???àÏù¥"Î°?Tuff ÏßÅÏ†ÑÍπåÏ?
+                
                 int rayX = start.x;
                 int rayY = start.y;
     
@@ -308,17 +319,17 @@ namespace Game.World
     
                 if (nSteps <= 0) continue;
     
-                // (B) Í≤ΩÎ°ú ?ùÏÑ±: y??1Ïπ∏Ïî©, xÎß?cubic bezier (Ï£ºÏö©?îÎ≥¥??Í∞ïÌïòÍ≤??îÎì§Î¶¨Í≤å)
+                
                 int x0b = start.x;
                 int x3b = endXb;
     
                 float inv = 1f / nSteps;
     
-                // ?úÏ£º?©ÏïîÎ≥¥Îã§ Í∞ïÌïòÍ≤å‚Ä? steps Í∏∞Î∞ò?ºÎ°ú Ïª®Ìä∏Î°?Î≤îÏúÑÎ•??¨Í≤å
-                // (Í∞ÄÏßÄÍ∞Ä ?áÏïÑ??Íµ¨Î∂àÍ±∞Î¶º??Ï∂©Î∂Ñ???òÏò§Í≤?
+                
+                
                 int maxCtrlB = Mathf.Clamp(Mathf.RoundToInt(nSteps * 1.25f), 12, 140);
     
-                // ÏßÅÏÑ†(45?? Í∏∞Ï? x(t) = start.x + dir * round(nSteps * t)
+                
                 int xLin1 = x0b + dir * Mathf.RoundToInt(nSteps * (1f / 3f));
                 int xLin2 = x0b + dir * Mathf.RoundToInt(nSteps * (2f / 3f));
     
@@ -343,8 +354,8 @@ namespace Game.World
     
                     int bx = Mathf.Clamp(Mathf.RoundToInt(xf), 0, w - 1);
     
-                    // ?àÎ¨¥ ?úÍ∞Ñ?¥Îèô?òÎ©¥ Í∞ÄÏßÄÍ∞Ä ?äÍ≤® Î≥¥Ïù¥ÎØÄÎ°?"?§ÌÖù??Î≥Ä?????úÌïú.
-                    // Íµ¨Î∂àÍ±∞Î¶º???¥Î¶¨Í∏??ÑÌï¥ ¬±2ÍπåÏ? ?àÏö©(Ï£ºÏö©?îÎ≥¥????Ï∂úÎ†Å??
+                    
+                    
                     bx = Mathf.Clamp(bx, prevX - 2, prevX + 2);
     
                     if (solid[bx, y] == ID_TUFF) break;
@@ -357,7 +368,7 @@ namespace Game.World
     
                 if (branchPts.Count == 0) continue;
     
-                // (C) ?êÍªò ?åÏù¥??carve (Í∏∞Ï°¥ ?†Ï?)
+                
                 int n = branchPts.Count;
                 for (int k = 0; k < n; k++)
                 {
@@ -396,7 +407,8 @@ namespace Game.World
             }
         }
     
-        // ??Pyramid: desertStartX ~ volcanoStartX ?¨Ïù¥??Ï§ëÏïô???ùÏÑ±
+        
+        
         private static void ApplyPyramidPass(int desertStartX, int volcanoCoreStartX, int seaLevel, ushort[,] commonSolid, ushort[,] commonMeta, int w, int h)
         {
             int x0 = Mathf.Clamp(desertStartX, 0, w - 1);
@@ -404,7 +416,7 @@ namespace Game.World
     
             if (x1 <= x0) return;
     
-            const int baseWidth = 301;     // ?Ä??
+            const int baseWidth = 301;     
             int halfBase = baseWidth / 2;
             int height = halfBase + 1;
     
@@ -435,7 +447,8 @@ namespace Game.World
             }
         }
     
-        // ??FloodFill ?¥ÌõÑ: ?¨Î†àÎ∞îÏä§ Íµ¨Í∞Ñ Î¨º‚Üí?ºÏùå + Íµ¨Îç©???´Í∏∞
+        
+        
         private static void ApplyCrevasseFreezeAndCarvePass(WorldGenSettings s, int seed, ushort[,] solid, ushort[,] meta, ushort[,] fluid)
         {
             int w = solid.GetLength(0);
@@ -448,7 +461,7 @@ namespace Game.World
             float transChance = Mathf.Clamp01(s.crevasseTransitionChance);
             int transEnd = Mathf.Min(w, coreEnd + transLen);
     
-            // (1) Freeze: air+water -> ice (core=100%, trans=chance)
+            
             for (int x = 0; x < transEnd; x++)
             {
                 bool inCore = (x < coreEnd);
@@ -474,7 +487,7 @@ namespace Game.World
                 }
             }
     
-            // (2) Carve: ?úÎ©¥Î∂Ä???ÑÎûòÎ°?depth(x) ÎßåÌÅº AIRÎ°??´Í∏∞ (Î¨??ºÏùå ?¨Ìï® ?úÍ±∞)
+            
             for (int x = 0; x < transEnd; x++)
             {
                 bool inCore = (x < coreEnd);
@@ -507,6 +520,7 @@ namespace Game.World
             }
         }
     
+        
         private static int ComputeCrevasseDepthAtX(WorldGenSettings s, int seed, int x, int zoneW)
         {
             if (zoneW <= 1) return 0;
@@ -517,7 +531,7 @@ namespace Game.World
             float center = (zoneW - 1) * 0.5f;
             float half = Mathf.Max(1f, center);
     
-            float dNorm = Mathf.Abs(x - center) / half; // 0..1
+            float dNorm = Mathf.Abs(x - center) / half; 
             float baseShape = Mathf.Max(0f, 1f - dNorm);
     
             float curve = (x <= center) ? Mathf.Max(0.01f, s.crevasseLeftCurve) : Mathf.Max(0.01f, s.crevasseRightCurve);

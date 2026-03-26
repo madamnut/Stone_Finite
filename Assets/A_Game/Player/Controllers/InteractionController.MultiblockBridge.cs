@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 
 using Game.UI;
@@ -7,15 +10,18 @@ namespace Game.Player
 {
     public partial class InteractionController
     {
+        
         void InitializeMultiblockUiBridge()
         {
             if (multiblockManager == null)
+
                 return;
 
             multiblockManager.moduleOpenHandler = HandleOpenMultiblockModule;
             multiblockManager.playerTransform = player != null ? player.transform : null;
         }
 
+        
         void OnDestroy()
         {
             if (multiblockManager == null)
@@ -25,6 +31,7 @@ namespace Game.Player
                 multiblockManager.moduleOpenHandler = null;
         }
 
+        
         void HandleOpenMultiblockModule(string moduleId, Multiblock owner)
         {
             GameObject prefab = moduleId switch

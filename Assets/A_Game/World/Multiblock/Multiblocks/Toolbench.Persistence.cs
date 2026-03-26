@@ -1,3 +1,6 @@
+﻿
+
+
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 
@@ -7,14 +10,17 @@ namespace Game.World
 {
     public partial class Toolbench
     {
+        
         public override SaveData ToSaveData()
         {
             var root = new JObject();
 
+            
             JToken PackItem(ItemData it)
             {
                 if (it == null || it.Count <= 0) return JValue.CreateNull();
                 var o = new JObject();
+
                 o["id"] = it.ItemId;
                 o["count"] = it.Count;
                 o["dur"] = it.Durability;
@@ -37,6 +43,7 @@ namespace Game.World
             };
         }
 
+        
         public override void FromSaveData(SaveData data)
         {
             RestoreBaseSaveData(data);
@@ -67,6 +74,7 @@ namespace Game.World
             InvalidateIfInputsChanged();
         }
 
+        
         public override void OnCellBroken(Vector2Int brokenCell)
         {
             if (!_droppedOnDestroy)
@@ -80,6 +88,7 @@ namespace Game.World
             base.OnCellBroken(brokenCell);
         }
 
+        
         void DropIfAny(ItemData it)
         {
             if (it == null || it.Count <= 0) return;

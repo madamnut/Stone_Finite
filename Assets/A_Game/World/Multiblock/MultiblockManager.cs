@@ -1,4 +1,6 @@
-// MultiblockManager.cs (????썹땟????????怨뺤툍??
+﻿
+
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +12,7 @@ namespace Game.World
 {
     public partial class MultiblockManager : MonoBehaviour
     {
+
         const string LOG_MB = "[MBLOCK]";
     
         [Header("Deps")]
@@ -23,13 +26,13 @@ namespace Game.World
         public Action<string, Multiblock> moduleOpenHandler;
         [Header("Modules (Prefabs)")]
         public GameObject primalCraftModule;
-        public GameObject forgeCraftModule; // ?????ㅻ쿋??
+        public GameObject forgeCraftModule; 
         public GameObject campfireModule;
         public GameObject woodenCrateModule;
         public GameObject clayKilnModule;
         public GameObject brickFurnaceModule;
-        public GameObject toolbenchModule;    // ?????ㅻ쿋??
-        public GameObject cokeOvenModule;     // ?????ㅻ쿋??
+        public GameObject toolbenchModule;    
+        public GameObject cokeOvenModule;     
     
         [Header("VFX")]
         public VfxManager vfx;

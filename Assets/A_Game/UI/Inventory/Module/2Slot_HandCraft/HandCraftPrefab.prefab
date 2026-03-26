@@ -128,6 +128,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1689f7091c923fe4d9730c7fa859b3b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tableType: 0
   inputs:
   - {fileID: 5049950954308114922}
   - {fileID: 1818573541256033023}
@@ -136,7 +137,7 @@ MonoBehaviour:
   - {fileID: 4866206154422223973}
   craftButton: {fileID: 3516968324689874836}
   recipeLibrary: {fileID: 0}
-  player: {fileID: 0}
+  inventoryOwnerComponent: {fileID: 0}
 --- !u!1 &8359840846924004371
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,13 +12,16 @@ namespace Game.World
     {
         private sealed class PersistenceService
         {
+
             readonly WorldServiceContext _ctx;
 
+            
             public PersistenceService(WorldServiceContext context)
             {
                 _ctx = context;
             }
 
+            
             public void SaveWorld()
             {
                 WorldSaveSystem.SaveWorld(
@@ -32,6 +38,7 @@ namespace Game.World
                 );
             }
 
+            
             public bool LoadWorldFromDisk(out WorldData loaded, out List<Multiblock.SaveData> multiblocks)
             {
                 int w, h;
@@ -60,6 +67,7 @@ namespace Game.World
                 return ok;
             }
 
+            
             public void LoadPlayerData()
             {
                 _ctx.HasLoadedPlayerData = WorldSaveSystem.LoadPlayerData(
@@ -71,6 +79,7 @@ namespace Game.World
                 _ctx.LoadedInventory = loadedInventory;
             }
 
+            
             public void LoadEntities()
             {
                 GameObject dropPrefab = _ctx.ItemDropper != null ? _ctx.ItemDropper.droppedItemPrefab : null;
@@ -86,6 +95,7 @@ namespace Game.World
                 );
             }
 
+            
             public void ApplyLoadedPlayerAndInventory()
             {
                 if (!_ctx.HasLoadedPlayerData) return;

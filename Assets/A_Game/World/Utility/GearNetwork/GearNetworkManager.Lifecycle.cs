@@ -1,3 +1,6 @@
+ï»¿
+
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,14 +10,17 @@ namespace Game.World
 {
     public sealed partial class GearNetworkManager
     {
+        
         void Awake()
         {
             if (vfx == null && world != null)
+
                 vfx = world.vfx;
     
             CacheUtilityOccupiedId();
         }
     
+        
         void CacheUtilityOccupiedId()
         {
             _utilityOccupiedId = 0;
@@ -24,12 +30,14 @@ namespace Game.World
                 _utilityOccupiedId = occ;
         }
     
+        
         void EnsureOccupiedCached()
         {
             if (_utilityOccupiedId != 0) return;
             CacheUtilityOccupiedId();
         }
     
+        
         bool IsUtilityOccupiedCell(Vector2Int c)
         {
             if (world == null) return false;
@@ -42,6 +50,7 @@ namespace Game.World
             return (_utilityOccupiedId != 0 && uid == _utilityOccupiedId);
         }
     
+        
         bool IsGearCenterCell(Vector2Int c)
         {
             if (world == null) return false;
@@ -51,17 +60,20 @@ namespace Game.World
             return _gearCenterToNodeId.ContainsKey(c);
         }
     
+        
         void EnsureVfxRef()
         {
             if (vfx == null && world != null)
                 vfx = world.vfx;
         }
     
+        
         static Vector3 CellCenterToWorld(Vector2Int c) => new Vector3(c.x + 0.5f, c.y + 0.5f, 0f);
     
-        // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
-        // Public API : Spec Registration
-        // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        
+        
+        
+        
         public void RegisterCogwheelSpec(string gearId, GearNode.GearSize size, int maxRpm)
         {
             if (string.IsNullOrEmpty(gearId)) return;
@@ -69,6 +81,7 @@ namespace Game.World
             _gearSpecById[gearId] = new GearSpec { size = size, maxRpm = maxRpm };
         }
     
+        
         public void RegisterSourceSpec(string sourceId, SourceNode.SourceKind kind, int rpm, int stressCapacity)
         {
             if (string.IsNullOrEmpty(sourceId)) return;
@@ -77,6 +90,7 @@ namespace Game.World
             _sourceSpecById[sourceId] = new SourceSpec { kind = kind, rpm = rpm, stressCapacity = stressCapacity };
         }
     
+        
         public void RegisterBeltSpec(string beltKind, int maxRpm, string materialItemId, Color color)
         {
             if (string.IsNullOrEmpty(beltKind)) return;
@@ -85,9 +99,10 @@ namespace Game.World
             _beltSpecById[beltKind] = new BeltSpec { maxRpm = maxRpm, materialItemId = materialItemId, color = color };
         }
     
-        // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
-        // Public API : World Tick
-        // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+        
+        
+        
+        
         public void TickSources()
         {
             if (world == null) return;
@@ -148,6 +163,7 @@ namespace Game.World
             }
         }
     
+        
         public void TickNetworks()
         {
             if (world == null) return;

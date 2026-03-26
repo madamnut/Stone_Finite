@@ -1,3 +1,6 @@
+﻿
+
+
 using System.Collections;
 using UnityEngine;
 using Game.UI;
@@ -10,12 +13,14 @@ namespace Game.Player
     
     public partial class Player
     {
+        
         internal void HandlePickupTrigger(Collider2D other)
         {
             if (!other.CompareTag("DroppedItem")) return;
     
             var drop = other.GetComponent<DroppedItem>();
             if (drop == null)
+
                 return;
 
             int before = drop.ItemData.Count;
@@ -32,6 +37,7 @@ namespace Game.Player
                 drop.ItemData.Count = left;
         }
     
+        
         public bool TryConsumeStaminaForAttack(float staminaCost)
         {
             if (_attackCooldownTimer > 0f)
@@ -46,11 +52,13 @@ namespace Game.Player
             return true;
         }
     
+        
         public void StartAttackCooldown(float cooldown)
         {
             _attackCooldownTimer = cooldown;
         }
     
+        
         public void TakeDamage(int damage)
         {
             if (damage <= 0) return;
@@ -68,11 +76,13 @@ namespace Game.Player
             _flashCo = StartCoroutine(CoFlashRed());
         }
     
+        
         IEnumerator CoFlashRed()
         {
             for (int i = 0; i < _allRenderers.Length; i++)
                 _allRenderers[i].color = Color.red;
     
+            
             yield return new WaitForSeconds(damageFlashDuration);
     
             for (int i = 0; i < _allRenderers.Length; i++)
@@ -81,6 +91,7 @@ namespace Game.Player
             _flashCo = null;
         }
     
+        
         void UpdateSurvivalUI()
         {
             hungerFillImage.fillAmount = Mathf.Clamp01(hunger / 100f);
@@ -89,6 +100,7 @@ namespace Game.Player
             oxygenFillImage.fillAmount = Mathf.Clamp01(oxygen / 100f);
         }
     
+        
         void InitHeartsUI()
         {
             for (int i = heartRoot.childCount - 1; i >= 0; i--)
@@ -106,6 +118,7 @@ namespace Game.Player
             UpdateHeartsUI();
         }
     
+        
         void UpdateHeartsUI()
         {
             int maxHearts = heartObjects.Length;
