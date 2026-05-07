@@ -1,0 +1,419 @@
+@startuml
+title Stone - Simple Structure View (Wide Layout)
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 24
+skinparam ranksep 34
+skinparam packageTitleFontStyle bold
+hide empty members
+hide circle
+
+package "Core" {
+  interface IInventoryOwner
+  interface IInventoryOwnerConsumer
+
+  class InventoryData
+  class ItemData
+  class WorldData
+  class EntitySaveData
+
+  IInventoryOwner -[hidden]- IInventoryOwnerConsumer
+  InventoryData -[hidden]- ItemData
+  ItemData -[hidden]- WorldData
+  WorldData -[hidden]- EntitySaveData
+}
+
+package "Data" {
+  class CellLibrary
+  class ItemLibrary
+  class RecipeLibrary
+
+  CellLibrary -[hidden]- ItemLibrary
+  ItemLibrary -[hidden]- RecipeLibrary
+}
+
+package "Support" {
+  class Debugger
+  class CameraFollow
+  class BackGround
+  class AudioManager
+  class VfxManager
+  class RotatingVfx
+  class BeltVfx
+  class GodRay
+
+  Debugger -[hidden]- CameraFollow
+  CameraFollow -[hidden]- BackGround
+  BackGround -[hidden]- AudioManager
+  VfxManager -[hidden]- RotatingVfx
+  RotatingVfx -[hidden]- BeltVfx
+  BeltVfx -[hidden]- GodRay
+}
+
+package "Player" {
+  class Player
+  class InteractionController
+
+  class BlockInteractionService
+  class UtilityInteractionService
+  class GearInteractionService
+  class MultiblockInteractionService
+  class CorpseInteractionService
+  class HeldItemService
+
+  class GroundProbe
+  class FluidProbe
+  class PickupSensor
+  class CombatHitSensor
+  class CorpseHoverQueryService
+  class PlatformDropThroughService
+
+  Player -[hidden]- InteractionController
+  BlockInteractionService -[hidden]- UtilityInteractionService
+  UtilityInteractionService -[hidden]- GearInteractionService
+  GearInteractionService -[hidden]- MultiblockInteractionService
+  MultiblockInteractionService -[hidden]- CorpseInteractionService
+  CorpseInteractionService -[hidden]- HeldItemService
+  GroundProbe -[hidden]- FluidProbe
+  FluidProbe -[hidden]- PickupSensor
+  PickupSensor -[hidden]- CombatHitSensor
+  CombatHitSensor -[hidden]- CorpseHoverQueryService
+  CorpseHoverQueryService -[hidden]- PlatformDropThroughService
+}
+
+package "UI" {
+  interface ICursorTooltipSource
+
+  class Cursor
+  class Hotbar
+  class ItemSlot
+  class PlayerInventory
+  class Heart
+
+  class CraftModule
+  class ToolbenchModule
+  class BrickFurnaceModule
+  class CampfireModule
+  class ClayKilnModule
+  class CokeOvenModule
+  class WoodenCrateModule
+  class CrucibleView
+  class CrucibleSmelts
+
+  class ModuleSlotSyncUtility
+
+  Cursor -[hidden]- Hotbar
+  Hotbar -[hidden]- ItemSlot
+  ItemSlot -[hidden]- PlayerInventory
+  PlayerInventory -[hidden]- Heart
+  CraftModule -[hidden]- ToolbenchModule
+  ToolbenchModule -[hidden]- BrickFurnaceModule
+  BrickFurnaceModule -[hidden]- CampfireModule
+  ClayKilnModule -[hidden]- CokeOvenModule
+  CokeOvenModule -[hidden]- WoodenCrateModule
+  WoodenCrateModule -[hidden]- CrucibleView
+  CrucibleView -[hidden]- CrucibleSmelts
+}
+
+package "World / Definitions" {
+  class MultiblockLibrary
+  class UtilityLibrary
+  class WorldGenSettings
+
+  MultiblockLibrary -[hidden]- UtilityLibrary
+  UtilityLibrary -[hidden]- WorldGenSettings
+}
+
+package "World / Entities" {
+  abstract class Entity
+  class DroppedItem
+  class Corpse
+  class Mob
+  class Cow
+  class FallingBlock
+  class EntityManager
+
+  Entity -[hidden]- DroppedItem
+  DroppedItem -[hidden]- Corpse
+  Corpse -[hidden]- Mob
+  Mob -[hidden]- Cow
+  Cow -[hidden]- FallingBlock
+  FallingBlock -[hidden]- EntityManager
+}
+
+package "World / Factories" {
+  class ItemDropper
+  class MobLibrary
+  class CorpseLibrary
+  class WorldEntityFactory
+  class WorldEntityRestoreService
+
+  ItemDropper -[hidden]- MobLibrary
+  MobLibrary -[hidden]- CorpseLibrary
+  CorpseLibrary -[hidden]- WorldEntityFactory
+  WorldEntityFactory -[hidden]- WorldEntityRestoreService
+}
+
+package "World / Multiblock" {
+  abstract class Multiblock
+  class MultiblockManager
+
+  class Toolbench
+  class Campfire
+  class ClayKiln
+  class BrickFurnace
+  class CokeOven
+  class PrimalWorkbench
+  class ForgeWorkbench
+  class WoodenCrate
+  class Hearth
+
+  MultiblockManager -[hidden]- Multiblock
+  Toolbench -[hidden]- Campfire
+  Campfire -[hidden]- ClayKiln
+  ClayKiln -[hidden]- BrickFurnace
+  CokeOven -[hidden]- PrimalWorkbench
+  PrimalWorkbench -[hidden]- ForgeWorkbench
+  ForgeWorkbench -[hidden]- WoodenCrate
+  WoodenCrate -[hidden]- Hearth
+}
+
+package "World / Gear" {
+  class GearNetworkManager
+  class GearNetwork
+  class GearNode
+  class SourceNode
+  class BeltLink
+
+  GearNetworkManager -[hidden]- GearNetwork
+  GearNetwork -[hidden]- GearNode
+  GearNode -[hidden]- SourceNode
+  SourceNode -[hidden]- BeltLink
+}
+
+package "World / Generation" {
+  class WorldDataGenerator
+  class ProceduralUtil
+  class StructureTemplate
+
+  WorldDataGenerator -[hidden]- ProceduralUtil
+  ProceduralUtil -[hidden]- StructureTemplate
+}
+
+package "World / Runtime" {
+  class WorldManager
+  class WorldChunkSystem
+  class Chunk
+
+  class WorldSaveSystem
+  class WorldBinaryMapPersistence
+  class PlayerPersistence
+  class EntityPersistence
+  class WorldSavePathResolver
+
+  WorldManager -[hidden]- WorldChunkSystem
+  WorldChunkSystem -[hidden]- Chunk
+  WorldSaveSystem -[hidden]- WorldBinaryMapPersistence
+  WorldBinaryMapPersistence -[hidden]- PlayerPersistence
+  PlayerPersistence -[hidden]- EntityPersistence
+  EntityPersistence -[hidden]- WorldSavePathResolver
+}
+
+package "Lobby / Tools" {
+  class LobyManager
+  class WorldLoadContext
+  class ImageGenerator
+  class GridGizmo
+  class ClassDiagramGenerator
+  class ScriptSelectionManager
+
+  LobyManager -[hidden]- WorldLoadContext
+  WorldLoadContext -[hidden]- ImageGenerator
+  ImageGenerator -[hidden]- GridGizmo
+  GridGizmo -[hidden]- ClassDiagramGenerator
+  ClassDiagramGenerator -[hidden]- ScriptSelectionManager
+}
+
+' package row 1: Core -> Data -> Player -> UI -> Lobby
+IInventoryOwner -right[hidden]-> CellLibrary
+CellLibrary -right[hidden]-> Player
+Player -right[hidden]-> Cursor
+Cursor -right[hidden]-> LobyManager
+
+' package row 2: Support -> World definitions/generation/runtime -> entities/factories -> multiblock -> gear
+Debugger -right[hidden]-> MultiblockLibrary
+MultiblockLibrary -right[hidden]-> WorldDataGenerator
+WorldDataGenerator -right[hidden]-> WorldManager
+WorldManager -right[hidden]-> ItemDropper
+ItemDropper -right[hidden]-> Entity
+Entity -right[hidden]-> MultiblockManager
+MultiblockManager -right[hidden]-> GearNetworkManager
+
+' connect rows so packages stay grouped in two horizontal bands
+CellLibrary -down[hidden]-> MultiblockLibrary
+Cursor -down[hidden]-> WorldManager
+
+IInventoryOwner <|.. Player
+IInventoryOwnerConsumer <|.. Hotbar
+IInventoryOwnerConsumer <|.. PlayerInventory
+IInventoryOwnerConsumer <|.. CraftModule
+IInventoryOwnerConsumer <|.. ToolbenchModule
+
+Entity <|-- DroppedItem
+Entity <|-- Corpse
+Entity <|-- Mob
+Entity <|-- FallingBlock
+Mob <|-- Cow
+
+Multiblock <|-- Toolbench
+Multiblock <|-- Campfire
+Multiblock <|-- ClayKiln
+Multiblock <|-- BrickFurnace
+Multiblock <|-- CokeOven
+Multiblock <|-- PrimalWorkbench
+Multiblock <|-- ForgeWorkbench
+Multiblock <|-- WoodenCrate
+
+Debugger --> WorldManager
+BackGround --> WorldManager
+
+Player --> GroundProbe
+Player --> FluidProbe
+Player --> PickupSensor
+Player --> PlatformDropThroughService
+Player --> AudioManager
+
+InteractionController o-- BlockInteractionService
+InteractionController o-- UtilityInteractionService
+InteractionController o-- GearInteractionService
+InteractionController o-- MultiblockInteractionService
+InteractionController o-- CorpseInteractionService
+InteractionController o-- HeldItemService
+
+InteractionController --> Player
+InteractionController --> Hotbar
+InteractionController --> ItemSlot
+InteractionController --> WorldManager
+InteractionController --> MultiblockManager
+InteractionController --> GearNetworkManager
+InteractionController --> RecipeLibrary
+InteractionController --> ItemLibrary
+InteractionController --> CellLibrary
+InteractionController --> UtilityLibrary
+InteractionController --> CorpseLibrary
+InteractionController --> AudioManager
+InteractionController --> CorpseHoverQueryService
+InteractionController --> CombatHitSensor
+InteractionController --> ItemData
+
+CombatHitSensor --> InteractionController
+PickupSensor --> Player
+Cursor --> ItemSlot
+
+Hotbar --> IInventoryOwner
+Hotbar --> InventoryData
+ItemSlot --> InventoryData
+ItemSlot --> ItemData
+PlayerInventory --> IInventoryOwner
+PlayerInventory --> InventoryData
+
+CraftModule --> IInventoryOwner
+CraftModule --> RecipeLibrary
+ToolbenchModule --> IInventoryOwner
+ToolbenchModule --> RecipeLibrary
+ToolbenchModule --> ItemSlot
+ToolbenchModule --> Toolbench
+
+BrickFurnaceModule --> ItemSlot
+BrickFurnaceModule --> CrucibleView
+BrickFurnaceModule --> BrickFurnace
+CampfireModule --> ItemSlot
+CampfireModule --> Campfire
+ClayKilnModule --> ItemSlot
+ClayKilnModule --> ClayKiln
+CokeOvenModule --> ItemSlot
+CokeOvenModule --> CokeOven
+WoodenCrateModule --> WoodenCrate
+
+CrucibleSmelts --> CrucibleView
+CrucibleView --> ItemLibrary
+CrucibleView --> ItemData
+
+InventoryData --> ItemData
+RecipeLibrary --> ItemLibrary
+RecipeLibrary --> ItemData
+
+DroppedItem --> ItemLibrary
+DroppedItem --> ItemData
+Mob --> CorpseLibrary
+FallingBlock --> WorldManager
+
+ItemDropper --> ItemLibrary
+ItemDropper --> EntityManager
+ItemDropper --> ItemData
+MobLibrary --> Mob
+MobLibrary --> EntityManager
+CorpseLibrary --> ItemDropper
+CorpseLibrary --> EntityManager
+CorpseLibrary --> Corpse
+
+WorldEntityFactory --> ItemDropper
+WorldEntityFactory --> MobLibrary
+WorldEntityFactory --> CorpseLibrary
+WorldEntityRestoreService --> WorldEntityFactory
+
+MultiblockManager --> WorldManager
+MultiblockManager --> VfxManager
+MultiblockManager --> Multiblock
+MultiblockManager --> MultiblockLibrary
+
+Toolbench --> ItemData
+Toolbench --> InventoryData
+Campfire --> ItemData
+ClayKiln --> ItemData
+BrickFurnace --> ItemData
+CokeOven --> ItemData
+
+GearNetworkManager --> WorldManager
+GearNetworkManager --> VfxManager
+GearNetworkManager --> GearNetwork
+GearNetworkManager --> GearNode
+GearNetworkManager --> SourceNode
+GearNetworkManager --> BeltLink
+
+WorldDataGenerator --> WorldGenSettings
+WorldDataGenerator --> WorldData
+WorldDataGenerator --> CellLibrary
+WorldDataGenerator --> ProceduralUtil
+WorldDataGenerator --> StructureTemplate
+
+WorldManager --> WorldGenSettings
+WorldManager --> WorldData
+WorldManager --> WorldChunkSystem
+WorldManager --> WorldSaveSystem
+WorldManager --> MultiblockManager
+WorldManager --> GearNetworkManager
+WorldManager --> EntityManager
+WorldManager --> ItemDropper
+WorldManager --> MobLibrary
+WorldManager --> CorpseLibrary
+WorldManager --> CellLibrary
+WorldManager --> ItemLibrary
+WorldManager --> RecipeLibrary
+WorldManager --> VfxManager
+WorldManager --> FallingBlock
+WorldManager --> InventoryData
+
+WorldSaveSystem --> WorldBinaryMapPersistence
+WorldSaveSystem --> PlayerPersistence
+WorldSaveSystem --> EntityPersistence
+WorldSaveSystem --> WorldSavePathResolver
+WorldSaveSystem --> WorldEntityRestoreService
+
+LobyManager --> WorldLoadContext
+ImageGenerator --> WorldDataGenerator
+
+@enduml
